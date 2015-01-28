@@ -423,7 +423,7 @@ bool ManipulationPipeline::moveToStartPosition(const robot_model::JointModelGrou
   // Check if already in start position
   {
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
-    if (statesEqual(scene->getCurrentState(), robot_state_))
+    if (statesEqual(scene->getCurrentState(), *robot_state_, jmg))
     {
       ROS_WARN_STREAM_NAMED("pipeline","Not planning motion because current state and goal state are close enough.");
       return true;
@@ -939,14 +939,17 @@ bool ManipulationPipeline::orderPublisher(WorkOrder& order)
   visual_tools_->publishText(status_position_, status, rviz_visual_tools::WHITE, rviz_visual_tools::LARGE);
 }
 
-bool ManipulationPipeline::statesEqual(moveit::core::RobotStatePtr s1, moveit::core::RobotStatePtr s2)
+bool ManipulationPipeline::statesEqual(const moveit::core::RobotState &s1, const moveit::core::RobotState &s2, 
+                                       const robot_model::JointModelGroup* jmg)
 {
-  const double* s1_vars = s1.getVariablePositions();
-  const double* s2_vars = s2.getVariablePositions();
-
-  for (std::size_t i = 0; i < s1.getVariableCount(); ++i)
+  double s1_vars[jmg->getActiveJointModels().size()];
+  double s2_vars[jmg->getActiveJointModels().size()];
+  s1.copyJointGroupPositions(jmg, s1_vars);
+  s2.copyJointGroupPositions(jmg, s2_vars);
+  
+  for (std::size_t i = 0; i < jmg->getActiveJointModels().size(); ++i)
   {
-    std::cout << "Diff of " << i << " - " << fabs(s1_vars[i] - s2_vars[i]) << std::endl;
+    //std::cout << "Diff of " << i << " - " << fabs(s1_vars[i] - s2_vars[i]) << std::endl;
     if ( fabs(s1_vars[i] - s2_vars[i]) > 0.001 )
     {
       return false;

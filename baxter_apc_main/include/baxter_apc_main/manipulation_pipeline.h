@@ -240,6 +240,15 @@ public:
    */
   bool orderPublisher(WorkOrder& order);
 
+  /**
+   * \brief Helper function for determining if robot is already in desired state
+   * \param robotstate to compare to
+   * \param robotstate to compare to
+   * \param only compare joints in this joint model group
+   * \return true if states are close enough in similarity
+   */
+  bool statesEqual(const moveit::core::RobotState &s1, const moveit::core::RobotState &s2, const robot_model::JointModelGroup* jmg);
+
 }; // end class
 
 } // end namespace

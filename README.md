@@ -33,7 +33,7 @@ Rviz Visualizer
 
 Run APC Manager (main program)
 
-    roslaunch baxter_apc_main apc_manager.launch verbose:=true use_scratch:=true saving_enabled:=false
+    roslaunch baxter_apc_main apc_manager.launch verbose:=true use_scratch:=true saving_enabled:=false debug:=false
 
 ### Run On Hardware
 
