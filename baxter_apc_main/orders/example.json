@@ -1,0 +1,73 @@
+{
+  "bin_contents":
+  {
+    "bin_A":
+    [
+      "toothbrush","chew_toy","yoyo"
+    ],
+    "bin_B":
+    [
+      "cheezits"
+    ],
+    "bin_C":
+    [
+      "brush","lip_balm"
+    ],
+    "bin_D":
+    [
+      "magnets"
+    ],
+    "bin_E":
+    [
+      "teddy_bear","teddy_bear"
+    ],
+    "bin_F":
+    [
+      "rubber_ducky"
+    ],
+    "bin_G":
+    [
+      "brush","lip_balm","pencils"
+    ],
+    "bin_H":
+    [
+      "childrens_book","baseball_cards"
+    ]
+  },
+
+  "work_order":
+  [
+    {
+      "bin": "bin_A",
+      "item": "chew_toy"
+    },
+    {
+      "bin": "bin_B",
+      "item": "cheezits"
+    },
+    {
+      "bin": "bin_C",
+      "item": "lip_balm"
+    },
+    {
+      "bin": "bin_D",
+      "item": "magnets"
+    },
+    {
+      "bin": "bin_E",
+      "item": "teddy_bear"
+    },
+    {
+      "bin": "bin_F",
+      "item": "rubber_ducky"
+    },
+    {
+      "bin": "bin_G",
+      "item": "pencils"
+    },
+    {
+      "bin": "bin_H",
+      "item": "childrens_book"
+    }
+  ]
+}

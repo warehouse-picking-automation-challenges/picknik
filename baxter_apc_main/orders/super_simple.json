@@ -1,0 +1,46 @@
+{
+  "bin_contents":
+  {
+    "bin_A":
+    [
+      "oreo_mega_stuff","champion_copper_plus_spark_plug"
+    ],
+    "bin_B":
+    [
+      "cheezit_big_original"
+    ],
+    "bin_C":
+    [
+    ],
+    "bin_D":
+    [
+    ],
+    "bin_E":
+    [
+    ],
+    "bin_F":
+    [
+
+    ],
+    "bin_G":
+    [
+
+    ],
+    "bin_H":
+    [
+
+    ]
+  },
+
+  "work_order":
+  [
+    {
+      "bin": "bin_A",
+      "item": "oreo_mega_stuff"
+    },
+    {
+      "bin": "bin_B",
+      "item": "cheezit_big_original"
+    }
+  ]
+}
