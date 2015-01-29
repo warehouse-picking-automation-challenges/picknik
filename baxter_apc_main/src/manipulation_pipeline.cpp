@@ -15,18 +15,22 @@
 #include <baxter_apc_main/manipulation_pipeline.h>
 #include <moveit/trajectory_processing/iterative_time_parameterization.h>
 #include <algorithm>
+#include <moveit/ompl/model_based_planning_context.h>
+#include <ompl/tools/lightning/Lightning.h>
 
 namespace baxter_apc_main
 {
 
 ManipulationPipeline::ManipulationPipeline(bool verbose, moveit_visual_tools::MoveItVisualToolsPtr visual_tools,
                                            planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                                           ShelfObjectPtr shelf)
+                                           ShelfObjectPtr shelf, bool use_experience)
   : nh_("~")
   , verbose_(verbose)
   , visual_tools_(visual_tools)
   , planning_scene_monitor_(planning_scene_monitor)
   , shelf_(shelf)
+  , use_experience_(use_experience)
+  , use_logging_(true)
 {
 
   // Create initial robot state
@@ -82,6 +86,17 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, moveit_visual_tools::Mo
 
   // Load trajectory execution
   loadPlanExecution();
+
+  // Load logging capability
+  if (use_logging_ && use_experience)
+  {
+    /*    if (use_thunder_ && use_experience)
+      logging_file_.open("/home/dave/ompl_storage/thunder_whole_body_logging.csv", std::ios::out | std::ios::app);
+    else if (use_thunder_ && !use_experience)
+      logging_file_.open("/home/dave/ompl_storage/scratch_whole_body_logging.csv", std::ios::out | std::ios::app);
+      else*/
+    logging_file_.open("/home/dave/ompl_storage/lightning_whole_body_logging.csv", std::ios::out | std::ios::app);
+  }
 
   ROS_INFO_STREAM_NAMED("pipeline","Pipeline Ready.");
 }
@@ -471,10 +486,10 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
   req.planner_id = "RRTConnectkConfigDefault";
   //req.planner_id = "RRTstarkConfigDefault";
   req.group_name = jmg->getName();
-  req.num_planning_attempts = 4; // this must be one else it threads and doesn't use lightning/thunder correctly
+  req.num_planning_attempts = 1; // this must be one else it threads and doesn't use lightning/thunder correctly
   req.allowed_planning_time = 30; // seconds
-  req.use_experience = false;
-  req.experience_method = ""; //lightning";
+  req.use_experience = use_experience_;
+  req.experience_method = "lightning";
 
   // Parameters for the workspace that the planner should work inside relative to center of robot
   double workspace_size = 1;
@@ -535,10 +550,30 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
     ROS_ERROR_STREAM_NAMED("pipeline","Failed to execute trajectory");
   }
 
+  // Save Experience Database
+  if (use_experience_)
+  {
+    moveit_ompl::ModelBasedPlanningContextPtr mbpc = boost::dynamic_pointer_cast<moveit_ompl::ModelBasedPlanningContext>(planning_context_handle);
+    ompl::tools::ExperienceSetupPtr experience_setup = boost::dynamic_pointer_cast<ompl::tools::ExperienceSetup>(mbpc->getOMPLSimpleSetup());
+
+    // Display logs
+    experience_setup->printLogs();
+
+    // Logging
+    if (use_logging_)
+    {
+      experience_setup->saveDataLog(logging_file_);
+      logging_file_.flush();
+    }
+
+    // Save database
+    ROS_INFO_STREAM_NAMED("pipeline","Saving experience db...");
+    experience_setup->saveIfChanged();
+  }
+
   if (error)
   {
-    ros::shutdown();
-    exit(0);
+    return false;
   }
   return true;
 }

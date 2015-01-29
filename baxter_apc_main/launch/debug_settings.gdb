@@ -1,3 +1,4 @@
 set breakpoint pending on
 #break moveit_visual_tools.cpp:857
-#break shelf.cpp:330
+break Lightning.cpp:174
+break model_based_planning_context.cpp:545

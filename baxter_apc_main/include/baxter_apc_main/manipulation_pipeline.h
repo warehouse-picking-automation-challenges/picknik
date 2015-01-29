@@ -85,6 +85,11 @@ private:
   Eigen::Affine3d status_position_; // where to display messages
   Eigen::Affine3d order_position_; // where to display messages
 
+  // Experience-based planning
+  bool use_experience_;
+  bool use_logging_;
+  std::ofstream logging_file_;
+
 public:
 
   /**
@@ -93,7 +98,7 @@ public:
    */
   ManipulationPipeline(bool verbose, moveit_visual_tools::MoveItVisualToolsPtr visual_tools,
                        planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                       ShelfObjectPtr shelf);
+                       ShelfObjectPtr shelf, bool use_experience);
 
   /**
    * \brief Destructor

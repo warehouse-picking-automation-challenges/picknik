@@ -4,6 +4,7 @@ project(baxter_apc_main)
 find_package(catkin REQUIRED COMPONENTS
   moveit_core
   moveit_grasps
+  moveit_ompl
   moveit_visual_tools
   cmake_modules
 )

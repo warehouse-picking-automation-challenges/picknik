@@ -79,7 +79,7 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  APCManager(bool verbose)
+  APCManager(bool verbose, bool use_experience)
     : nh_("~")
     , verbose_(verbose)
   {
@@ -121,7 +121,7 @@ public:
     visualizeShelf();
 
     // Create the pick place pipeline
-    pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, planning_scene_monitor_, shelf_));
+    pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, planning_scene_monitor_, shelf_, use_experience));
 
 
     ROS_INFO_STREAM_NAMED("apc_manager","APC Manager Ready.");
@@ -165,7 +165,11 @@ public:
       for (std::size_t i = 0; i < orders_.size(); ++i)
       {
         pipeline_->orderPublisher(orders_[i]); // feedback
-        pipeline_->graspObject(orders_[i], verbose_);      
+        if (!pipeline_->graspObject(orders_[i], verbose_))
+        {
+          ROS_ERROR_STREAM_NAMED("apc_manager","Shutting down for debug purposes only (it could continue on)");
+          return false;
+        }
       }
     }
     else // debug mode
@@ -295,19 +299,23 @@ int main(int argc, char** argv)
 
   // Check for verbose flag
   bool verbose = false;
-  if (argc > 1)
+  bool use_experience = true;
+  for (std::size_t i = 0; i < argc; ++i)
   {
-    for (std::size_t i = 0; i < argc; ++i)
+    if (strcmp(argv[i], "--verbose") == 0)
     {
-      if (strcmp(argv[i], "--verbose") == 0)
-      {
-        ROS_INFO_STREAM_NAMED("main","Running in VERBOSE mode (slower)");
-        verbose = true;
-      }
+      ROS_INFO_STREAM_NAMED("main","Running in VERBOSE mode (slower)");
+      verbose = true;
+    }
+    if( std::string(argv[i]).compare("--use_experience") == 0 )
+    {
+      ++i;
+      use_experience = atoi(argv[i]);
+      ROS_INFO_STREAM_NAMED("main","Using experience: " << use_experience);
     }
   }
 
-  baxter_apc_main::APCManager manager(verbose);
+  baxter_apc_main::APCManager manager(verbose, use_experience);
   manager.runOrder();
 
   // Shutdown
