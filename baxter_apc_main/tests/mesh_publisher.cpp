@@ -67,24 +67,40 @@ public:
   MeshPublisher(bool verbose)
     : verbose_(verbose)
   {
-    // Viusalizer
+    std::cout << std::endl;
+    std::cout << std::endl;
+    ROS_WARN_STREAM_NAMED("temp","Change your planning scene to /mesh_publisher/baxter_apc_planning_scene");
+    std::cout << std::endl;
+    std::cout << std::endl;
+
+    // Visualizer
     visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("/world", "/amazon_shelf_markers"));
     visual_tools_->setPlanningSceneTopic("baxter_apc_planning_scene");
     visual_tools_->loadPlanningSceneMonitor();
     ros::spinOnce();
     ros::Duration(1.0).sleep();
+    visual_tools_->deleteAllMarkers();
     visual_tools_->removeAllCollisionObjects();
     visual_tools_->triggerPlanningSceneUpdate();
     visual_tools_->setManualSceneUpdating(true);
 
-    //static const std::string file_name = "file://home/dave/ros/ws_baxter/src/cu_amazon/mesh_models/amazon_picking_challenge/oreo_mega_stuf/meshes/tsdf.stl";
-    static const std::string file_name = "file://home/dave/ros/ws_baxter/src/cu_amazon/mesh_models/amazon_picking_challenge/";
-    //static const std::string file_name = "file://home/dave/ros/ws_moveit/src/moveit_visual_tools/resources/demo_mesh.stl";
-    //static const std::string file_name = "file://home/dave/ros/ws_moveit/src/moveit_visual_tools/resources/tsdf.stl";
+    // TEST REGULAR MESHES -----------------------------
+
+    //static const std::string pr2 = "package://pr2_description/meshes/base_v0/base.dae";
+    static const std::string pr2 = "file:///home/dave/ros/mesh_models/amazon_picking_challenge/crayola_64_ct/textured_meshes/completed_tsdf_texture_mapped_mesh.dae";
+    Eigen::Affine3d pose1 = Eigen::Affine3d::Identity();
+    visual_tools_->publishMesh(pose1, pr2);
+    ros::Duration(10).sleep();
+
+
+    // TEST COLLISION MESHES ---------------------------
+
+    static const std::string file_name = "file://home/dave/ros/mesh_models/amazon_picking_challenge/crayola_64_ct/textured_meshes/";
 
     namespace fs = boost::filesystem;
 
-    fs::path targetDir("/home/dave/ros/ws_baxter/src/cu_amazon/mesh_models/amazon_picking_challenge/");
+    fs::path targetDir("/home/dave/ros/mesh_models/amazon_picking_challenge/crayola_64_ct/textured_meshes/");
+    //fs::path targetDir("/home/dave/ros/mesh_models/amazon_picking_challenge/crayola_64_ct/meshes/");
 
     fs::recursive_directory_iterator it(targetDir), eod;
     std::cout << "Dir: " << targetDir.string() << std::endl;
@@ -95,7 +111,8 @@ public:
     BOOST_FOREACH(fs::path const &p, std::make_pair(it, eod))
     {
       //std::cout << "File: " << p.string() << std::endl;
-      if(p.extension().string() == ".stl" && is_regular_file(p))
+      //if(p.extension().string() == ".stl" && is_regular_file(p))
+      if(is_regular_file(p))
       {
         if (!ros::ok())
           break;
@@ -113,11 +130,11 @@ public:
           std::cout << std::endl;std::cout << std::endl;
         }
       }
-      if (counter % 10 == 0)
-      {
+      //      if (counter % 10 == 0)
+      //{
         visual_tools_->triggerPlanningSceneUpdate();
-        ros::Duration(1).sleep();
-      }
+        ros::Duration(2).sleep();
+        //}
     }
 
 

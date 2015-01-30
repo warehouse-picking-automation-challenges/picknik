@@ -56,10 +56,10 @@ simulation, hardware, or both.
 
 ### Loading meshes
 
-Simply displays all meshes from our mesh library in Rviz. Be sure to set the right planning scene in Rviz
+Simply displays all meshes from our mesh library in Rviz. Be sure to set the right planning scene in Rviz by changing it to '/mesh_publisher/baxter_apc_planning_scene'
 
- - Visualization: UNTESTED
- - Hardware: UNTESTED
+ - Visualization: Working Jan 30
+ - Hardware: N/A
 
 Start fake controllers
 
@@ -96,7 +96,7 @@ Planner
 
 Open and closes both end effectors
 
- - Visualization: GOOD
+ - Visualization: Working Jan 30
  - Hardware: UNTESTED
 
 Start fake controllers
