@@ -1,5 +1,6 @@
 ![Team PickNik](http://picknik.io/PickNik_Logo3.png)
-Amazon Picking Challenge
+
+**Amazon Picking Challenge**
 
  - Website: [http://picknik.io](http://picknik.io)
  - [Team Members](https://bitbucket.org/cuamazonchallenge/profile/members)
