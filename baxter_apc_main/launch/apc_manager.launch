@@ -15,6 +15,7 @@
   <arg name="verbose" default="0" />
   <arg name="use_scratch" default="1" />
   <arg name="saving_enabled" default="0" />
+  <arg name="order" default="$(find baxter_apc_main)/orders/simple.json" />
 
   <!-- Planning Functionality -->
   <include ns="baxter_apc_main" file="$(find baxter_moveit_config)/launch/planning_pipeline.launch.xml">
@@ -37,7 +38,7 @@
   <!-- Main process -->
   <node name="baxter_apc_main" pkg="baxter_apc_main" type="apc_manager" respawn="false" 
 	launch-prefix="$(arg launch_prefix)" output="screen" 
-	args="--verbose $(arg verbose)">
+	args="--verbose $(arg verbose) --order $(arg order)">
 
     <!-- DTC Testing -->
     <!--param name="constraint_samplers" value=""/-->

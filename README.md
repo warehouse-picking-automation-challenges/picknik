@@ -1,27 +1,45 @@
-# Team PickNik - Amazon Picking Challenge
+![Team PickNik](http://picknik.io/PickNik_Logo3.png)
 
-See http://picknik.io
+**Amazon Picking Challenge**
 
-## Team Members:
-
-- Dave Coleman <david.t.coleman@colorado.edu>
-- Lu Ma <Lu.Ma@colorado.edu>
-- Andy McEvoy <mcevoy.andy@gmail.com>
-- Jorge Cañardo Alastuey <jorgecanardo@gmail.com>
-- Nicholas Farrow <Nicholas.Farrow@colorado.edu>
-
-### Advisers
-
-- Gabe Sibley <gsibley@colorado.edu>
-- Nikolaus Correll <nikolaus.correll@colorado.edu>
+ - Website: [http://picknik.io](http://picknik.io)
+ - [Team Members](https://bitbucket.org/cuamazonchallenge/profile/members)
 
 ## Install
 
-You need to get a bunch of code manually from Dave. It's complicated.
+Dave occasionally releases a new zip file with a lot of custom ROS code, that can be built into one workspace. Download the latest zip (~700MB) from here:
+
+    Directory: http://picknik.io/secure
+    User: picknik
+    Password: sfd798asfiahfl89o7df980791324jhkls
+
+Unzip the file and put into a catkin workspace. Build using catkin_tools.
 
 ## Run
 
-### Run In Simulation
+### Generate Mock Amazon order
+
+Create a simulated bin inventory and random order by running
+
+    rosrun baxter_apc_main random_orders.py order.json
+
+Note that you can repeat experiments setting the used seed, and modify
+the likelyhood of the number of objects per bin too:
+
+    usage: random_orders.py [-h] [--probabilites PROBABILITES] [--seed SEED]
+                            filename
+
+    positional arguments:
+      filename              filename to save the json order to
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --probabilites PROBABILITES, -p PROBABILITES
+                            Quote delimited list of probabilites. Eg "[0.5, 0.2,
+                            0.2, 0.1]"
+      --seed SEED, -s SEED
+
+### Setup Simulation
 
 Start fake controllers
 
@@ -31,13 +49,11 @@ Rviz Visualizer
 
     roslaunch baxter_apc_main moveit_rviz.launch
 
-Run APC Manager (main program)
+Now skip to section **Run Main Routine**
 
-    roslaunch baxter_apc_main apc_manager.launch verbose:=true use_scratch:=true saving_enabled:=false debug:=false
+### Setup Hardware
 
-### Run On Hardware
-
-Start fake controllers
+BETA - Start actual controllers
 
     roslaunch baxter_control baxter_hardware.launch
 
@@ -45,9 +61,20 @@ Rviz Visualizer
 
     roslaunch baxter_apc_main moveit_rviz.launch
 
+Now go to section **Run Main Routine**
+
+### Run Main Routine
+
 Run APC Manager (main program)
 
-    roslaunch baxter_apc_main apc_manager.launch
+    roslaunch baxter_apc_main apc_manager.launch verbose:=true use_scratch:=true saving_enabled:=false debug:=false order:=order.json
+
+Optional Arguments:
+
+    order - which json file to use, defaults to orders/simple.json
+	use_scratch - whether to always plan from scratch (true) or use experience database to speed up planning (false)
+	saving_enabled - allow new plans to be saved to experience database
+	debug - slower and more verbose
 
 ## Working Tests
 
