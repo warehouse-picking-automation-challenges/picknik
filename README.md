@@ -1,10 +1,7 @@
 # Team PickNik - Amazon Picking Challenge
 
-See http://picknik.io
-
-## Team Members:
-
-See [APC PickNik Team](https://bitbucket.org/cuamazonchallenge/profile/members)
+ - Website: [http://picknik.io](http://picknik.io)
+ - [APC PickNik Team](https://bitbucket.org/cuamazonchallenge/profile/members)
 
 ## Install
 
