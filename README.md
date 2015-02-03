@@ -17,7 +17,13 @@ See http://picknik.io
 
 ## Install
 
-You need to get a bunch of code manually from Dave. It's complicated.
+Dave occasionally releases a new zip file with a lot of custom ROS code, that can be built into one workspace. Download the latest zip (~700MB) from here:
+
+Directory: http://picknik.io/secure
+User: picknik
+Password: sfd798asfiahfl89o7df980791324jhkls
+
+Unzip the file and put into a catkin workspace. Build using catkin_tools.
 
 ## Run
 
