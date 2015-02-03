@@ -31,6 +31,26 @@ Unzip the file and put into a catkin workspace. Build using catkin_tools.
 
 ### Run In Simulation
 
+Create a simulated bin placement and random order by running
+
+    python baxter_apc_main/orders/random_orders.py order.json
+
+Note that you can repeat experiments setting the used seed, and modify
+the likelyhood of the number of objects per bin too:
+
+    usage: random_orders.py [-h] [--probabilites PROBABILITES] [--seed SEED]
+                            filename
+
+    positional arguments:
+      filename              filename to save the json order to
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --probabilites PROBABILITES, -p PROBABILITES
+                            Quote delimited list of probabilites. Eg "[0.5, 0.2,
+                            0.2, 0.1]"
+      --seed SEED, -s SEED
+
 Start fake controllers
 
     roslaunch baxter_control baxter_visualization.launch

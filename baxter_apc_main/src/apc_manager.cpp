@@ -63,7 +63,7 @@ private:
   robot_model_loader::RobotModelLoaderPtr robot_model_loader_;
   robot_model::RobotModelPtr robot_model_;
   planning_scene::PlanningScenePtr planning_scene_;
-  planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;  
+  planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
 
   // Properties
   ShelfObjectPtr shelf_;
@@ -79,7 +79,7 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  APCManager(bool verbose)
+  APCManager(bool verbose, std::string order_fp)
     : nh_("~")
     , verbose_(verbose)
   {
@@ -94,7 +94,7 @@ public:
 
     // Create tf transformer
     tf_.reset(new tf::TransformListener(ros::Duration(10.0)));
-    
+
     // Load planning scene monitor
     if (!loadPlanningSceneMonitor())
     {
@@ -117,7 +117,7 @@ public:
 
     // Load shelf
     shelf_.reset(new ShelfObject(visual_tools_, rviz_visual_tools::BROWN, "shelf_0", package_path_));
-    loadShelfContents();
+    loadShelfContents(order_fp);
     visualizeShelf();
 
     // Create the pick place pipeline
@@ -165,7 +165,7 @@ public:
       for (std::size_t i = 0; i < orders_.size(); ++i)
       {
         pipeline_->orderPublisher(orders_[i]); // feedback
-        pipeline_->graspObject(orders_[i], verbose_);      
+        pipeline_->graspObject(orders_[i], verbose_);
       }
     }
     else // debug mode
@@ -181,11 +181,11 @@ public:
    * \brief Load shelf contents
    * \return true on success
    */
-  bool loadShelfContents()
-  {  
+  bool loadShelfContents(std::string order_fp)
+  {
     // Choose file
     AmazonJSONParser parser(verbose_, visual_tools_);
-    std::string file_path = package_path_ + "/orders/simple.json";
+    std::string file_path = package_path_ + "/" + order_fp;
 
     // Parse json
     return parser.parse(file_path, package_path_, shelf_, orders_);
@@ -230,7 +230,7 @@ public:
     // Allows us to sycronize to Rviz and also publish collision objects to ourselves
     ROS_DEBUG_STREAM_NAMED("apc_manager","Loading Planning Scene Monitor");
     static const std::string PLANNING_SCENE_MONITOR_NAME = "AmazonShelfWorld";
-    planning_scene_monitor_.reset(new planning_scene_monitor::PlanningSceneMonitor(planning_scene_, 
+    planning_scene_monitor_.reset(new planning_scene_monitor::PlanningSceneMonitor(planning_scene_,
                                                                                    robot_model_loader_,
                                                                                    tf_,
                                                                                    PLANNING_SCENE_MONITOR_NAME));
@@ -246,7 +246,7 @@ public:
                                                          use_octomap_monitor);
       //planning_scene_monitor_->startSceneMonitor("/move_group/monitored_planning_scene");
       planning_scene_monitor_->startStateMonitor(JOINT_STATE_TOPIC, "/attached_collision_object");
-      planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE, 
+      planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE,
                                                             "baxter_apc_planning_scene");
     }
     else
@@ -293,8 +293,9 @@ int main(int argc, char** argv)
   ros::AsyncSpinner spinner(2);
   spinner.start();
 
-  // Check for verbose flag
+  // Check flags
   bool verbose = false;
+  std::string order_fp;
   if (argc > 1)
   {
     for (std::size_t i = 0; i < argc; ++i)
@@ -304,10 +305,22 @@ int main(int argc, char** argv)
         ROS_INFO_STREAM_NAMED("main","Running in VERBOSE mode (slower)");
         verbose = true;
       }
+      if (strcmp(argv[i], "--order") == 0)
+	{
+	  ++i;
+	  if (i >= argc) {
+	    ROS_INFO_STREAM_NAMED("main",
+				  "Hey, please remember to tell us where's"
+				  " the json order");
+	    return 1;
+	  }
+	  order_fp = argv[i+1];
+	  if (order_fp.empty()) {return 1;}
+	}
     }
   }
 
-  baxter_apc_main::APCManager manager(verbose);
+  baxter_apc_main::APCManager manager(verbose, order_fp);
   manager.runOrder();
 
   // Shutdown
