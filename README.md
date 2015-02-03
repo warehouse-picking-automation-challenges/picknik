@@ -1,5 +1,6 @@
-# Team PickNik - Amazon Picking Challenge
+![Team PickNik](http://picknik.io/PickNik_Logo3.png)
 
+ - Team PickNik - Amazon Picking Challenge
  - Website: [http://picknik.io](http://picknik.io)
  - [APC PickNik Team](https://bitbucket.org/cuamazonchallenge/profile/members)
 
@@ -7,7 +8,7 @@
 
 Dave occasionally releases a new zip file with a lot of custom ROS code, that can be built into one workspace. Download the latest zip (~700MB) from here:
 
-    Directory: [http://picknik.io/secure](http://picknik.io/secure)
+    Directory: http://picknik.io/secure
     User: picknik
     Password: sfd798asfiahfl89o7df980791324jhkls
 
