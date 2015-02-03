@@ -19,8 +19,10 @@ See http://picknik.io
 
 Dave occasionally releases a new zip file with a lot of custom ROS code, that can be built into one workspace. Download the latest zip (~700MB) from here:
 
-Directory: http://picknik.io/secure
+Directory: [http://picknik.io/secure](http://picknik.io/secure)
+
 User: picknik
+
 Password: sfd798asfiahfl89o7df980791324jhkls
 
 Unzip the file and put into a catkin workspace. Build using catkin_tools.
