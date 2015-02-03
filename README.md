@@ -1,8 +1,8 @@
 ![Team PickNik](http://picknik.io/PickNik_Logo3.png)
+Amazon Picking Challenge
 
- - Team PickNik - Amazon Picking Challenge
  - Website: [http://picknik.io](http://picknik.io)
- - [APC PickNik Team](https://bitbucket.org/cuamazonchallenge/profile/members)
+ - [Team Members](https://bitbucket.org/cuamazonchallenge/profile/members)
 
 ## Install
 
