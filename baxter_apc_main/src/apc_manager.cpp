@@ -312,9 +312,10 @@ int main(int argc, char** argv)
 	    ROS_INFO_STREAM_NAMED("main",
 				  "Hey, please remember to tell us where's"
 				  " the json order");
-	    break;
+	    return 1;
 	  }
 	  order_fp = argv[i+1];
+	  if (order_fp.empty()) {return 1;}
 	}
     }
   }
