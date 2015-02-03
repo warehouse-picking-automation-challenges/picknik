@@ -4,16 +4,7 @@ See http://picknik.io
 
 ## Team Members:
 
-- Dave Coleman <david.t.coleman@colorado.edu>
-- Lu Ma <Lu.Ma@colorado.edu>
-- Andy McEvoy <mcevoy.andy@gmail.com>
-- Jorge Cañardo Alastuey <jorgecanardo@gmail.com>
-- Nicholas Farrow <Nicholas.Farrow@colorado.edu>
-
-### Advisers
-
-- Gabe Sibley <gsibley@colorado.edu>
-- Nikolaus Correll <nikolaus.correll@colorado.edu>
+See [APC PickNik Team](https://bitbucket.org/cuamazonchallenge/profile/members)
 
 ## Install
 
@@ -29,11 +20,11 @@ Unzip the file and put into a catkin workspace. Build using catkin_tools.
 
 ## Run
 
-### Run In Simulation
+### Generate Mock Amazon order
 
-Create a simulated bin placement and random order by running
+Create a simulated bin inventory and random order by running
 
-    python baxter_apc_main/orders/random_orders.py order.json
+    rosrun baxter_apc_main random_orders.py order.json
 
 Note that you can repeat experiments setting the used seed, and modify
 the likelyhood of the number of objects per bin too:
@@ -50,6 +41,8 @@ the likelyhood of the number of objects per bin too:
                             Quote delimited list of probabilites. Eg "[0.5, 0.2,
                             0.2, 0.1]"
       --seed SEED, -s SEED
+
+### Run In Simulation
 
 Start fake controllers
 
