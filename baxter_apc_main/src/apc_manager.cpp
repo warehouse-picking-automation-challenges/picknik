@@ -185,10 +185,10 @@ public:
   {
     // Choose file
     AmazonJSONParser parser(verbose_, visual_tools_);
-    std::string file_path = package_path_ + "/" + order_fp;
+    //std::string file_path = package_path_ + "/" + order_fp;
 
     // Parse json
-    return parser.parse(file_path, package_path_, shelf_, orders_);
+    return parser.parse(order_fp, package_path_, shelf_, orders_);
   }
 
   /**
@@ -306,18 +306,22 @@ int main(int argc, char** argv)
         verbose = true;
       }
       if (strcmp(argv[i], "--order") == 0)
-	{
-	  ++i;
-	  if (i >= argc) {
-	    ROS_INFO_STREAM_NAMED("main",
-				  "Hey, please remember to tell us where's"
-				  " the json order");
-	    return 1;
-	  }
-	  order_fp = argv[i+1];
-	  if (order_fp.empty()) {return 1;}
-	}
+      {
+        ++i;
+        if (i >= argc) {
+          ROS_ERROR_STREAM_NAMED("main", "Remember to tell us where's the json order, aborting");
+          return 1;
+        }
+        order_fp = argv[i];
+        ROS_INFO_STREAM_NAMED("main","Using order file " << order_fp);
+      }
     }
+  }
+
+  if (order_fp.empty()) 
+  {
+    ROS_ERROR_STREAM_NAMED("main","No order json file passed in as argument, aborting.");
+    return 1; // error
   }
 
   baxter_apc_main::APCManager manager(verbose, order_fp);

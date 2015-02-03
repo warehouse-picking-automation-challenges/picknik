@@ -42,7 +42,7 @@ the likelyhood of the number of objects per bin too:
                             0.2, 0.1]"
       --seed SEED, -s SEED
 
-### Run In Simulation
+### Setup Simulation
 
 Start fake controllers
 
@@ -52,13 +52,11 @@ Rviz Visualizer
 
     roslaunch baxter_apc_main moveit_rviz.launch
 
-Run APC Manager (main program)
+Now skip to section **Run Main Routine**
 
-    roslaunch baxter_apc_main apc_manager.launch verbose:=true use_scratch:=true saving_enabled:=false debug:=false
+### Setup Hardware
 
-### Run On Hardware
-
-Start fake controllers
+BETA - Start actual controllers
 
     roslaunch baxter_control baxter_hardware.launch
 
@@ -66,9 +64,20 @@ Rviz Visualizer
 
     roslaunch baxter_apc_main moveit_rviz.launch
 
+Now go to section **Run Main Routine**
+
+### Run Main Routine
+
 Run APC Manager (main program)
 
-    roslaunch baxter_apc_main apc_manager.launch
+    roslaunch baxter_apc_main apc_manager.launch verbose:=true use_scratch:=true saving_enabled:=false debug:=false order:=order.json
+
+Optional Arguments:
+
+    order - which json file to use, defaults to orders/simple.json
+	use_scratch - whether to always plan from scratch (true) or use experience database to speed up planning (false)
+	saving_enabled - allow new plans to be saved to experience database
+	debug - slower and more verbose
 
 ## Working Tests
 
