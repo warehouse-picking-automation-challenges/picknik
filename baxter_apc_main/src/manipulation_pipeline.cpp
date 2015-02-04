@@ -23,13 +23,14 @@ namespace baxter_apc_main
 
 ManipulationPipeline::ManipulationPipeline(bool verbose, moveit_visual_tools::MoveItVisualToolsPtr visual_tools,
                                            planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                                           ShelfObjectPtr shelf, bool use_experience)
+                                           ShelfObjectPtr shelf, bool use_experience, bool show_database)
   : nh_("~")
   , verbose_(verbose)
   , visual_tools_(visual_tools)
   , planning_scene_monitor_(planning_scene_monitor)
   , shelf_(shelf)
   , use_experience_(use_experience)
+  , show_database_(show_database)
   , use_logging_(true)
 {
 
@@ -107,7 +108,6 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
   visual_tools_->publishAxis(object_pose);
 
   std::vector<moveit_msgs::Grasp> possible_grasps;
-  //grasps_->generateBlockGrasps( object_pose, grasp_data_, possible_grasps);
   grasps_->setVerbose(true);
   grasps_->generateAxisGrasps( object_pose, moveit_grasps::Y_AXIS, moveit_grasps::DOWN, moveit_grasps::HALF, 0,
                                grasp_datas_[jmg], possible_grasps);
@@ -555,6 +555,7 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
   {
     moveit_ompl::ModelBasedPlanningContextPtr mbpc = boost::dynamic_pointer_cast<moveit_ompl::ModelBasedPlanningContext>(planning_context_handle);
     ompl::tools::ExperienceSetupPtr experience_setup = boost::dynamic_pointer_cast<ompl::tools::ExperienceSetup>(mbpc->getOMPLSimpleSetup());
+    
 
     // Display logs
     experience_setup->printLogs();
@@ -569,6 +570,14 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
     // Save database
     ROS_INFO_STREAM_NAMED("pipeline","Saving experience db...");
     experience_setup->saveIfChanged();
+
+    // Show the database
+    if (show_database_)
+    {
+      ROS_ERROR_STREAM_NAMED("pipeline","Showing database...");
+      displayLightningPlans(experience_setup, jmg);
+      ros::Duration(10).sleep();
+    }
   }
 
   if (error)
@@ -993,5 +1002,50 @@ bool ManipulationPipeline::statesEqual(const moveit::core::RobotState &s1, const
 
   return true;
 }
+
+void ManipulationPipeline::displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup, 
+                                                 const robot_model::JointModelGroup* jmg)
+{
+  // Create a state space describing our robot's planning group
+  moveit_ompl::ModelBasedStateSpacePtr model_state_space 
+    = boost::dynamic_pointer_cast<moveit_ompl::ModelBasedStateSpace>(experience_setup->getStateSpace());
+
+  //ROS_DEBUG_STREAM_NAMED("pipeline","Model Based State Space has dimensions: " << model_state_space->getDimension());
+
+  // Load lightning and its database
+  ompl::tools::LightningPtr lightning = boost::dynamic_pointer_cast<ompl::tools::Lightning>(experience_setup);
+  //7lightning.setFile(jmg->getName());
+
+  // Get all of the paths in the database
+  std::vector<ompl::base::PlannerDataPtr> paths;
+  lightning->getAllPlannerDatas(paths);
+
+  ROS_INFO_STREAM_NAMED("pipeline","Number of paths to publish: " << paths.size());
+
+  // Load the OMPL visualizer
+  if (!ompl_visual_tools_)
+  {
+    ompl_visual_tools_.reset(new ompl_visual_tools::OmplVisualTools(robot_model_->getModelFrame(), "/ompl_experience_database", 
+                                                                    robot_model_));
+    ompl_visual_tools_->loadRobotStatePub("/baxter_amazon");
+  }
+  ompl_visual_tools_->deleteAllMarkers(); // clear all old markers
+  ompl_visual_tools_->setStateSpace(model_state_space);
+
+  // Get tip links for this setup
+  std::vector<const robot_model::LinkModel*> tips;
+  jmg->getEndEffectorTips(tips);
+  ROS_INFO_STREAM_NAMED("pipeline","Found " << tips.size() << " tips");
+
+  bool show_trajectory_animated = false;//verbose_;
+
+  // Loop through each path
+  for (std::size_t path_id = 0; path_id < paths.size(); ++path_id)
+  {
+    std::cout << "Processing path " << path_id << std::endl;
+    ompl_visual_tools_->publishRobotPath(paths[path_id], jmg, tips, show_trajectory_animated);
+  }
+
+} // function
 
 } // end namespace

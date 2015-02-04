@@ -6,25 +6,32 @@ find_package(catkin REQUIRED COMPONENTS
   moveit_grasps
   moveit_ompl
   moveit_visual_tools
+  ompl_visual_tools
   cmake_modules
 )
 
 find_package(Eigen REQUIRED)
 find_package(Boost REQUIRED)
+find_package(OMPL REQUIRED)
 
 catkin_package(
   CATKIN_DEPENDS
     moveit_core
     moveit_grasps
     moveit_visual_tools
+    moveit_ompl
   DEPENDS
     Eigen
-  INCLUDE_DIRS include
+  INCLUDE_DIRS 
+    include
+    ${OMPL_INCLUDE_DIRS}
   LIBRARIES
     jsoncpp
     amazon_json_parser
     shelf
     manipulation_pipeline
+    learning_pipeline
+    ${OMPL_LIBRARIES}
 )
 
 ###########
@@ -33,12 +40,14 @@ catkin_package(
 include_directories(
   include 
   ${catkin_INCLUDE_DIRS}
+  ${OMPL_INCLUDE_DIRS}
 )
 
 include_directories(SYSTEM 
   ${Boost_INCLUDE_DIR} 
   ${EIGEN_INCLUDE_DIRS}
 )
+link_directories(${OMPL_LIBRARY_DIRS})
 
 # JSON Parser Library
 add_library(jsoncpp
@@ -77,6 +86,16 @@ target_link_libraries(manipulation_pipeline
   ${Boost_LIBRARIES}
 )
 
+# Experience trainer library
+add_library(learning_pipeline
+  src/learning_pipeline.cpp
+)
+target_link_libraries(learning_pipeline
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+  manipulation_pipeline
+)
+
 # Main Executable
 add_executable(apc_manager src/apc_manager.cpp)
 target_link_libraries(apc_manager 
@@ -85,6 +104,7 @@ target_link_libraries(apc_manager
   shelf
   amazon_json_parser
   manipulation_pipeline
+  learning_pipeline
 )
 
 # TESTS

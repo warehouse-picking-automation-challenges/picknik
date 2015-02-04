@@ -67,13 +67,14 @@ Now go to section **Run Main Routine**
 
 Run APC Manager (main program)
 
-    roslaunch baxter_apc_main apc_manager.launch verbose:=true use_scratch:=true saving_enabled:=false debug:=false order:=order.json
+    roslaunch baxter_apc_main apc_manager.launch verbose:=1 use_experience:=1 saving_enabled:=1 debug:=0 show_database:=0 order:=order.json
 
 Optional Arguments:
 
     order - which json file to use, defaults to orders/simple.json
-	use_scratch - whether to always plan from scratch (true) or use experience database to speed up planning (false)
+	use_experience - whether to use cached planned (Lightning Database) or not
 	saving_enabled - allow new plans to be saved to experience database
+	show_database - whether to pause between motion plans and show all the saved paths (debug)
 	debug - slower and more verbose
 
 ## Working Tests

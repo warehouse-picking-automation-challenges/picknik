@@ -20,6 +20,7 @@
 #include <baxter_apc_main/amazon_json_parser.h>
 #include <baxter_apc_main/shelf.h>
 #include <baxter_apc_main/manipulation_pipeline.h>
+#include <baxter_apc_main/learning_pipeline.h>
 
 // ROS
 #include <ros/ros.h>
@@ -47,39 +48,13 @@ static const std::string PACKAGE_NAME = "baxter_apc_main";
 
 class APCManager
 {
-private:
-
-  // A shared node handle
-  ros::NodeHandle nh_;
-  boost::shared_ptr<tf::TransformListener> tf_;
-
-  // Show more visual and console output, with general slower run time.
-  bool verbose_;
-
-  // For visualizing things in rviz
-  moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
-
-  // Core MoveIt components
-  robot_model_loader::RobotModelLoaderPtr robot_model_loader_;
-  robot_model::RobotModelPtr robot_model_;
-  planning_scene::PlanningScenePtr planning_scene_;
-  planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
-
-  // Properties
-  ShelfObjectPtr shelf_;
-  WorkOrders orders_;
-  std::string package_path_;
-
-  // Main worker
-  ManipulationPipelinePtr pipeline_;
-
 public:
 
   /**
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  APCManager(bool verbose, std::string order_fp, bool use_experience)
+  APCManager(bool verbose, std::string order_fp)
     : nh_("~")
     , verbose_(verbose)
   {
@@ -120,10 +95,6 @@ public:
     loadShelfContents(order_fp);
     visualizeShelf();
 
-    // Create the pick place pipeline
-    pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, planning_scene_monitor_, shelf_, use_experience));
-
-
     ROS_INFO_STREAM_NAMED("apc_manager","APC Manager Ready.");
   }
 
@@ -137,8 +108,11 @@ public:
    * \brief Main program runner
    * \return true on success
    */
-  bool runOrder()
+  bool runOrder(bool use_experience, bool show_database)
   {
+    // Create the pick place pipeline
+    pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, planning_scene_monitor_, shelf_, use_experience, show_database));
+    
     // Move robot to start location
     pipeline_->statusPublisher("Moving to initial position");
 
@@ -180,6 +154,41 @@ public:
     }
 
     pipeline_->statusPublisher("Finished");
+  }
+
+  /**
+   * \brief Generate a discretized array of possible pre-grasps and save into experience database
+   * \return true on success
+   */
+  bool trainExperienceDatabase()
+  {
+    // Create learning pipeline for training the experience database
+    bool use_experience = false;
+    bool show_database = false;
+    learning_.reset(new LearningPipeline(verbose_, visual_tools_, planning_scene_monitor_, shelf_, use_experience, show_database));
+
+    ROS_INFO_STREAM_NAMED("apc_manager","Training experience database");
+    learning_->generateTrainingGoals(shelf_);
+
+    // TODO: DONE create new class for experiences
+    //       DONE display all potential grasps
+    //       check ik
+    //       add cost function to ompl
+    //       setup PRMstar
+
+
+
+
+
+
+
+
+
+
+
+    
+
+    return true;
   }
 
   /**
@@ -285,6 +294,35 @@ public:
     return true;
   }
 
+private:
+
+  // A shared node handle
+  ros::NodeHandle nh_;
+  boost::shared_ptr<tf::TransformListener> tf_;
+
+  // Show more visual and console output, with general slower run time.
+  bool verbose_;
+
+  // For visualizing things in rviz
+  moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
+
+  // Core MoveIt components
+  robot_model_loader::RobotModelLoaderPtr robot_model_loader_;
+  robot_model::RobotModelPtr robot_model_;
+  planning_scene::PlanningScenePtr planning_scene_;
+  planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
+
+  // Properties
+  ShelfObjectPtr shelf_;
+  WorkOrders orders_;
+  std::string package_path_;
+
+  // Main worker
+  ManipulationPipelinePtr pipeline_;
+
+  // Helper classes
+  LearningPipelinePtr learning_;
+
 }; // end class
 
 } // end namespace
@@ -300,17 +338,11 @@ int main(int argc, char** argv)
 
   // Check flags
   bool verbose = false;
-  std::string order_fp;
   bool use_experience = true;
+  bool show_database = false;
+  std::string order_fp;
   for (std::size_t i = 0; i < argc; ++i)
   {
-    if( std::string(argv[i]).compare("--use_experience") == 0 )
-    {
-      ++i;
-      use_experience = atoi(argv[i]);
-      ROS_INFO_STREAM_NAMED("main","Using experience: " << use_experience);
-    }
-
     if (strcmp(argv[i], "--verbose") == 0)
     {
       ROS_INFO_STREAM_NAMED("main","Running in VERBOSE mode (slower)");
@@ -327,6 +359,22 @@ int main(int argc, char** argv)
       order_fp = argv[i];
       ROS_INFO_STREAM_NAMED("main","Using order file " << order_fp);
     }
+
+    if( std::string(argv[i]).compare("--use_experience") == 0 )
+    {
+      ++i;
+      use_experience = atoi(argv[i]);
+      ROS_INFO_STREAM_NAMED("main","Using experience: " << use_experience);
+    }
+
+    if( std::string(argv[i]).compare("--show_database") == 0 )
+    {
+      ++i;
+      show_database = atoi(argv[i]);
+      ROS_INFO_STREAM_NAMED("main","Showing database: " << show_database);
+    }
+
+
   }
 
   if (order_fp.empty()) 
@@ -335,9 +383,10 @@ int main(int argc, char** argv)
     return 1; // error
   }
 
-  baxter_apc_main::APCManager manager(verbose, order_fp, use_experience);
+  baxter_apc_main::APCManager manager(verbose, order_fp);
 
-  manager.runOrder();
+  manager.trainExperienceDatabase();
+  //manager.runOrder(use_experience, show_database);
 
   // Shutdown
   ros::Duration(2.0).sleep();

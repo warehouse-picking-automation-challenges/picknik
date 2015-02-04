@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Grid1/Offset1
         - /Amazon Shelf Markers1/Namespaces1
+        - /Experience Database1
         - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
@@ -334,6 +335,18 @@ Visualization Manager:
       Name: simple_grasps
       Namespaces:
         {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /ompl_experience_database
+      Name: Experience Database
+      Namespaces:
+        Arrow: true
+        Cylinder: true
+        Line: true
+        Sphere: true
+        Text: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -930,22 +943,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 5.49154
+      Distance: 4.62678
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.13159
-        Y: -0.844827
+        X: 0.697666
+        Y: -0.028464
         Z: -3.99351e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.564801
+      Pitch: 0.389801
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.2135
+      Yaw: 2.3685
     Saved: ~
 Window Geometry:
   Displays:

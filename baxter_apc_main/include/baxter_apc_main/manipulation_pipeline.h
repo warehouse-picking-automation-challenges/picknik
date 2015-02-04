@@ -24,6 +24,7 @@
 // MoveIt
 #include <moveit/collision_detection/world.h>
 #include <moveit_visual_tools/moveit_visual_tools.h>
+#include <ompl_visual_tools/ompl_visual_tools.h>
 #include <moveit/planning_pipeline/planning_pipeline.h>
 #include <moveit/kinematic_constraints/utils.h>
 #include <moveit/robot_state/conversions.h>
@@ -34,6 +35,9 @@
 #include <moveit_grasps/grasp_data.h>
 #include <moveit_grasps/grasp_filter.h>
 
+// OMPL
+#include <ompl/tools/experience/ExperienceSetup.h>
+
 namespace baxter_apc_main
 {
 
@@ -43,53 +47,6 @@ static const std::string START_POSE = "both_ready"; // where to move baxter to i
 
 class ManipulationPipeline
 {
-private:
-
-  // A shared node handle
-  ros::NodeHandle nh_;
-
-  // Show more visual and console output, with general slower run time.
-  bool verbose_;
-
-  // For visualizing things in rviz
-  moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
-
-  // Core MoveIt components
-  planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
-  robot_model::RobotModelConstPtr robot_model_;
-  planning_pipeline::PlanningPipelinePtr planning_pipeline_;
-
-  // Allocated memory for robot states
-  moveit::core::RobotStatePtr robot_state_;
-  moveit::core::RobotStatePtr start_state_;
-
-  // Group for each arm
-  const robot_model::JointModelGroup* left_arm_;
-  const robot_model::JointModelGroup* right_arm_;
-
-  // Grasp generator
-  moveit_grasps::GraspsPtr grasps_;
-  moveit_grasps::GraspFilterPtr grasp_filter_;
-
-  // robot-specific data for generating grasps
-  std::map<const robot_model::JointModelGroup*,moveit_grasps::GraspData> grasp_datas_;
-
-  // Trajectory execution
-  trajectory_execution_manager::TrajectoryExecutionManagerPtr trajectory_execution_manager_;
-  boost::shared_ptr<plan_execution::PlanExecution> plan_execution_;
-
-  // Properties
-  ShelfObjectPtr shelf_;
-
-  // User feedback
-  Eigen::Affine3d status_position_; // where to display messages
-  Eigen::Affine3d order_position_; // where to display messages
-
-  // Experience-based planning
-  bool use_experience_;
-  bool use_logging_;
-  std::ofstream logging_file_;
-
 public:
 
   /**
@@ -98,7 +55,7 @@ public:
    */
   ManipulationPipeline(bool verbose, moveit_visual_tools::MoveItVisualToolsPtr visual_tools,
                        planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                       ShelfObjectPtr shelf, bool use_experience);
+                       ShelfObjectPtr shelf, bool use_experience, bool show_database);
 
   /**
    * \brief Destructor
@@ -254,6 +211,60 @@ public:
    */
   bool statesEqual(const moveit::core::RobotState &s1, const moveit::core::RobotState &s2, const robot_model::JointModelGroup* jmg);
 
+  /**
+   * \brief Show the trajectories saved in the experience database
+   * \return true on success
+   */
+  void displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup, const robot_model::JointModelGroup* jmg);
+
+protected:
+
+  // A shared node handle
+  ros::NodeHandle nh_;
+
+  // Show more visual and console output, with general slower run time.
+  bool verbose_;
+
+  // For visualizing things in rviz
+  moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
+  ompl_visual_tools::OmplVisualToolsPtr ompl_visual_tools_;
+
+  // Core MoveIt components
+  planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
+  robot_model::RobotModelConstPtr robot_model_;
+  planning_pipeline::PlanningPipelinePtr planning_pipeline_;
+
+  // Allocated memory for robot states
+  moveit::core::RobotStatePtr robot_state_;
+  moveit::core::RobotStatePtr start_state_;
+
+  // Group for each arm
+  const robot_model::JointModelGroup* left_arm_;
+  const robot_model::JointModelGroup* right_arm_;
+
+  // Grasp generator
+  moveit_grasps::GraspsPtr grasps_;
+  moveit_grasps::GraspFilterPtr grasp_filter_;
+
+  // robot-specific data for generating grasps
+  std::map<const robot_model::JointModelGroup*,moveit_grasps::GraspData> grasp_datas_;
+
+  // Trajectory execution
+  trajectory_execution_manager::TrajectoryExecutionManagerPtr trajectory_execution_manager_;
+  boost::shared_ptr<plan_execution::PlanExecution> plan_execution_;
+
+  // Properties
+  ShelfObjectPtr shelf_;
+
+  // User feedback
+  Eigen::Affine3d status_position_; // where to display messages
+  Eigen::Affine3d order_position_; // where to display messages
+
+  // Experience-based planning
+  bool use_experience_;
+  bool show_database_;
+  bool use_logging_;
+  std::ofstream logging_file_;
 }; // end class
 
 } // end namespace
