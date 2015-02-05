@@ -81,11 +81,18 @@ public:
   bool generateTrainingGoals(ShelfObjectPtr shelf);
   bool generateTrainingGoalsBin(Eigen::Affine3d bin_transpose, EigenSTL::vector_Affine3d &poses);
 
-/**
- * \brief Determine which grasps have IK solutions
- * \return true on success
- */
-bool testGrasps();
+  /**
+   * \brief Simple test script for visualizing
+   * \param input - description
+   * \return true on success
+   */
+  bool visualizePose(Eigen::Affine3d grasp_pose, const moveit::core::JointModelGroup *arm_jmg);
+
+  /**
+   * \brief Determine which grasps have IK solutions
+   * \return true on success
+   */
+  bool testGrasps();
 
   /**
    * \brief Show all grasps in Rviz

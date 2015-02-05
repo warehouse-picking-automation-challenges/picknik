@@ -75,6 +75,21 @@ bool LearningPipeline::generateTrainingGoals(ShelfObjectPtr shelf)
 
   // Filter grasps
   testGrasps();
+
+  // Testing
+  //testPose(Eigen::Affine3d::Identity(), left_arm_);
+  //testPose(Eigen::Affine3d::Identity(), right_arm_);
+}
+
+bool LearningPipeline::visualizePose(Eigen::Affine3d grasp_pose, const moveit::core::JointModelGroup *arm_jmg)
+{
+  const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[arm_jmg].ee_group_);
+
+  // Rotate based on EE type
+  grasp_pose = grasp_pose * grasp_datas_[arm_jmg].grasp_pose_to_eef_pose_;
+
+  visual_tools_->publishArrow(grasp_pose);
+  visual_tools_->publishEEMarkers(grasp_pose, ee_jmg, rviz_visual_tools::GREEN);
 }
 
 bool LearningPipeline::generateTrainingGoalsBin(Eigen::Affine3d bin_transpose, EigenSTL::vector_Affine3d &poses)
@@ -101,7 +116,8 @@ bool LearningPipeline::generateTrainingGoalsBin(Eigen::Affine3d bin_transpose, E
 bool LearningPipeline::testGrasps()
 {
   // TODO: test both arms
-  const moveit::core::JointModelGroup *jmg = right_arm_;
+  const moveit::core::JointModelGroup* jmg = right_arm_;
+  const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[jmg].ee_group_);
 
   // Convert grasp vectors to grasp msgs
   std::vector<moveit_msgs::Grasp> possible_grasps;
@@ -136,12 +152,19 @@ bool LearningPipeline::testGrasps()
       geometry_msgs::PoseStamped grasp_pose_msg;
       grasp_pose_msg.header.stamp = ros::Time::now();
       grasp_pose_msg.header.frame_id = robot_model_->getModelFrame();
-      tf::poseEigenToMsg(data.poses[i], grasp_pose_msg.pose);
+
+      // Transform based on EE type
+      Eigen::Affine3d eigen_grasp_pose = data.poses[i] * grasp_datas_[jmg].grasp_pose_to_eef_pose_;
+      tf::poseEigenToMsg(eigen_grasp_pose, grasp_pose_msg.pose);
       new_grasp.grasp_pose = grasp_pose_msg;
 
-      visual_tools_->publishArrow(grasp_pose_msg.pose, rviz_visual_tools::RED);
-      ros::Duration(0.001).sleep();
-
+      // debug mode
+      if (false)
+      {
+        visual_tools_->publishArrow(grasp_pose_msg.pose, rviz_visual_tools::RED);
+        visual_tools_->publishEEMarkers(grasp_pose_msg.pose, ee_jmg);
+        ros::Duration(1).sleep();
+      }
 
       // the maximum contact force to use while grasping (<=0 to disable)
       new_grasp.max_contact_force = 0;
@@ -183,7 +206,7 @@ bool LearningPipeline::testGrasps()
       new_grasp.post_grasp_retreat = post_grasp_retreat;
 
       // Add to vector
-      possible_grasps.push_back(new_grasp);      
+      possible_grasps.push_back(new_grasp);
     }
   }
 
@@ -197,8 +220,8 @@ bool LearningPipeline::testGrasps()
   if (verbose_)
   {
     ROS_INFO_STREAM_NAMED("learning_pipeline","Showing animated grasps");
-    visual_tools_->loadEEMarker("left_hand", jmg->getName());
-    visual_tools_->publishAnimatedGrasps(possible_grasps, grasp_datas_[jmg].ee_parent_link_);
+    double animation_speed = 0.001;
+    visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg, animation_speed);
   }
 
   // Convert the filtered_grasps into a format moveit_visual_tools can use

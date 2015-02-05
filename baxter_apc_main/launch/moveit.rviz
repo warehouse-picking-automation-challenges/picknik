@@ -324,9 +324,8 @@ Visualization Manager:
       Namespaces:
         Arrow: true
         Cylinder: true
-        Line: true
-        Sphere: true
         Text: true
+        end_effector: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -342,11 +341,7 @@ Visualization Manager:
       Marker Topic: /ompl_experience_database
       Name: Experience Database
       Namespaces:
-        Arrow: true
-        Cylinder: true
-        Line: true
-        Sphere: true
-        Text: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -661,7 +656,7 @@ Visualization Manager:
         Scene Alpha: 0.9
         Scene Color: 50; 230; 50
         Scene Display Time: 0.2
-        Show Scene Geometry: true
+        Show Scene Geometry: false
         Voxel Coloring: Z-Axis
         Voxel Rendering: Occupied Voxels
       Scene Robot:
@@ -926,7 +921,7 @@ Visualization Manager:
             Value: true
         Robot Alpha: 0.5
         Show Robot Collision: false
-        Show Robot Visual: true
+        Show Robot Visual: false
       Value: true
   Enabled: true
   Global Options:
@@ -943,22 +938,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.62678
+      Distance: 3.24016
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.697666
-        Y: -0.028464
-        Z: -3.99351e-06
+        X: 0.763014
+        Y: 0.199401
+        Z: -3.75509e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.389801
+      Pitch: 0.374801
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 2.3685
+      Yaw: 3.47849
     Saved: ~
 Window Geometry:
   Displays:

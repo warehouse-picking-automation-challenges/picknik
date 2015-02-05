@@ -133,7 +133,6 @@ public:
     visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools(grasp_data_.base_link_, "/end_effector_marker", planning_scene_monitor_));
     visual_tools_->setLifetime(40.0);
     visual_tools_->setMuted(false);
-    visual_tools_->loadEEMarker(grasp_data_.ee_group_, planning_group_name_);
     visual_tools_->setFloorToBaseHeight(-0.9);
 
     // Clear out old collision objects just because
@@ -158,6 +157,8 @@ public:
     std::vector<moveit_msgs::Grasp> possible_grasps;
     std::vector<GraspSolution> filtered_grasps;
 
+    const moveit::core::JointModelGroup* ee_jmg = robot_state->getRobotModel()->getJointModelGroup(grasp_data_.ee_group_);
+  
     // Loop
     for (int i = 0; i < num_tests; ++i)
     {
@@ -182,7 +183,7 @@ public:
       grasp_filter_->filterGrasps(possible_grasps, filtered_grasps, filter_pregrasps, grasp_data_.ee_parent_link_, joint_model_group);
 
       // Show all generated grasps (non-filtered)
-      visual_tools_->publishAnimatedGrasps(possible_grasps, grasp_data_.ee_parent_link_);      
+      visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg);      
 
       // Convert the filtered_grasps into a format moveit_visual_tools can use
       std::vector<trajectory_msgs::JointTrajectoryPoint> ik_solutions;

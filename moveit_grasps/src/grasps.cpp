@@ -208,12 +208,8 @@ bool Grasps::generateAxisGrasps(
     // ------------------------------------------------------------------------
     // Change grasp to frame of reference of this custom end effector
 
-    // Convert to Eigen
-    Eigen::Affine3d eef_conversion_pose;
-    tf::poseMsgToEigen(grasp_data.grasp_pose_to_eef_pose_, eef_conversion_pose);
-
     // Transform the grasp pose
-    grasp_pose = grasp_pose * eef_conversion_pose;
+    grasp_pose = grasp_pose * grasp_data.grasp_pose_to_eef_pose_;
 
     // ------------------------------------------------------------------------
     // Convert pose to global frame (base_link)

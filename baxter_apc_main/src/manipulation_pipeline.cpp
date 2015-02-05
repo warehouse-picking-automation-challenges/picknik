@@ -86,7 +86,8 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, moveit_visual_tools::Mo
   grasp_filter_.reset(new moveit_grasps::GraspFilter(robot_state_, visual_tools_) );
 
   // Load trajectory execution
-  loadPlanExecution();
+  //loadPlanExecution();
+  ROS_WARN_STREAM_NAMED("temp","DISABLED LOAD PLAN EXECUTION");
 
   // Load logging capability
   if (use_logging_ && use_experience)
@@ -105,6 +106,8 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, moveit_visual_tools::Mo
 bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_model::JointModelGroup* jmg,
                                        moveit_grasps::GraspSolution& chosen, bool verbose)
 {
+  const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[jmg].ee_group_);
+
   visual_tools_->publishAxis(object_pose);
 
   std::vector<moveit_msgs::Grasp> possible_grasps;
@@ -115,8 +118,8 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
   // Visualize
   if (verbose)
   {
-    visual_tools_->loadEEMarker("left_hand", jmg->getName());
-    visual_tools_->publishAnimatedGrasps(possible_grasps, grasp_datas_[jmg].ee_parent_link_);
+    visual_tools_->loadEEMarker("left_hand");
+    visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg);
   }
 
   // Filter grasps based on IK
@@ -129,7 +132,7 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
 
   // Visualize them
   if (verbose)
-    visual_tools_->publishAnimatedGrasps(possible_grasps, grasp_datas_[jmg].ee_parent_link_);
+    visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg);
 
   // Convert the filtered_grasps into a format moveit_visual_tools can use
   if (verbose)
@@ -509,10 +512,13 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
 
   // SOLVE
   loadPlanningPipeline(); // always call before using generatePlan()
+  ROS_WARN_STREAM_NAMED("temp","Untested scene cloning feature here");
+  planning_scene::PlanningScenePtr cloned_scene;
   {
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
-    planning_pipeline_->generatePlan(scene, req, res, dummy, planning_context_handle);
+    cloned_scene = planning_scene::PlanningScene::clone(scene);
   }
+  planning_pipeline_->generatePlan(cloned_scene, req, res, dummy, planning_context_handle);
 
   // Check that the planning was successful
   bool error = false;

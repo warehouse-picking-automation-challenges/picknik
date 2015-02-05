@@ -385,8 +385,8 @@ int main(int argc, char** argv)
 
   baxter_apc_main::APCManager manager(verbose, order_fp);
 
-  manager.trainExperienceDatabase();
-  //manager.runOrder(use_experience, show_database);
+  //manager.trainExperienceDatabase();
+  manager.runOrder(use_experience, show_database);
 
   // Shutdown
   ros::Duration(2.0).sleep();

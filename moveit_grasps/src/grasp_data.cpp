@@ -201,19 +201,14 @@ bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string&
 
   // Orientation
   ROS_ASSERT(grasp_pose_to_eef_rotation.size() == 3);
+  ROS_ASSERT(grasp_pose_to_eef.size() == 3);
   Eigen::Quaterniond quat(Eigen::AngleAxis<double>(double(grasp_pose_to_eef_rotation[1]), Eigen::Vector3d::UnitY())); // turn on Z axis
   // TODO: rotate for roll and yaw also, not just pitch (unit y)
   // but i don't need that feature right now and it might be tricky
-  grasp_pose_to_eef_pose_.orientation.x = quat.x();
-  grasp_pose_to_eef_pose_.orientation.y = quat.y();
-  grasp_pose_to_eef_pose_.orientation.z = quat.z();
-  grasp_pose_to_eef_pose_.orientation.w = quat.w();
-
-  // Position // approach vector?
-  ROS_ASSERT(grasp_pose_to_eef.size() == 3);
-  grasp_pose_to_eef_pose_.position.x = grasp_pose_to_eef[0];
-  grasp_pose_to_eef_pose_.position.y = grasp_pose_to_eef[1];
-  grasp_pose_to_eef_pose_.position.z = grasp_pose_to_eef[2];
+  grasp_pose_to_eef_pose_ = Eigen::Translation3d(grasp_pose_to_eef[0],
+                                                 grasp_pose_to_eef[1],
+                                                 grasp_pose_to_eef[2]) * quat;
+    
 
   // -------------------------------
   // Create pre-grasp posture if specified
@@ -287,17 +282,17 @@ bool GraspData::setRobotState( robot_state::RobotStatePtr &robot_state, const tr
 void GraspData::print()
 {
   ROS_WARN_STREAM_NAMED("grasp_data","Debug Grasp Data variable values:");
-  std::cout << "grasp_pose_to_eef_pose_: \n" <<grasp_pose_to_eef_pose_<<std::endl;
-  std::cout << "pre_grasp_posture_: \n" <<pre_grasp_posture_<<std::endl;
-  std::cout << "grasp_posture_: \n" <<grasp_posture_<<std::endl;
-  std::cout << "base_link_: " <<base_link_<<std::endl;
-  std::cout << "ee_parent_link_: " <<ee_parent_link_<<std::endl;
-  std::cout << "ee_group_: " <<ee_group_<<std::endl;
-  std::cout << "grasp_depth_: " <<grasp_depth_<<std::endl;
-  std::cout << "angle_resolution_: " <<angle_resolution_<<std::endl;
-  std::cout << "approach_retreat_desired_dist_: " <<approach_retreat_desired_dist_<<std::endl;
-  std::cout << "approach_retreat_min_dist_: " <<approach_retreat_min_dist_<<std::endl;
-  std::cout << "object_size_: " <<object_size_<<std::endl;
+  std::cout << "grasp_pose_to_eef_pose_: \n" << grasp_pose_to_eef_pose_.translation() << "\n" << grasp_pose_to_eef_pose_.rotation() <<std::endl;
+  std::cout << "pre_grasp_posture_: \n" << pre_grasp_posture_<<std::endl;
+  std::cout << "grasp_posture_: \n" << grasp_posture_<<std::endl;
+  std::cout << "base_link_: " << base_link_<<std::endl;
+  std::cout << "ee_parent_link_: " << ee_parent_link_<<std::endl;
+  std::cout << "ee_group_: " << ee_group_<<std::endl;
+  std::cout << "grasp_depth_: " << grasp_depth_<<std::endl;
+  std::cout << "angle_resolution_: " << angle_resolution_<<std::endl;
+  std::cout << "approach_retreat_desired_dist_: " << approach_retreat_desired_dist_<<std::endl;
+  std::cout << "approach_retreat_min_dist_: " << approach_retreat_min_dist_<<std::endl;
+  std::cout << "object_size_: " << object_size_<<std::endl;
 }
 
 } // namespace
