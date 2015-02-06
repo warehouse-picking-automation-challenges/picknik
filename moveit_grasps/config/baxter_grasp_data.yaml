@@ -29,11 +29,11 @@ right_hand:
     joints : ['right_gripper_l_finger_joint']
 
     #open position
-    pregrasp_posture : [0.0]
+    pregrasp_posture : [-0.5] #[-1.57]
     pregrasp_time_from_start : 4.0
 
     #close position
-    grasp_posture : [-1.57]
+    grasp_posture : [0.0]
     grasp_time_from_start : 4.0
 
     #desired pose from end effector to grasp - [x,y,z]

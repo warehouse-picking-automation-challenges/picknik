@@ -73,12 +73,14 @@ bool LearningPipeline::generateTrainingGoals(ShelfObjectPtr shelf)
   bool valid_only = false;
   //displayGrasps(valid_only);
 
+
+
   // Filter grasps
   testGrasps();
 
   // Testing
-  //testPose(Eigen::Affine3d::Identity(), left_arm_);
-  //testPose(Eigen::Affine3d::Identity(), right_arm_);
+  //visualizePose(Eigen::Affine3d::Identity(), left_arm_);
+  //visualizePose(Eigen::Affine3d::Identity(), right_arm_);
 }
 
 bool LearningPipeline::visualizePose(Eigen::Affine3d grasp_pose, const moveit::core::JointModelGroup *arm_jmg)
@@ -122,6 +124,9 @@ bool LearningPipeline::testGrasps()
   // Convert grasp vectors to grasp msgs
   std::vector<moveit_msgs::Grasp> possible_grasps;
 
+  // Statistics for testing
+  std::size_t total_generated_grasps = 0;
+
   for (BinExperienceDataMap::iterator bin_it = bin_experience_data_.begin(); 
        bin_it != bin_experience_data_.end(); bin_it++)
   {
@@ -130,6 +135,7 @@ bool LearningPipeline::testGrasps()
     for (std::size_t i = 0; i < data.poses.size(); ++i)
     {
       moveit_msgs::Grasp new_grasp;
+      total_generated_grasps++;
 
       /* The estimated probability of success for this grasp, or some other measure of how "good" it is.
        * Here we base bias the score based on how far the wrist is from the surface, preferring a greater
@@ -213,27 +219,47 @@ bool LearningPipeline::testGrasps()
   // Filter the grasp for only the ones that are reachable
   bool filter_pregrasps = true;
   std::vector<moveit_grasps::GraspSolution> filtered_grasps;
+  ROS_INFO_STREAM_NAMED("learning_pipeline","Filtering grasps using IK, may take a minute");
   grasp_filter_->filterGrasps(possible_grasps, filtered_grasps, filter_pregrasps,
                               grasp_datas_[jmg].ee_parent_link_, jmg);
 
-  // Visualize them
-  if (verbose_)
+  // Visualize animated grasps
+  if (verbose_ && false)
   {
     ROS_INFO_STREAM_NAMED("learning_pipeline","Showing animated grasps");
     double animation_speed = 0.001;
     visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg, animation_speed);
   }
 
-  // Convert the filtered_grasps into a format moveit_visual_tools can use
+  // Visualize valid grasps as arrows
   if (verbose_)
   {
+    ROS_INFO_STREAM_NAMED("learning_pipeline","Showing valid filtered grasp poses");
+    Eigen::Affine3d eigen_grasp_pose;
+    for (std::size_t i = 0; i < filtered_grasps.size(); ++i)
+    {      
+      // Convert each grasp back to forward-facing error (undo end effector custom rotation)
+      tf::poseMsgToEigen(filtered_grasps[i].grasp_.grasp_pose.pose, eigen_grasp_pose);
+      eigen_grasp_pose = eigen_grasp_pose * grasp_datas_[jmg].grasp_pose_to_eef_pose_.inverse();
+      visual_tools_->publishArrow(eigen_grasp_pose);
+      ros::Duration(0.001).sleep();
+    }    
+  }
+
+  // Visualize IK solutions
+  if (verbose_ && false)
+  {
+    // Convert the filtered_grasps into a format moveit_visual_tools can use
     std::vector<trajectory_msgs::JointTrajectoryPoint> ik_solutions;
     ik_solutions.resize(filtered_grasps.size());
     for (std::size_t i = 0; i < filtered_grasps.size(); ++i)
     {
       ik_solutions[i].positions = filtered_grasps[i].grasp_ik_solution_;
     }
-    visual_tools_->publishIKSolutions(ik_solutions, jmg->getName(), 0.5);
+    ROS_INFO_STREAM_NAMED("learning_pipeline","Showing IK solutions of grasps");
+    double display_time = 0.5;
+    visual_tools_->getSharedRobotState() = robot_state_;
+    visual_tools_->publishIKSolutions(ik_solutions, jmg->getName(), display_time);
   }
 
   ROS_INFO_STREAM_NAMED("learning_pipeline","Filtering grasps by collision");
@@ -244,12 +270,15 @@ bool LearningPipeline::testGrasps()
     (*robot_state_) = scene->getCurrentState();
   }
 
-  openEndEffector(true, robot_state_); // to be passed to the grasp filter
+  openEndEffector(false, robot_state_); // to be passed to the grasp filter
+  visual_tools_->publishRobotState(robot_state_);
+  std::cout << "Showing open EE of state " << std::endl;
+  ros::Duration(5.0).sleep();
 
   grasp_filter_->filterGraspsInCollision(filtered_grasps, planning_scene_monitor_, jmg, robot_state_, verbose_);
 
   // Convert the filtered_grasps into a format moveit_visual_tools can use
-  if (verbose_)
+  if (verbose_ && false)
   {
     std::vector<trajectory_msgs::JointTrajectoryPoint> ik_solutions;
     ik_solutions.resize(filtered_grasps.size());
@@ -257,8 +286,22 @@ bool LearningPipeline::testGrasps()
     {
       ik_solutions[i].positions = filtered_grasps[i].grasp_ik_solution_;
     }
+    ROS_INFO_STREAM_NAMED("learning_pipeline","Showing IK solutions of grasps that are not in collision");
     visual_tools_->publishIKSolutions(ik_solutions, jmg->getName(), 1);
-  }  
+  }
+
+  // Output statistics
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << "Total Generated Grasps: " << total_generated_grasps << std::endl;
+  std::cout << "Grasps with valid IK:   " << filtered_grasps.size() << std::endl;
+  std::cout << "Percent valid: " << (double(filtered_grasps.size()) / total_generated_grasps * 100.0) << " %" << std::endl;
+  std::cout << std::endl;
+  std::cout << "Grasps not in collision: " << filtered_grasps.size() << std::endl;
+  std::cout << "Percent valid: " << (double(filtered_grasps.size()) / total_generated_grasps * 100.0) << " %" << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << std::endl;
+
 }
 
 bool LearningPipeline::displayGrasps(bool valid_only)

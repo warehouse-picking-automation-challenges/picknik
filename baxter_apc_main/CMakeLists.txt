@@ -96,15 +96,26 @@ target_link_libraries(learning_pipeline
   manipulation_pipeline
 )
 
-# Main Executable
-add_executable(apc_manager src/apc_manager.cpp)
-target_link_libraries(apc_manager 
+# Main logic of APC
+add_library(apc_manager
+  src/apc_manager.cpp
+)
+target_link_libraries(apc_manager
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
   shelf
   amazon_json_parser
   manipulation_pipeline
   learning_pipeline
+)
+
+# Main Executable
+add_executable(main src/main.cpp)
+target_link_libraries(main 
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+  amazon_json_parser
+  apc_manager
 )
 
 # TESTS

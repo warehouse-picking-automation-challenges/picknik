@@ -855,25 +855,39 @@ bool ManipulationPipeline::openEndEffector(bool open, const robot_model::JointMo
 
 bool ManipulationPipeline::openEndEffector(bool open, moveit::core::RobotStatePtr robot_state)
 {
-  static const double open_position  = 0; // 0.0094;
-  static const double close_position = 0.03; //0.0125;
+  //static const double left_open_position  = 0; // 0.0094;
+  //static const double left_close_position = 0.03; //0.0125;
 
-  //const std::vector<std::string> names = robot_state->getVariableNames();
-  //std::copy(names.begin(), names.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
+  const double& left_open_position  = grasp_datas_[left_arm_].pre_grasp_posture_.points[0].positions[0];
+  const double& left_close_position = grasp_datas_[left_arm_].grasp_posture_.points[0].positions[0];
+
+  const double& right_open_position  = grasp_datas_[right_arm_].pre_grasp_posture_.points[0].positions[0];
+  const double& right_close_position = grasp_datas_[right_arm_].grasp_posture_.points[0].positions[0];
+
+  if (verbose_)
+  {
+    std::cout << "Setting end effector to open: " << open << std::endl;
+    std::cout << "  right_open_position: " << right_open_position << std::endl;
+    std::cout << "  left_open_position: " << left_open_position << std::endl;
+    std::cout << "  right_close_position: " << right_close_position << std::endl;
+    std::cout << "  left_close_position: " << left_close_position << std::endl;
+  }
 
   if (open)
   {
-    robot_state->setVariablePosition("left_gripper_r_finger_joint", open_position);
-    robot_state->setVariablePosition("left_gripper_l_finger_joint", -open_position);
-    robot_state->setVariablePosition("right_gripper_r_finger_joint", open_position);
-    robot_state->setVariablePosition("right_gripper_l_finger_joint", -open_position);
+    robot_state->setVariablePosition("left_gripper_r_finger_joint", left_open_position);
+    robot_state->setVariablePosition("left_gripper_l_finger_joint", -left_open_position);
+    // Specific to Yale-Arm:
+    robot_state->setVariablePosition("right_gripper_r_finger_joint", right_open_position);
+    robot_state->setVariablePosition("right_gripper_l_finger_joint", right_open_position);
   }
   else
   {
-    robot_state->setVariablePosition("left_gripper_r_finger_joint", close_position);
-    robot_state->setVariablePosition("left_gripper_l_finger_joint", -close_position);
-    robot_state->setVariablePosition("right_gripper_r_finger_joint", close_position);
-    robot_state->setVariablePosition("right_gripper_l_finger_joint", -close_position);
+    robot_state->setVariablePosition("left_gripper_r_finger_joint", left_close_position);
+    robot_state->setVariablePosition("left_gripper_l_finger_joint", -left_close_position);
+    // Specific to Yale-Arm:
+    robot_state->setVariablePosition("right_gripper_r_finger_joint", right_close_position);
+    robot_state->setVariablePosition("right_gripper_l_finger_joint", right_close_position);
   }
 }
 

@@ -37,7 +37,7 @@
   </include>
 
   <!-- Main process -->
-  <node name="baxter_apc_main" pkg="baxter_apc_main" type="apc_manager" respawn="false" 
+  <node name="baxter_apc_main" pkg="baxter_apc_main" type="main" respawn="false" 
 	launch-prefix="$(arg launch_prefix)" output="screen" 
 	args="--verbose $(arg verbose) --order $(arg order) --show_database $(arg show_database) --use_experience $(arg use_experience)">
 

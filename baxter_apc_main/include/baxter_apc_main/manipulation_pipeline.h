@@ -217,6 +217,23 @@ public:
    */
   void displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup, const robot_model::JointModelGroup* jmg);
 
+  /**
+   * \brief Getter for RobotState
+   */ 
+  moveit::core::RobotStatePtr getRobotState()
+  {
+    return robot_state_;
+  }
+  
+  /**
+   * \brief Setter for RobotState
+   */
+  void setRobotState(moveit::core::RobotStatePtr robot_state)
+  {
+    robot_state_ = robot_state;
+  }
+  
+
 protected:
 
   // A shared node handle
