@@ -39,6 +39,7 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, moveit_visual_tools::Mo
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
     robot_state_.reset(new moveit::core::RobotState(scene->getCurrentState()));
   }
+  visual_tools_->getSharedRobotState() = robot_state_; // allow visual_tools to have the correct virtual joint
   robot_model_ = robot_state_->getRobotModel();
 
   // Set baxter to starting position
@@ -74,8 +75,8 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, moveit_visual_tools::Mo
   order_position_.translation().z() += 0.2;
   
   // Load grasp data specific to our robot
-  if (!grasp_datas_[left_arm_].loadRobotGraspData(nh_, "left_hand") ||
-      !grasp_datas_[right_arm_].loadRobotGraspData(nh_, "right_hand"))
+  if (!grasp_datas_[left_arm_].loadRobotGraspData(nh_, "left_hand", robot_model_) ||
+      !grasp_datas_[right_arm_].loadRobotGraspData(nh_, "right_hand", robot_model_))
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Unable to load grasp data");
   }
@@ -128,7 +129,7 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
   bool filter_pregrasps = true;
   std::vector<moveit_grasps::GraspSolution> filtered_grasps;
   grasp_filter_->filterGrasps(possible_grasps, filtered_grasps, filter_pregrasps,
-                              grasp_datas_[jmg].ee_parent_link_, jmg);
+                              grasp_datas_[jmg].parent_link_name_, jmg);
 
   // Visualize them
   if (verbose)
@@ -302,7 +303,7 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
   for (std::size_t i = 0; i < robot_state_trajectory.size(); ++i)
   {
     const Eigen::Affine3d& tip_pose = 
-      robot_state_trajectory[i]->getGlobalLinkTransform(grasp_datas_[jmg].ee_parent_link_);
+      robot_state_trajectory[i]->getGlobalLinkTransform(grasp_datas_[jmg].parent_link_);
     visual_tools_->publishSphere(tip_pose);
 
     //visual_tools_->publishRobotState(robot_state_trajectory[i], rviz_visual_tools::YELLOW);
@@ -361,7 +362,7 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
   }
 
   // Attach collision object
-  visual_tools_->attachCO(order.product_->getCollisionName(), grasp_datas_[jmg].ee_parent_link_);
+  visual_tools_->attachCO(order.product_->getCollisionName(), grasp_datas_[jmg].parent_link_name_);
 
   // Allow fingers to touch object
   allowFingerTouch(order.product_->getCollisionName(), jmg);
@@ -617,7 +618,7 @@ bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *
   for (std::size_t i = 0; i < robot_state_trajectory.size(); ++i)
   {
     const Eigen::Affine3d& tip_pose = 
-      robot_state_trajectory[i]->getGlobalLinkTransform(grasp_datas_[jmg].ee_parent_link_);
+      robot_state_trajectory[i]->getGlobalLinkTransform(grasp_datas_[jmg].parent_link_name_);
     visual_tools_->publishSphere(tip_pose, rviz_visual_tools::YELLOW);
 
     //visual_tools_->publishRobotState(robot_state_trajectory[i], rviz_visual_tools::YELLOW);
@@ -667,7 +668,7 @@ bool ManipulationPipeline::executeRetrievalPath(const moveit::core::JointModelGr
   for (std::size_t i = 0; i < robot_state_trajectory.size(); ++i)
   {
     const Eigen::Affine3d& tip_pose = 
-      robot_state_trajectory[i]->getGlobalLinkTransform(grasp_datas_[jmg].ee_parent_link_);
+      robot_state_trajectory[i]->getGlobalLinkTransform(grasp_datas_[jmg].parent_link_name_);
     visual_tools_->publishSphere(tip_pose, rviz_visual_tools::RED);
 
     //visual_tools_->publishRobotState(robot_state_trajectory[i], rviz_visual_tools::YELLOW);
@@ -703,7 +704,7 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
 
   // Debug
   const Eigen::Affine3d& tip_pose = 
-    robot_state->getGlobalLinkTransform(grasp_datas_[jmg].ee_parent_link_);
+    robot_state->getGlobalLinkTransform(grasp_datas_[jmg].parent_link_);
   Eigen::Affine3d tip_pose_end = tip_pose;
   tip_pose_end.translation().x() -= desired_approach_distance;
 
@@ -714,7 +715,7 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
   // Settings for computeCartesianPath
 
   // End effector parent link (arm tip for ik solving)
-  const moveit::core::LinkModel *ik_tip_link_model = robot_state->getLinkModel( grasp_datas_[jmg].ee_parent_link_ );
+  const moveit::core::LinkModel *ik_tip_link_model = grasp_datas_[jmg].parent_link_;
 
   // Resolution of trajectory
   double max_step = 0.01; // The maximum distance in Cartesian space between consecutive points on the resulting path
@@ -859,9 +860,9 @@ bool ManipulationPipeline::openEndEffector(bool open, moveit::core::RobotStatePt
   //static const double left_close_position = 0.03; //0.0125;
 
   const double& left_open_position  = grasp_datas_[left_arm_].pre_grasp_posture_.points[0].positions[0];
-  const double& left_close_position = grasp_datas_[left_arm_].grasp_posture_.points[0].positions[0];
-
   const double& right_open_position  = grasp_datas_[right_arm_].pre_grasp_posture_.points[0].positions[0];
+
+  const double& left_close_position = grasp_datas_[left_arm_].grasp_posture_.points[0].positions[0];
   const double& right_close_position = grasp_datas_[right_arm_].grasp_posture_.points[0].positions[0];
 
   if (verbose_)
@@ -1066,6 +1067,16 @@ void ManipulationPipeline::displayLightningPlans(ompl::tools::ExperienceSetupPtr
     ompl_visual_tools_->publishRobotPath(paths[path_id], jmg, tips, show_trajectory_animated);
   }
 
-} // function
+} 
+
+void ManipulationPipeline::publishGraspArrow(geometry_msgs::Pose grasp, const moveit::core::JointModelGroup *arm,
+                                             const rviz_visual_tools::colors &color)
+{
+  Eigen::Affine3d eigen_grasp_pose;
+  // Convert each grasp back to forward-facing error (undo end effector custom rotation)
+  tf::poseMsgToEigen(grasp, eigen_grasp_pose);
+  eigen_grasp_pose = eigen_grasp_pose * grasp_datas_[arm].grasp_pose_to_eef_pose_.inverse();
+  visual_tools_->publishArrow(eigen_grasp_pose, color);
+}
 
 } // end namespace

@@ -141,8 +141,13 @@ bool APCManager::testEndEffectors()
   pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, planning_scene_monitor_, shelf_, use_experience, show_database));
 
   // Test visualization 10 times
+  pipeline_->statusPublisher("Testing open close visualization of EE, 10 times");
   for (std::size_t i = 0; i < 10; ++i)
   {
+    if (!ros::ok())
+      return false;
+
+    std::cout << std::endl << std::endl << std::endl;
     if (i % 2 == 0)
     {
       std::cout << "Showing closed EE of state " << std::endl;
@@ -158,6 +163,10 @@ bool APCManager::testEndEffectors()
       ros::Duration(5.0).sleep();
     }
   }
+
+  // EE min approach distance
+  //pipeline_->statusPublisher("Testing EE min approach distance");
+
   ROS_INFO_STREAM_NAMED("apc_manager","Done testing end effectors");
 }
 
@@ -229,7 +238,7 @@ bool APCManager::loadPlanningSceneMonitor()
     return false;
   }
   ros::spinOnce();
-  ros::Duration(0.5).sleep();
+  ros::Duration(0.5).sleep(); // when at 0.1, i believe sometimes vjoint not properly loaded
 
   // Wait for complete state to be recieved
   std::vector<std::string> missing_joints;

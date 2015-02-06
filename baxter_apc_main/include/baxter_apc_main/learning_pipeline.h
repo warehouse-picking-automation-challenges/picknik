@@ -48,7 +48,8 @@
 namespace baxter_apc_main
 {
 
-const double POSE_DISCRETIZATION = 0.03; // how spread apart to create training poses
+//const double POSE_DISCRETIZATION = 0.02; // how spread apart to create training poses
+const double POSE_DISCRETIZATION = 0.04; // how spread apart to create training poses
 
 struct BinExperienceData
 {

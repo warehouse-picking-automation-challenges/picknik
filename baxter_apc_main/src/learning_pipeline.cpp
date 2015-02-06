@@ -60,7 +60,7 @@ bool LearningPipeline::generateTrainingGoals(ShelfObjectPtr shelf)
   {
     BinObjectPtr bin = bin_it->second;
 
-    ROS_DEBUG_STREAM_NAMED("learning_pipeline","Adding poses for bin " << bin->getName());
+    //ROS_DEBUG_STREAM_NAMED("learning_pipeline","Adding poses for bin " << bin->getName());
 
     // Create new entry
     bin_experience_data_[bin->getName()] = BinExperienceData();
@@ -74,8 +74,7 @@ bool LearningPipeline::generateTrainingGoals(ShelfObjectPtr shelf)
   //displayGrasps(valid_only);
 
 
-
-  // Filter grasps
+  // Analyze reachability
   testGrasps();
 
   // Testing
@@ -106,6 +105,7 @@ bool LearningPipeline::generateTrainingGoalsBin(Eigen::Affine3d bin_transpose, E
       //std::cout << "y: " << y << " z: " << z << std::endl;
 
       pose = Eigen::Affine3d::Identity();
+      pose.translation().x() = 0.09; // penetration depth into shelf, this is 0.005 m beyond line (5mm)
       pose.translation().y() = y;
       pose.translation().z() = z;
 
@@ -126,6 +126,8 @@ bool LearningPipeline::testGrasps()
 
   // Statistics for testing
   std::size_t total_generated_grasps = 0;
+  std::size_t total_valid_ik_grasps = 0;
+  std::size_t total_collision_free_grasps = 0;
 
   for (BinExperienceDataMap::iterator bin_it = bin_experience_data_.begin(); 
        bin_it != bin_experience_data_.end(); bin_it++)
@@ -181,34 +183,47 @@ bool LearningPipeline::testGrasps()
       // Create re-usable approach motion
       moveit_msgs::GripperTranslation pre_grasp_approach;
       pre_grasp_approach.direction.header.stamp = ros::Time::now();
-      pre_grasp_approach.desired_distance = grasp_datas_[jmg].approach_retreat_desired_dist_; // The distance the origin of a robot link needs to travel
-      pre_grasp_approach.min_distance = grasp_datas_[jmg].approach_retreat_min_dist_; // half of the desired? Untested.
+      pre_grasp_approach.desired_distance = grasp_datas_[jmg].finger_to_palm_depth_ + 0.1; // The distance the origin of a robot link needs to travel
+      pre_grasp_approach.min_distance = grasp_datas_[jmg].finger_to_palm_depth_; // half of the desired? Untested.
 
       // Create re-usable retreat motion
       moveit_msgs::GripperTranslation post_grasp_retreat;
       post_grasp_retreat.direction.header.stamp = ros::Time::now();
-      post_grasp_retreat.desired_distance = grasp_datas_[jmg].approach_retreat_desired_dist_; // The distance the origin of a robot link needs to travel
-      post_grasp_retreat.min_distance = grasp_datas_[jmg].approach_retreat_min_dist_; // half of the desired? Untested.
+      post_grasp_retreat.desired_distance = grasp_datas_[jmg].finger_to_palm_depth_ + 0.1; // The distance the origin of a robot link needs to travel
+      post_grasp_retreat.min_distance = grasp_datas_[jmg].finger_to_palm_depth_; // half of the desired? Untested.
 
       // Angled with pose -------------------------------------------------------------------------------------
       // Approach with respect to end effector orientation
 
       // Approach
-      //pre_grasp_approach.direction.header.frame_id = grasp_datas_[jmg].ee_parent_link_;
-      pre_grasp_approach.direction.header.frame_id = robot_model_->getModelFrame();
+      bool approach_down = false;
+      if (approach_down)
+      {
+        pre_grasp_approach.direction.header.frame_id = robot_model_->getModelFrame();
+        pre_grasp_approach.direction.vector.z = -1;
+      }
+      else
+      {
+        pre_grasp_approach.direction.header.frame_id = grasp_datas_[jmg].parent_link_name_;
+        pre_grasp_approach.direction.vector.z = 1;
+      }
       pre_grasp_approach.direction.vector.x = 0;
       pre_grasp_approach.direction.vector.y = 0;
-      //pre_grasp_approach.direction.vector.z = 1;
-      pre_grasp_approach.direction.vector.z = -1;
       new_grasp.pre_grasp_approach = pre_grasp_approach;
 
       // Retreat
-      //post_grasp_retreat.direction.header.frame_id = grasp_datas_[jmg].ee_parent_link_;
-      post_grasp_retreat.direction.header.frame_id = robot_model_->getModelFrame();
+      if (approach_down)
+      {
+        post_grasp_retreat.direction.header.frame_id = robot_model_->getModelFrame();
+        post_grasp_retreat.direction.vector.z = 1;
+      }
+      else
+      {
+        post_grasp_retreat.direction.header.frame_id = grasp_datas_[jmg].parent_link_name_;
+        post_grasp_retreat.direction.vector.z = -1;
+      }
       post_grasp_retreat.direction.vector.x = 0;
       post_grasp_retreat.direction.vector.y = 0;
-      //post_grasp_retreat.direction.vector.z = -1;
-      post_grasp_retreat.direction.vector.z = 1;
       new_grasp.post_grasp_retreat = post_grasp_retreat;
 
       // Add to vector
@@ -219,35 +234,48 @@ bool LearningPipeline::testGrasps()
   // Filter the grasp for only the ones that are reachable
   bool filter_pregrasps = true;
   std::vector<moveit_grasps::GraspSolution> filtered_grasps;
+  std::cout << std::endl;
+  std::cout << std::endl;
   ROS_INFO_STREAM_NAMED("learning_pipeline","Filtering grasps using IK, may take a minute");
   grasp_filter_->filterGrasps(possible_grasps, filtered_grasps, filter_pregrasps,
-                              grasp_datas_[jmg].ee_parent_link_, jmg);
-
-  // Visualize animated grasps
-  if (verbose_ && false)
-  {
-    ROS_INFO_STREAM_NAMED("learning_pipeline","Showing animated grasps");
-    double animation_speed = 0.001;
-    visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg, animation_speed);
-  }
+                              grasp_datas_[jmg].parent_link_name_, jmg);
+  total_valid_ik_grasps = filtered_grasps.size();
 
   // Visualize valid grasps as arrows
   if (verbose_)
   {
     ROS_INFO_STREAM_NAMED("learning_pipeline","Showing valid filtered grasp poses");
-    Eigen::Affine3d eigen_grasp_pose;
     for (std::size_t i = 0; i < filtered_grasps.size(); ++i)
     {      
-      // Convert each grasp back to forward-facing error (undo end effector custom rotation)
-      tf::poseMsgToEigen(filtered_grasps[i].grasp_.grasp_pose.pose, eigen_grasp_pose);
-      eigen_grasp_pose = eigen_grasp_pose * grasp_datas_[jmg].grasp_pose_to_eef_pose_.inverse();
-      visual_tools_->publishArrow(eigen_grasp_pose);
+      publishGraspArrow(filtered_grasps[i].grasp_.grasp_pose.pose, jmg, rviz_visual_tools::BLUE);
       ros::Duration(0.001).sleep();
     }    
   }
 
-  // Visualize IK solutions
+  // Show just one grasp - DEBUG mode
+  if (false)
+  {
+    double animation_speed = 0.5;
+    for (std::size_t i = 0; i < 20; ++i)
+    {
+      std::cout << std::endl;
+      std::cout << "-------------------------------------------------------" << std::endl;
+      std::cout << "Showing animated grasp 0 " << std::endl;
+      visual_tools_->publishAnimatedGrasp(possible_grasps[0], ee_jmg, animation_speed);    
+      ros::Duration(0).sleep();
+    }
+  }
+
+  // Visualize animated grasps
   if (verbose_ && false)
+  {
+    ROS_INFO_STREAM_NAMED("learning_pipeline","Showing animated grasps");
+    double animation_speed = 0.01;
+    visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg, animation_speed);
+  }
+
+  // Visualize IK solutions
+  if (verbose_ && true)
   {
     // Convert the filtered_grasps into a format moveit_visual_tools can use
     std::vector<trajectory_msgs::JointTrajectoryPoint> ik_solutions;
@@ -257,8 +285,7 @@ bool LearningPipeline::testGrasps()
       ik_solutions[i].positions = filtered_grasps[i].grasp_ik_solution_;
     }
     ROS_INFO_STREAM_NAMED("learning_pipeline","Showing IK solutions of grasps");
-    double display_time = 0.5;
-    visual_tools_->getSharedRobotState() = robot_state_;
+    double display_time = 2;
     visual_tools_->publishIKSolutions(ik_solutions, jmg->getName(), display_time);
   }
 
@@ -270,16 +297,40 @@ bool LearningPipeline::testGrasps()
     (*robot_state_) = scene->getCurrentState();
   }
 
-  openEndEffector(false, robot_state_); // to be passed to the grasp filter
-  visual_tools_->publishRobotState(robot_state_);
-  std::cout << "Showing open EE of state " << std::endl;
-  ros::Duration(5.0).sleep();
+  openEndEffector(true, robot_state_); // to be passed to the grasp filter
 
+  // Filter by collision
   grasp_filter_->filterGraspsInCollision(filtered_grasps, planning_scene_monitor_, jmg, robot_state_, verbose_);
+  total_collision_free_grasps = filtered_grasps.size();
 
-  // Convert the filtered_grasps into a format moveit_visual_tools can use
-  if (verbose_ && false)
+  // Visualize valid grasps after collision filtering with arrows
+  if (verbose_)
   {
+    visual_tools_->deleteAllMarkers();
+    ROS_INFO_STREAM_NAMED("learning_pipeline","Showing valid filtered grasp poses");
+    for (std::size_t i = 0; i < filtered_grasps.size(); ++i)
+    {      
+      publishGraspArrow(filtered_grasps[i].grasp_.grasp_pose.pose, jmg, rviz_visual_tools::GREEN);
+      ros::Duration(0.001).sleep();
+    }    
+  }
+
+  // Output statistics
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << "Total Generated Grasps: " << total_generated_grasps << std::endl;
+  std::cout << "Grasps with valid IK:   " << total_valid_ik_grasps << std::endl;
+  std::cout << "Percent valid: " << (double(total_valid_ik_grasps) / total_generated_grasps * 100.0) << " %" << std::endl;
+  std::cout << std::endl;
+  std::cout << "Grasps not in collision: " << total_collision_free_grasps << std::endl;
+  std::cout << "Percent valid: " << (double(total_collision_free_grasps) / total_generated_grasps * 100.0) << " %" << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << std::endl;
+
+  // Visualize IK solutions after collision filtering
+  if (verbose_ && true)
+  {
+    // Convert the filtered_grasps into a format moveit_visual_tools can use
     std::vector<trajectory_msgs::JointTrajectoryPoint> ik_solutions;
     ik_solutions.resize(filtered_grasps.size());
     for (std::size_t i = 0; i < filtered_grasps.size(); ++i)
@@ -287,20 +338,9 @@ bool LearningPipeline::testGrasps()
       ik_solutions[i].positions = filtered_grasps[i].grasp_ik_solution_;
     }
     ROS_INFO_STREAM_NAMED("learning_pipeline","Showing IK solutions of grasps that are not in collision");
-    visual_tools_->publishIKSolutions(ik_solutions, jmg->getName(), 1);
+    double display_time = 0.1;
+    visual_tools_->publishIKSolutions(ik_solutions, jmg->getName(), display_time);
   }
-
-  // Output statistics
-  std::cout << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
-  std::cout << "Total Generated Grasps: " << total_generated_grasps << std::endl;
-  std::cout << "Grasps with valid IK:   " << filtered_grasps.size() << std::endl;
-  std::cout << "Percent valid: " << (double(filtered_grasps.size()) / total_generated_grasps * 100.0) << " %" << std::endl;
-  std::cout << std::endl;
-  std::cout << "Grasps not in collision: " << filtered_grasps.size() << std::endl;
-  std::cout << "Percent valid: " << (double(filtered_grasps.size()) / total_generated_grasps * 100.0) << " %" << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
-  std::cout << std::endl;
 
 }
 
