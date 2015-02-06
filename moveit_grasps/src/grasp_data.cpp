@@ -55,12 +55,13 @@ GraspData::GraspData() :
   base_link_("/base_link"),
   grasp_depth_(0.12),
   angle_resolution_(16),
-  approach_retreat_desired_dist_(0.6),
-  approach_retreat_min_dist_(0.4),
+  //approach_retreat_desired_dist_(0.6),
+  //approach_retreat_min_dist_(0.4),
   object_size_(0.04)
 {}
 
-bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string& end_effector)
+bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string& end_effector, 
+                                   moveit::core::RobotModelConstPtr robot_model)
 {
   std::vector<std::string> joint_names;
   std::vector<double> pre_grasp_posture; // todo: remove all underscore post-fixes
@@ -69,6 +70,7 @@ bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string&
   std::vector<double> grasp_pose_to_eef_rotation;
   double pregrasp_time_from_start;
   double grasp_time_from_start;
+  double finger_to_palm_depth;
   std::string end_effector_name;
   std::string end_effector_parent_link;
 
@@ -98,6 +100,14 @@ bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string&
     return false;
   }
   child_nh.getParam("grasp_time_from_start", grasp_time_from_start);
+
+  // Load a param
+  if (!child_nh.hasParam("finger_to_palm_depth"))
+  {
+    ROS_ERROR_STREAM_NAMED("grasp_data_loader","Grasp configuration parameter `finger_to_palm_depth` missing from rosparam server. Did you load your end effector's configuration yaml file?");
+    return false;
+  }
+  child_nh.getParam("finger_to_palm_depth", finger_to_palm_depth);
 
   // Load a param
   if (!child_nh.hasParam("end_effector_name"))
@@ -236,18 +246,27 @@ bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string&
 
   // -------------------------------
   // SRDF Info
-  ee_parent_link_ = end_effector_parent_link;
+  //ee_parent_link_ = end_effector_parent_link;
   ee_group_ = end_effector_name;
 
   // -------------------------------
+  // Geometry data
+  finger_to_palm_depth_ = finger_to_palm_depth;
+
+  // -------------------------------
   // Nums
-  approach_retreat_desired_dist_ = 0.2; // 0.3;
-  approach_retreat_min_dist_ = 0.06;
+  //approach_retreat_desired_dist_ = 0.2; // 0.3;
+  //approach_retreat_min_dist_ = 0.06;
   // distance from center point of object to end effector
   grasp_depth_ = 0.06;// in negative or 0 this makes the grasps on the other side of the object! (like from below)
 
   // generate grasps at PI/angle_resolution increments
   angle_resolution_ = 32; //TODO parametrize this, or move to action interface
+
+  // Copy values from RobotModel
+  joint_model_group_ = robot_model->getJointModelGroup(ee_group_);
+  parent_link_name_ = joint_model_group_->getEndEffectorParentGroup().second;    
+  parent_link_ = robot_model->getLinkModel(parent_link_name_);
 
   // Debug
   //moveit_grasps::Grasps::printObjectGraspData(grasp_data);
@@ -286,12 +305,13 @@ void GraspData::print()
   std::cout << "pre_grasp_posture_: \n" << pre_grasp_posture_<<std::endl;
   std::cout << "grasp_posture_: \n" << grasp_posture_<<std::endl;
   std::cout << "base_link_: " << base_link_<<std::endl;
-  std::cout << "ee_parent_link_: " << ee_parent_link_<<std::endl;
+  //std::cout << "ee_parent_link_: " << ee_parent_link_<<std::endl;
   std::cout << "ee_group_: " << ee_group_<<std::endl;
   std::cout << "grasp_depth_: " << grasp_depth_<<std::endl;
   std::cout << "angle_resolution_: " << angle_resolution_<<std::endl;
-  std::cout << "approach_retreat_desired_dist_: " << approach_retreat_desired_dist_<<std::endl;
-  std::cout << "approach_retreat_min_dist_: " << approach_retreat_min_dist_<<std::endl;
+  //std::cout << "approach_retreat_desired_dist_: " << approach_retreat_desired_dist_<<std::endl;
+  //std::cout << "approach_retreat_min_dist_: " << approach_retreat_min_dist_<<std::endl;
+  std::cout << "finger_to_palm_depth_: " << finger_to_palm_depth_<<std::endl;
   std::cout << "object_size_: " << object_size_<<std::endl;
 }
 

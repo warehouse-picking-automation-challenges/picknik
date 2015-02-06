@@ -84,14 +84,14 @@ bool Grasps::generateAxisGrasps(
   // Create re-usable approach motion
   moveit_msgs::GripperTranslation pre_grasp_approach;
   pre_grasp_approach.direction.header.stamp = ros::Time::now();
-  pre_grasp_approach.desired_distance = grasp_data.approach_retreat_desired_dist_; // The distance the origin of a robot link needs to travel
-  pre_grasp_approach.min_distance = grasp_data.approach_retreat_min_dist_; // half of the desired? Untested.
+  pre_grasp_approach.desired_distance = grasp_data.finger_to_palm_depth_ + 0.1; // The distance the origin of a robot link needs to travel
+  pre_grasp_approach.min_distance = grasp_data.finger_to_palm_depth_; // half of the desired? Untested.
 
   // Create re-usable retreat motion
   moveit_msgs::GripperTranslation post_grasp_retreat;
   post_grasp_retreat.direction.header.stamp = ros::Time::now();
-  post_grasp_retreat.desired_distance = grasp_data.approach_retreat_desired_dist_; // The distance the origin of a robot link needs to travel
-  post_grasp_retreat.min_distance = grasp_data.approach_retreat_min_dist_; // half of the desired? Untested.
+  post_grasp_retreat.desired_distance = grasp_data.finger_to_palm_depth_ + 0.1; // The distance the origin of a robot link needs to travel
+  post_grasp_retreat.min_distance = grasp_data.finger_to_palm_depth_; // half of the desired? Untested.
 
   // Create re-usable blank pose
   geometry_msgs::PoseStamped grasp_pose_msg;
@@ -253,14 +253,14 @@ bool Grasps::generateAxisGrasps(
     // Approach with respect to end effector orientation
 
     // Approach
-    pre_grasp_approach.direction.header.frame_id = grasp_data.ee_parent_link_;
+    pre_grasp_approach.direction.header.frame_id = grasp_data.parent_link_name_;
     pre_grasp_approach.direction.vector.x = 0;
     pre_grasp_approach.direction.vector.y = 0;
     pre_grasp_approach.direction.vector.z = 1;
     new_grasp.pre_grasp_approach = pre_grasp_approach;
 
     // Retreat
-    post_grasp_retreat.direction.header.frame_id = grasp_data.ee_parent_link_;
+    post_grasp_retreat.direction.header.frame_id = grasp_data.parent_link_name_;
     post_grasp_retreat.direction.vector.x = 0;
     post_grasp_retreat.direction.vector.y = 0;
     post_grasp_retreat.direction.vector.z = -1;

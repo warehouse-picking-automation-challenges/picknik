@@ -85,19 +85,20 @@ public:
     ROS_INFO_STREAM_NAMED("test","Planning Group: " << planning_group_name_);
 
     // ---------------------------------------------------------------------------------------------
-    // Load grasp data specific to our robot
-    if (!grasp_data_.loadRobotGraspData(nh_, ee_group_name_))
-      ros::shutdown();
-
-    // ---------------------------------------------------------------------------------------------
     // Load the Robot Viz Tools for publishing to Rviz
-    visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools(grasp_data_.base_link_));
+    ROS_ERROR_STREAM_NAMED("temp","Warning: i hacked the base link to be hard coded string, is likely wrong");
+    visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("base_link"));
     visual_tools_->setLifetime(120.0);
     visual_tools_->setMuted(false);
     visual_tools_->loadMarkerPub();
 
+    // ---------------------------------------------------------------------------------------------
+    // Load grasp data specific to our robot
+    if (!grasp_data_.loadRobotGraspData(nh_, ee_group_name_, visual_tools_->getRobotModel()))
+      ros::shutdown();
+
     const moveit::core::JointModelGroup* ee_jmg 
-      = visual_tools_->getSharedRobotState()->getRobotModel()->getJointModelGroup(ee_group_name_);
+      = visual_tools_->getRobotModel()->getJointModelGroup(ee_group_name_);
 
     // ---------------------------------------------------------------------------------------------
     // Load grasp generator

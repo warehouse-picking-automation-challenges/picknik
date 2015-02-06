@@ -116,7 +116,7 @@ bool GraspFilter::filterGrasps(const std::vector<moveit_msgs::Grasp>& possible_g
   // -----------------------------------------------------------------------------------------------
   // Get the solver timeout from kinematics.yaml
   double timeout = jmg->getDefaultIKTimeout();
-  timeout = 0.05;
+  timeout = 0.1; //0.05;
   ROS_DEBUG_STREAM_NAMED("grasp_filter","Grasp filter IK timeout " << timeout);
 
   // -----------------------------------------------------------------------------------------------
@@ -222,7 +222,7 @@ bool GraspFilter::filterGraspsInCollision(std::vector<GraspSolution>& possible_g
 
   assert(original_possible_grasps.size() == original_size); // make sure the copy worked
 
-  // Check if enough passed
+  // Check if enough passed. If not, go to debug mode
   if (!possible_grasps.size())
   {
     std::cout << std::endl;

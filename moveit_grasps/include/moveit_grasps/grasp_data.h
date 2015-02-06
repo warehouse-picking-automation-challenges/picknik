@@ -47,26 +47,13 @@
 #include <geometry_msgs/Pose.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <moveit/robot_state/robot_state.h>
+#include <moveit/robot_model/link_model.h>
 
 namespace moveit_grasps
 {
 
 class GraspData
 {
-public:
-  //geometry_msgs::Pose grasp_pose_to_eef_pose_; // Convert generic grasp pose to this end effector's frame of reference
-  Eigen::Affine3d grasp_pose_to_eef_pose_; // Convert generic grasp pose to this end effector's frame of reference
-  trajectory_msgs::JointTrajectory pre_grasp_posture_; // when the end effector is in "open" position
-  trajectory_msgs::JointTrajectory grasp_posture_; // when the end effector is in "close" position
-  std::string base_link_; // name of global frame with z pointing up
-  std::string ee_parent_link_; // the last link in the kinematic chain before the end effector, e.g. "/gripper_roll_link"
-  std::string ee_group_; // the end effector name
-  double grasp_depth_; // distance from center point of object to end effector
-  int angle_resolution_; // generate grasps at PI/angle_resolution increments
-  double approach_retreat_desired_dist_; // how far back from the grasp position the pregrasp phase should be
-  double approach_retreat_min_dist_; // how far back from the grasp position the pregrasp phase should be at minimum
-  double object_size_; // for visualization
-
 public:
 
   /**
@@ -80,7 +67,7 @@ public:
    * \param end effector name - which side of a two handed robot to load data for. should correspond to SRDF EE names
    * \return true on success
    */
-  bool loadRobotGraspData(const ros::NodeHandle& nh, const std::string& end_effector);
+  bool loadRobotGraspData(const ros::NodeHandle& nh, const std::string& end_effector, moveit::core::RobotModelConstPtr robot_model);
 
   /**
    * \brief Alter a robot state so that the end effector corresponding to this grasp data is in pre-grasp state (OPEN)
@@ -103,11 +90,32 @@ public:
    * \return true on success
    */
   bool setRobotState( robot_state::RobotStatePtr &robot_state, const trajectory_msgs::JointTrajectory &posture );
-
+  
   /**
    * \brief Debug data to console
    */
   void print();
+
+public:
+
+  //geometry_msgs::Pose grasp_pose_to_eef_pose_; // Convert generic grasp pose to this end effector's frame of reference
+  Eigen::Affine3d grasp_pose_to_eef_pose_; // Convert generic grasp pose to this end effector's frame of reference
+  trajectory_msgs::JointTrajectory pre_grasp_posture_; // when the end effector is in "open" position
+  trajectory_msgs::JointTrajectory grasp_posture_; // when the end effector is in "close" position
+  std::string base_link_; // name of global frame with z pointing up
+  std::string ee_group_; // the end effector name
+  double grasp_depth_; // distance from center point of object to end effector
+  int angle_resolution_; // generate grasps at PI/angle_resolution increments
+  //double approach_retreat_desired_dist_; // how far back from the grasp position the pregrasp phase should be
+  //double approach_retreat_min_dist_; // how far back from the grasp position the pregrasp phase should be at minimum
+  double object_size_; // for visualization
+  double finger_to_palm_depth_;
+
+  // Duplicate end effector data copied from RobotModel
+  const robot_model::JointModelGroup* joint_model_group_; // this end effector
+  const robot_model::LinkModel* parent_link_; // the last link in the kinematic chain before the end effector, e.g. "/gripper_roll_link"
+  std::string parent_link_name_; // the last link in the kinematic chain before the end effector, e.g. "/gripper_roll_link"
+
 };
 
 } // namespace

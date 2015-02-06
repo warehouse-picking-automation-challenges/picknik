@@ -119,24 +119,26 @@ public:
     ROS_INFO_STREAM_NAMED("test","Planning Group: " << planning_group_name_);
 
     // ---------------------------------------------------------------------------------------------
-    // Load grasp data
-    if (!grasp_data_.loadRobotGraspData(nh_, ee_group_name_))
-      ros::shutdown();
-
-    // ---------------------------------------------------------------------------------------------
     // Load planning scene to share
     planning_scene_monitor_.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description"));    
     const robot_model::JointModelGroup* joint_model_group = planning_scene_monitor_->getPlanningScene()->getCurrentState().getRobotModel()->getJointModelGroup(planning_group_name_);
 
     // ---------------------------------------------------------------------------------------------
     // Load the Robot Viz Tools for publishing to Rviz
-    visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools(grasp_data_.base_link_, "/end_effector_marker", planning_scene_monitor_));
+    ROS_ERROR_STREAM_NAMED("temp","Warning: i hacked the base link to be hard coded string, is likely wrong");
+    visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("base_link", "/end_effector_marker", planning_scene_monitor_));
     visual_tools_->setLifetime(40.0);
     visual_tools_->setMuted(false);
     visual_tools_->setFloorToBaseHeight(-0.9);
 
-    // Clear out old collision objects just because
-    //visual_tools_->removeAllCollisionObjects();
+    // ---------------------------------------------------------------------------------------------
+    // Load grasp data
+    if (!grasp_data_.loadRobotGraspData(nh_, ee_group_name_, visual_tools_->getRobotModel()))
+      ros::shutdown();
+
+    // ---------------------------------------------------------------------------------------------
+    // Clear out old collision objects
+    visual_tools_->removeAllCollisionObjects();
 
     // Create a collision table for fun
     visual_tools_->publishCollisionTable(TABLE_X, TABLE_Y, 0, TABLE_WIDTH, TABLE_HEIGHT, TABLE_DEPTH, "table");
@@ -180,7 +182,8 @@ public:
 
       // Filter the grasp for only the ones that are reachable
       bool filter_pregrasps = true;
-      grasp_filter_->filterGrasps(possible_grasps, filtered_grasps, filter_pregrasps, grasp_data_.ee_parent_link_, joint_model_group);
+      grasp_filter_->filterGrasps(possible_grasps, filtered_grasps, filter_pregrasps, ee_jmg->getEndEffectorParentGroup().second, 
+                                  joint_model_group);
 
       // Show all generated grasps (non-filtered)
       visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg);      
