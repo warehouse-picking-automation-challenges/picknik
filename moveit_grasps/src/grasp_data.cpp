@@ -50,14 +50,10 @@
 
 namespace moveit_grasps
 {
-GraspData::GraspData() :
-  // Fill in default values where possible:
-  base_link_("/base_link"),
-  grasp_depth_(0.12),
-  angle_resolution_(16),
-  //approach_retreat_desired_dist_(0.6),
-  //approach_retreat_min_dist_(0.4),
-  object_size_(0.04)
+GraspData::GraspData()
+  : base_link_("/base_link")
+  , grasp_depth_(0.12)
+  , angle_resolution_(16)
 {}
 
 bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string& end_effector, 
@@ -72,7 +68,6 @@ bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string&
   double grasp_time_from_start;
   double finger_to_palm_depth;
   std::string end_effector_name;
-  std::string end_effector_parent_link;
 
   // Load a param
   if (!nh.hasParam("base_link"))
@@ -116,14 +111,6 @@ bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string&
     return false;
   }
   child_nh.getParam("end_effector_name", end_effector_name);
-
-  // Load a param
-  if (!child_nh.hasParam("end_effector_parent_link"))
-  {
-    ROS_ERROR_STREAM_NAMED("grasp_data_loader","Grasp configuration parameter `end_effector_parent_link` missing from rosparam server. Did you load your end effector's configuration yaml file?");
-    return false;
-  }
-  child_nh.getParam("end_effector_parent_link", end_effector_parent_link);
 
   // Load a param
   if (!child_nh.hasParam("joints"))
@@ -246,7 +233,6 @@ bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string&
 
   // -------------------------------
   // SRDF Info
-  //ee_parent_link_ = end_effector_parent_link;
   ee_group_ = end_effector_name;
 
   // -------------------------------
@@ -255,8 +241,6 @@ bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string&
 
   // -------------------------------
   // Nums
-  //approach_retreat_desired_dist_ = 0.2; // 0.3;
-  //approach_retreat_min_dist_ = 0.06;
   // distance from center point of object to end effector
   grasp_depth_ = 0.06;// in negative or 0 this makes the grasps on the other side of the object! (like from below)
 
@@ -305,14 +289,10 @@ void GraspData::print()
   std::cout << "pre_grasp_posture_: \n" << pre_grasp_posture_<<std::endl;
   std::cout << "grasp_posture_: \n" << grasp_posture_<<std::endl;
   std::cout << "base_link_: " << base_link_<<std::endl;
-  //std::cout << "ee_parent_link_: " << ee_parent_link_<<std::endl;
   std::cout << "ee_group_: " << ee_group_<<std::endl;
   std::cout << "grasp_depth_: " << grasp_depth_<<std::endl;
   std::cout << "angle_resolution_: " << angle_resolution_<<std::endl;
-  //std::cout << "approach_retreat_desired_dist_: " << approach_retreat_desired_dist_<<std::endl;
-  //std::cout << "approach_retreat_min_dist_: " << approach_retreat_min_dist_<<std::endl;
   std::cout << "finger_to_palm_depth_: " << finger_to_palm_depth_<<std::endl;
-  std::cout << "object_size_: " << object_size_<<std::endl;
 }
 
 } // namespace

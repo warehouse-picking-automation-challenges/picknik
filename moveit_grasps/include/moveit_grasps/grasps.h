@@ -144,6 +144,14 @@ public:
   static geometry_msgs::PoseStamped getPreGraspPose(const moveit_msgs::Grasp &grasp, const std::string &ee_parent_link);
 
   /**
+   * \brief Helper to convert a robot-specific grasp to an arrow pointed in the right direction
+   * \param grasp - the grasp to show
+   * \param arm - the planning group of the arm we want to display
+   * \return true on success
+   */
+  void publishGraspArrow(geometry_msgs::Pose grasp, const GraspData& grasp_data, const rviz_visual_tools::colors &color);
+
+  /**
    * \brief Getter for Verbose
    */ 
   bool getVerbose()

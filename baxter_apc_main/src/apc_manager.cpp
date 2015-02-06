@@ -218,7 +218,7 @@ bool APCManager::loadPlanningSceneMonitor()
                                                                                  tf_,
                                                                                  PLANNING_SCENE_MONITOR_NAME));
   ros::spinOnce();
-  ros::Duration(0.1).sleep();
+  //ros::Duration(0.1).sleep();
 
   if (planning_scene_monitor_->getPlanningScene())
   {
@@ -245,7 +245,7 @@ bool APCManager::loadPlanningSceneMonitor()
   int counter = 0;
   while( !planning_scene_monitor_->getStateMonitor()->haveCompleteState() && ros::ok() )
   {
-    ROS_DEBUG_STREAM_NAMED("apc_manager","Waiting for complete state...");
+    ROS_INFO_STREAM_NAMED("apc_manager","Waiting for complete state...");
     ros::Duration(0.1).sleep();
     ros::spinOnce();
 

@@ -182,6 +182,8 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
 
 bool ManipulationPipeline::setupPlanningScene( const std::string& bin_name )
 {
+  ROS_WARN_STREAM_NAMED("temp","setupPlanningScene - sleeping 2 seconds ");
+
   // Disable all bins except desired one
   visual_tools_->removeAllCollisionObjects(); // clear all old collision objects that might be visible in rviz
   visual_tools_->deleteAllMarkers(); // clear all old markers
@@ -1068,15 +1070,5 @@ void ManipulationPipeline::displayLightningPlans(ompl::tools::ExperienceSetupPtr
   }
 
 } 
-
-void ManipulationPipeline::publishGraspArrow(geometry_msgs::Pose grasp, const moveit::core::JointModelGroup *arm,
-                                             const rviz_visual_tools::colors &color)
-{
-  Eigen::Affine3d eigen_grasp_pose;
-  // Convert each grasp back to forward-facing error (undo end effector custom rotation)
-  tf::poseMsgToEigen(grasp, eigen_grasp_pose);
-  eigen_grasp_pose = eigen_grasp_pose * grasp_datas_[arm].grasp_pose_to_eef_pose_.inverse();
-  visual_tools_->publishArrow(eigen_grasp_pose, color);
-}
 
 } // end namespace

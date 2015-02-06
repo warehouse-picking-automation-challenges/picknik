@@ -218,14 +218,6 @@ public:
   void displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup, const robot_model::JointModelGroup* jmg);
 
   /**
-   * \brief Helper to convert a robot-specific grasp to an arrow pointed in the right direction
-   * \param grasp - the grasp to show
-   * \param arm - the planning group of the arm we want to display
-   * \return true on success
-   */
-  void publishGraspArrow(geometry_msgs::Pose grasp, const moveit::core::JointModelGroup *arm, const rviz_visual_tools::colors &color);
-
-  /**
    * \brief Getter for RobotState
    */ 
   moveit::core::RobotStatePtr getRobotState()

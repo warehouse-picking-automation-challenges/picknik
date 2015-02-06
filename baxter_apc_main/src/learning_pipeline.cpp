@@ -98,9 +98,9 @@ bool LearningPipeline::generateTrainingGoalsBin(Eigen::Affine3d bin_transpose, E
   Eigen::Affine3d pose;
 
   // Generate for one bin
-  for (double y = POSE_DISCRETIZATION; y < BIN_WIDTH; y += POSE_DISCRETIZATION)
+  for (double y = POSE_HORIZONTAL_MARGIN; y < BIN_WIDTH - POSE_HORIZONTAL_MARGIN; y += POSE_DISCRETIZATION)
   {
-    for (double z = POSE_DISCRETIZATION; z < BIN_HEIGHT / 1.25 - POSE_DISCRETIZATION; z += POSE_DISCRETIZATION)
+    for (double z = POSE_BOTTOM_MARGIN; z < POSE_TOP_MARGIN; z += POSE_DISCRETIZATION)
     {
       //std::cout << "y: " << y << " z: " << z << std::endl;
 
@@ -129,7 +129,7 @@ bool LearningPipeline::testGrasps()
   std::size_t total_valid_ik_grasps = 0;
   std::size_t total_collision_free_grasps = 0;
 
-  for (BinExperienceDataMap::iterator bin_it = bin_experience_data_.begin(); 
+  for (BinExperienceDataMap::iterator bin_it = bin_experience_data_.begin();
        bin_it != bin_experience_data_.end(); bin_it++)
   {
     BinExperienceData &data = bin_it->second;
@@ -154,7 +154,7 @@ bool LearningPipeline::testGrasps()
       new_grasp.pre_grasp_posture = grasp_datas_[jmg].pre_grasp_posture_;
 
       // The internal posture of the hand for the grasp positions and efforts are used
-      new_grasp.grasp_posture = grasp_datas_[jmg].grasp_posture_;        
+      new_grasp.grasp_posture = grasp_datas_[jmg].grasp_posture_;
 
       // The position of the end-effector for the grasp relative to a reference frame (that is always specified elsewhere, not in this message)
       geometry_msgs::PoseStamped grasp_pose_msg;
@@ -245,11 +245,14 @@ bool LearningPipeline::testGrasps()
   if (verbose_)
   {
     ROS_INFO_STREAM_NAMED("learning_pipeline","Showing valid filtered grasp poses");
+
+    // Publish in batch
+    visual_tools_->enableBatchPublishing(true);
     for (std::size_t i = 0; i < filtered_grasps.size(); ++i)
-    {      
-      publishGraspArrow(filtered_grasps[i].grasp_.grasp_pose.pose, jmg, rviz_visual_tools::BLUE);
-      ros::Duration(0.001).sleep();
-    }    
+    {
+      grasps_->publishGraspArrow(filtered_grasps[i].grasp_.grasp_pose.pose, grasp_datas_[jmg], rviz_visual_tools::BLUE);
+    }
+    visual_tools_->triggerBatchPublishAndDisable();
   }
 
   // Show just one grasp - DEBUG mode
@@ -261,7 +264,7 @@ bool LearningPipeline::testGrasps()
       std::cout << std::endl;
       std::cout << "-------------------------------------------------------" << std::endl;
       std::cout << "Showing animated grasp 0 " << std::endl;
-      visual_tools_->publishAnimatedGrasp(possible_grasps[0], ee_jmg, animation_speed);    
+      visual_tools_->publishAnimatedGrasp(possible_grasps[0], ee_jmg, animation_speed);
       ros::Duration(0).sleep();
     }
   }
@@ -275,7 +278,7 @@ bool LearningPipeline::testGrasps()
   }
 
   // Visualize IK solutions
-  if (verbose_ && true)
+  if (verbose_ && false)
   {
     // Convert the filtered_grasps into a format moveit_visual_tools can use
     std::vector<trajectory_msgs::JointTrajectoryPoint> ik_solutions;
@@ -308,11 +311,14 @@ bool LearningPipeline::testGrasps()
   {
     visual_tools_->deleteAllMarkers();
     ROS_INFO_STREAM_NAMED("learning_pipeline","Showing valid filtered grasp poses");
+
+    // Publish in batch
+    visual_tools_->enableBatchPublishing(true);
     for (std::size_t i = 0; i < filtered_grasps.size(); ++i)
-    {      
-      publishGraspArrow(filtered_grasps[i].grasp_.grasp_pose.pose, jmg, rviz_visual_tools::GREEN);
-      ros::Duration(0.001).sleep();
-    }    
+    {
+      grasps_->publishGraspArrow(filtered_grasps[i].grasp_.grasp_pose.pose, grasp_datas_[jmg], rviz_visual_tools::GREEN);
+    }
+    visual_tools_->triggerBatchPublishAndDisable();
   }
 
   // Output statistics
@@ -328,7 +334,7 @@ bool LearningPipeline::testGrasps()
   std::cout << std::endl;
 
   // Visualize IK solutions after collision filtering
-  if (verbose_ && true)
+  if (verbose_ && false)
   {
     // Convert the filtered_grasps into a format moveit_visual_tools can use
     std::vector<trajectory_msgs::JointTrajectoryPoint> ik_solutions;
@@ -346,7 +352,7 @@ bool LearningPipeline::testGrasps()
 
 bool LearningPipeline::displayGrasps(bool valid_only)
 {
-  for (BinExperienceDataMap::iterator bin_it = bin_experience_data_.begin(); 
+  for (BinExperienceDataMap::iterator bin_it = bin_experience_data_.begin();
        bin_it != bin_experience_data_.end(); bin_it++)
   {
     BinExperienceData &data = bin_it->second;
@@ -354,7 +360,7 @@ bool LearningPipeline::displayGrasps(bool valid_only)
     for (std::size_t i = 0; i < data.poses.size(); ++i)
     {
       visual_tools_->publishArrow(data.poses[i]);
-      ros::Duration(0.001).sleep();          
+      ros::Duration(0.001).sleep();
     }
   }
 }

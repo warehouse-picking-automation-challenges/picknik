@@ -33,7 +33,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Authors: Bence Magyar, Dave Coleman
+/* Authors: Dave Coleman, Bence Magyar
    Description: Data class used by the grasp generator.
 */
 
@@ -98,7 +98,6 @@ public:
 
 public:
 
-  //geometry_msgs::Pose grasp_pose_to_eef_pose_; // Convert generic grasp pose to this end effector's frame of reference
   Eigen::Affine3d grasp_pose_to_eef_pose_; // Convert generic grasp pose to this end effector's frame of reference
   trajectory_msgs::JointTrajectory pre_grasp_posture_; // when the end effector is in "open" position
   trajectory_msgs::JointTrajectory grasp_posture_; // when the end effector is in "close" position
@@ -106,9 +105,7 @@ public:
   std::string ee_group_; // the end effector name
   double grasp_depth_; // distance from center point of object to end effector
   int angle_resolution_; // generate grasps at PI/angle_resolution increments
-  //double approach_retreat_desired_dist_; // how far back from the grasp position the pregrasp phase should be
-  //double approach_retreat_min_dist_; // how far back from the grasp position the pregrasp phase should be at minimum
-  double object_size_; // for visualization
+
   double finger_to_palm_depth_;
 
   // Duplicate end effector data copied from RobotModel

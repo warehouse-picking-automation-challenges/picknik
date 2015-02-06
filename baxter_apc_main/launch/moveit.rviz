@@ -5,9 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Grid1/Offset1
-        - /Baxter State1/Joints1/right_hand1
-        - /Amazon Shelf Markers1/Namespaces1
-        - /Experience Database1
+        - /Baxter State1
         - /Trajectory1
         - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
@@ -51,157 +49,265 @@ Visualization Manager:
       Value: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
-      Collision Enabled: false
+      Collision Enabled: true
       Enabled: true
-      Joints:
+      Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
-        Link Tree Style: Joints in Alphabetic Order
-        collision_head_1:
+        Link Tree Style: Links in Alphabetic Order
+        base:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
+        collision_head_link_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
           Value: true
-        collision_head_2:
+        collision_head_link_2:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        display_joint:
+        display:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        dummy:
+        dummyhead1:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
+        head:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         head_camera:
+          Alpha: 1
           Show Axes: false
-        head_nod:
+          Show Trail: false
+        left_arm_itb:
+          Alpha: 1
           Show Axes: false
-          Value: true
-        head_pan:
+          Show Trail: false
+        left_arm_mount:
+          Alpha: 1
           Show Axes: false
-          Value: true
-        left_e0:
+          Show Trail: false
+        left_gripper:
+          Alpha: 1
           Show Axes: false
-          Value: true
-        left_e0_fixed:
-          Show Axes: false
-          Value: true
-        left_e1:
-          Show Axes: false
-          Value: true
-        left_endpoint:
-          Show Axes: false
+          Show Trail: false
           Value: true
         left_gripper_base:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        left_gripper_l_finger_joint:
+        left_gripper_l_finger:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        left_gripper_r_finger_joint:
+        left_gripper_r_finger:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
         left_hand:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
         left_hand_accelerometer:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
         left_hand_camera:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
         left_hand_camera_axis:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
         left_hand_range:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        left_s0:
+        left_lower_elbow:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        left_s1:
+        left_lower_forearm:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        left_torso_arm_mount:
+        left_lower_shoulder:
+          Alpha: 1
           Show Axes: false
-        left_torso_itb_fixed:
-          Show Axes: false
-        left_w0:
-          Show Axes: false
+          Show Trail: false
           Value: true
-        left_w0_fixed:
+        left_torso_itb:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
+        left_upper_elbow:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
           Value: true
-        left_w0_to_itb_fixed:
+        left_upper_elbow_visual:
+          Alpha: 1
           Show Axes: false
-        left_w1:
-          Show Axes: false
+          Show Trail: false
           Value: true
-        left_w2:
+        left_upper_forearm:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        pedestal_fixed:
+        left_upper_forearm_visual:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        right_e0:
+        left_upper_shoulder:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        right_e0_fixed:
+        left_wrist:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        right_e1:
+        pedestal:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        right_endpoint:
+        right_arm_itb:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
+        right_arm_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        right_gripper:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
           Value: true
         right_gripper_base:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        right_gripper_l_finger_joint:
+        right_gripper_l_finger:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        right_gripper_r_finger_joint:
+        right_gripper_r_finger:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
         right_hand:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
         right_hand_accelerometer:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
         right_hand_camera:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
         right_hand_camera_axis:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
         right_hand_range:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        right_s0:
+        right_lower_elbow:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        right_s1:
+        right_lower_forearm:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        right_torso_arm_mount:
+        right_lower_shoulder:
+          Alpha: 1
           Show Axes: false
-        right_torso_itb_fixed:
-          Show Axes: false
-        right_w0:
-          Show Axes: false
+          Show Trail: false
           Value: true
-        right_w0_fixed:
+        right_torso_itb:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
+        right_upper_elbow:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
           Value: true
-        right_w0_to_itb_fixed:
+        right_upper_elbow_visual:
+          Alpha: 1
           Show Axes: false
-        right_w1:
-          Show Axes: false
+          Show Trail: false
           Value: true
-        right_w2:
+        right_upper_forearm:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        sonar_s0:
+        right_upper_forearm_visual:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
           Value: true
-        torso_t0:
+        right_upper_shoulder:
+          Alpha: 1
           Show Axes: false
+          Show Trail: false
+          Value: true
+        right_wrist:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        screen:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sonar_ring:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        torso:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
           Value: true
       Name: Baxter State
       Robot Alpha: 1
@@ -210,16 +316,16 @@ Visualization Manager:
       Show All Links: true
       Show Highlights: true
       Value: true
-      Visual Enabled: true
-    - Class: rviz/Marker
+      Visual Enabled: false
+    - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /amazon_shelf_markers
       Name: Amazon Shelf Markers
       Namespaces:
         Arrow: true
+        Collision: true
         Cylinder: true
         Text: true
-        end_effector: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -256,7 +362,7 @@ Visualization Manager:
       Value: false
     - Alpha: 1
       Class: rviz/RobotModel
-      Collision Enabled: false
+      Collision Enabled: true
       Enabled: false
       Links:
         All Links Enabled: true
@@ -269,7 +375,7 @@ Visualization Manager:
       TF Prefix: ""
       Update Interval: 0
       Value: false
-      Visual Enabled: true
+      Visual Enabled: false
     - Class: moveit_rviz_plugin/Trajectory
       Enabled: true
       Links:
@@ -532,10 +638,10 @@ Visualization Manager:
           Value: true
       Loop Animation: false
       Name: Trajectory
-      Robot Alpha: 0.5
+      Robot Alpha: 1
       Robot Description: robot_description
       Show Robot Collision: false
-      Show Robot Visual: true
+      Show Robot Visual: false
       Show Trail: false
       State Display Time: REALTIME
       Trajectory Topic: /move_group/display_planned_path
@@ -815,7 +921,7 @@ Visualization Manager:
             Value: true
         Robot Alpha: 0.5
         Show Robot Collision: false
-        Show Robot Visual: true
+        Show Robot Visual: false
       Value: true
   Enabled: true
   Global Options:
@@ -832,22 +938,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.12709
+      Distance: 3.34476
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.83531
-        Y: 0.161825
-        Z: -2.38419e-07
+        X: 0.684688
+        Y: -0.477532
+        Z: -3.27826e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.144798
+      Pitch: 0.145399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.45037
+      Yaw: 3.59676
     Saved: ~
 Window Geometry:
   Displays:

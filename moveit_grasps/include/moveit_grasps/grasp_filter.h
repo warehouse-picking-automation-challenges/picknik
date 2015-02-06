@@ -158,6 +158,16 @@ public:
                     const std::string &ee_parent_link, 
                     const robot_model::JointModelGroup* jmg);
 
+private:
+
+  /**
+   * \brief Thread for checking part of the possible grasps list
+   * \param 
+   */
+  void filterGraspThread(IkThreadStruct ik_thread_struct);
+
+public:
+
   /**
    * \brief Filter using collision checking. Run this after filterGrasps()
    * \param potential grasps - invalid ones will be removed
@@ -176,14 +186,13 @@ public:
                                      robot_state::RobotStatePtr robot_state,
                                      bool verbose);
 
-private:
-
   /**
-   * \brief Thread for checking part of the possible grasps list
-   * \param 
+   * \brief Display collision points in Rviz
+   * \param state of robot
+   * \param planning scene
+   * \return true on success
    */
-  void filterGraspThread(IkThreadStruct ik_thread_struct);
-
+  bool publishContactPoints(const moveit::core::RobotStatePtr robot_state, planning_scene::PlanningScenePtr planning_scene);
 
 }; // end of class
 

@@ -326,6 +326,9 @@ bool ShelfObject::visualize() const
 
 bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool just_frame) const
 {
+  // Publish in batch
+  visual_tools_->enableBatchPublishing(true);
+
   // Create side walls of shelf
   for (std::size_t i = 0; i < shelf_parts_.size(); ++i)
   {
@@ -359,7 +362,7 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
     }
   }
 
-  return true;
+  return visual_tools_->triggerBatchPublishAndDisable();
 }
 
 bool ShelfObject::createCollisionShelfDetailed() const

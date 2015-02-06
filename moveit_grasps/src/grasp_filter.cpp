@@ -34,6 +34,7 @@
 
 #include <moveit_grasps/grasp_filter.h>
 #include <moveit/transforms/transforms.h>
+#include <moveit/collision_detection/collision_tools.h>
 
 // Conversions
 #include <eigen_conversions/eigen_msg.h> // add to pkg TODO
@@ -204,113 +205,6 @@ bool GraspFilter::filterGrasps(const std::vector<moveit_msgs::Grasp>& possible_g
   return true;
 }
 
-bool GraspFilter::filterGraspsInCollision(std::vector<GraspSolution>& possible_grasps,
-                                          planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                                          const robot_model::JointModelGroup* jmg,
-                                          robot_state::RobotStatePtr robot_state,
-                                          bool verbose)
-{
-  std::vector<GraspSolution> original_possible_grasps = possible_grasps;
-  const std::size_t original_size = possible_grasps.size();
-
-  // Initial run
-  if (!filterGraspsInCollisionHelper(possible_grasps, planning_scene_monitor, jmg, robot_state, false))
-  {
-    ROS_ERROR_STREAM_NAMED("temp","Grasp filter failed");
-    return false;
-  }
-
-  assert(original_possible_grasps.size() == original_size); // make sure the copy worked
-
-  // Check if enough passed. If not, go to debug mode
-  if (!possible_grasps.size())
-  {
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    ROS_WARN_STREAM_NAMED("temp","All grasps were filtered due to collision, possible error");
-    ROS_WARN_STREAM_NAMED("temp","Re-running again in debug mode");
-
-    if (!filterGraspsInCollisionHelper(original_possible_grasps, planning_scene_monitor, jmg, robot_state, true))
-    {
-      ROS_ERROR_STREAM_NAMED("temp","Grasp filter failed");
-      return false;
-    }
-  }
-
-  return true;
-}
-
-bool GraspFilter::filterGraspsInCollisionHelper(std::vector<GraspSolution>& possible_grasps,
-                                                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                                                const robot_model::JointModelGroup* jmg,
-                                                robot_state::RobotStatePtr robot_state,
-                                                bool verbose)
-{
-  // Copy the current state positions
-  *robot_state_ = *robot_state;
-
-  // Lock planning scene
-  {
-    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor);
-
-    // Start checking all grasps
-    for (std::vector<GraspSolution>::iterator grasp_it = possible_grasps.begin();
-         grasp_it != possible_grasps.end(); /*it++*/)
-    {
-      // -----------------------------------------------------------------------------------
-      // Check grasp ik solution
-      robot_state_->setJointGroupPositions(jmg, grasp_it->grasp_ik_solution_);
-
-      if (scene->isStateColliding(*robot_state_, jmg->getName(), verbose))
-      {
-        // Remove this grasp
-        if (verbose)
-        {
-          ROS_INFO_STREAM_NAMED("temp","Grasp solution colliding");
-          visual_tools_->publishRobotState(robot_state_, rviz_visual_tools::RED);
-          ros::Duration(1.0).sleep();
-        }
-
-        possible_grasps.erase(grasp_it);
-        continue; // next grasp
-      }
-
-      // -----------------------------------------------------------------------------------
-      // Check PRE-grasp ik solution
-      /*
-        robot_state_->setJointGroupPositions(jmg, grasp_it->pregrasp_ik_solution_);
-
-        if (scene->isStateColliding(*robot_state_, jmg->getName(), verbose))
-        {
-        // Remove this grasp
-        if (verbose)
-        {
-        ROS_INFO_STREAM_NAMED("temp","Pre-grasp solution colliding");       
-        visual_tools_->publishRobotState(robot_state_, rviz_visual_tools::RED);
-        ros::Duration(1.0).sleep();
-        }
-
-        possible_grasps.erase(grasp_it);
-        continue; // next grasp
-        }
-      */
-
-      // Else
-      grasp_it++; // move to next grasp
-    }
-  }
-
-  ROS_INFO_STREAM_NAMED("temp","After collision checking " << possible_grasps.size() << " grasps were found valid");
-
-  if (verbose)
-  {
-    visual_tools_->hideRobot();
-  }
-
-  return true;
-}
-
 void GraspFilter::filterGraspThread(IkThreadStruct ik_thread_struct)
 {
   // Seed state - start at zero
@@ -412,6 +306,158 @@ void GraspFilter::filterGraspThread(IkThreadStruct ik_thread_struct)
   }
 
   //ROS_DEBUG_STREAM_NAMED("filter","Thread " << ik_thread_struct.thread_id_ << " finished");
+}
+
+bool GraspFilter::filterGraspsInCollision(std::vector<GraspSolution>& possible_grasps,
+                                          planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
+                                          const robot_model::JointModelGroup* jmg,
+                                          robot_state::RobotStatePtr robot_state,
+                                          bool verbose)
+{
+  std::vector<GraspSolution> original_possible_grasps = possible_grasps;
+  const std::size_t original_size = possible_grasps.size();
+
+  // Initial run
+  if (!filterGraspsInCollisionHelper(possible_grasps, planning_scene_monitor, jmg, robot_state, verbose))
+  {
+    ROS_ERROR_STREAM_NAMED("temp","Grasp filter failed");
+    return false;
+  }
+
+  assert(original_possible_grasps.size() == original_size); // make sure the copy worked
+
+  // Check if enough passed. If not, go to debug mode if we weren't already in verbose mode
+  if (!possible_grasps.size() && !verbose)
+  {
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    ROS_WARN_STREAM_NAMED("temp","All grasps were filtered due to collision, possible error");
+    ROS_WARN_STREAM_NAMED("temp","Re-running again in debug mode");
+
+    if (!filterGraspsInCollisionHelper(original_possible_grasps, planning_scene_monitor, jmg, robot_state, true))
+    {
+      ROS_ERROR_STREAM_NAMED("temp","Grasp filter failed");
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool GraspFilter::filterGraspsInCollisionHelper(std::vector<GraspSolution>& possible_grasps,
+                                                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
+                                                const robot_model::JointModelGroup* jmg,
+                                                robot_state::RobotStatePtr robot_state,
+                                                bool verbose)
+{
+  // Copy the current state positions
+  *robot_state_ = *robot_state;
+
+  // Copy planning scene that is locked
+  planning_scene::PlanningScenePtr cloned_scene;
+  {
+    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor);
+    cloned_scene = planning_scene::PlanningScene::clone(scene);
+  }
+
+  // Start checking all grasps
+  for (std::vector<GraspSolution>::iterator grasp_it = possible_grasps.begin();
+       grasp_it != possible_grasps.end(); /*it++*/)
+  {
+    // -----------------------------------------------------------------------------------
+    // Check grasp ik solution
+    robot_state_->setJointGroupPositions(jmg, grasp_it->grasp_ik_solution_);
+
+    if (cloned_scene->isStateColliding(*robot_state_, jmg->getName(), verbose))
+    {
+      // Remove this grasp
+      if (verbose)
+      {
+        ROS_INFO_STREAM_NAMED("temp","Grasp solution colliding");
+        visual_tools_->publishRobotState(robot_state_, rviz_visual_tools::RED);
+
+        publishContactPoints(robot_state_, cloned_scene);
+
+
+
+        ros::Duration(4.0).sleep();
+      }
+
+      possible_grasps.erase(grasp_it);
+      continue; // next grasp
+    }
+
+    // -----------------------------------------------------------------------------------
+    // Check PRE-grasp ik solution
+    /*
+      robot_state_->setJointGroupPositions(jmg, grasp_it->pregrasp_ik_solution_);
+
+      if (cloned_scene->isStateColliding(*robot_state_, jmg->getName(), verbose))
+      {
+      // Remove this grasp
+      if (verbose)
+      {
+      ROS_INFO_STREAM_NAMED("temp","Pre-grasp solution colliding");       
+      visual_tools_->publishRobotState(robot_state_, rviz_visual_tools::RED);
+      ros::Duration(1.0).sleep();
+      }
+
+      possible_grasps.erase(grasp_it);
+      continue; // next grasp
+      }
+    */
+
+    // Else
+    grasp_it++; // move to next grasp
+  }
+
+  ROS_INFO_STREAM_NAMED("temp","After collision checking " << possible_grasps.size() << " grasps were found valid");
+
+  if (verbose)
+  {
+    visual_tools_->hideRobot();
+  }
+
+  return true;
+}
+
+bool GraspFilter::publishContactPoints(const moveit::core::RobotStatePtr robot_state, planning_scene::PlanningScenePtr planning_scene)
+{
+  // compute the contacts if any
+  collision_detection::CollisionRequest c_req;
+  collision_detection::CollisionResult c_res;
+  c_req.contacts = true;
+  c_req.max_contacts = 10;
+  c_req.max_contacts_per_pair = 3;
+  c_req.verbose = true;
+
+  // check for collisions
+  planning_scene->checkCollision(c_req, c_res, *robot_state);
+
+  // Display
+  if (c_res.contact_count > 0)
+  {
+    visualization_msgs::MarkerArray arr;
+    collision_detection::getCollisionMarkersFromContacts(arr, planning_scene->getPlanningFrame(), c_res.contacts);
+    ROS_ERROR_STREAM("Completed listing of explanations for invalid states.");
+
+    // Check for markers
+    if (arr.markers.empty())
+      return true;
+
+    // Convert markers to same namespace and other custom stuff
+    for (std::size_t i = 0; i < arr.markers.size(); ++i)
+    {
+      arr.markers[i].ns = "Collision";
+      arr.markers[i].scale.x = 0.04;
+      arr.markers[i].scale.y = 0.04;
+      arr.markers[i].scale.z = 0.04;
+    }
+
+    visual_tools_->publishMarkers(arr);
+  }
+
 }
 
 } // namespace
