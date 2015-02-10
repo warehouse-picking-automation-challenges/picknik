@@ -103,6 +103,12 @@ public:
    */
   bool displayGrasps(bool valid_only);
 
+  /**
+   * \brief For a particular pose, analyze redundancy of IK solutions
+   * \return true on success
+   */
+  bool testSingleGraspIK();
+
 private:
 
   BinExperienceDataMap bin_experience_data_;

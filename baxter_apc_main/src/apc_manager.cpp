@@ -120,16 +120,6 @@ bool APCManager::trainExperienceDatabase()
   ROS_INFO_STREAM_NAMED("apc_manager","Training experience database");
   learning_->generateTrainingGoals(shelf_);
 
-  // TODO: DONE create new class for experiences
-  //       DONE display all potential grasps
-  //       DONE check ik
-  //       analyze workspace
-  //       add cost function to ompl
-  //       setup PRMstar
-
-
-
-
   return true;
 }
 

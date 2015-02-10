@@ -296,7 +296,9 @@ void GraspFilter::filterGraspThread(IkThreadStruct ik_thread_struct)
       // End pre-grasp section -------------------------------------------------------
     }
     else if( error_code.val == moveit_msgs::MoveItErrorCodes::NO_IK_SOLUTION )
-      ROS_WARN_STREAM_NAMED("filter","Unable to find IK solution for pose.");
+    {
+      //ROS_WARN_STREAM_NAMED("filter","Unable to find IK solution for pose: No Solution");
+    }
     else if( error_code.val == moveit_msgs::MoveItErrorCodes::TIMED_OUT )
     {
       //ROS_DEBUG_STREAM_NAMED("filter","Unable to find IK solution for pose: Timed Out.");
@@ -374,6 +376,7 @@ bool GraspFilter::filterGraspsInCollisionHelper(std::vector<GraspSolution>& poss
       // Remove this grasp
       if (verbose)
       {
+        std::cout << std::endl;
         ROS_INFO_STREAM_NAMED("temp","Grasp solution colliding");
         visual_tools_->publishRobotState(robot_state_, rviz_visual_tools::RED);
 
@@ -440,7 +443,7 @@ bool GraspFilter::publishContactPoints(const moveit::core::RobotStatePtr robot_s
   {
     visualization_msgs::MarkerArray arr;
     collision_detection::getCollisionMarkersFromContacts(arr, planning_scene->getPlanningFrame(), c_res.contacts);
-    ROS_ERROR_STREAM("Completed listing of explanations for invalid states.");
+    ROS_INFO_STREAM_NAMED("filter","Completed listing of explanations for invalid states.");
 
     // Check for markers
     if (arr.markers.empty())

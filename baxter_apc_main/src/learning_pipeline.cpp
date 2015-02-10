@@ -118,7 +118,7 @@ bool LearningPipeline::generateTrainingGoalsBin(Eigen::Affine3d bin_transpose, E
 bool LearningPipeline::testGrasps()
 {
   // TODO: test both arms
-  const moveit::core::JointModelGroup* jmg = right_arm_;
+  const moveit::core::JointModelGroup* jmg = left_arm_;
   const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[jmg].ee_group_);
 
   // Convert grasp vectors to grasp msgs
@@ -303,7 +303,8 @@ bool LearningPipeline::testGrasps()
   openEndEffector(true, robot_state_); // to be passed to the grasp filter
 
   // Filter by collision
-  grasp_filter_->filterGraspsInCollision(filtered_grasps, planning_scene_monitor_, jmg, robot_state_, verbose_);
+  bool filter_verbose = false;
+  grasp_filter_->filterGraspsInCollision(filtered_grasps, planning_scene_monitor_, jmg, robot_state_, filter_verbose);
   total_collision_free_grasps = filtered_grasps.size();
 
   // Visualize valid grasps after collision filtering with arrows
@@ -363,6 +364,128 @@ bool LearningPipeline::displayGrasps(bool valid_only)
       ros::Duration(0.001).sleep();
     }
   }
+}
+
+bool LearningPipeline::testSingleGraspIK()
+{
+  const moveit::core::JointModelGroup* jmg = left_arm_;
+  const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[jmg].ee_group_);
+
+  BinExperienceData &data = bin_experience_data_["bin_H"];
+
+  // Transform based on EE type
+  std::size_t i = 0;
+  Eigen::Affine3d eigen_grasp_pose = data.poses[i] * grasp_datas_[jmg].grasp_pose_to_eef_pose_;
+
+  // debug mode
+  if (true)
+  {
+    visual_tools_->publishArrow(eigen_grasp_pose, rviz_visual_tools::RED);
+    visual_tools_->publishEEMarkers(eigen_grasp_pose, ee_jmg);
+    ros::Duration(1).sleep();
+  }
+
+  // Seed state - start at zero
+  std::vector<double> ik_seed_state(7); // fill with zeros
+  // TODO do not assume 7 dof
+
+  std::vector<double> grasp_ik_solution;
+  std::vector<double> pregrasp_ik_solution;
+  moveit_msgs::MoveItErrorCodes error_code;
+  geometry_msgs::PoseStamped ik_pose;
+
+  // Process the assigned grasps
+  for( int i = ik_thread_struct.grasps_id_start_; i < ik_thread_struct.grasps_id_end_; ++i )
+  {
+    //ROS_DEBUG_STREAM_NAMED("filter", "Checking grasp #" << i);
+
+    // Clear out previous solution just in case - not sure if this is needed
+    grasp_ik_solution.clear(); // TODO remove
+    pregrasp_ik_solution.clear(); // TODO remove
+
+    // Transform current pose to frame of planning group
+    ik_pose = ik_thread_struct.possible_grasps_[i].grasp_pose;
+    Eigen::Affine3d eigen_pose;
+    tf::poseMsgToEigen(ik_pose.pose, eigen_pose);
+    eigen_pose = ik_thread_struct.link_transform_ * eigen_pose;
+    tf::poseEigenToMsg(eigen_pose, ik_pose.pose);
+
+    // Test it with IK
+    ik_thread_struct.kin_solver_->
+      searchPositionIK(ik_pose.pose, ik_seed_state, ik_thread_struct.timeout_, grasp_ik_solution, error_code);
+
+    // Results
+    if( error_code.val == moveit_msgs::MoveItErrorCodes::SUCCESS )
+    {
+      //ROS_INFO_STREAM_NAMED("filter","Found IK Solution");
+
+      // Copy solution to seed state so that next solution is faster
+      ik_seed_state = grasp_ik_solution;
+
+      // Start pre-grasp section ----------------------------------------------------------
+      if (ik_thread_struct.filter_pregrasp_)       // optionally check the pregrasp
+      {
+        // Convert to a pre-grasp
+        ik_pose = Grasps::getPreGraspPose(ik_thread_struct.possible_grasps_[i], ik_thread_struct.ee_parent_link_);
+
+        // Transform current pose to frame of planning group
+        Eigen::Affine3d eigen_pose;
+        tf::poseMsgToEigen(ik_pose.pose, eigen_pose);
+        eigen_pose = ik_thread_struct.link_transform_ * eigen_pose;
+        tf::poseEigenToMsg(eigen_pose, ik_pose.pose);
+
+        // Test it with IK
+        ik_thread_struct.kin_solver_->
+          searchPositionIK(ik_pose.pose, ik_seed_state, ik_thread_struct.timeout_, pregrasp_ik_solution, error_code);
+
+        // Results
+        if( error_code.val == moveit_msgs::MoveItErrorCodes::NO_IK_SOLUTION )
+        {
+          ROS_WARN_STREAM_NAMED("filter","Unable to find IK solution for pre-grasp pose.");
+          continue;
+        }
+        else if( error_code.val == moveit_msgs::MoveItErrorCodes::TIMED_OUT )
+        {
+          //ROS_DEBUG_STREAM_NAMED("filter","Unable to find IK solution for pre-grasp pose: Timed Out.");
+          continue;
+        }
+        else if( error_code.val != moveit_msgs::MoveItErrorCodes::SUCCESS )
+        {
+          ROS_INFO_STREAM_NAMED("filter","IK solution error for pre-grasp: MoveItErrorCodes.msg = " << error_code);
+          continue;
+        }
+      }
+      else
+      {
+        ROS_WARN_STREAM_NAMED("temp","Not filtering pre-grasp - GraspSolution may have bad data");
+      }
+      // Both grasp and pre-grasp have passed, create the solution
+      GraspSolution grasp_solution;
+      grasp_solution.grasp_ = ik_thread_struct.possible_grasps_[i];
+      grasp_solution.grasp_ik_solution_ = grasp_ik_solution;
+      grasp_solution.pregrasp_ik_solution_ = pregrasp_ik_solution;
+
+      // Lock the result vector so we can add to it for a second
+      {
+        boost::mutex::scoped_lock slock(*ik_thread_struct.lock_);
+        ik_thread_struct.filtered_grasps_.push_back( grasp_solution );
+      }
+
+      // End pre-grasp section -------------------------------------------------------
+    }
+    else if( error_code.val == moveit_msgs::MoveItErrorCodes::NO_IK_SOLUTION )
+    {
+      //ROS_WARN_STREAM_NAMED("filter","Unable to find IK solution for pose: No Solution");
+    }
+    else if( error_code.val == moveit_msgs::MoveItErrorCodes::TIMED_OUT )
+    {
+      //ROS_DEBUG_STREAM_NAMED("filter","Unable to find IK solution for pose: Timed Out.");
+    }
+    else
+      ROS_INFO_STREAM_NAMED("filter","IK solution error: MoveItErrorCodes.msg = " << error_code);
+  }
+  
+
 }
 
 } // namespace

@@ -858,16 +858,13 @@ bool ManipulationPipeline::openEndEffector(bool open, const robot_model::JointMo
 
 bool ManipulationPipeline::openEndEffector(bool open, moveit::core::RobotStatePtr robot_state)
 {
-  //static const double left_open_position  = 0; // 0.0094;
-  //static const double left_close_position = 0.03; //0.0125;
-
   const double& left_open_position  = grasp_datas_[left_arm_].pre_grasp_posture_.points[0].positions[0];
   const double& right_open_position  = grasp_datas_[right_arm_].pre_grasp_posture_.points[0].positions[0];
 
   const double& left_close_position = grasp_datas_[left_arm_].grasp_posture_.points[0].positions[0];
   const double& right_close_position = grasp_datas_[right_arm_].grasp_posture_.points[0].positions[0];
 
-  if (verbose_)
+  if (verbose_ && false)
   {
     std::cout << "Setting end effector to open: " << open << std::endl;
     std::cout << "  right_open_position: " << right_open_position << std::endl;
