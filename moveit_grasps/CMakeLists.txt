@@ -90,6 +90,11 @@ target_link_libraries(${PROJECT_NAME}_test
   ${PROJECT_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES}
 )
 
+add_executable(cuboid_grasp_test src/cuboid_test.cpp)
+target_link_libraries(cuboid_grasp_test
+  ${PROJECT_NAME} ${catkin_LIBRARIES} ${Boost_LIBRARIES}
+)
+
 ## Install
 
 # Install libraries
