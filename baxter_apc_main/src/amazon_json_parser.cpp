@@ -112,7 +112,7 @@ bool AmazonJSONParser::parseBins(const std::string& package_path, const Json::Va
       // Set location of product
       product->bottom_right_.translation() = Eigen::Vector3d(0.05, //visual_tools_->dRand(0.0, 0.05),  // depth
                                                             bin_y_space,  // from right
-                                                            0);
+                                                            0.1);
 
       // Set size of product
       double width = visual_tools_->dRand(0.01, 0.06);

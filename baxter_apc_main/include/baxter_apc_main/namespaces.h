@@ -18,8 +18,10 @@
 // Temporarily define the namespace
 namespace moveit_visual_tools {}
 namespace rviz_visual_tools {}
+namespace ompl_visual_tools {}
 
 namespace mvt = moveit_visual_tools;
 namespace rvt = rviz_visual_tools;
+namespace ovt = ompl_visual_tools;
 
 #endif

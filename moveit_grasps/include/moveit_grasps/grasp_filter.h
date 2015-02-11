@@ -186,14 +186,6 @@ public:
                                      robot_state::RobotStatePtr robot_state,
                                      bool verbose);
 
-  /**
-   * \brief Display collision points in Rviz
-   * \param state of robot
-   * \param planning scene
-   * \return true on success
-   */
-  bool publishContactPoints(const moveit::core::RobotStatePtr robot_state, planning_scene::PlanningScenePtr planning_scene);
-
 }; // end of class
 
 typedef boost::shared_ptr<GraspFilter> GraspFilterPtr;

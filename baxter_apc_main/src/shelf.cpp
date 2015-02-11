@@ -339,7 +339,7 @@ bool ShelfObject::visualize() const
   */
 }
 
-bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool just_frame) const
+bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool just_frame, bool show_all_products) const
 {
   // Publish in batch
   visual_tools_->enableBatchPublishing(true);
@@ -363,14 +363,20 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
       {
         focus_bin = bin_it->second; // save for later
       }
-      else
+      else if (!show_all_products)
       {
         // Fill in bin as simple rectangle (disabled mode)
         bin_it->second->createCollisionBodies(bottom_right_);
       }
+
+      // Optionall add all products to shelves
+      if (show_all_products)
+      {
+        bin_it->second->createCollisionBodiesProducts(bottom_right_);
+      }
     }
 
-    if (focus_bin)
+    if (focus_bin && !show_all_products) // don't redisplay products if show_all_products is true
     {
       // Add products to shelves
       focus_bin->createCollisionBodiesProducts(bottom_right_);
@@ -467,9 +473,10 @@ ProductObject::ProductObject(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveIt
 
   // Cache the object's mesh
   mesh_path_ = "file://" + package_path + "/meshes/" + name_ + "/recommended.dae";
+  collision_mesh_path_ = "file://" + package_path + "/meshes/" + name_ + "/collision.stl";
 
-  ROS_DEBUG_STREAM_NAMED("shelf","Creating collision product with name " << collision_object_name_ << " from mesh " << mesh_path_);
-  
+  // Debug
+  ROS_DEBUG_STREAM_NAMED("shelf","Creating collision product with name " << collision_object_name_ << " from mesh " << mesh_path_ << " and collision mesh " << collision_mesh_path_);
 }
 
 std::string ProductObject::getCollisionName() const
@@ -493,7 +500,7 @@ bool ProductObject::visualize(const Eigen::Affine3d &trans) const
 bool ProductObject::createCollisionBodies(const Eigen::Affine3d &trans) const
 { 
   // Show product mesh
-  if (!visual_tools_->publishCollisionMesh(transform(bottom_right_, trans), collision_object_name_, mesh_path_, rvt::CLEAR))
+  if (!visual_tools_->publishCollisionMesh(transform(bottom_right_, trans), collision_object_name_, collision_mesh_path_, rvt::RAND))
   {
     // Fall back to publishing rectangles
     visual_tools_->publishCollisionRectangle( transform(bottom_right_, trans).translation(),

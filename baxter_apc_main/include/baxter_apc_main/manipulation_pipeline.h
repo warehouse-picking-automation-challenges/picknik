@@ -45,6 +45,7 @@ namespace baxter_apc_main
 MOVEIT_CLASS_FORWARD(ManipulationPipeline);
 
 static const std::string START_POSE = "both_ready"; // where to move baxter to initially
+const double APPROACH_DISTANCE_DESIRED = 0.1; // amount beyond min distance
 
 class ManipulationPipeline
 {
@@ -54,7 +55,7 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  ManipulationPipeline(bool verbose, 
+  ManipulationPipeline(bool verbose,
                        mvt::MoveItVisualToolsPtr visual_tools,
                        mvt::MoveItVisualToolsPtr visual_tools_display,
                        planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
@@ -144,7 +145,7 @@ public:
    * \param path_length - the length of the resulting cartesian path
    * \return true on success
    */
-  bool computeStraightLinePath( Eigen::Vector3d approach_direction, 
+  bool computeStraightLinePath( Eigen::Vector3d approach_direction,
                                 double desired_approach_distance,
                                 std::vector<robot_state::RobotStatePtr>& robot_state_trajectory,
                                 robot_state::RobotStatePtr robot_state,
@@ -238,12 +239,12 @@ public:
 
   /**
    * \brief Getter for RobotState
-   */ 
+   */
   moveit::core::RobotStatePtr getRobotState()
   {
     return robot_state_;
   }
-  
+
   /**
    * \brief Setter for RobotState
    */
@@ -251,7 +252,7 @@ public:
   {
     robot_state_ = robot_state;
   }
-  
+
 
 protected:
 
@@ -264,7 +265,7 @@ protected:
   // For visualizing things in rviz
   mvt::MoveItVisualToolsPtr visual_tools_;
   mvt::MoveItVisualToolsPtr visual_tools_display_;
-  ompl_visual_tools::OmplVisualToolsPtr ompl_visual_tools_;
+  ovt::OmplVisualToolsPtr ompl_visual_tools_;
 
   // Core MoveIt components
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
@@ -308,8 +309,8 @@ protected:
 
 namespace
 {
-bool isStateValid(const planning_scene::PlanningScene *planning_scene,
-                  robot_state::RobotState *state,
+bool isStateValid(const planning_scene::PlanningScene *planning_scene, bool verbose,
+                  mvt::MoveItVisualToolsPtr visual_tools, robot_state::RobotState *state,
                   const robot_state::JointModelGroup *group, const double *ik_solution);
 }
 

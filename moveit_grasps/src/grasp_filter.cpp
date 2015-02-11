@@ -380,7 +380,7 @@ bool GraspFilter::filterGraspsInCollisionHelper(std::vector<GraspSolution>& poss
         ROS_INFO_STREAM_NAMED("temp","Grasp solution colliding");
         visual_tools_->publishRobotState(robot_state_, rviz_visual_tools::RED);
 
-        publishContactPoints(robot_state_, cloned_scene);
+        visual_tools_->publishContactPoints(*robot_state_, cloned_scene.get());
 
 
 
@@ -425,42 +425,5 @@ bool GraspFilter::filterGraspsInCollisionHelper(std::vector<GraspSolution>& poss
   return true;
 }
 
-bool GraspFilter::publishContactPoints(const moveit::core::RobotStatePtr robot_state, planning_scene::PlanningScenePtr planning_scene)
-{
-  // compute the contacts if any
-  collision_detection::CollisionRequest c_req;
-  collision_detection::CollisionResult c_res;
-  c_req.contacts = true;
-  c_req.max_contacts = 10;
-  c_req.max_contacts_per_pair = 3;
-  c_req.verbose = true;
-
-  // check for collisions
-  planning_scene->checkCollision(c_req, c_res, *robot_state);
-
-  // Display
-  if (c_res.contact_count > 0)
-  {
-    visualization_msgs::MarkerArray arr;
-    collision_detection::getCollisionMarkersFromContacts(arr, planning_scene->getPlanningFrame(), c_res.contacts);
-    ROS_INFO_STREAM_NAMED("filter","Completed listing of explanations for invalid states.");
-
-    // Check for markers
-    if (arr.markers.empty())
-      return true;
-
-    // Convert markers to same namespace and other custom stuff
-    for (std::size_t i = 0; i < arr.markers.size(); ++i)
-    {
-      arr.markers[i].ns = "Collision";
-      arr.markers[i].scale.x = 0.04;
-      arr.markers[i].scale.y = 0.04;
-      arr.markers[i].scale.z = 0.04;
-    }
-
-    visual_tools_->publishMarkers(arr);
-  }
-
-}
 
 } // namespace

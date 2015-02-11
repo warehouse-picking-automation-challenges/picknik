@@ -14,7 +14,7 @@
 
   <!-- Command line arguments -->
   <arg name="mode" default="1" />
-  <arg name="verbose" default="0" />
+  <arg name="verbose" default="1" />
   <arg name="use_experience" default="1" />
   <arg name="order" default="$(find baxter_apc_main)/orders/simple.json" />
   <arg name="show_database" default="0" />

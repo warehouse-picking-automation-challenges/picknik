@@ -180,12 +180,16 @@ bool APCManager::loadShelfContents(std::string order_fp)
 bool APCManager::visualizeShelf()
 {
   // Show the mesh visualization
+  visual_tools_display_->enableBatchPublishing(true);
   shelf_->visualize();
   shelf_->visualizeAxis(visual_tools_display_);
+  visual_tools_display_->triggerBatchPublish();
 
   // Now show empty shelf to help in reversing robot arms to initial position
   visual_tools_->removeAllCollisionObjects();
-  shelf_->createCollisionBodies("", true); // only show the frame
+  bool just_frame = false;
+  bool show_all_products = true;
+  shelf_->createCollisionBodies("", just_frame, show_all_products); // only show the frame
   shelf_->visualizeAxis(visual_tools_);
   visual_tools_->triggerPlanningSceneUpdate();
 

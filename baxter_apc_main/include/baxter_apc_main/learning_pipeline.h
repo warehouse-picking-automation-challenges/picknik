@@ -52,7 +52,6 @@ const double POSE_DISCRETIZATION = 0.05; //0.02; // how spread apart to create t
 const double POSE_HORIZONTAL_MARGIN = 0.08;
 const double POSE_TOP_MARGIN = BIN_HEIGHT - 0.05;
 const double POSE_BOTTOM_MARGIN = 0.05;
-const double APPROACH_DISTANCE_DESIRED = 0.1; // amount beyond min distance
 
 struct BinExperienceData
 {

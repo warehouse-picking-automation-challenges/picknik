@@ -246,7 +246,7 @@ public:
    * \brief Create collision bodies of shelf
    * \param focus_bin_id - which bin to enable e.g. allow manipulation in
    */
-  bool createCollisionBodies(const std::string& focus_bin_name = "", bool just_frame = false) const;
+  bool createCollisionBodies(const std::string& focus_bin_name = "", bool just_frame = false, bool show_all_products = false) const;
 
   /**
    * \brief Represent shelf in MoveIt! planning scene
@@ -273,6 +273,15 @@ public:
    */
   bool deleteProduct(const std::string &bin_name, const std::string &product_name);
 
+  /**
+   * \brief Get shelf parts for prevent collision with products
+   * \return true on success
+   */
+  const std::vector<Rectangle>& getShelfParts()
+  {
+    return shelf_parts_;
+  }
+
 }; // class
 
 // -------------------------------------------------------------------------------------------------
@@ -281,6 +290,7 @@ public:
 class ProductObject : public Rectangle
 {
   std::string collision_object_name_;
+  std::string collision_mesh_path_;
   std::string mesh_path_;
 
 public:
