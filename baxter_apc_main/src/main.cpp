@@ -88,35 +88,36 @@ int main(int argc, char** argv)
   switch (mode)
   {
     case 1:
-      ROS_INFO_STREAM_NAMED("apc_manager","Run actual Amazon Picking Challenge mode");
+      ROS_INFO_STREAM_NAMED("main","Run actual Amazon Picking Challenge mode");
       manager.runOrder(use_experience, show_database);
       break;
     case 2:
-      ROS_INFO_STREAM_NAMED("apc_manager","Train experience database mode");
+      ROS_INFO_STREAM_NAMED("main","Train experience database mode");
       manager.trainExperienceDatabase();
       break;
     case 3:
-      ROS_INFO_STREAM_NAMED("apc_manager","Test end effectors mode");
+      ROS_INFO_STREAM_NAMED("main","Test end effectors mode");
       manager.testEndEffectors();
       break;
     case 4:
-      ROS_INFO_STREAM_NAMED("apc_manager","Just visualizing shelf");
+      ROS_INFO_STREAM_NAMED("main","Only visualizing shelf");
       break;
-    // case 4:
-    //   ROS_INFO_STREAM_NAMED("apc_manager"," mode");
+      //case 4:
+    //   ROS_INFO_STREAM_NAMED("main"," mode");
     //   break;
     // case 4:
-    //   ROS_INFO_STREAM_NAMED("apc_manager"," mode");
+    //   ROS_INFO_STREAM_NAMED("main"," mode");
     //   break;
     // case 4:
-    //   ROS_INFO_STREAM_NAMED("apc_manager"," mode");
+    //   ROS_INFO_STREAM_NAMED("main"," mode");
     //   break;
     default:
-      ROS_WARN_STREAM_NAMED("apc_manager","Unkown mode: " << mode);
+      ROS_WARN_STREAM_NAMED("main","Unkown mode: " << mode);
   }
 
   // Shutdown
   ROS_INFO_STREAM_NAMED("main", "Shutting down.");
+  ros::Duration(5.0).sleep();
   ros::shutdown();
 
   return 0;

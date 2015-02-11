@@ -29,15 +29,15 @@ MOVEIT_CLASS_FORWARD(ShelfObject);
 MOVEIT_CLASS_FORWARD(BinObject);
 MOVEIT_CLASS_FORWARD(ProductObject);
 
-const double SHELF_WIDTH = 0.874;
-const double SHELF_HEIGHT= 2.4;
+const double SHELF_WIDTH = 0.873;
+const double SHELF_HEIGHT= 2.37;
 const double SHELF_DEPTH = 0.875;
 const double SHELF_DISTANCE_FROM_BAXTER = 1.0; //0.8 // this is the main variable - how far from baxter's face forward is shelf?
 
 const double FIRST_BIN_FROM_BOTTOM = 0.81;
-const double FIRST_BIN_FROM_RIGHT = 0.02;
-const double BIN_WIDTH = SHELF_WIDTH / 3.0; //0.27;
-const double BIN_HEIGHT = 0.25; //0.24;
+const double FIRST_BIN_FROM_RIGHT = 0.036;
+const double BIN_WIDTH = SHELF_WIDTH / 3.2;
+const double BIN_HEIGHT = 0.26; //0.24;
 const double BIN_DEPTH = 0.42;
 const double BIN_TOP_MARGIN = 0.01;
 const double BIN_LEFT_MARGIN = 0.01;
@@ -99,7 +99,7 @@ public:
    * \brief Show coordinate system
    * \param trans - transform from parent container to current container
    */
-  bool visualizeAxis(const Eigen::Affine3d& trans) const;
+  bool visualizeAxis(const Eigen::Affine3d& trans, mvt::MoveItVisualToolsPtr visual_tools) const;
 
   /**
    * \brief Show bin in Rviz (not collision bodies)
@@ -234,7 +234,7 @@ public:
   /**
    * \brief Show coordinate system
    */
-  bool visualizeAxis() const;
+  bool visualizeAxis(mvt::MoveItVisualToolsPtr visual_tools) const;
 
   /**
    * \brief Show shelf in Rviz (not collision bodies)

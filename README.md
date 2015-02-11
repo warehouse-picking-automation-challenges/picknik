@@ -90,9 +90,9 @@ simulation, hardware, or both.
 
 ### Loading meshes
 
-Simply displays all meshes from our mesh library in Rviz. Be sure to set the right planning scene in Rviz by changing it to '/mesh_publisher/baxter_apc_planning_scene'
+Simply displays all meshes from our mesh library in Rviz.
 
- - Visualization: Working Jan 30
+ - Visualization: Working Feb 11
  - Hardware: N/A
 
 Start fake controllers
@@ -101,7 +101,7 @@ Start fake controllers
 
 Rviz Visualizer
 
-    roslaunch baxter_apc_main moveit_rviz.launch
+    roslaunch baxter_apc_main mesh_publisher_rviz.launch
 
 Load meshes
 

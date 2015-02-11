@@ -4,7 +4,6 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
         - /Grid1/Offset1
         - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
@@ -591,7 +590,8 @@ Visualization Manager:
       Marker Topic: /amazon_shelf_markers
       Name: Amazon Shelf Markers
       Namespaces:
-        {}
+        Cylinder: true
+        Text: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -1188,22 +1188,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 6.22983
+      Distance: 9.91908
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.28883
-        Y: -0.234263
-        Z: -1.19209e-06
+        X: 2.75812
+        Y: -0.861252
+        Z: -1.90735e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.230399
+      Pitch: 0.200399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.33856
+      Yaw: 2.78856
     Saved: ~
 Window Geometry:
   Displays:
@@ -1217,5 +1217,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 960
-  X: 1899
+  X: 1879
   Y: 14

@@ -51,8 +51,8 @@ APCManager::APCManager(bool verbose, std::string order_fp)
 
   // Load the COLLISION Robot Viz Tools for publishing to Rviz
   visual_tools_display_.reset(new mvt::MoveItVisualTools(robot_model_->getModelFrame(), "/amazon_shelf_markers_display", planning_scene_monitor_));
-  visual_tools_display_->loadRobotStatePub("/baxter_amazon_display");
-  visual_tools_display_->hideRobot(); // show that things have been reset
+  //visual_tools_display_->loadRobotStatePub("/baxter_amazon_display");
+  //visual_tools_display_->hideRobot(); // show that things have been reset
   visual_tools_display_->deleteAllMarkers(); // clear all old markers
 
   // Get package path
@@ -173,7 +173,6 @@ bool APCManager::loadShelfContents(std::string order_fp)
 {
   // Choose file
   AmazonJSONParser parser(verbose_, visual_tools_, visual_tools_display_);
-  //std::string file_path = package_path_ + "/" + order_fp;
 
   // Parse json
   return parser.parse(order_fp, package_path_, shelf_, orders_);
@@ -183,11 +182,12 @@ bool APCManager::visualizeShelf()
 {
   // Show the mesh visualization
   shelf_->visualize();
+  shelf_->visualizeAxis(visual_tools_display_);
 
   // Now show empty shelf to help in reversing robot arms to initial position
   visual_tools_->removeAllCollisionObjects();
   shelf_->createCollisionBodies("", true); // only show the frame
-  shelf_->visualizeAxis();
+  shelf_->visualizeAxis(visual_tools_);
   visual_tools_->triggerPlanningSceneUpdate();
 
   return true;

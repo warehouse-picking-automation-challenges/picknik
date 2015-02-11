@@ -43,17 +43,17 @@ Rectangle::Rectangle(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualTo
   }
 }
 
-bool Rectangle::visualizeAxis(const Eigen::Affine3d& trans) const
+bool Rectangle::visualizeAxis(const Eigen::Affine3d& trans, mvt::MoveItVisualToolsPtr visual_tools) const
 {
   // Show coordinate system
-  visual_tools_->publishAxis( transform(bottom_right_, trans) );
+  visual_tools->publishAxis( transform(bottom_right_, trans) );
 
   // Show label
   Eigen::Affine3d text_location = transform( bottom_right_, trans);
                                              
   text_location.translation() += Eigen::Vector3d(0,BIN_WIDTH/2.0, BIN_HEIGHT*0.9);
 
-  visual_tools_->publishText( text_location, name_, rvt::BLACK, rvt::REGULAR, false);
+  visual_tools->publishText( text_location, name_, rvt::BLACK, rvt::REGULAR, false);
   
 }
 
@@ -203,7 +203,7 @@ bool ShelfObject::initialize(const std::string &package_path)
 
   // Calculate first bin location
   Eigen::Affine3d bin1_bottom_right = Eigen::Affine3d::Identity();
-  bin1_bottom_right.translation().y() = 0; //FIRST_BIN_FROM_RIGHT;
+  bin1_bottom_right.translation().y() = FIRST_BIN_FROM_RIGHT;
   bin1_bottom_right.translation().z() = FIRST_BIN_FROM_BOTTOM;
 
   // Create each bin
@@ -212,7 +212,7 @@ bool ShelfObject::initialize(const std::string &package_path)
        z < SHELF_HEIGHT; z = z + BIN_HEIGHT) // + BIN_TOP_MARGIN)
   {
     for (double y = bin1_bottom_right.translation().y();
-         y < SHELF_WIDTH; y = y + BIN_WIDTH) // + BIN_LEFT_MARGIN)
+         y < SHELF_WIDTH - BIN_WIDTH * 0.9; y = y + BIN_WIDTH) // + BIN_LEFT_MARGIN)
     {
       // Create new bin
       std::string bin_name = "bin_" + boost::lexical_cast<std::string>((char)(65 + NUM_BINS - bin_id - 1)); // reverse the lettering
@@ -293,15 +293,15 @@ bool ShelfObject::insertBinHelper(rvt::colors color, const std::string& name)
   return true;
 }
 
-bool ShelfObject::visualizeAxis() const
+bool ShelfObject::visualizeAxis(mvt::MoveItVisualToolsPtr visual_tools) const
 {
   // Show coordinate system
-  visual_tools_->publishAxis( bottom_right_ );
+  visual_tools->publishAxis( bottom_right_ );
 
   // Show each bin
   for (BinObjectMap::const_iterator bin_it = bins_.begin(); bin_it != bins_.end(); bin_it++)
   {
-    bin_it->second->visualizeAxis(bottom_right_);    
+    bin_it->second->visualizeAxis(bottom_right_, visual_tools);
   }
 }
 
@@ -316,7 +316,7 @@ bool ShelfObject::visualize() const
   offset.translation().y() = 0;
 
   // Publish mesh
-  if (!visual_tools_display_->publishMesh(offset, mesh_path_))
+  if (!visual_tools_display_->publishMesh(offset, mesh_path_, rvt::BROWN, 1, "Shelf"))
     return false;
 
   // Visualize shelf location as rectangle
@@ -484,7 +484,7 @@ void ProductObject::setCollisionName(std::string name)
 
 bool ProductObject::visualize(const Eigen::Affine3d &trans) const
 {
-  visual_tools_display_->publishAxis(transform(bottom_right_, trans));
+  visual_tools_display_->publishAxis(transform(bottom_right_, trans), 0.1/2, 0.01/2);
 
   // Show product mesh
   return visual_tools_display_->publishMesh(transform(bottom_right_, trans), mesh_path_);
@@ -493,7 +493,7 @@ bool ProductObject::visualize(const Eigen::Affine3d &trans) const
 bool ProductObject::createCollisionBodies(const Eigen::Affine3d &trans) const
 { 
   // Show product mesh
-  if (!visual_tools_->publishMesh(transform(bottom_right_, trans), mesh_path_))
+  if (!visual_tools_->publishCollisionMesh(transform(bottom_right_, trans), collision_object_name_, mesh_path_, rvt::CLEAR))
   {
     // Fall back to publishing rectangles
     visual_tools_->publishCollisionRectangle( transform(bottom_right_, trans).translation(),

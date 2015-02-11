@@ -194,7 +194,7 @@ bool ManipulationPipeline::setupPlanningScene( const std::string& bin_name )
   ros::Duration(1.0).sleep(); // TODO combine these two parts into one
 
   // Visualize
-  shelf_->visualizeAxis();
+  shelf_->visualizeAxis(visual_tools_);
   shelf_->createCollisionBodies(bin_name, false);
   visual_tools_->triggerPlanningSceneUpdate();
   ros::Duration(1.0).sleep();
