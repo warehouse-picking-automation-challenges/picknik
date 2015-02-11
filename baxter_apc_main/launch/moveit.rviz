@@ -318,7 +318,7 @@ Visualization Manager:
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -583,7 +583,7 @@ Visualization Manager:
       Robot State Topic: /moveit_ompl/display_robot_state
       Show All Links: true
       Show Highlights: true
-      Value: true
+      Value: false
       Visual Enabled: true
     - Class: rviz/MarkerArray
       Enabled: true
@@ -1188,22 +1188,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 9.91908
+      Distance: 3.87057
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.75812
-        Y: -0.861252
-        Z: -1.90735e-06
+        X: 2.17766
+        Y: -0.351711
+        Z: -2.41399e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.200399
+      Pitch: 0.155399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 2.78856
+      Yaw: 2.58856
     Saved: ~
 Window Geometry:
   Displays:
@@ -1217,5 +1217,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 960
-  X: 1879
+  X: 1849
   Y: 14

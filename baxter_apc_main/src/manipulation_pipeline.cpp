@@ -13,10 +13,14 @@
 */
 
 #include <baxter_apc_main/manipulation_pipeline.h>
+
+// MoveIt
 #include <moveit/trajectory_processing/iterative_time_parameterization.h>
-#include <algorithm>
 #include <moveit/ompl/model_based_planning_context.h>
+
 #include <ompl/tools/lightning/Lightning.h>
+
+#include <algorithm>
 
 namespace baxter_apc_main
 {
@@ -86,12 +90,11 @@ ManipulationPipeline::ManipulationPipeline(bool verbose,
 
   // Load grasp generator
   grasps_.reset( new moveit_grasps::Grasps(visual_tools_) );
-  openEndEffector(true, robot_state_); // so that grasp filter is started up with EE open
+  setEndEffectorOpen(true, robot_state_); // so that grasp filter is started up with EE open
   grasp_filter_.reset(new moveit_grasps::GraspFilter(robot_state_, visual_tools_) );
 
-  // Load trajectory execution
+  // Load trajectory execution. Or, it will do it automatically later
   //loadPlanExecution();
-  ROS_WARN_STREAM_NAMED("temp","DISABLED LOAD PLAN EXECUTION");
 
   // Load logging capability
   if (use_logging_ && use_experience)
@@ -157,7 +160,7 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
     (*robot_state_) = scene->getCurrentState();
   }
-  openEndEffector(true, robot_state_); // to be passed to the grasp filter
+  setEndEffectorOpen(true, robot_state_); // to be passed to the grasp filter
 
   grasp_filter_->filterGraspsInCollision(filtered_grasps, planning_scene_monitor_, jmg, robot_state_, verbose);
 
@@ -276,11 +279,11 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
     (*start_state_) = scene->getCurrentState();
   }
-  openEndEffector(true, start_state_);
+  setEndEffectorOpen(true, start_state_);
 
   // Get the-grasp
   the_grasp->setJointGroupPositions(jmg, chosen.grasp_ik_solution_);
-  openEndEffector(true, the_grasp);
+  setEndEffectorOpen(true, the_grasp);
 
   if (verbose && true)
   {
@@ -606,6 +609,42 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
   return true;
 }
 
+bool ManipulationPipeline::testEndEffectors(bool open)
+{
+  if (open)
+  {
+    setEndEffectorOpen(true, robot_state_); // to be passed to the grasp filter
+    visual_tools_->publishRobotState(robot_state_);
+    //openEndEffector(true, left_arm_);
+    openEndEffector(true, right_arm_);
+  }
+  else
+  {
+    setEndEffectorOpen(false, robot_state_); // to be passed to the grasp filter
+    visual_tools_->publishRobotState(robot_state_);
+    //openEndEffector(false, left_arm_);
+    openEndEffector(false, right_arm_);
+  }
+}
+
+bool ManipulationPipeline::executeState(const moveit::core::RobotStatePtr robot_state, const moveit::core::JointModelGroup *jmg)
+{
+  // Convert state to trajecotry
+  robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, jmg));
+  double duration_from_previous = 1;
+  robot_trajectory->addSuffixWayPoint(robot_state, duration_from_previous);
+
+  // Convert trajectory to a message
+  moveit_msgs::RobotTrajectory trajectory_msg;
+  robot_trajectory->getRobotTrajectoryMsg(trajectory_msg);
+
+  // Execute
+  if( !executeTrajectoryMsg(trajectory_msg) )
+  {
+    ROS_ERROR_STREAM_NAMED("pipeline","Failed to execute trajectory");
+  }
+}
+
 bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *jmg)
 {
   // Get current state after grasping
@@ -797,9 +836,8 @@ bool ManipulationPipeline::convertRobotStatesToTrajectory(const std::vector<robo
                                                           const robot_model::JointModelGroup* jmg)
 {
   // Copy the vector of RobotStates to a RobotTrajectory
-  robot_trajectory::RobotTrajectoryPtr
-    robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, jmg->getName()));;
-
+  robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, jmg));
+    
   // -----------------------------------------------------------------------------------------------
   // Smooth the path and add velocities/accelerations
   //const std::vector<moveit_msgs::JointLimits> &joint_limits = jmg->getVariableLimits();
@@ -818,25 +856,6 @@ bool ManipulationPipeline::convertRobotStatesToTrajectory(const std::vector<robo
   // Convert trajectory to a message
   robot_trajectory->getRobotTrajectoryMsg(trajectory_msg);
 
-  return true;
-}
-
-bool ManipulationPipeline::testEndEffector()
-{
-  for (std::size_t i = 0; i < 5; ++i)
-  {
-    openEndEffector(true, left_arm_);
-    ros::Duration(2).sleep();
-
-    openEndEffector(false, left_arm_);
-    ros::Duration(2).sleep();
-
-    openEndEffector(true, right_arm_);
-    ros::Duration(2).sleep();
-
-    openEndEffector(false, right_arm_);
-    ros::Duration(2).sleep();
-  }
   return true;
 }
 
@@ -889,7 +908,7 @@ bool ManipulationPipeline::openEndEffector(bool open, const robot_model::JointMo
   return true;
 }
 
-bool ManipulationPipeline::openEndEffector(bool open, moveit::core::RobotStatePtr robot_state)
+bool ManipulationPipeline::setEndEffectorOpen(bool open, moveit::core::RobotStatePtr robot_state)
 {
   const double& left_open_position  = grasp_datas_[left_arm_].pre_grasp_posture_.points[0].positions[0];
   const double& right_open_position  = grasp_datas_[right_arm_].pre_grasp_posture_.points[0].positions[0];

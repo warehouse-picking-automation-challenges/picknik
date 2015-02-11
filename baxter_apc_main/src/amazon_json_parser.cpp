@@ -97,7 +97,7 @@ bool AmazonJSONParser::parseBins(const std::string& package_path, const Json::Va
 
     const Json::Value& bin = bin_contents[bin_name];
 
-    double bin_y_space = 0.07; // where to place objects
+    double bin_y_space = 0.08; // where to place objects
 
     // Get each product
     for ( int index = 0; index < bin.size(); ++index )
@@ -110,7 +110,7 @@ bool AmazonJSONParser::parseBins(const std::string& package_path, const Json::Va
       ProductObjectPtr product(new ProductObject(visual_tools_, visual_tools_display_, rvt::RAND, product_name, package_path));
 
       // Set location of product
-      product->bottom_right_.translation() = Eigen::Vector3d(0.01, //visual_tools_->dRand(0.0, 0.05),  // depth
+      product->bottom_right_.translation() = Eigen::Vector3d(0.05, //visual_tools_->dRand(0.0, 0.05),  // depth
                                                             bin_y_space,  // from right
                                                             0);
 

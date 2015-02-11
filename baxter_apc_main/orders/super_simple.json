@@ -7,10 +7,11 @@
     ],
     "bin_B":
     [
-      "cheezit_big_original"
+      "mark_twain_huckleberry_finn"
     ],
     "bin_C":
     [
+      "expo_dry_erase_board_eraser"
     ],
     "bin_D":
     [
@@ -40,7 +41,7 @@
     },
     {
       "bin": "bin_B",
-      "item": "cheezit_big_original"
+      "item": "mark_twain_huckleberry_finn"
     }
   ]
 }

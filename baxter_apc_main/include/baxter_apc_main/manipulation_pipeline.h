@@ -112,6 +112,18 @@ public:
             bool show_database = true);
 
   /**
+   * \brief Simple testing script to open close EEs
+   * \return true on success
+   */
+  bool testEndEffectors(bool open);
+
+  /**
+   * \brief Send a single state to the controllers for execution
+   * \return true on success
+   */
+  bool executeState(const moveit::core::RobotStatePtr robot_state, const moveit::core::JointModelGroup *jmg);
+
+  /**
    * \brief After grasping an object, lift object up slightly
    * \return true on success
    */
@@ -148,12 +160,6 @@ public:
                                       const robot_model::JointModelGroup* jmg);
 
   /**
-   * \brief Test it
-   * \return true on success
-   */
-  bool testEndEffector();
-
-  /**
    * \brief Open both end effectors in hardware
    * \return true on success
    */
@@ -170,7 +176,7 @@ public:
    * \brief Set a robot state to have an open or closed EE. Does not actually affect hardware
    * \return true on success
    */
-  bool openEndEffector(bool open, moveit::core::RobotStatePtr robot_state);
+  bool setEndEffectorOpen(bool open, moveit::core::RobotStatePtr robot_state);
 
   /**
    * \brief Send trajectories to Baxter

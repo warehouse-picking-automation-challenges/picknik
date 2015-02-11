@@ -63,6 +63,8 @@ APCManager::APCManager(bool verbose, std::string order_fp)
   // Load shelf
   shelf_.reset(new ShelfObject(visual_tools_, visual_tools_display_, rvt::BROWN, "shelf_0", package_path_));
   loadShelfContents(order_fp);
+
+  // Visualize
   visualizeShelf();
 
   ROS_INFO_STREAM_NAMED("apc_manager","APC Manager Ready.");
@@ -139,28 +141,25 @@ bool APCManager::testEndEffectors()
   pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, visual_tools_display_,
                                            planning_scene_monitor_, shelf_, use_experience, show_database));
 
-  // Test visualization 10 times
-  pipeline_->statusPublisher("Testing open close visualization of EE, 10 times");
-  for (std::size_t i = 0; i < 10; ++i)
+  // Test visualization
+  pipeline_->statusPublisher("Testing open close visualization of EE");
+  std::size_t i = 0;
+  while (ros::ok())
   {
-    if (!ros::ok())
-      return false;
-
-    std::cout << std::endl << std::endl << std::endl;
+    std::cout << std::endl << std::endl;
     if (i % 2 == 0)
     {
       std::cout << "Showing closed EE of state " << std::endl;
-      pipeline_->openEndEffector(false, pipeline_->getRobotState()); // to be passed to the grasp filter
-      visual_tools_->publishRobotState(pipeline_->getRobotState());
-      ros::Duration(5.0).sleep();
+      pipeline_->testEndEffectors(false);
+      ros::Duration(4.0).sleep();
     }
     else
     {
       std::cout << "Showing open EE of state " << std::endl;
-      pipeline_->openEndEffector(true, pipeline_->getRobotState()); // to be passed to the grasp filter
-      visual_tools_->publishRobotState(pipeline_->getRobotState());
-      ros::Duration(5.0).sleep();
+      pipeline_->testEndEffectors(true);
+      ros::Duration(4.0).sleep();
     }
+    ++i;
   }
 
   // EE min approach distance

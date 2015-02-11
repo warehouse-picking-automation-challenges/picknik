@@ -269,7 +269,7 @@ bool LearningPipeline::analyzeGrasps(const moveit::core::JointModelGroup* arm_jm
     (*robot_state_) = scene->getCurrentState();
   }
 
-  openEndEffector(true, robot_state_); // to be passed to the grasp filter
+  setEndEffectorOpen(true, robot_state_); // to be passed to the grasp filter
 
   // Filter by collision
   ROS_INFO_STREAM_NAMED("learning","Filtering grasps by collision checking");
