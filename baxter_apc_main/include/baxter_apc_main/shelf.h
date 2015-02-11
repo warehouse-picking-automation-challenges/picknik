@@ -19,6 +19,7 @@
 #include <ros/ros.h>
 
 // MoveIt
+#include <baxter_apc_main/namespaces.h>
 #include <moveit_visual_tools/moveit_visual_tools.h>
 
 namespace baxter_apc_main
@@ -33,7 +34,7 @@ const double SHELF_HEIGHT= 2.4;
 const double SHELF_DEPTH = 0.875;
 const double SHELF_DISTANCE_FROM_BAXTER = 1.0; //0.8 // this is the main variable - how far from baxter's face forward is shelf?
 
-const double FIRST_BIN_FROM_BOTTOM = 0.82;
+const double FIRST_BIN_FROM_BOTTOM = 0.81;
 const double FIRST_BIN_FROM_RIGHT = 0.02;
 const double BIN_WIDTH = SHELF_WIDTH / 3.0; //0.27;
 const double BIN_HEIGHT = 0.25; //0.24;
@@ -75,7 +76,8 @@ protected:
   std::string name_;
 
   // Pointer to a pre-loaded visual_tools_ object
-  moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
+  mvt::MoveItVisualToolsPtr visual_tools_;
+  mvt::MoveItVisualToolsPtr visual_tools_display_;
 
 public:
 
@@ -84,14 +86,14 @@ public:
   Eigen::Affine3d top_left_;
 
   // Color of object
-  rviz_visual_tools::colors color_;
+  rvt::colors color_;
 
   /**
    * \brief Constructor
    * \return
    */
-  Rectangle(moveit_visual_tools::MoveItVisualToolsPtr visual_tools, 
-            const rviz_visual_tools::colors &color = rviz_visual_tools::RAND, const std::string &name = "");
+  Rectangle(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
+            const rvt::colors &color = rvt::RAND, const std::string &name = "");
   
   /**
    * \brief Show coordinate system
@@ -156,8 +158,8 @@ public:
   /**
    * \brief Constructor
    */
-  BinObject(moveit_visual_tools::MoveItVisualToolsPtr visual_tools, 
-            const rviz_visual_tools::colors &color,
+  BinObject(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
+            const rvt::colors &color,
             const std::string &name);
 
   /**
@@ -214,8 +216,8 @@ public:
    * \brief Constructor
    * \param shelf_id
    */
-  ShelfObject(moveit_visual_tools::MoveItVisualToolsPtr visual_tools, 
-              const rviz_visual_tools::colors &color,
+  ShelfObject(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
+              const rvt::colors &color,
               const std::string &name,
               const std::string &package_path);
 
@@ -227,7 +229,7 @@ public:
   /**
    * \brief Helper for creating a bin
    */
-  bool insertBinHelper(rviz_visual_tools::colors color, const std::string& name);
+  bool insertBinHelper(rvt::colors color, const std::string& name);
 
   /**
    * \brief Show coordinate system
@@ -237,6 +239,7 @@ public:
   /**
    * \brief Show shelf in Rviz (not collision bodies)
    */
+  //bool visualize() const;
   bool visualize() const;
 
   /**
@@ -284,8 +287,8 @@ public:
  /**
    * \brief Constructor
    */
-  ProductObject(moveit_visual_tools::MoveItVisualToolsPtr visual_tools, 
-                const rviz_visual_tools::colors &color,
+  ProductObject(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
+                const rvt::colors &color,
                 const std::string &name,
                 const std::string &package_path);
 
@@ -298,6 +301,12 @@ public:
    * \brief Setter for collision name - unique incase there are more than 1 product with the same name
    */
   void setCollisionName(std::string name);
+
+  /**
+   * \brief Show product in Rviz (not collision bodies)
+   * \param trans - transform from parent container to current container
+   */
+  bool visualize(const Eigen::Affine3d &trans) const;
 
   /**
    * \brief Create collision bodies of rectangle

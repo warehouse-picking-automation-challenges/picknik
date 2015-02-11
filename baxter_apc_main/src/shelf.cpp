@@ -21,9 +21,10 @@ namespace baxter_apc_main
 // Rectangle Object
 // -------------------------------------------------------------------------------------------------
 
-Rectangle::Rectangle(moveit_visual_tools::MoveItVisualToolsPtr visual_tools, const rviz_visual_tools::colors &color,
-                     const std::string &name)
+Rectangle::Rectangle(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
+                     const rvt::colors &color, const std::string &name)                     
   : visual_tools_(visual_tools)
+  , visual_tools_display_(visual_tools_display)
   , color_(color)
   , bottom_right_(Eigen::Affine3d::Identity())
   , top_left_(Eigen::Affine3d::Identity())    
@@ -52,14 +53,14 @@ bool Rectangle::visualizeAxis(const Eigen::Affine3d& trans) const
                                              
   text_location.translation() += Eigen::Vector3d(0,BIN_WIDTH/2.0, BIN_HEIGHT*0.9);
 
-  visual_tools_->publishText( text_location, name_, rviz_visual_tools::BLACK, rviz_visual_tools::REGULAR, false);
+  visual_tools_->publishText( text_location, name_, rvt::BLACK, rvt::REGULAR, false);
   
 }
 
 bool Rectangle::visualize(const Eigen::Affine3d& trans) const
 {
   // Show bin
-  visual_tools_->publishRectangle( transform(bottom_right_, trans).translation(),
+  visual_tools_display_->publishRectangle( transform(bottom_right_, trans).translation(),
                                    transform(top_left_, trans).translation(),
                                    color_);
   return true;
@@ -113,19 +114,19 @@ void Rectangle::setName(std::string name)
 // Bin Object
 // -------------------------------------------------------------------------------------------------
 
-BinObject::BinObject(moveit_visual_tools::MoveItVisualToolsPtr visual_tools,
-                     const rviz_visual_tools::colors &color,
+BinObject::BinObject(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
+                     const rvt::colors &color,
                      const std::string &name)
-  : Rectangle(visual_tools, color, name)
+  : Rectangle(visual_tools, visual_tools_display, color, name)
 {
 }
 
 bool BinObject::visualize(const Eigen::Affine3d& trans) const
 {
   // Show bin
-  visual_tools_->publishRectangle( transform(bottom_right_, trans).translation(),
-                                   transform(top_left_, trans).translation(),
-                                   color_);
+  //visual_tools_display_->publishRectangle( transform(bottom_right_, trans).translation(),
+  //                                 transform(top_left_, trans).translation(),
+  //                                 color_);
 
   // Show products
   for (std::size_t product_id = 0; product_id < products_.size(); ++product_id)
@@ -181,11 +182,11 @@ ProductObjectPtr BinObject::getProduct(const std::string& name)
 // Shelf Object
 // -------------------------------------------------------------------------------------------------
 
-ShelfObject::ShelfObject(moveit_visual_tools::MoveItVisualToolsPtr visual_tools,
-                         const rviz_visual_tools::colors &color,
+ShelfObject::ShelfObject(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
+                         const rvt::colors &color,
                          const std::string &name,
                          const std::string &package_path)
-  : Rectangle(visual_tools, color, name)
+  : Rectangle(visual_tools, visual_tools_display, color, name)
 {
   initialize(package_path);
 }
@@ -217,7 +218,7 @@ bool ShelfObject::initialize(const std::string &package_path)
       std::string bin_name = "bin_" + boost::lexical_cast<std::string>((char)(65 + NUM_BINS - bin_id - 1)); // reverse the lettering
       ROS_DEBUG_STREAM_NAMED("shelf","Creating bin '" << bin_name << "'");
 
-      insertBinHelper( rviz_visual_tools::YELLOW, bin_name );
+      insertBinHelper( rvt::YELLOW, bin_name );
 
       // Calculate new bin location
       bins_[bin_name]->bottom_right_.translation().x() = bin1_bottom_right.translation().x();
@@ -241,7 +242,7 @@ bool ShelfObject::initialize(const std::string &package_path)
 
   // Base
   // Note: bottom right is at 0,0,0
-  shelf_parts_.push_back(Rectangle(visual_tools_, color_, "base"));
+  shelf_parts_.push_back(Rectangle(visual_tools_, visual_tools_display_, color_, "base"));
   Rectangle &base = shelf_parts_[shelf_parts_.size()-1];
   base.top_left_.translation().x() += SHELF_DEPTH;
   base.top_left_.translation().y() += SHELF_WIDTH;
@@ -252,7 +253,7 @@ bool ShelfObject::initialize(const std::string &package_path)
   {
     // Note: bottom right is at 0,0,0
     const std::string wall_name = "wall_" + boost::lexical_cast<std::string>(i);
-    shelf_parts_.push_back(Rectangle(visual_tools_, color_, wall_name));
+    shelf_parts_.push_back(Rectangle(visual_tools_, visual_tools_display_, color_, wall_name));
     Rectangle &wall = shelf_parts_[shelf_parts_.size()-1];
     // Geometry
     wall.bottom_right_.translation().x() = 0;
@@ -267,7 +268,7 @@ bool ShelfObject::initialize(const std::string &package_path)
   for (std::size_t i = 0; i < 5; ++i)
   {
     const std::string shelf_name = "shelf_" + boost::lexical_cast<std::string>(i);
-    shelf_parts_.push_back(Rectangle(visual_tools_, color_, shelf_name));
+    shelf_parts_.push_back(Rectangle(visual_tools_, visual_tools_display_, color_, shelf_name));
     Rectangle &shelf = shelf_parts_[shelf_parts_.size()-1];
     // Geometry
     shelf.top_left_.translation().x() = SHELF_WIDTH;
@@ -283,9 +284,9 @@ bool ShelfObject::initialize(const std::string &package_path)
   return true;
 }
 
-bool ShelfObject::insertBinHelper(rviz_visual_tools::colors color, const std::string& name)
+bool ShelfObject::insertBinHelper(rvt::colors color, const std::string& name)
 {
-  BinObjectPtr new_bin(new BinObject(visual_tools_, color, name));
+  BinObjectPtr new_bin(new BinObject(visual_tools_, visual_tools_display_, color, name));
 
   bins_.insert( std::pair<std::string, BinObjectPtr>(name, new_bin));
                                                   
@@ -306,10 +307,22 @@ bool ShelfObject::visualizeAxis() const
 
 bool ShelfObject::visualize() const
 {
+  // Calculate offset
+  Eigen::Affine3d offset;
+  offset = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitX())
+    * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
+    * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ());
+  offset.translation().x() = bottom_right_.translation().x() + SHELF_DEPTH / 2.0;
+  offset.translation().y() = 0;
+
+  // Publish mesh
+  if (!visual_tools_display_->publishMesh(offset, mesh_path_))
+    return false;
+
   // Visualize shelf location as rectangle
-  visual_tools_->publishRectangle(bottom_right_.translation(),
-                                  top_left_.translation(),
-                                  color_);
+  //visual_tools_->publishRectangle(bottom_right_.translation(),
+  //                                top_left_.translation(),
+  //                                color_);
 
   // Show each bin
   for (BinObjectMap::const_iterator bin_it = bins_.begin(); bin_it != bins_.end(); bin_it++)
@@ -318,10 +331,12 @@ bool ShelfObject::visualize() const
   }
 
   // Create side walls of shelf
+  /*
   for (std::size_t i = 0; i < shelf_parts_.size(); ++i)
   {
     shelf_parts_[i].visualize(bottom_right_);
   }
+  */
 }
 
 bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool just_frame) const
@@ -439,11 +454,11 @@ bool ShelfObject::deleteProduct(const std::string &bin_name, const std::string &
 // -------------------------------------------------------------------------------------------------
 // Product Object
 // -------------------------------------------------------------------------------------------------
-ProductObject::ProductObject(moveit_visual_tools::MoveItVisualToolsPtr visual_tools, 
-                             const rviz_visual_tools::colors &color,
+ProductObject::ProductObject(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
+                             const rvt::colors &color,
                              const std::string &name,
                              const std::string &package_path)
-  : Rectangle( visual_tools, color, name )
+  : Rectangle( visual_tools, visual_tools_display, color, name )
 {
   // Ensure the name is unique
   static std::size_t product_id = 0;
@@ -451,7 +466,7 @@ ProductObject::ProductObject(moveit_visual_tools::MoveItVisualToolsPtr visual_to
   collision_object_name_ = name + "_" + boost::lexical_cast<std::string>(product_id);
 
   // Cache the object's mesh
-  mesh_path_ = "file://" + package_path + "/meshes/" + name_ + "/recommended.stl";
+  mesh_path_ = "file://" + package_path + "/meshes/" + name_ + "/recommended.dae";
 
   ROS_DEBUG_STREAM_NAMED("shelf","Creating collision product with name " << collision_object_name_ << " from mesh " << mesh_path_);
   
@@ -467,12 +482,18 @@ void ProductObject::setCollisionName(std::string name)
   collision_object_name_ = name;
 }
 
+bool ProductObject::visualize(const Eigen::Affine3d &trans) const
+{
+  visual_tools_display_->publishAxis(transform(bottom_right_, trans));
+
+  // Show product mesh
+  return visual_tools_display_->publishMesh(transform(bottom_right_, trans), mesh_path_);
+}
+
 bool ProductObject::createCollisionBodies(const Eigen::Affine3d &trans) const
 { 
   // Show product mesh
-  if (!visual_tools_->publishCollisionMesh(transform(bottom_right_, trans),
-                                           collision_object_name_, 
-                                           mesh_path_, color_ ))
+  if (!visual_tools_->publishMesh(transform(bottom_right_, trans), mesh_path_))
   {
     // Fall back to publishing rectangles
     visual_tools_->publishCollisionRectangle( transform(bottom_right_, trans).translation(),

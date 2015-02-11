@@ -48,10 +48,11 @@
 namespace baxter_apc_main
 {
 
-const double POSE_DISCRETIZATION = 0.02; // how spread apart to create training poses
+const double POSE_DISCRETIZATION = 0.05; //0.02; // how spread apart to create training poses
 const double POSE_HORIZONTAL_MARGIN = 0.08;
 const double POSE_TOP_MARGIN = BIN_HEIGHT - 0.05;
 const double POSE_BOTTOM_MARGIN = 0.05;
+const double APPROACH_DISTANCE_DESIRED = 0.1; // amount beyond min distance
 
 struct BinExperienceData
 {
@@ -69,7 +70,9 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  LearningPipeline(bool verbose, moveit_visual_tools::MoveItVisualToolsPtr visual_tools,
+  LearningPipeline(bool verbose, 
+                   mvt::MoveItVisualToolsPtr visual_tools,
+                   mvt::MoveItVisualToolsPtr visual_tools_display,
                    planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                    ShelfObjectPtr shelf, bool use_experience, bool show_database);
 
@@ -95,7 +98,13 @@ public:
    * \brief Determine which grasps have IK solutions
    * \return true on success
    */
-  bool testGrasps();
+  bool analyzeGrasps(const moveit::core::JointModelGroup* arm_jmg);
+
+  /**
+   * \brief Plan to grasps
+   * \return true on success
+   */
+  bool planToGrasps(const moveit::core::JointModelGroup *arm_jmg);
 
   /**
    * \brief Show all grasps in Rviz
@@ -109,9 +118,28 @@ public:
    */
   bool testSingleGraspIK();
 
+  /**
+   * \brief Visulization function
+   * \param input - description
+   * \return true on success
+   */
+  bool visualizeGrasps(std::vector<moveit_grasps::GraspSolution> filtered_grasps, 
+                       const moveit::core::JointModelGroup *arm_jmg,
+                       bool show_cartesian_path = true);
+
+  /**
+   * \brief Visalize ik solutions
+   * \param input - description
+   * \return true on success
+   */
+  bool visualizeIKSolutions(std::vector<moveit_grasps::GraspSolution> filtered_grasps, const moveit::core::JointModelGroup* arm_jmg);
+
 private:
 
   BinExperienceDataMap bin_experience_data_;
+
+  // Save all IK and collision-valid grasps
+  std::vector<moveit_grasps::GraspSolution> filtered_grasps_;
 
 }; // end class
 

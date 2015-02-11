@@ -39,7 +39,8 @@ private:
   bool verbose_;
 
   // For visualizing things in rviz
-  moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
+  mvt::MoveItVisualToolsPtr visual_tools_;
+  mvt::MoveItVisualToolsPtr visual_tools_display_;
 
 public:
 
@@ -47,7 +48,7 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  AmazonJSONParser(bool verbose, moveit_visual_tools::MoveItVisualToolsPtr visual_tools);
+  AmazonJSONParser(bool verbose, mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display);
 
   /**
    * \brief Destructor

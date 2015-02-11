@@ -76,6 +76,7 @@ Optional Arguments:
 	    1. Actual APC contest mode
 		2. Train experience database mode / workspace analysis
 		3. Test end effectors mode
+		4. Only load JSON and visualize shelf
     order - which json file to use, defaults to orders/simple.json
 	use_experience - whether to use cached planned (Lightning Database) or not
 	saving_enabled - allow new plans to be saved to experience database

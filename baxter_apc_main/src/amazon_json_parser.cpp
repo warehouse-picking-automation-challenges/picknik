@@ -20,9 +20,10 @@
 namespace baxter_apc_main
 {
 
-AmazonJSONParser::AmazonJSONParser(bool verbose, moveit_visual_tools::MoveItVisualToolsPtr visual_tools)
+AmazonJSONParser::AmazonJSONParser(bool verbose, mvt::MoveItVisualToolsPtr visual_tools,mvt::MoveItVisualToolsPtr visual_tools_display)
   : verbose_(verbose)
   , visual_tools_(visual_tools)
+  , visual_tools_display_(visual_tools_display)
 {
   ROS_INFO_STREAM_NAMED("parser","AmazonJSONParser Ready.");
 }
@@ -106,7 +107,7 @@ bool AmazonJSONParser::parseBins(const std::string& package_path, const Json::Va
         ROS_DEBUG_STREAM_NAMED("parser","   product: " << product_name);
 
       // Add object to a bin
-      ProductObjectPtr product(new ProductObject(visual_tools_, rviz_visual_tools::RAND, product_name, package_path));
+      ProductObjectPtr product(new ProductObject(visual_tools_, visual_tools_display_, rvt::RAND, product_name, package_path));
 
       // Set location of product
       product->bottom_right_.translation() = Eigen::Vector3d(0.01, //visual_tools_->dRand(0.0, 0.05),  // depth

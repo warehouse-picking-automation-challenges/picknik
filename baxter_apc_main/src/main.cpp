@@ -99,6 +99,15 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("apc_manager","Test end effectors mode");
       manager.testEndEffectors();
       break;
+    case 4:
+      ROS_INFO_STREAM_NAMED("apc_manager","Just visualizing shelf");
+      break;
+    // case 4:
+    //   ROS_INFO_STREAM_NAMED("apc_manager"," mode");
+    //   break;
+    // case 4:
+    //   ROS_INFO_STREAM_NAMED("apc_manager"," mode");
+    //   break;
     // case 4:
     //   ROS_INFO_STREAM_NAMED("apc_manager"," mode");
     //   break;

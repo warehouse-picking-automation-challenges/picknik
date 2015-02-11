@@ -16,6 +16,7 @@
 #define BAXTER_APC_MAIN__SHELF_MANAGER
 
 // Amazon Pick Place Challenge
+#include <baxter_apc_main/namespaces.h>
 #include <baxter_apc_main/amazon_json_parser.h>
 #include <baxter_apc_main/shelf.h>
 #include <baxter_apc_main/manipulation_pipeline.h>
@@ -26,17 +27,7 @@
 #include <tf/transform_listener.h>
 
 // MoveIt
-//#include <moveit/collision_detection/world.h>
 #include <moveit_visual_tools/moveit_visual_tools.h>
-//#include <moveit/planning_pipeline/planning_pipeline.h>
-//#include <moveit/kinematic_constraints/utils.h>
-//#include <moveit/robot_state/conversions.h>
-//#include <moveit/plan_execution/plan_execution.h>
-
-// Grasp generation
-//#include <moveit_grasps/grasps.h>
-//#include <moveit_grasps/grasp_data.h>
-//#include <moveit_grasps/grasp_filter.h>
 
 namespace baxter_apc_main
 {
@@ -106,7 +97,8 @@ private:
   bool verbose_;
 
   // For visualizing things in rviz
-  moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
+  mvt::MoveItVisualToolsPtr visual_tools_;
+  mvt::MoveItVisualToolsPtr visual_tools_display_;
 
   // Core MoveIt components
   robot_model_loader::RobotModelLoaderPtr robot_model_loader_;

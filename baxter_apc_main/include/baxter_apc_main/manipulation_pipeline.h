@@ -16,6 +16,7 @@
 #define BAXTER_APC_MAIN__MANIPULATION_PIPELINE
 
 #include <baxter_apc_main/shelf.h>
+#include <baxter_apc_main/namespaces.h>
 
 // ROS
 #include <ros/ros.h>
@@ -53,7 +54,9 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  ManipulationPipeline(bool verbose, moveit_visual_tools::MoveItVisualToolsPtr visual_tools,
+  ManipulationPipeline(bool verbose, 
+                       mvt::MoveItVisualToolsPtr visual_tools,
+                       mvt::MoveItVisualToolsPtr visual_tools_display,
                        planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                        ShelfObjectPtr shelf, bool use_experience, bool show_database);
 
@@ -105,7 +108,8 @@ public:
    * \return true on success
    */
   bool move(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
-            const robot_model::JointModelGroup* jmg, bool verbose);
+            const robot_model::JointModelGroup* jmg, bool verbose, bool execute_trajectory = true,
+            bool show_database = true);
 
   /**
    * \brief After grasping an object, lift object up slightly
@@ -125,13 +129,15 @@ public:
    * \param desired_approach_distance - distance the origin of a robot link needs to travel
    * \param trajectory_msg - resulting path
    * \param robot_state - used as the base state of the robot when starting to move
+   * \param path_length - the length of the resulting cartesian path
    * \return true on success
    */
   bool computeStraightLinePath( Eigen::Vector3d approach_direction, 
                                 double desired_approach_distance,
                                 std::vector<robot_state::RobotStatePtr>& robot_state_trajectory,
                                 robot_state::RobotStatePtr robot_state,
-                                const moveit::core::JointModelGroup *jmg);
+                                const moveit::core::JointModelGroup *jmg,
+                                double& path_length);
 
   /**
    * \brief Convert and parameterize a trajectory with velocity information
@@ -218,6 +224,13 @@ public:
   void displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup, const robot_model::JointModelGroup* jmg);
 
   /**
+   * \brief Set both arms to home position
+   * \param input - description
+   * \return true on success
+   */
+  bool setToDefaultPosition(moveit::core::RobotStatePtr robot_state);
+
+  /**
    * \brief Getter for RobotState
    */ 
   moveit::core::RobotStatePtr getRobotState()
@@ -243,7 +256,8 @@ protected:
   bool verbose_;
 
   // For visualizing things in rviz
-  moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
+  mvt::MoveItVisualToolsPtr visual_tools_;
+  mvt::MoveItVisualToolsPtr visual_tools_display_;
   ompl_visual_tools::OmplVisualToolsPtr ompl_visual_tools_;
 
   // Core MoveIt components
@@ -285,5 +299,12 @@ protected:
 }; // end class
 
 } // end namespace
+
+namespace
+{
+bool isStateValid(const planning_scene::PlanningScene *planning_scene,
+                  robot_state::RobotState *state,
+                  const robot_state::JointModelGroup *group, const double *ik_solution);
+}
 
 #endif

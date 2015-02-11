@@ -43,6 +43,7 @@
 #include <ros/ros.h>
 
 // MoveIt
+#include <baxter_apc_main/namespaces.h>
 #include <moveit_visual_tools/moveit_visual_tools.h>
 
 // Boost
@@ -56,7 +57,7 @@ namespace baxter_apc_main
 class MeshPublisher
 {
   // For visualizing things in rviz
-  moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
+  mvt::MoveItVisualToolsPtr visual_tools_;
 
 public:
 
@@ -74,7 +75,7 @@ public:
     std::cout << std::endl;
 
     // Visualizer
-    visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("/world", "/amazon_shelf_markers"));
+    visual_tools_.reset(new mvt::MoveItVisualTools("/world", "/amazon_shelf_markers"));
     visual_tools_->setPlanningSceneTopic("baxter_apc_planning_scene");
     visual_tools_->loadPlanningSceneMonitor();
     ros::spinOnce();
@@ -121,9 +122,9 @@ public:
         pose.translation().x() += 0.2;
         //std::cout << "Pose: " << visual_tools_->convertPose(pose) << std::endl;
         if (visual_tools_->publishCollisionMesh(pose, "object"+boost::lexical_cast<std::string>(counter++), 
-                                                "file://" + p.string(), rviz_visual_tools::RAND))
+                                                "file://" + p.string(), rvt::RAND))
         {
-          visual_tools_->publishText(pose, p.filename().string(), rviz_visual_tools::WHITE, rviz_visual_tools::SMALL, false);
+          visual_tools_->publishText(pose, p.filename().string(), rvt::WHITE, rvt::SMALL, false);
           visual_tools_->publishAxis(pose);
 
           ROS_DEBUG_STREAM_NAMED("apc_manager","File: " << p.filename().string());

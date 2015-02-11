@@ -41,7 +41,7 @@ APCManager::APCManager(bool verbose, std::string order_fp)
   }
 
   // Load the Robot Viz Tools for publishing to Rviz
-  visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools(robot_model_->getModelFrame(), "/amazon_shelf_markers", planning_scene_monitor_));
+  visual_tools_.reset(new mvt::MoveItVisualTools(robot_model_->getModelFrame(), "/amazon_shelf_markers", planning_scene_monitor_));
   visual_tools_->loadRobotStatePub("/baxter_amazon");
   visual_tools_->loadMarkerPub();
   visual_tools_->setAlpha(0.8);
@@ -49,13 +49,19 @@ APCManager::APCManager(bool verbose, std::string order_fp)
   visual_tools_->deleteAllMarkers(); // clear all old markers
   visual_tools_->setManualSceneUpdating(true);
 
+  // Load the COLLISION Robot Viz Tools for publishing to Rviz
+  visual_tools_display_.reset(new mvt::MoveItVisualTools(robot_model_->getModelFrame(), "/amazon_shelf_markers_display", planning_scene_monitor_));
+  visual_tools_display_->loadRobotStatePub("/baxter_amazon_display");
+  visual_tools_display_->hideRobot(); // show that things have been reset
+  visual_tools_display_->deleteAllMarkers(); // clear all old markers
+
   // Get package path
   package_path_ = ros::package::getPath(PACKAGE_NAME);
   if( package_path_.empty() )
     ROS_FATAL_STREAM_NAMED("product", "Unable to get " << PACKAGE_NAME << " package path" );
 
   // Load shelf
-  shelf_.reset(new ShelfObject(visual_tools_, rviz_visual_tools::BROWN, "shelf_0", package_path_));
+  shelf_.reset(new ShelfObject(visual_tools_, visual_tools_display_, rvt::BROWN, "shelf_0", package_path_));
   loadShelfContents(order_fp);
   visualizeShelf();
 
@@ -65,7 +71,8 @@ APCManager::APCManager(bool verbose, std::string order_fp)
 bool APCManager::runOrder(bool use_experience, bool show_database)
 {
   // Create the pick place pipeline
-  pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, planning_scene_monitor_, shelf_, use_experience, show_database));
+  pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, visual_tools_display_,
+                                           planning_scene_monitor_, shelf_, use_experience, show_database));
 
   // Move robot to start location
   pipeline_->statusPublisher("Moving to initial position");
@@ -115,7 +122,8 @@ bool APCManager::trainExperienceDatabase()
   // Create learning pipeline for training the experience database
   bool use_experience = false;
   bool show_database = false;
-  learning_.reset(new LearningPipeline(verbose_, visual_tools_, planning_scene_monitor_, shelf_, use_experience, show_database));
+  learning_.reset(new LearningPipeline(verbose_, visual_tools_, visual_tools_display_,
+                                       planning_scene_monitor_, shelf_, use_experience, show_database));
 
   ROS_INFO_STREAM_NAMED("apc_manager","Training experience database");
   learning_->generateTrainingGoals(shelf_);
@@ -128,7 +136,8 @@ bool APCManager::testEndEffectors()
   // Create the pick place pipeline
   bool use_experience = false;
   bool show_database = false;
-  pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, planning_scene_monitor_, shelf_, use_experience, show_database));
+  pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, visual_tools_display_,
+                                           planning_scene_monitor_, shelf_, use_experience, show_database));
 
   // Test visualization 10 times
   pipeline_->statusPublisher("Testing open close visualization of EE, 10 times");
@@ -163,7 +172,7 @@ bool APCManager::testEndEffectors()
 bool APCManager::loadShelfContents(std::string order_fp)
 {
   // Choose file
-  AmazonJSONParser parser(verbose_, visual_tools_);
+  AmazonJSONParser parser(verbose_, visual_tools_, visual_tools_display_);
   //std::string file_path = package_path_ + "/" + order_fp;
 
   // Parse json
@@ -172,28 +181,14 @@ bool APCManager::loadShelfContents(std::string order_fp)
 
 bool APCManager::visualizeShelf()
 {
-  shelf_->visualizeAxis();
-
-  // Show the STL files
-  if (false)
-  {
-    visual_tools_->removeAllCollisionObjects();
-    shelf_->createCollisionShelfDetailed();
-
-    std::cout << "triggering planning scene update " << std::endl;
-    visual_tools_->triggerPlanningSceneUpdate();
-
-    ROS_INFO_STREAM_NAMED("apc_manager","Sleeping while shelf is displayed");
-    ros::Duration(2).sleep();
-  }
+  // Show the mesh visualization
+  shelf_->visualize();
 
   // Now show empty shelf to help in reversing robot arms to initial position
   visual_tools_->removeAllCollisionObjects();
   shelf_->createCollisionBodies("", true); // only show the frame
+  shelf_->visualizeAxis();
   visual_tools_->triggerPlanningSceneUpdate();
-
-  // Show each shelf
-  //shelf_->visualize();
 
   return true;
 }
@@ -208,7 +203,7 @@ bool APCManager::loadPlanningSceneMonitor()
                                                                                  tf_,
                                                                                  PLANNING_SCENE_MONITOR_NAME));
   ros::spinOnce();
-  //ros::Duration(0.1).sleep();
+  ros::Duration(0.1).sleep();
 
   if (planning_scene_monitor_->getPlanningScene())
   {
