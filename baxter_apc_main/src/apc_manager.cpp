@@ -70,7 +70,7 @@ APCManager::APCManager(bool verbose, std::string order_fp)
   ROS_INFO_STREAM_NAMED("apc_manager","APC Manager Ready.");
 }
 
-bool APCManager::runOrder(bool use_experience, bool show_database)
+bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t order_start)
 {
   // Create the pick place pipeline
   pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, visual_tools_display_,
@@ -99,7 +99,7 @@ bool APCManager::runOrder(bool use_experience, bool show_database)
   // Grasps things
   if (true) // run normal
   {
-    for (std::size_t i = 0; i < orders_.size(); ++i)
+    for (std::size_t i = order_start; i < orders_.size(); ++i)
     {
       pipeline_->orderPublisher(orders_[i]); // feedback
 
@@ -113,7 +113,7 @@ bool APCManager::runOrder(bool use_experience, bool show_database)
   else // debug mode
   {
     ROS_INFO_STREAM_NAMED("apc_manager","Debug mode - grasping only 1 object");
-    pipeline_->graspObject(orders_[1], verbose_);
+    pipeline_->graspObject(orders_[order_start], verbose_);
   }
 
   pipeline_->statusPublisher("Finished");

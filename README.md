@@ -78,6 +78,7 @@ Optional Arguments:
 		3. Test end effectors mode
 		4. Only load JSON and visualize shelf
     order - which json file to use, defaults to orders/simple.json
+	order_start - specify the index of the product to skip to, based on the ordering in the json file
 	use_experience - whether to use cached planned (Lightning Database) or not
 	saving_enabled - allow new plans to be saved to experience database
 	show_database - whether to pause between motion plans and show all the saved paths (debug)

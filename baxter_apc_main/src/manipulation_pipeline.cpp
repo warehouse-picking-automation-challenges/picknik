@@ -337,7 +337,7 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
     ros::Duration(0.1).sleep();
   }
 
-  // Grasp --------------------------------------------------------------------------------------
+  // Open end effector --------------------------------------------------------------------------------------
   statusPublisher("Opening End Effector");
   if (!openEndEffector(true, arm_jmg))
   {
@@ -376,9 +376,10 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
   // Allow fingers to touch object
   allowFingerTouch(order.product_->getCollisionName(), arm_jmg);
 
-  ros::Duration(0.1).sleep();
+  //ros::Duration(0.1).sleep();
 
   // Cartesian lift object up ---------------------------------------------------------------
+  statusPublisher("Lifting product UP slightly");
   if (!executeLiftPath(arm_jmg))
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Unable to execute retrieval path after grasping");
@@ -386,6 +387,7 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
   }
 
   // Cartesian move back to pregrasp ------------------------------------------------------------------------------
+  statusPublisher("Moving BACK to pre-grasp position");
   if (!executeRetrievalPath(arm_jmg))
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Unable to execute retrieval path after grasping");
@@ -684,7 +686,6 @@ bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *
   }
 
   // Execute
-  statusPublisher("Lifting product UP slightly");
   if( !executeTrajectoryMsg(cartesian_trajectory_msg) )
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Failed to execute trajectory");
@@ -735,7 +736,6 @@ bool ManipulationPipeline::executeRetrievalPath(const moveit::core::JointModelGr
   }
 
   // Execute
-  statusPublisher("Moving BACK to pre-grasp position");
   if( !executeTrajectoryMsg(cartesian_trajectory_msg) )
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Failed to execute trajectory");
@@ -772,7 +772,14 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
   const moveit::core::LinkModel *ik_tip_link_model = grasp_datas_[arm_jmg].parent_link_;
 
   // Resolution of trajectory
-  double max_step = 0.05; // 0.01 // The maximum distance in Cartesian space between consecutive points on the resulting path
+  double max_step = 0.01; // 0.01 // The maximum distance in Cartesian space between consecutive points on the resulting path
+
+  // Error check
+  if (desired_approach_distance < max_step)
+  {
+    ROS_ERROR_STREAM_NAMED("temp","desired_approach_distance (" << desired_approach_distance << ")  < max_step (" << max_step << ")");
+    return false;
+  }
 
   // Jump threshold for preventing consequtive joint values from 'jumping' by a large amount in joint space
   double jump_threshold = 0.0; // disabled
@@ -978,20 +985,24 @@ bool ManipulationPipeline::executeTrajectoryMsg(moveit_msgs::RobotTrajectory tra
   {
     plan_execution_->getTrajectoryExecutionManager()->execute();
 
-    // wait for the trajectory to complete
-    moveit_controller_manager::ExecutionStatus es = plan_execution_->getTrajectoryExecutionManager()->waitForExecution();
-    if (es == moveit_controller_manager::ExecutionStatus::SUCCEEDED)
-      ROS_DEBUG_STREAM_NAMED("pipeline","Trajectory execution succeeded");
-    else
+    bool wait_exection = true;
+    if (wait_exection)
     {
-      if (es == moveit_controller_manager::ExecutionStatus::PREEMPTED)
-        ROS_INFO_STREAM_NAMED("pipeline","Trajectory execution preempted");
+      // wait for the trajectory to complete
+      moveit_controller_manager::ExecutionStatus es = plan_execution_->getTrajectoryExecutionManager()->waitForExecution();
+      if (es == moveit_controller_manager::ExecutionStatus::SUCCEEDED)
+        ROS_DEBUG_STREAM_NAMED("pipeline","Trajectory execution succeeded");
       else
-        if (es == moveit_controller_manager::ExecutionStatus::TIMED_OUT)
-          ROS_INFO_STREAM_NAMED("pipeline","Trajectory execution timed out");
+      {
+        if (es == moveit_controller_manager::ExecutionStatus::PREEMPTED)
+          ROS_INFO_STREAM_NAMED("pipeline","Trajectory execution preempted");
         else
-          ROS_INFO_STREAM_NAMED("pipeline","Trajectory execution control failed");
-      return false;
+          if (es == moveit_controller_manager::ExecutionStatus::TIMED_OUT)
+            ROS_INFO_STREAM_NAMED("pipeline","Trajectory execution timed out");
+          else
+            ROS_INFO_STREAM_NAMED("pipeline","Trajectory execution control failed");
+        return false;
+      }
     }
   }
   else
@@ -1179,8 +1190,6 @@ bool isStateValid(const planning_scene::PlanningScene *planning_scene, bool verb
   if (verbose)
   {
     visual_tools->publishRobotState(*robot_state, rvt::RED);
-    ros::Duration(5.0).sleep();
-
     planning_scene->isStateColliding(*robot_state, group->getName(), true);
     visual_tools->publishContactPoints(*robot_state, planning_scene);
   }

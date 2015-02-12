@@ -30,7 +30,8 @@ int main(int argc, char** argv)
   spinner.start();
 
   // Command line arguments
-  int mode = 1;
+  std::size_t mode = 1;
+  std::size_t order_start = 0;
   bool verbose = false;
   bool use_experience = true;
   bool show_database = false;
@@ -75,6 +76,12 @@ int main(int argc, char** argv)
       mode = atoi(argv[i]);
       //ROS_INFO_STREAM_NAMED("main","In mode " << mode);
     }
+    if( std::string(argv[i]).compare("--order_start") == 0 )
+    {
+      ++i;
+      order_start = atoi(argv[i]);
+      ROS_INFO_STREAM_NAMED("main","Starting on order item " << order_start);
+    }
   }
 
   if (order_fp.empty()) 
@@ -89,7 +96,7 @@ int main(int argc, char** argv)
   {
     case 1:
       ROS_INFO_STREAM_NAMED("main","Run actual Amazon Picking Challenge mode");
-      manager.runOrder(use_experience, show_database);
+      manager.runOrder(use_experience, show_database, order_start);
       break;
     case 2:
       ROS_INFO_STREAM_NAMED("main","Train experience database mode");

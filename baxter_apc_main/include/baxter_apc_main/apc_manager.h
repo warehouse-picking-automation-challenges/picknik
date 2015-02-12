@@ -54,9 +54,12 @@ public:
 
   /**
    * \brief Main program runner
+   * \brief Use an experience database in planning
+   * \brief Show the experience database after each plan
+   * \brief Which product in the order to skip ahead to
    * \return true on success
    */
-  bool runOrder(bool use_experience, bool show_database);
+  bool runOrder(bool use_experience, bool show_database, std::size_t order_start = 0);
 
   /**
    * \brief Generate a discretized array of possible pre-grasps and save into experience database
