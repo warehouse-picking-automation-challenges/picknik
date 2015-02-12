@@ -4,6 +4,7 @@
 
  - Website: [http://picknik.io](http://picknik.io)
  - [Team Members](https://bitbucket.org/cuamazonchallenge/profile/members)
+ - [Timeline](https://docs.google.com/spreadsheets/d/1GG_j6BVir-J8VGwbU8RWDHA8kD8ZSeXrtlLtW9N851o/edit?usp=sharing)
 
 ## Install
 
