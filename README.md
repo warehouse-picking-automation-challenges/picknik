@@ -45,10 +45,6 @@ Start fake controllers
 
     roslaunch baxter_control baxter_visualization.launch
 
-Rviz Visualizer
-
-    roslaunch baxter_apc_main moveit_rviz.launch
-
 Now skip to section **Run Main Routine**
 
 ### Setup Hardware
@@ -57,13 +53,17 @@ BETA - Start actual controllers
 
     roslaunch baxter_control baxter_hardware.launch
 
-Rviz Visualizer
-
-    roslaunch baxter_apc_main moveit_rviz.launch
-
 Now go to section **Run Main Routine**
 
 ### Run Main Routine
+
+Rviz Visualizer of robot state
+
+    roslaunch baxter_apc_main moveit_display_rviz.launch
+	
+Rviz Visualizer of planning scene and debug markers
+
+    roslaunch baxter_apc_main moveit_rviz.launch
 
 Run APC Manager (main program)
 
