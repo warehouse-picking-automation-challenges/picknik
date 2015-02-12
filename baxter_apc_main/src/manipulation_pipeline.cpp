@@ -507,6 +507,7 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
   req.allowed_planning_time = 30; // seconds
   req.use_experience = use_experience_;
   req.experience_method = "lightning";
+  req.max_velocity_scaling_factor = 0.05;
 
   // Parameters for the workspace that the planner should work inside relative to center of robot
   double workspace_size = 1;

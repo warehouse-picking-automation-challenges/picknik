@@ -50,11 +50,21 @@ Now skip to section **Run Main Routine**
 
 ### Setup Hardware
 
+#### Version 1
+
 BETA - Start actual controllers
 
     roslaunch baxter_control baxter_hardware.launch
 
 Now go to section **Run Main Routine**
+
+#### Version 2
+
+Use Rethink's controllers
+
+    roslaunch baxter_control baxter_hardware_rethink.launch
+
+Make sure correct controller name is chosen in baxter_controllers.yaml
 
 ### Run Main Routine
 
@@ -68,7 +78,7 @@ Rviz Visualizer of planning scene and debug markers
 
 Run APC Manager (main program)
 
-    roslaunch baxter_apc_main apc_manager.launch mode:=1 verbose:=1 use_experience:=1 saving_enabled:=1 debug:=0 show_database:=0 order:=order.json
+    roslaunch baxter_apc_main apc_manager.launch mode:=1 verbose:=1 use_experience:=1 saving_enabled:=1 debug:=0 show_database:=0
 
 Optional Arguments:
 
