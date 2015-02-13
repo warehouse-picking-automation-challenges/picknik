@@ -206,7 +206,7 @@ bool APCManager::loadPlanningSceneMonitor()
                                                                                  tf_,
                                                                                  PLANNING_SCENE_MONITOR_NAME));
   ros::spinOnce();
-  ros::Duration(0.1).sleep();
+  ros::Duration(0.5).sleep();
 
   if (planning_scene_monitor_->getPlanningScene())
   {
@@ -246,7 +246,7 @@ bool APCManager::loadPlanningSceneMonitor()
     }
     counter++;
   }
-
+  ros::spinOnce();
 
   return true;
 }

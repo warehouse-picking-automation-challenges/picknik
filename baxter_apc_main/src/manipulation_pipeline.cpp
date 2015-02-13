@@ -110,17 +110,18 @@ ManipulationPipeline::ManipulationPipeline(bool verbose,
   ROS_INFO_STREAM_NAMED("pipeline","Pipeline Ready.");
 }
 
-bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_model::JointModelGroup* jmg,
+bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_model::JointModelGroup* arm_jmg,
                                        moveit_grasps::GraspSolution& chosen, bool verbose)
 {
-  const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[jmg].ee_group_);
+  const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[arm_jmg].ee_group_);
 
   visual_tools_->publishAxis(object_pose);
 
+  // Generate all possible grasps
   std::vector<moveit_msgs::Grasp> possible_grasps;
   grasps_->setVerbose(true);
   grasps_->generateAxisGrasps( object_pose, moveit_grasps::Y_AXIS, moveit_grasps::DOWN, moveit_grasps::HALF, 0,
-                               grasp_datas_[jmg], possible_grasps);
+                               grasp_datas_[arm_jmg], possible_grasps);
 
   // Visualize
   if (verbose)
@@ -135,7 +136,7 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
   bool filter_pregrasps = true;
   std::vector<moveit_grasps::GraspSolution> filtered_grasps;
   grasp_filter_->filterGrasps(possible_grasps, filtered_grasps, filter_pregrasps,
-                              grasp_datas_[jmg].parent_link_name_, jmg);
+                              grasp_datas_[arm_jmg].parent_link_name_, arm_jmg);
 
   // Visualize them
   if (verbose)
@@ -150,7 +151,7 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
     {
       ik_solutions[i].positions = filtered_grasps[i].grasp_ik_solution_;
     }
-    visual_tools_->publishIKSolutions(ik_solutions, jmg->getName(), 0.5);
+    visual_tools_->publishIKSolutions(ik_solutions, arm_jmg->getName(), 0.5);
   }
 
   ROS_INFO_STREAM_NAMED("pipeline","Filtering grasps by collision");
@@ -162,7 +163,7 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
   }
   setEndEffectorOpen(true, robot_state_); // to be passed to the grasp filter
 
-  grasp_filter_->filterGraspsInCollision(filtered_grasps, planning_scene_monitor_, jmg, robot_state_, verbose);
+  grasp_filter_->filterGraspsInCollision(filtered_grasps, planning_scene_monitor_, arm_jmg, robot_state_, verbose);
 
   // Convert the filtered_grasps into a format moveit_visual_tools can use
   if (verbose)
@@ -173,7 +174,7 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
     {
       ik_solutions[i].positions = filtered_grasps[i].grasp_ik_solution_;
     }
-    visual_tools_->publishIKSolutions(ik_solutions, jmg->getName(), 1);
+    visual_tools_->publishIKSolutions(ik_solutions, arm_jmg->getName(), 1);
   }
 
   // Choose grasp

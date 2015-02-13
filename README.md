@@ -16,6 +16,8 @@ Dave occasionally releases a new zip file with a lot of custom ROS code, that ca
 
 Unzip the file and put into a catkin workspace. Build using catkin_tools.
 
+![Team PickNik]()
+
 ## Run
 
 ### Generate Mock Amazon order
