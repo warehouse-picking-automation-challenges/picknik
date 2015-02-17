@@ -32,7 +32,7 @@ APCManager::APCManager(bool verbose, std::string order_fp)
   planning_scene_.reset(new planning_scene::PlanningScene(robot_model_));
 
   // Create tf transformer
-  tf_.reset(new tf::TransformListener(ros::Duration(10.0)));
+  tf_.reset(new tf::TransformListener(nh_)); //ros::Duration(10.0)));
 
   // Load planning scene monitor
   if (!loadPlanningSceneMonitor())

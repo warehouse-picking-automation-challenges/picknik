@@ -107,7 +107,8 @@ int main(int argc, char** argv)
       manager.testEndEffectors();
       break;
     case 4:
-      ROS_INFO_STREAM_NAMED("main","Only visualizing shelf");
+      ROS_INFO_STREAM_NAMED("main","Only visualizing shelf... ready to shutdown.");
+      ros::spin();
       break;
       //case 4:
     //   ROS_INFO_STREAM_NAMED("main"," mode");

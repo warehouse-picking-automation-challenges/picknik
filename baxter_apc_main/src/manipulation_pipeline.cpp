@@ -613,20 +613,10 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
 
 bool ManipulationPipeline::testEndEffectors(bool open)
 {
-  if (open)
-  {
-    setEndEffectorOpen(true, robot_state_); // to be passed to the grasp filter
-    visual_tools_->publishRobotState(robot_state_);
-    //openEndEffector(true, left_arm_);
-    openEndEffector(true, right_arm_);
-  }
-  else
-  {
-    setEndEffectorOpen(false, robot_state_); // to be passed to the grasp filter
-    visual_tools_->publishRobotState(robot_state_);
-    //openEndEffector(false, left_arm_);
-    openEndEffector(false, right_arm_);
-  }
+  setEndEffectorOpen(open, robot_state_);
+  visual_tools_->publishRobotState(robot_state_);
+  openEndEffector(open, left_arm_);
+  openEndEffector(open, right_arm_);
 }
 
 bool ManipulationPipeline::executeState(const moveit::core::RobotStatePtr robot_state, const moveit::core::JointModelGroup *jmg)

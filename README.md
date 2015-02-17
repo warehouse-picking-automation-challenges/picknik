@@ -68,6 +68,19 @@ Use Rethink's controllers
 
 Make sure correct controller name is chosen in baxter_controllers.yaml
 
+### Turn on Yale Controller
+
+    roslaunch open_hand_controller controller_manager.launch
+
+Check for correct USB
+
+    ls /dev/ttyUSB*
+
+Check to make sure you have ``dialout`` group
+
+    sudo adduser second_user dialout
+
+
 ### Run Main Routine
 
 Rviz Visualizer of robot state

@@ -1,15 +1,15 @@
 Panels:
   - Class: rviz/Displays
-    Help Height: 0
+    Help Height: 143
     Name: Displays
     Property Tree Widget:
       Expanded:
         - /Grid1/Offset1
-        - /Trajectory1
+        - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
       Splitter Ratio: 0.611446
-    Tree Height: 933
+    Tree Height: 790
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -583,7 +583,6 @@ Visualization Manager:
       Marker Topic: /amazon_shelf_markers
       Name: Amazon Shelf
       Namespaces:
-        Arrow: true
         Cylinder: true
         Text: true
       Queue Size: 100
@@ -1159,6 +1158,27 @@ Visualization Manager:
         Show Robot Collision: true
         Show Robot Visual: false
       Value: true
+    - Class: rviz/TF
+      Enabled: false
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        {}
+      Update Interval: 0
+      Value: false
+    - Class: rviz/Axes
+      Enabled: false
+      Length: 0.5
+      Name: Axes
+      Radius: 0.05
+      Reference Frame: world
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -1174,22 +1194,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.16634
+      Distance: 5.35102
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.144395
-        Y: -0.348012
-        Z: 2.38419e-07
+        X: 0.442196
+        Y: -0.395164
+        Z: 8.34465e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.459801
+      Pitch: 0.289801
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.70356
+      Yaw: 3.63855
     Saved: ~
 Window Geometry:
   Displays:
@@ -1203,5 +1223,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1155
-  X: 1538
+  X: 1528
   Y: 14
