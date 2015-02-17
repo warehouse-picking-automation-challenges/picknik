@@ -16,7 +16,7 @@ Dave occasionally releases a new zip file with a lot of custom ROS code, that ca
 
 Unzip the file and put into a catkin workspace. Build using catkin_tools.
 
-![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/724708c7c65b84857c61a70b92edb873fe58cc8a/baxter_apc_main/docs/apc_picknik_pipeline.png?token=82e90a661539df9f96679e59a2994e065510d818)
+![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/baxter_apc_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
 
 ## Run
 
