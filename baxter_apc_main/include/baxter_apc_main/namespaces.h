@@ -1,5 +1,5 @@
 /*********************************************************************
- * Software License Agreement (BSD License)
+ * Software License Agreement
  *
  *  Copyright (c) 2015, Dave Coleman <dave@dav.ee>
  *  All rights reserved.

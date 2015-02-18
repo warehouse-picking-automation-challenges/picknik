@@ -1,5 +1,5 @@
 /*********************************************************************
- * Software License Agreement (BSD License)
+ * Software License Agreement
  *
  *  Copyright (c) 2015, University of Colorado, Boulder
  *  All rights reserved.
