@@ -83,10 +83,10 @@ public:
     visual_tools_->enableBatchPublishing(true);
 
     // TEST REGULAR MESHES -----------------------------
-
+    std::string home_dir = getenv("HOME");
     if (false)
-    {
-      static const std::string pr2 = "file:///home/dave/ros/mesh_models/amazon_picking_challenge/crayola_64_ct/textured_meshes/completed_tsdf_texture_mapped_mesh.dae";
+    {  
+      static const std::string pr2 = "file://" + home_dir + "/ros/mesh_models/amazon_picking_challenge/crayola_64_ct/textured_meshes/completed_tsdf_texture_mapped_mesh.dae";
       Eigen::Affine3d pose1 = Eigen::Affine3d::Identity();
       visual_tools_->publishMesh(pose1, pr2);
       ros::Duration(10).sleep();
@@ -94,7 +94,7 @@ public:
 
     // TEST COLLISION MESHES ---------------------------
 
-    fs::path target_dir("/home/dave/ros/ws_baxter/src/picknik/baxter_apc_main/meshes/");
+    fs::path target_dir(home_dir + "/ros/ws_baxter/src/picknik/baxter_apc_main/meshes/");
 
     fs::directory_iterator it(target_dir), eod;
     std::cout << "Directory: " << target_dir.string() << std::endl;
