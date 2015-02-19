@@ -266,15 +266,15 @@ bool LearningPipeline::analyzeGrasps(const moveit::core::JointModelGroup* arm_jm
   // Filter grasps based on collision
   {
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
-    (*robot_state_) = scene->getCurrentState();
+    (*current_state_) = scene->getCurrentState();
   }
 
-  setEndEffectorOpen(true, robot_state_); // to be passed to the grasp filter
+  setStateWithOpenEE(true, current_state_); // to be passed to the grasp filter
 
   // Filter by collision
   ROS_INFO_STREAM_NAMED("learning","Filtering grasps by collision checking");
   bool filter_verbose = false;  
-  grasp_filter_->filterGraspsInCollision(filtered_grasps_, planning_scene_monitor_, arm_jmg, robot_state_, filter_verbose);
+  grasp_filter_->filterGraspsInCollision(filtered_grasps_, planning_scene_monitor_, arm_jmg, current_state_, filter_verbose);
   total_collision_free_grasps = filtered_grasps_.size();
 
   // Visualize valid grasps after collision filtering with arrows
@@ -306,8 +306,8 @@ bool LearningPipeline::analyzeGrasps(const moveit::core::JointModelGroup* arm_jm
 
 bool LearningPipeline::planToGrasps(const moveit::core::JointModelGroup *arm_jmg)
 {
-  moveit::core::RobotStatePtr start_state(new moveit::core::RobotState(*robot_state_));
-  moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*robot_state_));
+  moveit::core::RobotStatePtr start_state(new moveit::core::RobotState(*current_state_));
+  moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_));
 
   // Set start state to initial pose
   setToDefaultPosition(start_state);
@@ -472,69 +472,5 @@ bool LearningPipeline::testSingleGraspIK()
   */
 }
 
-bool LearningPipeline::visualizeGrasps(std::vector<moveit_grasps::GraspSolution> filtered_grasps, 
-                                       const moveit::core::JointModelGroup *arm_jmg,
-                                       bool show_cartesian_path)
-{
-  ROS_INFO_STREAM_NAMED("learning_pipeline","Showing valid filtered grasp poses");
-
-  // Publish in batch
-  //visual_tools_->enableBatchPublishing(true);
-
-  // Get the-grasp
-  moveit::core::RobotStatePtr the_grasp(new moveit::core::RobotState(*robot_state_));
-
-  Eigen::Vector3d approach_direction;
-  approach_direction << -1, 0, 0; // backwards towards robot body
-  double desired_approach_distance = 0.45; //0.12; //0.15;
-  std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
-  double path_length;
-  double max_path_length = 0; // statistics
-  for (std::size_t i = 0; i < filtered_grasps.size(); ++i)
-  {
-    if (!ros::ok())
-      return false;
-
-    if (show_cartesian_path)
-    {
-      the_grasp->setJointGroupPositions(arm_jmg, filtered_grasps[i].grasp_ik_solution_);
-      
-      if (!computeStraightLinePath(approach_direction, desired_approach_distance,
-                                   robot_state_trajectory, the_grasp, arm_jmg, path_length))
-      {
-        ROS_WARN_STREAM_NAMED("pipeline","Unable to find straight line path");
-      }
-
-      // Statistics
-      if (path_length > max_path_length)
-        max_path_length = path_length;
-
-      bool blocking = false;
-      double speed = 0.01;
-      visual_tools_->publishTrajectoryPath(robot_state_trajectory, arm_jmg, speed, blocking);
-    }
-    grasps_->publishGraspArrow(filtered_grasps[i].grasp_.grasp_pose.pose, grasp_datas_[arm_jmg], rvt::BLUE, path_length);
-  }
-  //visual_tools_->triggerBatchPublishAndDisable();
-
-  ROS_INFO_STREAM_NAMED("learning","Maximum path length in approach trajetory was " << max_path_length);
-
-  return true;
-}
-
-bool LearningPipeline::visualizeIKSolutions(std::vector<moveit_grasps::GraspSolution> filtered_grasps, const moveit::core::JointModelGroup* arm_jmg)
-{
-  // Convert the filtered_grasps into a format moveit_visual_tools can use
-  std::vector<trajectory_msgs::JointTrajectoryPoint> ik_solutions;
-  ik_solutions.resize(filtered_grasps.size());
-  for (std::size_t i = 0; i < filtered_grasps.size(); ++i)
-  {
-    ik_solutions[i].positions = filtered_grasps[i].grasp_ik_solution_;
-  }
-  ROS_INFO_STREAM_NAMED("learning_pipeline","Showing IK solutions of grasps");
-  double display_time = 2;
-
-  return visual_tools_->publishIKSolutions(ik_solutions, arm_jmg->getName(), display_time);
-}
 
 } // namespace

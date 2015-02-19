@@ -117,22 +117,6 @@ public:
    */
   bool testSingleGraspIK();
 
-  /**
-   * \brief Visulization function
-   * \param input - description
-   * \return true on success
-   */
-  bool visualizeGrasps(std::vector<moveit_grasps::GraspSolution> filtered_grasps, 
-                       const moveit::core::JointModelGroup *arm_jmg,
-                       bool show_cartesian_path = true);
-
-  /**
-   * \brief Visalize ik solutions
-   * \param input - description
-   * \return true on success
-   */
-  bool visualizeIKSolutions(std::vector<moveit_grasps::GraspSolution> filtered_grasps, const moveit::core::JointModelGroup* arm_jmg);
-
 private:
 
   BinExperienceDataMap bin_experience_data_;

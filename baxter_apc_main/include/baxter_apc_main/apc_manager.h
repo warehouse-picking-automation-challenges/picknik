@@ -59,7 +59,7 @@ public:
    * \brief Which product in the order to skip ahead to
    * \return true on success
    */
-  bool runOrder(bool use_experience, bool show_database, std::size_t order_start = 0);
+  bool runOrder(bool use_experience, bool show_database, std::size_t order_start = 0, std::size_t jump_to = 0);
 
   /**
    * \brief Generate a discretized array of possible pre-grasps and save into experience database

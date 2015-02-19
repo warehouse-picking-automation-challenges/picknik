@@ -103,6 +103,9 @@ Optional Arguments:
 		2. Train experience database mode / workspace analysis
 		3. Test end effectors mode
 		4. Only load JSON and visualize shelf
+	jump_to - which step in the manipulation pipeline to start on
+	  Steps:
+	    1. TODO
     order - which json file to use, defaults to orders/simple.json
 	order_start - specify the index of the product to skip to, based on the ordering in the json file
 	use_experience - whether to use cached planned (Lightning Database) or not

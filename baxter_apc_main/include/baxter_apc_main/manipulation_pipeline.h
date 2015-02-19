@@ -68,11 +68,9 @@ public:
   {}
 
   /**
-   * \brief Choose the grasp for the object
-   * \return true on success
+   * \brief Helper for initilizing the robot states
    */
-  bool chooseGrasp(const Eigen::Affine3d& object_pose, const robot_model::JointModelGroup* jmg,
-                   moveit_grasps::GraspSolution& chosen, bool verbose);
+  bool loadRobotStates();
 
   /**
    * \brief Load the shelf and products
@@ -84,13 +82,20 @@ public:
   /**
    * \brief Grasp product
    */
-  bool graspObject( WorkOrder order, bool verbose );
+  bool graspObject( WorkOrder order, bool verbose, std::size_t jump_to = 0);
 
   /**
    * \brief Grasp object once we know the pose
    * \return true on success
    */
-  bool graspObjectPipeline(const Eigen::Affine3d& object_pose, WorkOrder order, bool verbose);
+  bool graspObjectPipeline(const Eigen::Affine3d& object_pose, WorkOrder order, bool verbose, std::size_t jump_to = 0);
+
+  /**
+   * \brief Choose the grasp for the object
+   * \return true on success
+   */
+  bool chooseGrasp(const Eigen::Affine3d& object_pose, const robot_model::JointModelGroup* jmg,
+                   moveit_grasps::GraspSolution& chosen, bool verbose);
 
   /**
    * \brief Choose which arm to use for a particular task
@@ -125,6 +130,16 @@ public:
   bool executeState(const moveit::core::RobotStatePtr robot_state, const moveit::core::JointModelGroup *jmg);
 
   /**
+   * \brief Generate the straight line path from pregrasp to grasp
+   * \param input - description
+   * \return true on success
+   */
+  bool generateApproachPath(const moveit::core::JointModelGroup *arm_jmg,
+                            moveit_msgs::RobotTrajectory &approach_trajectory_msg,
+                            moveit::core::RobotStatePtr pre_grasp_state, moveit::core::RobotStatePtr the_grasp,
+                            bool verbose);
+
+  /**
    * \brief After grasping an object, lift object up slightly
    * \return true on success
    */
@@ -142,6 +157,8 @@ public:
    * \param desired_approach_distance - distance the origin of a robot link needs to travel
    * \param trajectory_msg - resulting path
    * \param robot_state - used as the base state of the robot when starting to move
+   * \param arm_jmg - the joint model group of the arm to plan for
+   * \param reverse_trajectory - whether to reverse the generated trajectory before displaying visualizations and returning
    * \param path_length - the length of the resulting cartesian path
    * \return true on success
    */
@@ -149,8 +166,16 @@ public:
                                 double desired_approach_distance,
                                 std::vector<robot_state::RobotStatePtr>& robot_state_trajectory,
                                 robot_state::RobotStatePtr robot_state,
-                                const moveit::core::JointModelGroup *jmg,
+                                const moveit::core::JointModelGroup *arm_jmg,
+                                bool reverse_trajectory,
                                 double& path_length);
+
+  /**
+   * \brief Move a pose in a specified direction and specified length, where all poses are in the world frame
+   * \return true on success
+   */
+  bool straightProjectPose( const Eigen::Affine3d& original_pose, Eigen::Affine3d& new_pose,
+                            const Eigen::Vector3d direction, double distance);
 
   /**
    * \brief Convert and parameterize a trajectory with velocity information
@@ -177,7 +202,7 @@ public:
    * \brief Set a robot state to have an open or closed EE. Does not actually affect hardware
    * \return true on success
    */
-  bool setEndEffectorOpen(bool open, moveit::core::RobotStatePtr robot_state);
+  bool setStateWithOpenEE(bool open, moveit::core::RobotStatePtr robot_state);
 
   /**
    * \brief Send trajectories to Baxter
@@ -242,7 +267,7 @@ public:
    */
   moveit::core::RobotStatePtr getRobotState()
   {
-    return robot_state_;
+    return current_state_;
   }
 
   /**
@@ -250,9 +275,24 @@ public:
    */
   void setRobotState(moveit::core::RobotStatePtr robot_state)
   {
-    robot_state_ = robot_state;
+    current_state_ = robot_state;
   }
 
+  /**
+   * \brief Visulization function
+   * \param input - description
+   * \return true on success
+   */
+  bool visualizeGrasps(std::vector<moveit_grasps::GraspSolution> filtered_grasps, const moveit::core::JointModelGroup *arm_jmg,
+                       bool show_cartesian_path = true);
+
+  /**
+   * \brief Visalize ik solutions
+   * \param input - description
+   * \return true on success
+   */
+  bool visualizeIKSolutions(std::vector<moveit_grasps::GraspSolution> filtered_grasps, const moveit::core::JointModelGroup* arm_jmg,
+                            double display_time = 2);
 
 protected:
 
@@ -272,13 +312,13 @@ protected:
   robot_model::RobotModelConstPtr robot_model_;
   planning_pipeline::PlanningPipelinePtr planning_pipeline_;
 
-  // Allocated memory for robot states
-  moveit::core::RobotStatePtr robot_state_;
-  moveit::core::RobotStatePtr start_state_;
+  // Allocated memory for robot state
+  moveit::core::RobotStatePtr current_state_;
 
   // Group for each arm
   const robot_model::JointModelGroup* left_arm_;
   const robot_model::JointModelGroup* right_arm_;
+  const robot_model::JointModelGroup* both_arms_;
 
   // Grasp generator
   moveit_grasps::GraspsPtr grasps_;

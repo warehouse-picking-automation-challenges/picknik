@@ -41,8 +41,9 @@ APCManager::APCManager(bool verbose, std::string order_fp)
   }
 
   // Load the Robot Viz Tools for publishing to Rviz
-  visual_tools_.reset(new mvt::MoveItVisualTools(robot_model_->getModelFrame(), "/amazon_shelf_markers", planning_scene_monitor_));
-  visual_tools_->loadRobotStatePub("/baxter_amazon");
+  visual_tools_.reset(new mvt::MoveItVisualTools(robot_model_->getModelFrame(), "/baxter_apc_main/markers", planning_scene_monitor_));
+  visual_tools_->loadRobotStatePub("/baxter_apc_main/robot_state");
+  visual_tools_->loadTrajectoryPub("/baxter_apc_main/display_trajectory");
   visual_tools_->loadMarkerPub();
   visual_tools_->setAlpha(0.8);
   visual_tools_->hideRobot(); // show that things have been reset
@@ -70,50 +71,26 @@ APCManager::APCManager(bool verbose, std::string order_fp)
   ROS_INFO_STREAM_NAMED("apc_manager","APC Manager Ready.");
 }
 
-bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t order_start)
+bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t order_start, std::size_t jump_to)
 {
   // Create the pick place pipeline
   pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, visual_tools_display_,
                                            planning_scene_monitor_, shelf_, use_experience, show_database));
 
-  // Move robot to start location
-  pipeline_->statusPublisher("Moving to initial position");
-
-  if (true)
-  {
-    pipeline_->moveToStartPosition();
-    pipeline_->openEndEffectors(true);
-
-    if (!ros::ok())
-      return false;
-  }
-
-  std::cout << std::endl;
-  std::cout << std::endl;
   std::cout << std::endl;
   ROS_INFO_STREAM_NAMED("apc_manager","Starting order ----------------------------");
 
-  //pipeline_->testEndEffector();
-  //return true;
-
   // Grasps things
-  if (true) // run normal
+  //for (std::size_t i = order_start; i < 1; ++i)
+  for (std::size_t i = order_start; i < orders_.size(); ++i)
   {
-    for (std::size_t i = order_start; i < orders_.size(); ++i)
-    {
-      pipeline_->orderPublisher(orders_[i]); // feedback
+    pipeline_->orderPublisher(orders_[i]); // feedback
 
-      if (!pipeline_->graspObject(orders_[i], verbose_))
-      {
-        ROS_ERROR_STREAM_NAMED("apc_manager","Shutting down for debug purposes only (it could continue on)");
-        return false;
-      }
+    if (!pipeline_->graspObject(orders_[i], verbose_, jump_to))
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Shutting down for debug purposes only (it could continue on)");
+      return false;
     }
-  }
-  else // debug mode
-  {
-    ROS_INFO_STREAM_NAMED("apc_manager","Debug mode - grasping only 1 object");
-    pipeline_->graspObject(orders_[order_start], verbose_);
   }
 
   pipeline_->statusPublisher("Finished");
@@ -183,7 +160,7 @@ bool APCManager::visualizeShelf()
   visual_tools_display_->enableBatchPublishing(true);
   shelf_->visualize();
   shelf_->visualizeAxis(visual_tools_display_);
-  visual_tools_display_->triggerBatchPublish();
+  visual_tools_display_->triggerBatchPublishAndDisable();
 
   // Now show empty shelf to help in reversing robot arms to initial position
   visual_tools_->removeAllCollisionObjects();

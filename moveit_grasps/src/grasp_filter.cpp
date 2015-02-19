@@ -263,7 +263,8 @@ void GraspFilter::filterGraspThread(IkThreadStruct ik_thread_struct)
         // Results
         if( error_code.val == moveit_msgs::MoveItErrorCodes::NO_IK_SOLUTION )
         {
-          ROS_WARN_STREAM_NAMED("filter","Unable to find IK solution for pre-grasp pose.");
+          // The grasp was valid but the pre-grasp was not
+          //ROS_WARN_STREAM_NAMED("filter","Unable to find IK solution for pre-grasp pose.");
           continue;
         }
         else if( error_code.val == moveit_msgs::MoveItErrorCodes::TIMED_OUT )
