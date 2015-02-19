@@ -193,6 +193,15 @@ ShelfObject::ShelfObject(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisu
 
 bool ShelfObject::initialize(const std::string &package_path)
 {
+
+  // Load a param
+  if (!nh.hasParam("base_link"))
+  {
+    ROS_ERROR_STREAM_NAMED("grasp_data_loader","Grasp configuration parameter `base_link` missing from rosparam server. Did you load your end effector's configuration yaml file? Searching in namespace: " << nh.getNamespace());
+    return false;
+  }
+  nh.getParam("base_link", base_link_);
+
   // Calculate shelf corners
   bottom_right_.translation().x() = SHELF_DISTANCE_FROM_BAXTER;
   bottom_right_.translation().y() = -SHELF_WIDTH/2.0;

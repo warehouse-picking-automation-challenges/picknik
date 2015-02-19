@@ -32,9 +32,10 @@ MOVEIT_CLASS_FORWARD(ProductObject);
 const double SHELF_WIDTH = 0.873;
 const double SHELF_HEIGHT= 2.37;
 const double SHELF_DEPTH = 0.875;
-const double SHELF_DISTANCE_FROM_BAXTER = 1.0; //0.8 // this is the main variable - how far from baxter's face forward is shelf?
+const double SHELF_DISTANCE_FROM_BAXTER = 1.0; //1.0; //0.8 // this is the main variable - how far from baxter's face forward is shelf?
 
-const double FIRST_BIN_FROM_BOTTOM = 0.81;
+//const double FIRST_BIN_FROM_BOTTOM = 0.81;
+const double FIRST_BIN_FROM_BOTTOM = 0.7;
 const double FIRST_BIN_FROM_RIGHT = 0.036;
 const double BIN_WIDTH = SHELF_WIDTH / 3.2;
 const double BIN_HEIGHT = 0.26; //0.24;

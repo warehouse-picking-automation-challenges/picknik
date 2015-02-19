@@ -143,7 +143,7 @@ public:
    * \brief After grasping an object, lift object up slightly
    * \return true on success
    */
-  bool executeLiftPath(const moveit::core::JointModelGroup *jmg);
+  bool executeLiftPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true);
 
   /**
    * \brief After grasping an object, pull object out of shelf in reverse

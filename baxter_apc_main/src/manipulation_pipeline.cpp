@@ -203,6 +203,7 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
   moveit::core::RobotStatePtr the_grasp_state(new moveit::core::RobotState(*current_state_)); // Allocate robot states
   moveit_msgs::RobotTrajectory approach_trajectory_msg;
   bool wait_for_trajetory = false;
+  double desired_lift_distance = 0.1;
 
   // Prevent jump-to errors
   if (jump_to == 3)
@@ -215,6 +216,9 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
   // Jump to a particular step in the manipulation pipeline
   for (std::size_t step = jump_to; step < 999; ++step) // 100 is just some large number, really it should quit when default is hit
   {
+    if (!ros::ok())
+      break;
+
     std::cout << std::endl;
     std::cout << std::endl;
     std::cout << "Running step: " << step << std::endl;
@@ -236,6 +240,9 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
       // #################################################################################################################
       case 2: statusPublisher("Generate and choose grasp");
 
+        // Allow fingers to touch object
+        allowFingerTouch(order.product_->getCollisionName(), arm_jmg);
+
         if (!chooseGrasp(object_pose, arm_jmg, chosen, verbose))
         {
           ROS_ERROR_STREAM_NAMED("pipeline","No grasps found");
@@ -253,7 +260,7 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
         {
           ROS_INFO_STREAM_NAMED("pipeline","Publishing grasp state in purple");
           visual_tools_->publishRobotState(the_grasp_state, rvt::PURPLE);
-          ros::Duration(5.0).sleep();
+          ros::Duration(0.5).sleep();
         }
         break;
 
@@ -268,14 +275,9 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
         break;
 
         // #################################################################################################################
-      case 5: statusPublisher("Opening End Effector");
+      case 5: // Not implemented
 
-        if (!openEndEffector(true, arm_jmg))
-        {
-          ROS_ERROR_STREAM_NAMED("pipeline","Unable to open end effector");
-          return false;
-        }
-        break;
+        step++;
 
         // #################################################################################################################
       case 6: statusPublisher("Moving to pre-grasp position");
@@ -321,16 +323,13 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
         // Attach collision object
         visual_tools_->attachCO(order.product_->getCollisionName(), grasp_datas_[arm_jmg].parent_link_name_);
 
-        // Allow fingers to touch object
-        allowFingerTouch(order.product_->getCollisionName(), arm_jmg);
-
         ros::Duration(0.1).sleep();
         break;
 
         // #################################################################################################################
       case 9: statusPublisher("Lifting product UP slightly");
 
-        if (!executeLiftPath(arm_jmg))
+        if (!executeLiftPath(arm_jmg, desired_lift_distance))
         {
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to execute retrieval path after grasping");
           return false;
@@ -513,11 +512,11 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
   {
     ROS_INFO_STREAM_NAMED("temp","Showing start state");
     visual_tools_->publishRobotState(start, rvt::GREEN);
-    ros::Duration(1).sleep();
+    ros::Duration(0.5).sleep();
 
     ROS_INFO_STREAM_NAMED("temp","Showing goal state");
     visual_tools_->publishRobotState(goal, rvt::ORANGE);
-    ros::Duration(1).sleep();
+    ros::Duration(0.1).sleep();
   }
 
   // Create motion planning request
@@ -674,8 +673,6 @@ bool ManipulationPipeline::generateApproachPath(const moveit::core::JointModelGr
                                                 moveit::core::RobotStatePtr the_grasp_state,
                                                 bool verbose)
 {
-  bool super_verbose = true;
-
   // Configurations
   Eigen::Vector3d approach_direction;
   approach_direction << -1, 0, 0; // backwards towards robot body
@@ -712,10 +709,8 @@ bool ManipulationPipeline::generateApproachPath(const moveit::core::JointModelGr
   return true;
 }
 
-bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *arm_jmg)
+bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up)
 {
-  bool super_verbose = true;
-
   // Get current state after grasping
   {
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
@@ -727,8 +722,7 @@ bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *
 
   // Compute straight line up above grasp
   Eigen::Vector3d approach_direction;
-  approach_direction << 0, 0, 1; // up over object
-  double desired_lift_distance = 0.1; //0.01;
+  approach_direction << 0, 0, (up ? 1 : -1); // 1 is up, -1 is down
   std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
   double path_length;
   bool reverse_path = false;
@@ -819,17 +813,26 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
 
   // End effector parent link (arm tip for ik solving)
   const moveit::core::LinkModel *ik_tip_link_model = grasp_datas_[arm_jmg].parent_link_;
+  //const moveit::core::LinkModel *ik_tip_link_model = robot_model_->getLinkModel("left_gripper");
+
+  std::cout << "PARENT LINK: " << grasp_datas_[arm_jmg].parent_link_->getName() << std::endl;
 
   // ---------------------------------------------------------------------------------------------
   // Show desired trajectory in BLACK
-  const Eigen::Affine3d tip_pose_start = robot_state->getGlobalLinkTransform(ik_tip_link_model);
+  Eigen::Affine3d tip_pose_start = robot_state->getGlobalLinkTransform(ik_tip_link_model);
 
-  //TEMP
-  visual_tools_->deleteAllMarkers();
-  visual_tools_->publishSphere(tip_pose_start, rvt::RED, rvt::LARGE);
+  // Debug
+  if (false)
+  {
+    std::cout << "Tip Pose Start \n" << tip_pose_start.translation().x() << "\t" 
+              << tip_pose_start.translation().y() 
+              << "\t" << tip_pose_start.translation().z() << std::endl;    
+  }
 
   if (verbose_)
   {
+    visual_tools_->publishSphere(tip_pose_start, rvt::RED, rvt::LARGE);
+
     Eigen::Affine3d tip_pose_end; // = tip_pose_start;
     //tip_pose_end.translation().x() -= desired_approach_distance;
 
@@ -923,10 +926,17 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
     //TEMP
     //const Eigen::Affine3d tip_pose_start2 = robot_state_trajectory.front()->getGlobalLinkTransform(ik_tip_link_model);
 
-    for (std::size_t i = 0; i < robot_state_trajectory.size(); ++i)
+    // Super debug
+    if (false)
     {
-      robot_state_trajectory[i]->update();
-    }    
+      std::cout << "Tip Pose Result: \n";
+      for (std::size_t i = 0; i < robot_state_trajectory.size(); ++i)
+      {
+        const Eigen::Affine3d tip_pose_start = robot_state_trajectory[i]->getGlobalLinkTransform(ik_tip_link_model);
+        std::cout << tip_pose_start.translation().x() << "\t" << tip_pose_start.translation().y() <<
+          "\t" << tip_pose_start.translation().z() << std::endl;      
+      }
+    }
 
     // Show actual trajectory in GREEN
     ROS_INFO_STREAM_NAMED("pipeline","Displaying cartesian trajectory in green");

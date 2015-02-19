@@ -3,7 +3,7 @@
   {
     "bin_A":
     [
-      "oreo_mega_stuff"
+      "elmers_washable_no_run_school_glue"
     ],
     "bin_B":
     [
@@ -15,7 +15,7 @@
     ],
     "bin_D":
     [
-      "elmers_washable_no_run_school_glue"
+      "oreo_mega_stuff"
     ],
     "bin_E":
     [
@@ -39,7 +39,7 @@
   [
     {
       "bin": "bin_A",
-      "item": "oreo_mega_stuff"
+      "item": "elmers_washable_no_run_school_glue"
     },
     {
       "bin": "bin_B",
@@ -51,7 +51,7 @@
     },
     {
       "bin": "bin_D",
-      "item": "elmers_washable_no_run_school_glue"
+      "item": "oreo_mega_stuff"
     },
     {
       "bin": "bin_E",

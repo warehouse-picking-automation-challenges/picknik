@@ -103,9 +103,22 @@ Optional Arguments:
 		2. Train experience database mode / workspace analysis
 		3. Test end effectors mode
 		4. Only load JSON and visualize shelf
+		5. Raise the roof (go up and down)
 	jump_to - which step in the manipulation pipeline to start on
 	  Steps:
-	    1. TODO
+	    0. Move to initial position
+		1. Open end effectors
+		2. Generate and choose grasp
+		3. Setting the-grasp
+		4. Get pre-grasp by generateApproachPath()
+		5. N/A
+		6. Moving to pre-grasp position
+		7. Cartesian move to the-grasp position
+		8. Grasping
+		9. Lifting product UP slightly
+		10. Moving BACK to pre-grasp position
+		11. Moving back to INITIAL position
+		12. Releasing product
     order - which json file to use, defaults to orders/simple.json
 	order_start - specify the index of the product to skip to, based on the ordering in the json file
 	use_experience - whether to use cached planned (Lightning Database) or not

@@ -75,6 +75,12 @@ public:
   bool testEndEffectors();
 
   /**
+   * \brief Simple script to move hand up and down on z axis from whereever it currently is
+   * \return true on success
+   */
+  bool testUpAndDown();
+
+  /**
    * \brief Load shelf contents
    * \return true on success
    */
