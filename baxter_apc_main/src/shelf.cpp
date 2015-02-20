@@ -208,7 +208,9 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     return false;
   if (!getDoubleParameter(nh,"bin_middle_width", bin_middle_width_))
     return false;
-  if (!getDoubleParameter(nh,"bin_height", bin_height_))
+  if (!getDoubleParameter(nh,"bin_short_height", bin_short_height_))
+    return false;
+  if (!getDoubleParameter(nh,"bin_tall_height", bin_tall_height_))
     return false;
   if (!getDoubleParameter(nh,"bin_depth", bin_depth_))
     return false;
@@ -234,17 +236,26 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
 
   // Create each bin
   std::size_t bin_id = 0;
+  double this_bin_width;
+  double this_bin_height;
   for (double z = bin1_bottom_right.translation().z();
-       z < shelf_height_; z = z + bin_height_)
+       z < shelf_height_; /* Increment */)
   {
+
     for (double y = bin1_bottom_right.translation().y();
-         y < shelf_width_ - bin_width_ * 0.9; y = y + bin_width_)
+         y < shelf_width_ - bin_width_ * 0.9; /* Increment */)
     {
       // Create new bin
       std::string bin_name = "bin_" + boost::lexical_cast<std::string>((char)(65 + num_bins_ - bin_id - 1)); // reverse the lettering
-      ROS_DEBUG_STREAM_NAMED("shelf","Creating bin '" << bin_name << "'");
+      ROS_DEBUG_STREAM_NAMED("shelf","Creating bin '" << bin_name << "' with id " << bin_id);
 
       insertBinHelper( rvt::YELLOW, bin_name );
+
+      // Choose what height the current bin is
+      if (bin_id == 3 || bin_id == 4 || bin_id == 5 || bin_id == 6 || bin_id == 7 || bin_id == 8)
+        this_bin_height = bin_short_height_;
+      else
+        this_bin_height = bin_tall_height_;
 
       // Calculate new bin location
       bins_[bin_name]->bottom_right_.translation().x() = bin1_bottom_right.translation().x();
@@ -254,12 +265,25 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
       bins_[bin_name]->top_left_ = bins_[bin_name]->bottom_right_;
       bins_[bin_name]->top_left_.translation().x() += bin_depth_;
       bins_[bin_name]->top_left_.translation().y() += bin_width_;
-      bins_[bin_name]->top_left_.translation().z() += bin_height_;
+      bins_[bin_name]->top_left_.translation().z() += this_bin_height;
+      
+      // Choose what width the current bin is
+      if (bin_id == 1 || bin_id == 4 || bin_id == 7 || bin_id == 10)
+        this_bin_width = bin_middle_width_;
+      else
+        this_bin_width = bin_width_;
+
+      // Increment
+      y = y + this_bin_width + shelf_wall_width_;
 
       bin_id ++;
       if (bin_id >= num_bins_)
         break;
     }
+
+    // Increment
+    z = z + this_bin_height;
+
     if (bin_id >= num_bins_)
       break;
   }
@@ -275,6 +299,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   base.top_left_.translation().z() += first_bin_from_bottom_;
 
   // Walls
+  double previous_y = shelf_wall_width_ * 0.5;
   for (std::size_t i = 0; i < 4; ++i)
   {
     // Note: bottom right is at 0,0,0
@@ -283,24 +308,44 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     Rectangle &wall = shelf_parts_[shelf_parts_.size()-1];
     // Geometry
     wall.bottom_right_.translation().x() = 0;
-    wall.bottom_right_.translation().y() = bin_width_ * i - shelf_wall_width_ * 0.5;
+    wall.bottom_right_.translation().y() = previous_y - shelf_wall_width_ * 0.5;
     wall.bottom_right_.translation().z() = first_bin_from_bottom_;
     wall.top_left_.translation().x() = shelf_depth_;
-    wall.top_left_.translation().y() = bin_width_ * i + shelf_wall_width_ * 0.5;
+    wall.top_left_.translation().y() = previous_y + shelf_wall_width_ * 0.5;
     wall.top_left_.translation().z() = shelf_height_;
+
+    // Choose what width the current bin is
+    if (i == 1)
+      this_bin_width = bin_middle_width_;
+    else
+      this_bin_width = bin_width_;
+
+    // Increment the y location
+    previous_y += this_bin_width + shelf_wall_width_;
   }
 
   // Shelves
+  double previous_z = first_bin_from_bottom_;
   for (std::size_t i = 0; i < 5; ++i)
   {
     const std::string shelf_name = "shelf_" + boost::lexical_cast<std::string>(i);
     shelf_parts_.push_back(Rectangle(visual_tools_, visual_tools_display_, color_, shelf_name));
     Rectangle &shelf = shelf_parts_[shelf_parts_.size()-1];
+
     // Geometry
     shelf.top_left_.translation().x() = shelf_width_;
     shelf.top_left_.translation().y() = shelf_depth_;
-    shelf.top_left_.translation().z() = first_bin_from_bottom_ + bin_height_ * (i+1); // flush with shelf top
+    shelf.top_left_.translation().z() = previous_z;
     shelf.bottom_right_.translation().z() = shelf.top_left_.translation().z() - shelf_wall_width_; // add thickenss
+
+    // Choose what height the current bin is
+    if (i == 1 || i == 2)
+      this_bin_height = bin_short_height_;
+    else
+      this_bin_height = bin_tall_height_;
+
+    // Increment the z location
+    previous_z += this_bin_height; // flush with top shelf
   }
 
   // Load mesh file name
@@ -340,30 +385,17 @@ bool ShelfObject::visualize() const
     * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ());
   offset.translation().x() = bottom_right_.translation().x() + shelf_depth_ / 2.0;
   offset.translation().y() = 0;
-  offset.translation().z() = first_bin_from_bottom:_ - 0.81; // TODO remove this height - only for temp table setup
+  offset.translation().z() = first_bin_from_bottom_ - 0.81; // TODO remove this height - only for temp table setup
 
   // Publish mesh
   if (!visual_tools_display_->publishMesh(offset, mesh_path_, rvt::BROWN, 1, "Shelf"))
     return false;
-
-  // Visualize shelf location as rectangle
-  //visual_tools_->publishRectangle(bottom_right_.translation(),
-  //                                top_left_.translation(),
-  //                                color_);
 
   // Show each bin
   for (BinObjectMap::const_iterator bin_it = bins_.begin(); bin_it != bins_.end(); bin_it++)
   {
     bin_it->second->visualize(bottom_right_);
   }
-
-  // Create side walls of shelf
-  /*
-  for (std::size_t i = 0; i < shelf_parts_.size(); ++i)
-  {
-    shelf_parts_[i].visualize(bottom_right_);
-  }
-  */
 }
 
 bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool just_frame, bool show_all_products) const

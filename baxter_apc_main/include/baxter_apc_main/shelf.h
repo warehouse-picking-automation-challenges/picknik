@@ -226,7 +226,8 @@ public:
   // Loaded bin parameter values
   double bin_width_;
   double bin_middle_width_;
-  double bin_height_;
+  double bin_short_height_;
+  double bin_tall_height_;
   double bin_depth_;
   double bin_top_margin_;
   double bin_left_margin_;
