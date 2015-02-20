@@ -117,12 +117,14 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Only visualizing shelf... ready to shutdown.");
       ros::spin();
       break;
-      //case 4:
-    //   ROS_INFO_STREAM_NAMED("main"," mode");
-    //   break;
-    // case 4:
-    //   ROS_INFO_STREAM_NAMED("main"," mode");
-    //   break;
+    case 5:
+       ROS_INFO_STREAM_NAMED("main","Raise the roof (go up and down)");
+       manager.testUpAndDown();
+       break;
+    case 6:
+      ROS_INFO_STREAM_NAMED("main","Verify shelf location");
+      manager.testShelfLocation();
+      break;
     // case 4:
     //   ROS_INFO_STREAM_NAMED("main"," mode");
     //   break;

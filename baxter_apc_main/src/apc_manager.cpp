@@ -62,7 +62,11 @@ APCManager::APCManager(bool verbose, std::string order_fp)
     ROS_FATAL_STREAM_NAMED("product", "Unable to get " << PACKAGE_NAME << " package path" );
 
   // Load shelf
-  shelf_.reset(new ShelfObject(visual_tools_, visual_tools_display_, rvt::BROWN, "shelf_0", package_path_));
+  shelf_.reset(new ShelfObject(visual_tools_, visual_tools_display_, rvt::BROWN, "shelf_0"));
+  if (!shelf_->initialize(package_path_, nh_))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to load shelf");
+  }
   loadShelfContents(order_fp);
 
   // Visualize
@@ -145,11 +149,65 @@ bool APCManager::testEndEffectors()
   ROS_INFO_STREAM_NAMED("apc_manager","Done testing end effectors");
 }
 
+bool APCManager::testUpAndDown()
+{
+  // Create the pick place pipeline
+  bool use_experience = false;
+  bool show_database = false;
+  pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, visual_tools_display_,
+                                           planning_scene_monitor_, shelf_, use_experience, show_database));
+
+  // Configure
+  const robot_model::JointModelGroup* arm_jmg = robot_model_->getJointModelGroup("left_arm");
+  double desired_lift_distance = 0.1;
+
+  // Test 
+  pipeline_->statusPublisher("Testing up and down calculations");
+  std::size_t i = 0;
+  while (ros::ok())
+  {
+    std::cout << std::endl << std::endl;
+    if (i % 2 == 0)
+    {
+      std::cout << "Moving up --------------------------------------" << std::endl;
+      pipeline_->executeLiftPath(arm_jmg, desired_lift_distance, true);
+      ros::Duration(4.0).sleep();
+    }
+    else
+    {
+      std::cout << "Moving down ------------------------------------" << std::endl;
+      pipeline_->executeLiftPath(arm_jmg, desired_lift_distance, false);
+      ros::Duration(4.0).sleep();
+    }
+    ++i;
+  }
+
+  // EE min approach distance
+  //pipeline_->statusPublisher("Testing EE min approach distance");
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Done testing end effectors");
+}
+
+bool APCManager::testShelfLocation()
+{
+  // Create the pick place pipeline
+  bool use_experience = false;
+  bool show_database = false;
+  pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, visual_tools_display_,
+                                           planning_scene_monitor_, shelf_, use_experience, show_database));
+
+  // Configure
+  const robot_model::JointModelGroup* arm_jmg = robot_model_->getJointModelGroup("left_arm");
+
+  // TODO
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Done testing shelf location");
+}
+
 bool APCManager::loadShelfContents(std::string order_fp)
 {
   // Choose file
   AmazonJSONParser parser(verbose_, visual_tools_, visual_tools_display_);
-
   // Parse json
   return parser.parse(order_fp, package_path_, shelf_, orders_);
 }

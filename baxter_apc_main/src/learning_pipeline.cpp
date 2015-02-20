@@ -104,7 +104,7 @@ bool LearningPipeline::generateTrainingGoalsBin(Eigen::Affine3d bin_transpose, E
   Eigen::Affine3d pose;
 
   // Generate for one bin
-  for (double y = POSE_HORIZONTAL_MARGIN; y < BIN_WIDTH - POSE_HORIZONTAL_MARGIN; y += POSE_DISCRETIZATION)
+  for (double y = POSE_HORIZONTAL_MARGIN; y < shelf_->bin_width_ - POSE_HORIZONTAL_MARGIN; y += POSE_DISCRETIZATION)
   {
     for (double z = POSE_BOTTOM_MARGIN; z < POSE_TOP_MARGIN; z += POSE_DISCRETIZATION)
     {
