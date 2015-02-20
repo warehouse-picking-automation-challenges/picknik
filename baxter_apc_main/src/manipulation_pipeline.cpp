@@ -127,11 +127,28 @@ bool ManipulationPipeline::setupPlanningScene( const std::string& bin_name )
   visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
   visual_tools_->deleteAllMarkers(); // clear all old markers
   visual_tools_->triggerPlanningSceneUpdate();
-  ros::Duration(1.0).sleep(); // TODO combine these two parts into one
+  ros::Duration(0.5).sleep(); // TODO combine these two parts into one
 
   // Visualize
   shelf_->visualizeAxis(visual_tools_);
   shelf_->createCollisionBodies(bin_name, false);
+  visual_tools_->triggerPlanningSceneUpdate();
+  ros::Duration(1.0).sleep();
+
+  return true;
+}
+
+bool ManipulationPipeline::createCollisionWall()
+{
+  // Disable all bins except desired one
+  visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
+  visual_tools_->triggerPlanningSceneUpdate();
+  ros::Duration(0.5).sleep(); // TODO combine these two parts into one
+
+  // Visualize
+  shelf_->visualizeAxis(visual_tools_);
+  visual_tools_->publishCollisionWall( shelf_->shelf_distance_from_baxter_, 0, 0, shelf_->shelf_width_ * 2.0, "SimpleCollisionWall",
+                                       rvt::BROWN );
   visual_tools_->triggerPlanningSceneUpdate();
   ros::Duration(1.0).sleep();
 
@@ -350,6 +367,8 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
 
         // #################################################################################################################
       case 11: statusPublisher("Moving back to INITIAL position");
+
+        createCollisionWall(); // Reduce collision model to simple wall that prevents Baxter from hitting shelf
 
         if (!moveToStartPosition(arm_jmg))
         {

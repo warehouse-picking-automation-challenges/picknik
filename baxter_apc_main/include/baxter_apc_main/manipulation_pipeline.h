@@ -44,7 +44,7 @@ namespace baxter_apc_main
 
 MOVEIT_CLASS_FORWARD(ManipulationPipeline);
 
-static const std::string START_POSE = "both_ready"; // where to move baxter to initially
+static const std::string START_POSE = "both_neutral"; // where to move baxter to initially
 const double APPROACH_DISTANCE_DESIRED = 0.1; // amount beyond min distance
 
 class ManipulationPipeline
@@ -78,6 +78,12 @@ public:
    * \return true on success
    */
   bool setupPlanningScene( const std::string& bin_name );
+
+  /**
+   * \brief Show simple collision wall that protects shelf
+   * \return true on success
+   */
+  bool createCollisionWall();
 
   /**
    * \brief Grasp product
