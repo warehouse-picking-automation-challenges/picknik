@@ -29,12 +29,12 @@ MOVEIT_CLASS_FORWARD(ShelfObject);
 MOVEIT_CLASS_FORWARD(BinObject);
 MOVEIT_CLASS_FORWARD(ProductObject);
 
+/*
+const double FIRST_BIN_FROM_BOTTOM = 0.81;
 const double SHELF_WIDTH = 0.873;
 const double SHELF_HEIGHT= 2.37;
 const double SHELF_DEPTH = 0.875;
 const double SHELF_DISTANCE_FROM_BAXTER = 1.0; //1.0; //0.8 // this is the main variable - how far from baxter's face forward is shelf?
-
-//const double FIRST_BIN_FROM_BOTTOM = 0.81;
 const double FIRST_BIN_FROM_BOTTOM = 0.7;
 const double FIRST_BIN_FROM_RIGHT = 0.036;
 const double BIN_WIDTH = SHELF_WIDTH / 3.2;
@@ -44,6 +44,7 @@ const double BIN_TOP_MARGIN = 0.01;
 const double BIN_LEFT_MARGIN = 0.01;
 const double NUM_BINS = 12;
 const double SHELF_WALL_WIDTH = 0.02;
+*/
 
 int iRand(int min, int max)
 {
@@ -96,12 +97,6 @@ public:
   Rectangle(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
             const rvt::colors &color = rvt::RAND, const std::string &name = "");
   
-  /**
-   * \brief Show coordinate system
-   * \param trans - transform from parent container to current container
-   */
-  bool visualizeAxis(const Eigen::Affine3d& trans, mvt::MoveItVisualToolsPtr visual_tools) const;
-
   /**
    * \brief Show bin in Rviz (not collision bodies)
    * \param trans - transform from parent container to current container
@@ -170,6 +165,12 @@ public:
   bool visualize(const Eigen::Affine3d& trans) const;
 
   /**
+   * \brief Show coordinate system
+   * \param trans - transform from parent container to current container
+   */
+  bool visualizeAxis(const Eigen::Affine3d& trans, mvt::MoveItVisualToolsPtr visual_tools) const;
+
+  /**
    * \brief Create collision bodies of bin
    * \param trans - transform from parent container to current container
    */
@@ -213,19 +214,35 @@ class ShelfObject : public Rectangle
 
 public:
 
+  // Loaded shelf parameter values
+  double shelf_distance_from_baxter_;
+  double shelf_width_;
+  double shelf_height_;
+  double shelf_depth_;
+  double shelf_wall_width_;
+  double first_bin_from_bottom_;
+  double first_bin_from_right_;
+
+  // Loaded bin parameter values
+  double bin_width_;
+  double bin_middle_width_;
+  double bin_height_;
+  double bin_depth_;
+  double bin_top_margin_;
+  double bin_left_margin_;
+  double num_bins_;
+
   /**
    * \brief Constructor
    * \param shelf_id
    */
   ShelfObject(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
-              const rvt::colors &color,
-              const std::string &name,
-              const std::string &package_path);
+              const rvt::colors &color, const std::string &name);
 
   /**
    * \brief Load geometry of shelf and bins (coordinate systems, etc)
    */
-  bool initialize(const std::string &package_path);
+  bool initialize(const std::string &package_path, ros::NodeHandle &nh);
 
   /**
    * \brief Helper for creating a bin
@@ -349,6 +366,11 @@ struct WorkOrder
 };
 
 typedef std::vector<WorkOrder> WorkOrders;
+
+// -------------------------------------------------------------------------------------------------
+// Work Order Struct
+// -------------------------------------------------------------------------------------------------
+bool getDoubleParameter(ros::NodeHandle &nh, const std::string &param_name, double &value);
 
 } // namespace
 

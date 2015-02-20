@@ -81,6 +81,12 @@ public:
   bool testUpAndDown();
 
   /**
+   * \brief Script for moving arms to locations of corner of shelf
+   * \return true on success
+   */
+  bool testShelfLocation();
+
+  /**
    * \brief Load shelf contents
    * \return true on success
    */

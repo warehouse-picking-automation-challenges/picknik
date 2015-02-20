@@ -203,7 +203,7 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
   moveit::core::RobotStatePtr the_grasp_state(new moveit::core::RobotState(*current_state_)); // Allocate robot states
   moveit_msgs::RobotTrajectory approach_trajectory_msg;
   bool wait_for_trajetory = false;
-  double desired_lift_distance = 0.1;
+  double desired_lift_distance = 0.05;
 
   // Prevent jump-to errors
   if (jump_to == 3)

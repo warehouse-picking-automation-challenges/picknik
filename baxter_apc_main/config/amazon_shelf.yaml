@@ -1,2 +1,20 @@
+# Shelf parameters
 shelf_distance_from_baxter: 1.0
-first_bin_from_bottom: 0.7
+
+shelf_width: 0.873
+shelf_height: 2.37
+shelf_depth: 0.875
+shelf_wall_width: 0.02
+
+# Bin parameters
+first_bin_from_bottom: 0.98
+#first_bin_from_bottom: 0.81 # If at correct competition height
+first_bin_from_right: 0.036
+bin_width: 0.250825
+bin_middle_width: 0.2921
+bin_height: 0.26
+bin_depth: 0.42
+bin_top_margin: 0.01
+bin_left_margin: 0.01
+num_bins: 12.0
+
