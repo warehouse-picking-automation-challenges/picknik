@@ -15,11 +15,11 @@
     ],
     "bin_D":
     [
-      "oreo_mega_stuff"
+      "crayola_64_ct"
     ],
     "bin_E":
     [
-      "expo_dry_erase_board_eraser","expo_dry_erase_board_eraser"
+      "expo_dry_erase_board_eraser","oreo_mega_stuff"
     ],
     "bin_F":
     [
@@ -27,7 +27,7 @@
     ],
     "bin_G":
     [
-      "first_years_take_and_toss_straw_cups","genuine_joe_plastic_stir_sticks"
+      "expo_dry_erase_board_eraser"
     ],
     "bin_H":
     [
@@ -39,7 +39,7 @@
     ],
     "bin_J":
     [
-      "highland_6539_self_stick_notes","first_years_take_and_toss_straw_cups"
+      "feline_greenies_dental_treats"
     ],
     "bin_K":
     [
@@ -59,15 +59,15 @@
     },
     {
       "bin": "bin_D",
-      "item": "oreo_mega_stuff"
+      "item": "crayola_64_ct"
     },
     {
       "bin": "bin_G",
-      "item": "genuine_joe_plastic_stir_sticks"
+      "item": "expo_dry_erase_board_eraser"
     },
     {
       "bin": "bin_J",
-      "item": "first_years_take_and_toss_straw_cups"
+      "item": "feline_greenies_dental_treats"
     }
   ]
 }

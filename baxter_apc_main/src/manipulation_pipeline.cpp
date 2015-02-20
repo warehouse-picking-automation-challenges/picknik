@@ -245,6 +245,7 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
       // #################################################################################################################
       case 0: statusPublisher("Moving to initial position");
 
+        openEndEffectors(false);
         moveToStartPosition();
         break;
 
@@ -452,9 +453,10 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
   grasp_filter_->filterGraspsInCollision(filtered_grasps, planning_scene_monitor_, arm_jmg, current_state_, verbose && false);
 
   // Visualize IK solutions
+  double display_time = 0.5;
   ROS_DEBUG_STREAM_NAMED("manipulation.collision_filtered_solutions","Publishing collision filtered solutions");
   ROS_DEBUG_STREAM_NAMED("manipulation.collision_filtered_solutions",
-                         visualizeIKSolutions(filtered_grasps, arm_jmg) ? "Done" : "Failed");
+                         visualizeIKSolutions(filtered_grasps, arm_jmg, display_time) ? "Done" : "Failed");
 
   // Choose grasp
   if (!grasp_filter_->chooseBestGrasp(filtered_grasps, chosen))
@@ -558,7 +560,7 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
   req.allowed_planning_time = 30; // seconds
   req.use_experience = use_experience_;
   req.experience_method = "lightning";
-  req.max_velocity_scaling_factor = 0.1;
+  req.max_velocity_scaling_factor = 0.75; //0.1;
 
   // Parameters for the workspace that the planner should work inside relative to center of robot
   double workspace_size = 1;
