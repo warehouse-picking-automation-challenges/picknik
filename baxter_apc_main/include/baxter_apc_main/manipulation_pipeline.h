@@ -17,6 +17,7 @@
 
 #include <baxter_apc_main/shelf.h>
 #include <baxter_apc_main/namespaces.h>
+#include <baxter_apc_main/visuals.h>
 
 // ROS
 #include <ros/ros.h>
@@ -24,7 +25,6 @@
 
 // MoveIt
 #include <moveit/collision_detection/world.h>
-#include <moveit_visual_tools/moveit_visual_tools.h>
 #include <ompl_visual_tools/ompl_visual_tools.h>
 #include <moveit/planning_pipeline/planning_pipeline.h>
 #include <moveit/kinematic_constraints/utils.h>
@@ -56,8 +56,7 @@ public:
    * \param verbose - run in debug mode
    */
   ManipulationPipeline(bool verbose,
-                       mvt::MoveItVisualToolsPtr visual_tools,
-                       mvt::MoveItVisualToolsPtr visual_tools_display,
+                       VisualsPtr visuals,
                        planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                        ShelfObjectPtr shelf, bool use_experience, bool show_database);
 
@@ -310,8 +309,7 @@ protected:
   bool verbose_;
 
   // For visualizing things in rviz
-  mvt::MoveItVisualToolsPtr visual_tools_;
-  mvt::MoveItVisualToolsPtr visual_tools_display_;
+  VisualsPtr visuals_;
   ovt::OmplVisualToolsPtr ompl_visual_tools_;
 
   // Core MoveIt components
@@ -364,7 +362,7 @@ protected:
 namespace
 {
 bool isStateValid(const planning_scene::PlanningScene *planning_scene, bool verbose,
-                  mvt::MoveItVisualToolsPtr visual_tools, robot_state::RobotState *state,
+                  baxter_apc_main::VisualsPtr visuals, robot_state::RobotState *state,
                   const robot_state::JointModelGroup *group, const double *ik_solution);
 }
 

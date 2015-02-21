@@ -70,8 +70,7 @@ public:
    * \param verbose - run in debug mode
    */
   LearningPipeline(bool verbose, 
-                   mvt::MoveItVisualToolsPtr visual_tools,
-                   mvt::MoveItVisualToolsPtr visual_tools_display,
+                   VisualsPtr visuals,
                    planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                    ShelfObjectPtr shelf, bool use_experience, bool show_database);
 

@@ -21,13 +21,11 @@
 #include <baxter_apc_main/shelf.h>
 #include <baxter_apc_main/manipulation_pipeline.h>
 #include <baxter_apc_main/learning_pipeline.h>
+#include <baxter_apc_main/visuals.h>
 
 // ROS
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
-
-// MoveIt
-#include <moveit_visual_tools/moveit_visual_tools.h>
 
 namespace baxter_apc_main
 {
@@ -112,8 +110,7 @@ private:
   bool verbose_;
 
   // For visualizing things in rviz
-  mvt::MoveItVisualToolsPtr visual_tools_;
-  mvt::MoveItVisualToolsPtr visual_tools_display_;
+  VisualsPtr visuals_;
 
   // Core MoveIt components
   robot_model_loader::RobotModelLoaderPtr robot_model_loader_;

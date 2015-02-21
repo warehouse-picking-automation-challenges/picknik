@@ -20,10 +20,9 @@
 namespace baxter_apc_main
 {
 
-AmazonJSONParser::AmazonJSONParser(bool verbose, mvt::MoveItVisualToolsPtr visual_tools,mvt::MoveItVisualToolsPtr visual_tools_display)
+AmazonJSONParser::AmazonJSONParser(bool verbose, VisualsPtr visuals)
   : verbose_(verbose)
-  , visual_tools_(visual_tools)
-  , visual_tools_display_(visual_tools_display)
+  , visuals_(visuals)
 {
   ROS_INFO_STREAM_NAMED("parser","AmazonJSONParser Ready.");
 }
@@ -107,19 +106,19 @@ bool AmazonJSONParser::parseBins(const std::string& package_path, const Json::Va
         ROS_DEBUG_STREAM_NAMED("parser","   product: " << product_name);
 
       // Add object to a bin
-      ProductObjectPtr product(new ProductObject(visual_tools_, visual_tools_display_, rvt::RAND, product_name, package_path));
+      ProductObjectPtr product(new ProductObject(visuals_, rvt::RAND, product_name, package_path));
 
       // Set location of product
-      product->bottom_right_.translation() = Eigen::Vector3d(0.05, //visual_tools_->dRand(0.0, 0.05),  // depth
+      product->bottom_right_.translation() = Eigen::Vector3d(0.05, //visuals_->visual_tools_->dRand(0.0, 0.05),  // depth
                                                             bin_y_space,  // from right
                                                             0.05);
 
       // Set size of product
-      double width = visual_tools_->dRand(0.01, 0.06);
+      double width = visuals_->visual_tools_->dRand(0.01, 0.06);
       product->top_left_.translation() = product->bottom_right_.translation() + 
-        Eigen::Vector3d(visual_tools_->dRand(0.01, 0.2), // depth
+        Eigen::Vector3d(visuals_->visual_tools_->dRand(0.01, 0.2), // depth
                         width, //width
-                        visual_tools_->dRand(0.05, 0.2)); // height
+                        visuals_->visual_tools_->dRand(0.05, 0.2)); // height
 
       bin_y_space += width + 0.07; // spacing between objects
 

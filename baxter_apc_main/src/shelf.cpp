@@ -21,13 +21,12 @@ namespace baxter_apc_main
 // Rectangle Object
 // -------------------------------------------------------------------------------------------------
 
-Rectangle::Rectangle(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
-                     const rvt::colors &color, const std::string &name)                     
-  : visual_tools_(visual_tools)
-  , visual_tools_display_(visual_tools_display)
+Rectangle::Rectangle(VisualsPtr visuals,
+                     const rvt::colors &color, const std::string &name)
+  : visuals_(visuals)
   , color_(color)
   , bottom_right_(Eigen::Affine3d::Identity())
-  , top_left_(Eigen::Affine3d::Identity())    
+  , top_left_(Eigen::Affine3d::Identity())
 {
   if (name.empty())
   {
@@ -46,9 +45,9 @@ Rectangle::Rectangle(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualTo
 bool Rectangle::visualize(const Eigen::Affine3d& trans) const
 {
   // Show bin
-  visual_tools_display_->publishRectangle( transform(bottom_right_, trans).translation(),
-                                   transform(top_left_, trans).translation(),
-                                   color_);
+  visuals_->visual_tools_display_->publishRectangle( transform(bottom_right_, trans).translation(),
+                                                     transform(top_left_, trans).translation(),
+                                                     color_);
   return true;
 }
 
@@ -57,7 +56,7 @@ bool Rectangle::createCollisionBodies(const Eigen::Affine3d &trans) const
   ROS_DEBUG_STREAM_NAMED("shelf","Creating collision rectangle with name " << name_);
 
   // Show bin
-  visual_tools_->publishCollisionRectangle( transform(bottom_right_, trans).translation(),
+  visuals_->visual_tools_->publishCollisionRectangle( transform(bottom_right_, trans).translation(),
                                             transform(top_left_, trans).translation(),
                                             name_, color_ );
   return true;
@@ -100,17 +99,17 @@ void Rectangle::setName(std::string name)
 // Bin Object
 // -------------------------------------------------------------------------------------------------
 
-BinObject::BinObject(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
+BinObject::BinObject(VisualsPtr visuals,
                      const rvt::colors &color,
                      const std::string &name)
-  : Rectangle(visual_tools, visual_tools_display, color, name)
+  : Rectangle(visuals, color, name)
 {
 }
 
 bool BinObject::visualize(const Eigen::Affine3d& trans) const
 {
   // Show bin
-  //visual_tools_display_->publishRectangle( transform(bottom_right_, trans).translation(),
+  //visuals_->visual_tools_display_->publishRectangle( transform(bottom_right_, trans).translation(),
   //                                 transform(top_left_, trans).translation(),
   //                                 color_);
 
@@ -123,25 +122,25 @@ bool BinObject::visualize(const Eigen::Affine3d& trans) const
   return true;
 }
 
-bool BinObject::visualizeAxis(const Eigen::Affine3d& trans, mvt::MoveItVisualToolsPtr visual_tools) const
+bool BinObject::visualizeAxis(const Eigen::Affine3d& trans, VisualsPtr visuals) const
 {
   // Show coordinate system
-  visual_tools->publishAxis( transform(bottom_right_, trans) );
+  visuals_->visual_tools_->publishAxis( transform(bottom_right_, trans) );
 
   // Show label
   Eigen::Affine3d text_location = transform( bottom_right_, trans);
-                                             
+
   text_location.translation() += Eigen::Vector3d(0,getWidth()/2.0, getHeight()*0.9);
 
-  visual_tools->publishText( text_location, name_, rvt::BLACK, rvt::REGULAR, false);
-  
+  visuals->visual_tools_->publishText( text_location, name_, rvt::BLACK, rvt::REGULAR, false);
+
 }
 
 bool BinObject::createCollisionBodies(const Eigen::Affine3d &trans) const
 {
   ROS_DEBUG_STREAM_NAMED("shelf","Creating collision bin " << name_);
 
-  visual_tools_->publishCollisionRectangle( transform(bottom_right_, trans).translation(),
+  visuals_->visual_tools_->publishCollisionRectangle( transform(bottom_right_, trans).translation(),
                                             transform(top_left_, trans).translation(),
                                             name_, color_ );
 
@@ -182,9 +181,9 @@ ProductObjectPtr BinObject::getProduct(const std::string& name)
 // Shelf Object
 // -------------------------------------------------------------------------------------------------
 
-ShelfObject::ShelfObject(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
+ShelfObject::ShelfObject(VisualsPtr visuals,
                          const rvt::colors &color, const std::string &name)
-  : Rectangle(visual_tools, visual_tools_display, color, name)
+  : Rectangle(visuals, color, name)
 {
 }
 
@@ -266,7 +265,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
       bins_[bin_name]->top_left_.translation().x() += bin_depth_;
       bins_[bin_name]->top_left_.translation().y() += bin_width_;
       bins_[bin_name]->top_left_.translation().z() += this_bin_height;
-      
+
       // Choose what width the current bin is
       if (bin_id == 1 || bin_id == 4 || bin_id == 7 || bin_id == 10)
         this_bin_width = bin_middle_width_;
@@ -292,7 +291,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
 
   // Base
   // Note: bottom right is at 0,0,0
-  shelf_parts_.push_back(Rectangle(visual_tools_, visual_tools_display_, color_, "base"));
+  shelf_parts_.push_back(Rectangle(visuals_, color_, "base"));
   Rectangle &base = shelf_parts_[shelf_parts_.size()-1];
   base.top_left_.translation().x() += shelf_depth_;
   base.top_left_.translation().y() += shelf_width_;
@@ -304,7 +303,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   {
     // Note: bottom right is at 0,0,0
     const std::string wall_name = "wall_" + boost::lexical_cast<std::string>(i);
-    shelf_parts_.push_back(Rectangle(visual_tools_, visual_tools_display_, color_, wall_name));
+    shelf_parts_.push_back(Rectangle(visuals_, color_, wall_name));
     Rectangle &wall = shelf_parts_[shelf_parts_.size()-1];
     // Geometry
     wall.bottom_right_.translation().x() = 0;
@@ -329,7 +328,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   for (std::size_t i = 0; i < 5; ++i)
   {
     const std::string shelf_name = "shelf_" + boost::lexical_cast<std::string>(i);
-    shelf_parts_.push_back(Rectangle(visual_tools_, visual_tools_display_, color_, shelf_name));
+    shelf_parts_.push_back(Rectangle(visuals_, color_, shelf_name));
     Rectangle &shelf = shelf_parts_[shelf_parts_.size()-1];
 
     // Geometry
@@ -357,22 +356,22 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
 
 bool ShelfObject::insertBinHelper(rvt::colors color, const std::string& name)
 {
-  BinObjectPtr new_bin(new BinObject(visual_tools_, visual_tools_display_, color, name));
+  BinObjectPtr new_bin(new BinObject(visuals_, color, name));
 
   bins_.insert( std::pair<std::string, BinObjectPtr>(name, new_bin));
-                                                  
+
   return true;
 }
 
-bool ShelfObject::visualizeAxis(mvt::MoveItVisualToolsPtr visual_tools) const
+bool ShelfObject::visualizeAxis(VisualsPtr visuals) const
 {
   // Show coordinate system
-  visual_tools->publishAxis( bottom_right_ );
+  visuals_->visual_tools_->publishAxis( bottom_right_ );
 
   // Show each bin
   for (BinObjectMap::const_iterator bin_it = bins_.begin(); bin_it != bins_.end(); bin_it++)
   {
-    bin_it->second->visualizeAxis(bottom_right_, visual_tools);
+    bin_it->second->visualizeAxis(bottom_right_, visuals);
   }
 }
 
@@ -388,7 +387,7 @@ bool ShelfObject::visualize() const
   offset.translation().z() = first_bin_from_bottom_ - 0.81; // TODO remove this height - only for temp table setup
 
   // Publish mesh
-  if (!visual_tools_display_->publishMesh(offset, mesh_path_, rvt::BROWN, 1, "Shelf"))
+  if (!visuals_->visual_tools_display_->publishMesh(offset, mesh_path_, rvt::BROWN, 1, "Shelf"))
     return false;
 
   // Show each bin
@@ -401,7 +400,7 @@ bool ShelfObject::visualize() const
 bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool just_frame, bool show_all_products) const
 {
   // Publish in batch
-  visual_tools_->enableBatchPublishing(true);
+  visuals_->visual_tools_->enableBatchPublishing(true);
 
   // Create side walls of shelf
   for (std::size_t i = 0; i < shelf_parts_.size(); ++i)
@@ -414,10 +413,10 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
   {
     // Send all the shapes for the shelf first, then secondly the products
     BinObjectPtr focus_bin;
-    
+
     for (BinObjectMap::const_iterator bin_it = bins_.begin(); bin_it != bins_.end(); bin_it++)
     {
-      // Check if this is the focused bin 
+      // Check if this is the focused bin
       if (bin_it->second->getName() == focus_bin_name)
       {
         focus_bin = bin_it->second; // save for later
@@ -442,7 +441,7 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
     }
   }
 
-  return visual_tools_->triggerBatchPublishAndDisable();
+  return visuals_->visual_tools_->triggerBatchPublishAndDisable();
 }
 
 bool ShelfObject::createCollisionShelfDetailed() const
@@ -458,7 +457,7 @@ bool ShelfObject::createCollisionShelfDetailed() const
   offset.translation().y() = 0;
 
   // Publish mesh
-  if (!visual_tools_->publishCollisionMesh(offset, name_, mesh_path_, color_))
+  if (!visuals_->visual_tools_->publishCollisionMesh(offset, name_, mesh_path_, color_))
     return false;
 
   // Add products to shelves
@@ -477,7 +476,7 @@ ProductObjectPtr ShelfObject::getProduct(const std::string &bin_name, const std:
 {
   // Find correct bin
   BinObjectPtr bin = bins_[bin_name];
-  
+
   if (!bin)
   {
     ROS_WARN_STREAM_NAMED("shelf","Unable to find product " << product_name << " in bin " << bin_name << " in the database");
@@ -513,17 +512,17 @@ bool ShelfObject::deleteProduct(const std::string &bin_name, const std::string &
   }
 
   ROS_WARN_STREAM_NAMED("shelf","Unable to delete product " << product_name << " in bin " << bin_name << " in the database");
-  return false;  
+  return false;
 }
 
 // -------------------------------------------------------------------------------------------------
 // Product Object
 // -------------------------------------------------------------------------------------------------
-ProductObject::ProductObject(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
+ProductObject::ProductObject(VisualsPtr visuals,
                              const rvt::colors &color,
                              const std::string &name,
                              const std::string &package_path)
-  : Rectangle( visual_tools, visual_tools_display, color, name )
+  : Rectangle( visuals, color, name )
 {
   // Ensure the name is unique
   static std::size_t product_id = 0;
@@ -550,19 +549,19 @@ void ProductObject::setCollisionName(std::string name)
 
 bool ProductObject::visualize(const Eigen::Affine3d &trans) const
 {
-  visual_tools_display_->publishAxis(transform(bottom_right_, trans), 0.1/2, 0.01/2);
+  visuals_->visual_tools_display_->publishAxis(transform(bottom_right_, trans), 0.1/2, 0.01/2);
 
   // Show product mesh
-  return visual_tools_display_->publishMesh(transform(bottom_right_, trans), mesh_path_);
+  return visuals_->visual_tools_display_->publishMesh(transform(bottom_right_, trans), mesh_path_);
 }
 
 bool ProductObject::createCollisionBodies(const Eigen::Affine3d &trans) const
-{ 
+{
   // Show product mesh
-  if (!visual_tools_->publishCollisionMesh(transform(bottom_right_, trans), collision_object_name_, collision_mesh_path_, rvt::RAND))
+  if (!visuals_->visual_tools_->publishCollisionMesh(transform(bottom_right_, trans), collision_object_name_, collision_mesh_path_, rvt::RAND))
   {
     // Fall back to publishing rectangles
-    visual_tools_->publishCollisionRectangle( transform(bottom_right_, trans).translation(),
+    visuals_->visual_tools_->publishCollisionRectangle( transform(bottom_right_, trans).translation(),
                                               transform(top_left_, trans).translation(),
                                               collision_object_name_, color_ );
     return false;

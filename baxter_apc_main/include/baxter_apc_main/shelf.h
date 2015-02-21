@@ -20,7 +20,7 @@
 
 // MoveIt
 #include <baxter_apc_main/namespaces.h>
-#include <moveit_visual_tools/moveit_visual_tools.h>
+#include <baxter_apc_main/visuals.h>
 
 namespace baxter_apc_main
 {
@@ -78,8 +78,7 @@ protected:
   std::string name_;
 
   // Pointer to a pre-loaded visual_tools_ object
-  mvt::MoveItVisualToolsPtr visual_tools_;
-  mvt::MoveItVisualToolsPtr visual_tools_display_;
+  VisualsPtr visuals_;
 
 public:
 
@@ -94,8 +93,7 @@ public:
    * \brief Constructor
    * \return
    */
-  Rectangle(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
-            const rvt::colors &color = rvt::RAND, const std::string &name = "");
+  Rectangle(VisualsPtr visuals, const rvt::colors &color = rvt::RAND, const std::string &name = "");
   
   /**
    * \brief Show bin in Rviz (not collision bodies)
@@ -154,9 +152,7 @@ public:
   /**
    * \brief Constructor
    */
-  BinObject(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
-            const rvt::colors &color,
-            const std::string &name);
+  BinObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name);
 
   /**
    * \brief Show bin in Rviz (not collision bodies)
@@ -168,7 +164,7 @@ public:
    * \brief Show coordinate system
    * \param trans - transform from parent container to current container
    */
-  bool visualizeAxis(const Eigen::Affine3d& trans, mvt::MoveItVisualToolsPtr visual_tools) const;
+  bool visualizeAxis(const Eigen::Affine3d& trans, VisualsPtr visuals) const;
 
   /**
    * \brief Create collision bodies of bin
@@ -237,8 +233,7 @@ public:
    * \brief Constructor
    * \param shelf_id
    */
-  ShelfObject(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
-              const rvt::colors &color, const std::string &name);
+  ShelfObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name);
 
   /**
    * \brief Load geometry of shelf and bins (coordinate systems, etc)
@@ -253,7 +248,7 @@ public:
   /**
    * \brief Show coordinate system
    */
-  bool visualizeAxis(mvt::MoveItVisualToolsPtr visual_tools) const;
+  bool visualizeAxis(VisualsPtr visuals) const;
 
   /**
    * \brief Show shelf in Rviz (not collision bodies)
@@ -316,10 +311,7 @@ public:
  /**
    * \brief Constructor
    */
-  ProductObject(mvt::MoveItVisualToolsPtr visual_tools, mvt::MoveItVisualToolsPtr visual_tools_display,
-                const rvt::colors &color,
-                const std::string &name,
-                const std::string &package_path);
+  ProductObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name, const std::string &package_path);
 
   /**
    * \brief Getter for collision name - unique incase there are more than 1 product with the same name

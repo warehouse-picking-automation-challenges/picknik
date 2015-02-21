@@ -44,12 +44,10 @@
 namespace baxter_apc_main
 {
 
-LearningPipeline::LearningPipeline(bool verbose, 
-                                   mvt::MoveItVisualToolsPtr visual_tools,
-                                   mvt::MoveItVisualToolsPtr visual_tools_display,
+LearningPipeline::LearningPipeline(bool verbose, VisualsPtr visuals,
                                    planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                                    ShelfObjectPtr shelf, bool use_experience, bool show_database)
-  : ManipulationPipeline(verbose, visual_tools, visual_tools_display, planning_scene_monitor, shelf, use_experience, show_database)
+  : ManipulationPipeline(verbose, visuals, planning_scene_monitor, shelf, use_experience, show_database)
 {
 
   ROS_INFO_STREAM_NAMED("learning_pipeline","LearningPipeline Ready.");
@@ -95,8 +93,8 @@ bool LearningPipeline::visualizePose(Eigen::Affine3d grasp_pose, const moveit::c
   // Rotate based on EE type
   grasp_pose = grasp_pose * grasp_datas_[arm_jmg].grasp_pose_to_eef_pose_;
 
-  visual_tools_->publishArrow(grasp_pose);
-  visual_tools_->publishEEMarkers(grasp_pose, ee_jmg, rvt::GREEN);
+  visuals_->visual_tools_->publishArrow(grasp_pose);
+  visuals_->visual_tools_->publishEEMarkers(grasp_pose, ee_jmg, rvt::GREEN);
 }
 
 bool LearningPipeline::generateTrainingGoalsBin(Eigen::Affine3d bin_transpose, EigenSTL::vector_Affine3d &poses)
@@ -173,8 +171,8 @@ bool LearningPipeline::analyzeGrasps(const moveit::core::JointModelGroup* arm_jm
       // debug mode
       if (false)
       {
-        visual_tools_->publishArrow(grasp_pose_msg.pose, rvt::RED);
-        visual_tools_->publishEEMarkers(grasp_pose_msg.pose, ee_jmg);
+        visuals_->visual_tools_->publishArrow(grasp_pose_msg.pose, rvt::RED);
+        visuals_->visual_tools_->publishEEMarkers(grasp_pose_msg.pose, ee_jmg);
         ros::Duration(1).sleep();
       }
 
@@ -255,7 +253,7 @@ bool LearningPipeline::analyzeGrasps(const moveit::core::JointModelGroup* arm_jm
     // Visualize animated grasps
     double animation_speed = 0.01;
     ROS_DEBUG_STREAM_NAMED("learning.ik_animated_grasps","Showing animated grasps" 
-                           << visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg, animation_speed));
+                           << visuals_->visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg, animation_speed));
 
     // Visualize IK solutions
     ROS_DEBUG_STREAM_NAMED("learning.ik_filtered_solutions","enabled" << visualizeIKSolutions(filtered_grasps_, arm_jmg));
@@ -283,7 +281,7 @@ bool LearningPipeline::analyzeGrasps(const moveit::core::JointModelGroup* arm_jm
     // Visualize valid grasps as arrows with cartesian path as well
     bool show_cartesian_path = false;
     ROS_DEBUG_STREAM_NAMED("learning.collision_filtered_grasps","enabled" 
-                           << visual_tools_->deleteAllMarkers()
+                           << visuals_->visual_tools_->deleteAllMarkers()
                            << visualizeGrasps(filtered_grasps_, arm_jmg, show_cartesian_path));
 
     // Output statistics
@@ -343,7 +341,7 @@ bool LearningPipeline::displayGrasps(bool valid_only)
 
     for (std::size_t i = 0; i < data.poses.size(); ++i)
     {
-      visual_tools_->publishArrow(data.poses[i]);
+      visuals_->visual_tools_->publishArrow(data.poses[i]);
       ros::Duration(0.001).sleep();
     }
   }
@@ -364,8 +362,8 @@ bool LearningPipeline::testSingleGraspIK()
   // debug mode
   if (true)
   {
-    visual_tools_->publishArrow(eigen_grasp_pose, rvt::RED);
-    visual_tools_->publishEEMarkers(eigen_grasp_pose, ee_jmg);
+    visuals_->visual_tools_->publishArrow(eigen_grasp_pose, rvt::RED);
+    visuals_->visual_tools_->publishEEMarkers(eigen_grasp_pose, ee_jmg);
     ros::Duration(1).sleep();
   }
 

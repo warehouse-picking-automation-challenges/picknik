@@ -40,21 +40,7 @@ APCManager::APCManager(bool verbose, std::string order_fp)
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to load planning scene monitor");
   }
 
-  // Load the Robot Viz Tools for publishing to Rviz
-  visual_tools_.reset(new mvt::MoveItVisualTools(robot_model_->getModelFrame(), "/baxter_apc_main/markers", planning_scene_monitor_));
-  visual_tools_->loadRobotStatePub("/baxter_apc_main/robot_state");
-  visual_tools_->loadTrajectoryPub("/baxter_apc_main/display_trajectory");
-  visual_tools_->loadMarkerPub();
-  visual_tools_->setAlpha(0.8);
-  visual_tools_->hideRobot(); // show that things have been reset
-  visual_tools_->deleteAllMarkers(); // clear all old markers
-  visual_tools_->setManualSceneUpdating(true);
-
-  // Load the COLLISION Robot Viz Tools for publishing to Rviz
-  visual_tools_display_.reset(new mvt::MoveItVisualTools(robot_model_->getModelFrame(), "/amazon_shelf_markers_display", planning_scene_monitor_));
-  //visual_tools_display_->loadRobotStatePub("/baxter_amazon_display");
-  //visual_tools_display_->hideRobot(); // show that things have been reset
-  visual_tools_display_->deleteAllMarkers(); // clear all old markers
+  visuals_.reset(new Visuals(robot_model_, planning_scene_monitor_));
 
   // Get package path
   package_path_ = ros::package::getPath(PACKAGE_NAME);
@@ -62,7 +48,7 @@ APCManager::APCManager(bool verbose, std::string order_fp)
     ROS_FATAL_STREAM_NAMED("product", "Unable to get " << PACKAGE_NAME << " package path" );
 
   // Load shelf
-  shelf_.reset(new ShelfObject(visual_tools_, visual_tools_display_, rvt::BROWN, "shelf_0"));
+  shelf_.reset(new ShelfObject(visuals_, rvt::BROWN, "shelf_0"));
   if (!shelf_->initialize(package_path_, nh_))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to load shelf");
@@ -78,7 +64,7 @@ APCManager::APCManager(bool verbose, std::string order_fp)
 bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t order_start, std::size_t jump_to)
 {
   // Create the pick place pipeline
-  pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, visual_tools_display_,
+  pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
                                            planning_scene_monitor_, shelf_, use_experience, show_database));
 
   std::cout << std::endl;
@@ -105,7 +91,7 @@ bool APCManager::trainExperienceDatabase()
   // Create learning pipeline for training the experience database
   bool use_experience = false;
   bool show_database = false;
-  learning_.reset(new LearningPipeline(verbose_, visual_tools_, visual_tools_display_,
+  learning_.reset(new LearningPipeline(verbose_, visuals_,
                                        planning_scene_monitor_, shelf_, use_experience, show_database));
 
   ROS_INFO_STREAM_NAMED("apc_manager","Training experience database");
@@ -119,7 +105,7 @@ bool APCManager::testEndEffectors()
   // Create the pick place pipeline
   bool use_experience = false;
   bool show_database = false;
-  pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, visual_tools_display_,
+  pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
                                            planning_scene_monitor_, shelf_, use_experience, show_database));
 
   // Test visualization
@@ -154,7 +140,7 @@ bool APCManager::testUpAndDown()
   // Create the pick place pipeline
   bool use_experience = false;
   bool show_database = false;
-  pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, visual_tools_display_,
+  pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
                                            planning_scene_monitor_, shelf_, use_experience, show_database));
 
   // Configure
@@ -193,7 +179,7 @@ bool APCManager::testShelfLocation()
   // Create the pick place pipeline
   bool use_experience = false;
   bool show_database = false;
-  pipeline_.reset(new ManipulationPipeline(verbose_, visual_tools_, visual_tools_display_,
+  pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
                                            planning_scene_monitor_, shelf_, use_experience, show_database));
 
   // Configure
@@ -207,7 +193,7 @@ bool APCManager::testShelfLocation()
 bool APCManager::loadShelfContents(std::string order_fp)
 {
   // Choose file
-  AmazonJSONParser parser(verbose_, visual_tools_, visual_tools_display_);
+  AmazonJSONParser parser(verbose_, visuals_);
   // Parse json
   return parser.parse(order_fp, package_path_, shelf_, orders_);
 }
@@ -215,18 +201,18 @@ bool APCManager::loadShelfContents(std::string order_fp)
 bool APCManager::visualizeShelf()
 {
   // Show the mesh visualization
-  visual_tools_display_->enableBatchPublishing(true);
+  visuals_->visual_tools_display_->enableBatchPublishing(true);
   shelf_->visualize();
-  shelf_->visualizeAxis(visual_tools_display_);
-  visual_tools_display_->triggerBatchPublishAndDisable();
+  shelf_->visualizeAxis(visuals_);
+  visuals_->visual_tools_display_->triggerBatchPublishAndDisable();
 
   // Now show empty shelf to help in reversing robot arms to initial position
-  visual_tools_->removeAllCollisionObjects();
+  visuals_->visual_tools_->removeAllCollisionObjects();
   bool just_frame = false;
   bool show_all_products = true;
   shelf_->createCollisionBodies("", just_frame, show_all_products); // only show the frame
-  shelf_->visualizeAxis(visual_tools_);
-  visual_tools_->triggerPlanningSceneUpdate();
+  shelf_->visualizeAxis(visuals_);
+  visuals_->visual_tools_->triggerPlanningSceneUpdate();
 
   return true;
 }

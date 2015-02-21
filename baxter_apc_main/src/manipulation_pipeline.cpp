@@ -25,14 +25,12 @@
 namespace baxter_apc_main
 {
 
-ManipulationPipeline::ManipulationPipeline(bool verbose, mvt::MoveItVisualToolsPtr visual_tools,
-                                           mvt::MoveItVisualToolsPtr visual_tools_display,
+ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
                                            planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                                            ShelfObjectPtr shelf, bool use_experience, bool show_database)
   : nh_("~")
   , verbose_(verbose)
-  , visual_tools_(visual_tools)
-  , visual_tools_display_(visual_tools_display)
+  , visuals_(visuals)
   , planning_scene_monitor_(planning_scene_monitor)
   , shelf_(shelf)
   , use_experience_(use_experience)
@@ -69,9 +67,9 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, mvt::MoveItVisualToolsP
   }
 
   // Load grasp generator
-  grasps_.reset( new moveit_grasps::Grasps(visual_tools_) );
+  grasps_.reset( new moveit_grasps::Grasps(visuals_->visual_tools_) );
   setStateWithOpenEE(true, current_state_); // so that grasp filter is started up with EE open
-  grasp_filter_.reset(new moveit_grasps::GraspFilter(current_state_, visual_tools_) );
+  grasp_filter_.reset(new moveit_grasps::GraspFilter(current_state_, visuals_->visual_tools_) );
 
   // Load performance variables
   getDoubleParameter(nh_, "main_velocity_scaling_factor", main_velocity_scaling_factor_);
@@ -102,7 +100,7 @@ bool ManipulationPipeline::loadRobotStates()
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
     current_state_.reset(new moveit::core::RobotState(scene->getCurrentState()));
   }
-  visual_tools_->getSharedRobotState() = current_state_; // allow visual_tools to have the correct virtual joint
+  visuals_->visual_tools_->getSharedRobotState() = current_state_; // allow visual_tools to have the correct virtual joint
   robot_model_ = current_state_->getRobotModel();
 
   if (current_state_->getVariablePosition("virtual_joint/trans_z") != 0.9)
@@ -129,16 +127,19 @@ bool ManipulationPipeline::loadRobotStates()
 
 bool ManipulationPipeline::setupPlanningScene( const std::string& bin_name )
 {
+  //TESTING
+
   // Disable all bins except desired one
-  visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
-  visual_tools_->deleteAllMarkers(); // clear all old markers
-  visual_tools_->triggerPlanningSceneUpdate();
-  ros::Duration(0.5).sleep(); // TODO combine these two parts into one
+  visuals_->visual_tools_->deleteAllMarkers(); // clear all old markers
+  visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
+  //visuals_->visual_tools_->triggerPlanningSceneUpdate();
+  //ros::Duration(0.1).sleep(); // TODO combine these two parts into one
+  //ros::spinOnce();
 
   // Visualize
-  shelf_->visualizeAxis(visual_tools_);
   shelf_->createCollisionBodies(bin_name, false);
-  visual_tools_->triggerPlanningSceneUpdate();
+  visuals_->visual_tools_->triggerPlanningSceneUpdate();
+  shelf_->visualizeAxis(visuals_);
   ros::Duration(1.0).sleep();
 
   return true;
@@ -147,15 +148,15 @@ bool ManipulationPipeline::setupPlanningScene( const std::string& bin_name )
 bool ManipulationPipeline::createCollisionWall()
 {
   // Disable all bins except desired one
-  visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
-  visual_tools_->triggerPlanningSceneUpdate();
+  visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
+  visuals_->visual_tools_->triggerPlanningSceneUpdate();
   ros::Duration(0.5).sleep(); // TODO combine these two parts into one
 
   // Visualize
-  shelf_->visualizeAxis(visual_tools_);
-  visual_tools_->publishCollisionWall( shelf_->shelf_distance_from_baxter_, 0, 0, shelf_->shelf_width_ * 2.0, "SimpleCollisionWall",
+  shelf_->visualizeAxis(visuals_);
+  visuals_->visual_tools_->publishCollisionWall( shelf_->shelf_distance_from_baxter_, 0, 0, shelf_->shelf_width_ * 2.0, "SimpleCollisionWall",
                                        rvt::BROWN );
-  visual_tools_->triggerPlanningSceneUpdate();
+  visuals_->visual_tools_->triggerPlanningSceneUpdate();
   ros::Duration(1.0).sleep();
 
   return true;
@@ -208,7 +209,7 @@ bool ManipulationPipeline::graspObject( WorkOrder order, bool verbose, std::size
 
   // Delete from planning scene the product
   shelf_->deleteProduct(order.bin_->getName(), order.product_->getName());
-  visual_tools_->cleanupACO( order.product_->getCollisionName() ); // use unique name
+  visuals_->visual_tools_->cleanupACO( order.product_->getCollisionName() ); // use unique name
 
   return result;
 }
@@ -283,7 +284,7 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
         if (verbose)
         {
           ROS_INFO_STREAM_NAMED("pipeline","Publishing grasp state in purple");
-          visual_tools_->publishRobotState(the_grasp_state, rvt::PURPLE);
+          visuals_->visual_tools_->publishRobotState(the_grasp_state, rvt::PURPLE);
           ros::Duration(0.5).sleep();
         }
         break;
@@ -326,7 +327,7 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
       case 7: statusPublisher("Cartesian move to the-grasp position");
 
         // Visualize trajectory in Rviz display
-        visual_tools_->publishTrajectoryPath(approach_trajectory_msg, wait_for_trajetory);
+        visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, wait_for_trajetory);
 
         // Run
         if( !executeTrajectoryMsg(approach_trajectory_msg) )
@@ -345,7 +346,7 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
         }
 
         // Attach collision object
-        visual_tools_->attachCO(order.product_->getCollisionName(), grasp_datas_[arm_jmg].parent_link_name_);
+        visuals_->visual_tools_->attachCO(order.product_->getCollisionName(), grasp_datas_[arm_jmg].parent_link_name_);
 
         ros::Duration(0.1).sleep();
         break;
@@ -394,7 +395,7 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
         }
 
         // Unattach
-        visual_tools_->cleanupACO(order.product_->getCollisionName());
+        visuals_->visual_tools_->cleanupACO(order.product_->getCollisionName());
 
         // #################################################################################################################
       default:
@@ -412,7 +413,7 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
 {
   const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[arm_jmg].ee_group_);
 
-  visual_tools_->publishAxis(object_pose);
+  visuals_->visual_tools_->publishAxis(object_pose);
 
   // Generate all possible grasps
   std::vector<moveit_msgs::Grasp> possible_grasps;
@@ -427,7 +428,7 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
     double animation_speed = 0.01;
     ROS_DEBUG_STREAM_NAMED("manipulation.animated_grasps","Showing animated grasps");
     ROS_DEBUG_STREAM_NAMED("manipulation.animated_grasps",
-                           (visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg, animation_speed) ? "Done" : "Failed"));
+                           (visuals_->visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg, animation_speed) ? "Done" : "Failed"));
   }
 
   // Filter grasps based on IK
@@ -538,11 +539,11 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
   if (verbose)
   {
     ROS_INFO_STREAM_NAMED("temp","Showing start state");
-    visual_tools_->publishRobotState(start, rvt::GREEN);
+    visuals_->visual_tools_->publishRobotState(start, rvt::GREEN);
     ros::Duration(0.5).sleep();
 
     ROS_INFO_STREAM_NAMED("temp","Showing goal state");
-    visual_tools_->publishRobotState(goal, rvt::ORANGE);
+    visuals_->visual_tools_->publishRobotState(goal, rvt::ORANGE);
     ros::Duration(0.1).sleep();
   }
 
@@ -578,7 +579,7 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
   req.workspace_parameters.max_corner.y = start->getVariablePosition("virtual_joint/trans_y") + workspace_size;
   req.workspace_parameters.max_corner.z = start->getVariablePosition("virtual_joint/trans_z") + workspace_size;
 
-  //visual_tools_->publishWorkspaceParameters(req.workspace_parameters);
+  //visuals_->visual_tools_->publishWorkspaceParameters(req.workspace_parameters);
 
   // Call pipeline
   std::vector<std::size_t> dummy;
@@ -614,11 +615,11 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
 
   // Visualize trajectory in Rviz display
   bool wait_for_trajetory = false;
-  visual_tools_->publishTrajectoryPath(response.trajectory, wait_for_trajetory);
+  visuals_->visual_tools_->publishTrajectoryPath(response.trajectory, wait_for_trajetory);
 
   // Focus on execution (unless we are in debug mode)
   if (!error)
-    visual_tools_->hideRobot();
+    visuals_->visual_tools_->hideRobot();
 
   // Execute trajectory
   if (execute_trajectory)
@@ -671,7 +672,7 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
 bool ManipulationPipeline::testEndEffectors(bool open)
 {
   setStateWithOpenEE(open, current_state_);
-  visual_tools_->publishRobotState(current_state_);
+  visuals_->visual_tools_->publishRobotState(current_state_);
   openEndEffector(open, left_arm_);
   openEndEffector(open, right_arm_);
 }
@@ -729,8 +730,8 @@ bool ManipulationPipeline::generateApproachPath(const moveit::core::JointModelGr
   if (verbose)
   {
     ROS_INFO_STREAM_NAMED("pipeline","Visualizing pre-grasp");
-    visual_tools_->publishRobotState(pre_grasp_state, rvt::YELLOW);
-    ros::Duration(5.0).sleep();
+    visuals_->visual_tools_->publishRobotState(pre_grasp_state, rvt::YELLOW);
+    ros::Duration(0.1).sleep();
   }
 
   return true;
@@ -745,7 +746,7 @@ bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *
   }
 
   // Clear all collision objects
-  visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
+  visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
 
   // Compute straight line up above grasp
   Eigen::Vector3d approach_direction;
@@ -770,7 +771,7 @@ bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *
 
   // Visualize trajectory in Rviz display
   bool wait_for_trajetory = false;
-  visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, wait_for_trajetory);
+  visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, wait_for_trajetory);
 
   std::cout << "trajectory: " << cartesian_trajectory_msg << std::endl;
 
@@ -816,7 +817,7 @@ bool ManipulationPipeline::executeRetreatPath(const moveit::core::JointModelGrou
 
   // Visualize trajectory in Rviz display
   bool wait_for_trajetory = false;
-  visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, wait_for_trajetory);
+  visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, wait_for_trajetory);
 
   // Execute
   if( !executeTrajectoryMsg(cartesian_trajectory_msg) )
@@ -842,8 +843,6 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
   const moveit::core::LinkModel *ik_tip_link_model = grasp_datas_[arm_jmg].parent_link_;
   //const moveit::core::LinkModel *ik_tip_link_model = robot_model_->getLinkModel("left_gripper");
 
-  std::cout << "PARENT LINK: " << grasp_datas_[arm_jmg].parent_link_->getName() << std::endl;
-
   // ---------------------------------------------------------------------------------------------
   // Show desired trajectory in BLACK
   Eigen::Affine3d tip_pose_start = robot_state->getGlobalLinkTransform(ik_tip_link_model);
@@ -858,14 +857,14 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
 
   if (verbose_)
   {
-    visual_tools_->publishSphere(tip_pose_start, rvt::RED, rvt::LARGE);
+    visuals_->visual_tools_->publishSphere(tip_pose_start, rvt::RED, rvt::LARGE);
 
     Eigen::Affine3d tip_pose_end; // = tip_pose_start;
     //tip_pose_end.translation().x() -= desired_approach_distance;
 
     straightProjectPose( tip_pose_start, tip_pose_end, approach_direction, desired_approach_distance);
 
-    visual_tools_->publishLine(tip_pose_start, tip_pose_end, rvt::BLACK, rvt::REGULAR);
+    visuals_->visual_tools_->publishLine(tip_pose_start, tip_pose_end, rvt::BLACK, rvt::REGULAR);
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -896,7 +895,7 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
     ls.reset(new planning_scene_monitor::LockedPlanningSceneRO(planning_scene_monitor_));
     robot_state::GroupStateValidityCallbackFn constraint_fn
       = boost::bind(&isStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
-                    collision_checking_verbose, visual_tools_, _1, _2, _3);
+                    collision_checking_verbose, visuals_, _1, _2, _3);
 
     // -----------------------------------------------------------------------------------------------
     // Compute Cartesian Path
@@ -921,7 +920,7 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
       // Recreate collision checker callback
       collision_checking_verbose = true;
       constraint_fn = boost::bind(&isStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
-                                  collision_checking_verbose, visual_tools_, _1, _2, _3);
+                                  collision_checking_verbose, visuals_, _1, _2, _3);
 
       // Re-compute Cartesian Path
       path_length = robot_state->computeCartesianPath(arm_jmg,
@@ -969,12 +968,12 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
     ROS_INFO_STREAM_NAMED("pipeline","Displaying cartesian trajectory in green");
     const Eigen::Affine3d& tip_pose_end =
       robot_state_trajectory.back()->getGlobalLinkTransform(ik_tip_link_model);
-    visual_tools_->publishLine(tip_pose_start, tip_pose_end, rvt::LIME_GREEN, rvt::LARGE);
-    visual_tools_->publishSphere(tip_pose_end, rvt::ORANGE, rvt::LARGE);
+    visuals_->visual_tools_->publishLine(tip_pose_start, tip_pose_end, rvt::LIME_GREEN, rvt::LARGE);
+    visuals_->visual_tools_->publishSphere(tip_pose_end, rvt::ORANGE, rvt::LARGE);
 
     // Visualize end effector position of cartesian path
     ROS_INFO_STREAM_NAMED("pipeline","Visualize end effector position of cartesian path");
-    visual_tools_->publishTrajectoryPoints(robot_state_trajectory, ik_tip_link_model);
+    visuals_->visual_tools_->publishTrajectoryPoints(robot_state_trajectory, ik_tip_link_model);
 
     ros::Duration(1.0).sleep();
   }
@@ -1225,13 +1224,13 @@ bool ManipulationPipeline::statusPublisher(const std::string &status)
 {
   std::cout << std::endl << std::endl;
   ROS_INFO_STREAM_NAMED("pipeline.status", status << " -------------------------------------");
-  visual_tools_->publishText(status_position_, status, rvt::WHITE, rvt::LARGE);
+  visuals_->visual_tools_->publishText(status_position_, status, rvt::WHITE, rvt::LARGE);
 }
 
 bool ManipulationPipeline::orderPublisher(WorkOrder& order)
 {
   const std::string status = order.bin_->getName() + ": " + order.product_->getName();
-  visual_tools_->publishText(status_position_, status, rvt::WHITE, rvt::LARGE);
+  visuals_->visual_tools_->publishText(status_position_, status, rvt::WHITE, rvt::LARGE);
 }
 
 bool ManipulationPipeline::statesEqual(const moveit::core::RobotState &s1, const moveit::core::RobotState &s2,
@@ -1318,7 +1317,7 @@ bool ManipulationPipeline::visualizeGrasps(std::vector<moveit_grasps::GraspSolut
   ROS_INFO_STREAM_NAMED("pipeline","Showing valid filtered grasp poses");
 
   // Publish in batch
-  //visual_tools_->enableBatchPublishing(true);
+  //visuals_->visual_tools_->enableBatchPublishing(true);
 
   // Get the-grasp
   moveit::core::RobotStatePtr the_grasp_state(new moveit::core::RobotState(*current_state_));
@@ -1351,11 +1350,11 @@ bool ManipulationPipeline::visualizeGrasps(std::vector<moveit_grasps::GraspSolut
 
       bool blocking = false;
       double speed = 0.01;
-      visual_tools_->publishTrajectoryPath(robot_state_trajectory, arm_jmg, speed, blocking);
+      visuals_->visual_tools_->publishTrajectoryPath(robot_state_trajectory, arm_jmg, speed, blocking);
     }
     grasps_->publishGraspArrow(filtered_grasps[i].grasp_.grasp_pose.pose, grasp_datas_[arm_jmg], rvt::BLUE, path_length);
   }
-  //visual_tools_->triggerBatchPublishAndDisable();
+  //visuals_->visual_tools_->triggerBatchPublishAndDisable();
 
   ROS_INFO_STREAM_NAMED("learning","Maximum path length in approach trajetory was " << max_path_length);
 
@@ -1373,7 +1372,7 @@ bool ManipulationPipeline::visualizeIKSolutions(std::vector<moveit_grasps::Grasp
     ik_solutions[i].positions = filtered_grasps[i].grasp_ik_solution_;
   }
 
-  return visual_tools_->publishIKSolutions(ik_solutions, arm_jmg->getName(), display_time);
+  return visuals_->visual_tools_->publishIKSolutions(ik_solutions, arm_jmg->getName(), display_time);
 }
 
 } // end namespace
@@ -1381,7 +1380,7 @@ bool ManipulationPipeline::visualizeIKSolutions(std::vector<moveit_grasps::Grasp
 namespace
 {
 bool isStateValid(const planning_scene::PlanningScene *planning_scene, bool verbose,
-                  mvt::MoveItVisualToolsPtr visual_tools, robot_state::RobotState *robot_state,
+                  baxter_apc_main::VisualsPtr visuals, robot_state::RobotState *robot_state,
                   const robot_state::JointModelGroup *group, const double *ik_solution)
 {
   robot_state->setJointGroupPositions(group, ik_solution);
@@ -1398,10 +1397,10 @@ bool isStateValid(const planning_scene::PlanningScene *planning_scene, bool verb
   // Display more info about the collision
   if (verbose)
   {
-    visual_tools->publishRobotState(*robot_state, rvt::RED);
+    visuals->visual_tools_->publishRobotState(*robot_state, rvt::RED);
     planning_scene->isStateColliding(*robot_state, group->getName(), true);
-    visual_tools->publishContactPoints(*robot_state, planning_scene);
-    ros::Duration(0.5).sleep();
+    visuals->visual_tools_->publishContactPoints(*robot_state, planning_scene);
+    ros::Duration(0.4).sleep();
   }
   return false;
 }
