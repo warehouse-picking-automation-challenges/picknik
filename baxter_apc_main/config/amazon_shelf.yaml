@@ -21,5 +21,10 @@ bin_top_margin: 0.01
 bin_left_margin: 0.01
 num_bins: 12.0
 
-# Baxter
-velocity_scaling_factor: 0.1
+# Execution Speed
+main_velocity_scaling_factor: 1.0 # during planning
+approach_velocity_scaling_factor: 0.25
+lift_velocity_scaling_factor: 0.5
+retreat_velocity_scaling_factor: 0.8
+
+

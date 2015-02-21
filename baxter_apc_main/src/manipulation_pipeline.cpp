@@ -73,6 +73,12 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, mvt::MoveItVisualToolsP
   setStateWithOpenEE(true, current_state_); // so that grasp filter is started up with EE open
   grasp_filter_.reset(new moveit_grasps::GraspFilter(current_state_, visual_tools_) );
 
+  // Load performance variables
+  getDoubleParameter(nh_, "main_velocity_scaling_factor", main_velocity_scaling_factor_);
+  getDoubleParameter(nh_, "approach_velocity_scaling_factor", approach_velocity_scaling_factor_);
+  getDoubleParameter(nh_, "lift_velocity_scaling_factor", lift_velocity_scaling_factor_);
+  getDoubleParameter(nh_, "retreat_velocity_scaling_factor", retreat_velocity_scaling_factor_);
+
   // Load trajectory execution. Or, it will do it automatically later
   //loadPlanExecution();
 
@@ -357,9 +363,9 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
         break;
 
         // #################################################################################################################
-      case 10: statusPublisher("Moving BACK to pre-grasp position");
+      case 10: statusPublisher("Moving BACK to pre-grasp position (retreat path)");
 
-        if (!executeRetrievalPath(arm_jmg))
+        if (!executeRetreatPath(arm_jmg))
         {
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to execute retrieval path after grasping");
           return false;
@@ -560,7 +566,7 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
   req.allowed_planning_time = 30; // seconds
   req.use_experience = use_experience_;
   req.experience_method = "lightning";
-  req.max_velocity_scaling_factor = 0.75; //0.1;
+  req.max_velocity_scaling_factor = main_velocity_scaling_factor_;
 
   // Parameters for the workspace that the planner should work inside relative to center of robot
   double workspace_size = 1;
@@ -711,7 +717,7 @@ bool ManipulationPipeline::generateApproachPath(const moveit::core::JointModelGr
   }
 
   // Get approach trajectory message
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, approach_trajectory_msg, arm_jmg))
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, approach_trajectory_msg, arm_jmg, approach_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Failed to convert to parameterized trajectory");
     return false;
@@ -756,7 +762,7 @@ bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *
 
   // Get approach trajectory message
   moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg))
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, lift_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Failed to convert to parameterized trajectory");
     return false;
@@ -778,7 +784,7 @@ bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *
   return true;
 }
 
-bool ManipulationPipeline::executeRetrievalPath(const moveit::core::JointModelGroup *arm_jmg)
+bool ManipulationPipeline::executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg)
 {
   // Get current state after grasping
   {
@@ -802,7 +808,7 @@ bool ManipulationPipeline::executeRetrievalPath(const moveit::core::JointModelGr
 
   // Get approach trajectory message
   moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg))
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, retreat_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Failed to convert to parameterized trajectory");
     return false;
@@ -993,8 +999,11 @@ bool ManipulationPipeline::straightProjectPose( const Eigen::Affine3d& original_
 
 bool ManipulationPipeline::convertRobotStatesToTrajectory(const std::vector<robot_state::RobotStatePtr>& robot_state_trajectory,
                                                           moveit_msgs::RobotTrajectory& trajectory_msg,
-                                                          const robot_model::JointModelGroup* jmg)
+                                                          const robot_model::JointModelGroup* jmg,
+                                                          const double &velocity_scaling_factor)
 {
+  ROS_DEBUG_STREAM_NAMED("pipeline","Converting robot states to trajectory using scaling factor " << velocity_scaling_factor);
+
   // Copy the vector of RobotStates to a RobotTrajectory
   robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, jmg));
 
@@ -1010,8 +1019,7 @@ bool ManipulationPipeline::convertRobotStatesToTrajectory(const std::vector<robo
 
   // Perform iterative parabolic smoothing
   trajectory_processing::IterativeParabolicTimeParameterization iterative_smoother;
-  double velocity_scale = 0.05;
-  iterative_smoother.computeTimeStamps( *robot_trajectory, velocity_scale );
+  iterative_smoother.computeTimeStamps( *robot_trajectory, velocity_scaling_factor );
 
   // Convert trajectory to a message
   robot_trajectory->getRobotTrajectoryMsg(trajectory_msg);

@@ -155,7 +155,7 @@ public:
    * \brief After grasping an object, pull object out of shelf in reverse
    * \return true on success
    */
-  bool executeRetrievalPath(const moveit::core::JointModelGroup *jmg);
+  bool executeRetreatPath(const moveit::core::JointModelGroup *jmg);
 
   /**
    * \brief Function for testing multiple directions
@@ -189,7 +189,8 @@ public:
    */
   bool convertRobotStatesToTrajectory(const std::vector<robot_state::RobotStatePtr>& robot_state_trajectory,
                                       moveit_msgs::RobotTrajectory& trajectory_msg,
-                                      const robot_model::JointModelGroup* jmg);
+                                      const robot_model::JointModelGroup* jmg,
+                                      const double &velocity_scaling_factor);
 
   /**
    * \brief Open both end effectors in hardware
@@ -349,6 +350,13 @@ protected:
   bool show_database_;
   bool use_logging_;
   std::ofstream logging_file_;
+
+  // Performance variables
+  double main_velocity_scaling_factor_;
+  double approach_velocity_scaling_factor_;
+  double lift_velocity_scaling_factor_;
+  double retreat_velocity_scaling_factor_;
+
 }; // end class
 
 } // end namespace

@@ -369,7 +369,7 @@ struct WorkOrder
 typedef std::vector<WorkOrder> WorkOrders;
 
 // -------------------------------------------------------------------------------------------------
-// Work Order Struct
+// Helper Functions
 // -------------------------------------------------------------------------------------------------
 bool getDoubleParameter(ros::NodeHandle &nh, const std::string &param_name, double &value);
 
