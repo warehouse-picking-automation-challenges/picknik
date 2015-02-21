@@ -22,7 +22,7 @@ bin_left_margin: 0.01
 num_bins: 12.0
 
 # Execution Speed
-main_velocity_scaling_factor: 0.7 # during planning
+main_velocity_scaling_factor: 0.5 # during planning
 approach_velocity_scaling_factor: 0.25
 lift_velocity_scaling_factor: 0.5
 retreat_velocity_scaling_factor: 0.8
