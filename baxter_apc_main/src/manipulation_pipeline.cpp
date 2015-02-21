@@ -76,6 +76,8 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   getDoubleParameter(nh_, "approach_velocity_scaling_factor", approach_velocity_scaling_factor_);
   getDoubleParameter(nh_, "lift_velocity_scaling_factor", lift_velocity_scaling_factor_);
   getDoubleParameter(nh_, "retreat_velocity_scaling_factor", retreat_velocity_scaling_factor_);
+  getDoubleParameter(nh_, "wait_before_grasp", wait_before_grasp_);
+  getDoubleParameter(nh_, "wait_after_grasp", wait_after_grasp_);
 
   // Load trajectory execution. Or, it will do it automatically later
   //loadPlanExecution();
@@ -132,15 +134,12 @@ bool ManipulationPipeline::setupPlanningScene( const std::string& bin_name )
   // Disable all bins except desired one
   visuals_->visual_tools_->deleteAllMarkers(); // clear all old markers
   visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
-  //visuals_->visual_tools_->triggerPlanningSceneUpdate();
-  //ros::Duration(0.1).sleep(); // TODO combine these two parts into one
-  //ros::spinOnce();
 
   // Visualize
   shelf_->createCollisionBodies(bin_name, false);
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
   shelf_->visualizeAxis(visuals_);
-  ros::Duration(1.0).sleep();
+  ros::Duration(0.5).sleep();
 
   return true;
 }
@@ -149,48 +148,29 @@ bool ManipulationPipeline::createCollisionWall()
 {
   // Disable all bins except desired one
   visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
-  visuals_->visual_tools_->triggerPlanningSceneUpdate();
-  ros::Duration(0.5).sleep(); // TODO combine these two parts into one
 
   // Visualize
   shelf_->visualizeAxis(visuals_);
   visuals_->visual_tools_->publishCollisionWall( shelf_->shelf_distance_from_baxter_, 0, 0, shelf_->shelf_width_ * 2.0, "SimpleCollisionWall",
                                        rvt::BROWN );
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
-  ros::Duration(1.0).sleep();
+  ros::Duration(0.5).sleep();
 
   return true;
 }
 
-bool ManipulationPipeline::graspObject( WorkOrder order, bool verbose, std::size_t jump_to )
+bool ManipulationPipeline::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose)
 {
-  // Error check
-  if (!order.product_ || !order.bin_)
-  {
-    ROS_ERROR_STREAM_NAMED("pipeline","Invalid pointers to product or bin in order");
-    return false;
-  }
-
-  ROS_INFO_STREAM_NAMED("temp","Removing all collision objects. Resetting planning scene");
-
-  // Feedback
-  statusPublisher("Picking " + order.product_->getName() + " from " + order.bin_->getName());
-
-  if (!setupPlanningScene( order.bin_->getName() ))
-    ROS_ERROR_STREAM_NAMED("temp","Unable to setup planning scene");
-
-  // Get object pose
-  Eigen::Affine3d object_pose;
+  // TODO: communicate with perception pipeline
   const std::string& coll_obj_name = order.product_->getCollisionName();
   {
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
 
     collision_detection::World::ObjectConstPtr world_obj;
     world_obj = scene->getWorld()->getObject(coll_obj_name);
-    if (!world_obj)
+    if (!world_obj) 
     {
-      ROS_ERROR_STREAM_NAMED("pipeline","Unable to find object " << coll_obj_name
-                             << " in planning scene world");
+      ROS_ERROR_STREAM_NAMED("pipeline","Unable to find object " << coll_obj_name << " in planning scene world");
       return false;
     }
     if (!world_obj->shape_poses_.size())
@@ -205,20 +185,19 @@ bool ManipulationPipeline::graspObject( WorkOrder order, bool verbose, std::size
     object_pose = world_obj->shape_poses_[0];
   }
 
-  bool result = graspObjectPipeline(object_pose, order, verbose, jump_to);
-
-  // Delete from planning scene the product
-  shelf_->deleteProduct(order.bin_->getName(), order.product_->getName());
-  visuals_->visual_tools_->cleanupACO( order.product_->getCollisionName() ); // use unique name
-
-  return result;
+  return true;
 }
 
-bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pose, WorkOrder order, bool verbose, std::size_t jump_to)
+bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t jump_to)
 {
-  std::cout << "graspObjectPipeline() jump_to: " << jump_to << std::endl;
+  // Error check
+  if (!order.product_ || !order.bin_)
+  {
+    ROS_ERROR_STREAM_NAMED("pipeline","Invalid pointers to product or bin in order");
+    return false;
+  }
 
-  const robot_model::JointModelGroup* arm_jmg = chooseArm(object_pose);
+  const robot_model::JointModelGroup* arm_jmg;
   bool execute_trajectory = true;
 
   // Variables
@@ -228,11 +207,12 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
   moveit_msgs::RobotTrajectory approach_trajectory_msg;
   bool wait_for_trajetory = false;
   double desired_lift_distance = 0.05;
+  Eigen::Affine3d object_pose;
 
   // Prevent jump-to errors
   if (jump_to == 3)
   {
-    ROS_ERROR_STREAM_NAMED("temp","Cannot jump to step 3 - must start on step 2 to choose grasp");
+    ROS_ERROR_STREAM_NAMED("pipeline","Cannot jump to step 3 - must start on step 2 to choose grasp");
     jump_to = 0;
   }
 
@@ -263,11 +243,30 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
         break;
 
       // #################################################################################################################
-      case 2: statusPublisher("Generate and choose grasp");
+      case 2: statusPublisher("Generate and choose grasp for product " + order.product_->getName() + 
+                              " from " + order.bin_->getName());
+
+        // Create the collision objects
+        if (!setupPlanningScene( order.bin_->getName() ))
+        {
+          ROS_ERROR_STREAM_NAMED("pipeline","Unable to setup planning scene");
+          return false;
+        }
+
+        // Get object pose
+        if (!getObjectPose(object_pose, order, verbose))
+        {
+          ROS_ERROR_STREAM_NAMED("pipeline","Unable to get object pose");
+          return false;
+        }
+
+        // Choose which arm to use
+        arm_jmg = chooseArm(object_pose);
 
         // Allow fingers to touch object
         allowFingerTouch(order.product_->getCollisionName(), arm_jmg);
 
+        // Generate and chose grasp
         if (!chooseGrasp(object_pose, arm_jmg, chosen, verbose))
         {
           ROS_ERROR_STREAM_NAMED("pipeline","No grasps found");
@@ -280,13 +279,6 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
 
         the_grasp_state->setJointGroupPositions(arm_jmg, chosen.grasp_ik_solution_);
         setStateWithOpenEE(true, the_grasp_state);
-
-        if (verbose)
-        {
-          ROS_INFO_STREAM_NAMED("pipeline","Publishing grasp state in purple");
-          visuals_->visual_tools_->publishRobotState(the_grasp_state, rvt::PURPLE);
-          ros::Duration(0.5).sleep();
-        }
         break;
 
         // #################################################################################################################
@@ -319,8 +311,6 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to plan");
           return false;
         }
-
-        ros::Duration(0.1).sleep();
         break;
 
         // #################################################################################################################
@@ -334,6 +324,9 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
         {
           ROS_ERROR_STREAM_NAMED("pipeline","Failed to execute trajectory");
         }
+
+        ROS_INFO_STREAM_NAMED("pipeline","Waiting " << wait_before_grasp_ << " seconds before grasping");
+        ros::Duration(wait_after_grasp_).sleep();
         break;
 
         // #################################################################################################################
@@ -348,7 +341,8 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
         // Attach collision object
         visuals_->visual_tools_->attachCO(order.product_->getCollisionName(), grasp_datas_[arm_jmg].parent_link_name_);
 
-        ros::Duration(0.1).sleep();
+        ROS_INFO_STREAM_NAMED("pipeline","Waiting " << wait_after_grasp_ << " seconds after grasping");
+        ros::Duration(wait_after_grasp_).sleep();
         break;
 
         // #################################################################################################################
@@ -359,8 +353,6 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to execute retrieval path after grasping");
           return false;
         }
-
-        ros::Duration(5).sleep();
         break;
 
         // #################################################################################################################
@@ -394,8 +386,12 @@ bool ManipulationPipeline::graspObjectPipeline(const Eigen::Affine3d& object_pos
           return false;
         }
 
-        // Unattach
-        visuals_->visual_tools_->cleanupACO(order.product_->getCollisionName());
+        // Delete from planning scene the product
+        shelf_->deleteProduct(order.bin_->getName(), order.product_->getName());
+
+        // Unattach from EE
+        visuals_->visual_tools_->cleanupACO( order.product_->getCollisionName() ); // use unique name
+        
 
         // #################################################################################################################
       default:
@@ -538,13 +534,9 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
 {
   if (verbose)
   {
-    ROS_INFO_STREAM_NAMED("temp","Showing start state");
-    visuals_->visual_tools_->publishRobotState(start, rvt::GREEN);
-    ros::Duration(0.5).sleep();
-
-    ROS_INFO_STREAM_NAMED("temp","Showing goal state");
-    visuals_->visual_tools_->publishRobotState(goal, rvt::ORANGE);
-    ros::Duration(0.1).sleep();
+    ROS_INFO_STREAM_NAMED("pipeline","Showing start and goal state");
+    visuals_->start_state_->publishRobotState(start, rvt::GREEN);
+    visuals_->goal_state_->publishRobotState(goal, rvt::ORANGE);
   }
 
   // Create motion planning request
@@ -587,7 +579,7 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
 
   // SOLVE
   loadPlanningPipeline(); // always call before using generatePlan()
-  ROS_WARN_STREAM_NAMED("temp","Untested scene cloning feature here");
+  ROS_WARN_STREAM_NAMED("pipeline","Untested scene cloning feature here");
   planning_scene::PlanningScenePtr cloned_scene;
   {
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
@@ -727,12 +719,13 @@ bool ManipulationPipeline::generateApproachPath(const moveit::core::JointModelGr
   // Set the pregrasp to be the first state in the trajectory. Copy value, not pointer
   *pre_grasp_state = *robot_state_trajectory.front();
 
+  /*
   if (verbose)
   {
     ROS_INFO_STREAM_NAMED("pipeline","Visualizing pre-grasp");
     visuals_->visual_tools_->publishRobotState(pre_grasp_state, rvt::YELLOW);
     ros::Duration(0.1).sleep();
-  }
+    }*/
 
   return true;
 }
@@ -865,6 +858,20 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
     straightProjectPose( tip_pose_start, tip_pose_end, approach_direction, desired_approach_distance);
 
     visuals_->visual_tools_->publishLine(tip_pose_start, tip_pose_end, rvt::BLACK, rvt::REGULAR);
+
+    // Show start and goal states of cartesian path
+    if (reverse_trajectory)
+    {
+      // The passed in robot state is the goal
+      visuals_->start_state_->hideRobot();
+      visuals_->goal_state_->publishRobotState(robot_state, rvt::ORANGE);
+    }
+    else
+    {
+      // The passed in robot state is the start (retreat)
+      visuals_->goal_state_->hideRobot();
+      visuals_->start_state_->publishRobotState(robot_state, rvt::GREEN);
+    }
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -876,7 +883,7 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
   // Error check
   if (desired_approach_distance < max_step)
   {
-    ROS_ERROR_STREAM_NAMED("temp","desired_approach_distance (" << desired_approach_distance << ")  < max_step (" << max_step << ")");
+    ROS_ERROR_STREAM_NAMED("pipeline","desired_approach_distance (" << desired_approach_distance << ")  < max_step (" << max_step << ")");
     return false;
   }
 
@@ -975,7 +982,18 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
     ROS_INFO_STREAM_NAMED("pipeline","Visualize end effector position of cartesian path");
     visuals_->visual_tools_->publishTrajectoryPoints(robot_state_trajectory, ik_tip_link_model);
 
-    ros::Duration(1.0).sleep();
+
+    // Show start and goal states of cartesian path
+    if (reverse_trajectory)
+    {
+      // The passed in robot state is the goal
+      visuals_->start_state_->publishRobotState(robot_state_trajectory.front(), rvt::GREEN);
+    }
+    else
+    {
+      // The passed in robot state is the start (retreat)
+      visuals_->goal_state_->publishRobotState(robot_state_trajectory.back(), rvt::ORANGE);
+    }
   }
 
 
@@ -1183,7 +1201,7 @@ bool ManipulationPipeline::allowFingerTouch(const std::string& object_name, cons
     // Prevent object from causing collision with shelf
     for (std::size_t i = 0; i < shelf_->getShelfParts().size(); ++i)
     {
-      ROS_DEBUG_STREAM_NAMED("temp","Prevent collision between " << object_name << " and " << shelf_->getShelfParts()[i].getName());
+      ROS_DEBUG_STREAM_NAMED("pipeline","Prevent collision between " << object_name << " and " << shelf_->getShelfParts()[i].getName());
       scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, shelf_->getShelfParts()[i].getName(), true);
     }
   }
@@ -1388,7 +1406,7 @@ bool isStateValid(const planning_scene::PlanningScene *planning_scene, bool verb
 
   if (!planning_scene)
   {
-    ROS_ERROR_STREAM_NAMED("temp","No planning scene provided");
+    ROS_ERROR_STREAM_NAMED("pipeline","No planning scene provided");
     return false;
   }
   if (!planning_scene->isStateColliding(*robot_state, group->getName()))

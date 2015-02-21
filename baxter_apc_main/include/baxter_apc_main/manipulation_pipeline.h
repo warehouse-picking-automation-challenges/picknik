@@ -85,15 +85,18 @@ public:
   bool createCollisionWall();
 
   /**
-   * \brief Grasp product
+   * \brief Get the pose of a requested object
+   * \param object_pose
+   * \param order - desired object
+   * \return true on success
    */
-  bool graspObject( WorkOrder order, bool verbose, std::size_t jump_to = 0);
+  bool getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose);
 
   /**
    * \brief Grasp object once we know the pose
    * \return true on success
    */
-  bool graspObjectPipeline(const Eigen::Affine3d& object_pose, WorkOrder order, bool verbose, std::size_t jump_to = 0);
+  bool graspObjectPipeline(WorkOrder order, bool verbose, std::size_t jump_to = 0);
 
   /**
    * \brief Choose the grasp for the object
@@ -354,6 +357,8 @@ protected:
   double approach_velocity_scaling_factor_;
   double lift_velocity_scaling_factor_;
   double retreat_velocity_scaling_factor_;
+  double wait_before_grasp_;
+  double wait_after_grasp_;
 
 }; // end class
 

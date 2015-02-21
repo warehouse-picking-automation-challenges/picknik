@@ -61,9 +61,9 @@ public:
 
     // ------------------------------------------------------------------------------------------------------
     // Load RobotState VisualTools for Goal State
-    goal_state_.reset(new mvt::MoveItVisualTools(robot_model->getModelFrame(), "/amazon_start_state_markers", 
+    goal_state_.reset(new mvt::MoveItVisualTools(robot_model->getModelFrame(), "/amazon_goal_state_markers", 
                                                  planning_scene_monitor));
-    goal_state_->loadRobotStatePub("/baxter_apc_main/robot_start_state");
+    goal_state_->loadRobotStatePub("/baxter_apc_main/robot_goal_state");
     goal_state_->hideRobot(); // show that things have been reset
 
   }

@@ -76,7 +76,7 @@ bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t o
   {
     pipeline_->orderPublisher(orders_[i]); // feedback
 
-    if (!pipeline_->graspObject(orders_[i], verbose_, jump_to))
+    if (!pipeline_->graspObjectPipeline(orders_[i], verbose_, jump_to))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Shutting down for debug purposes only (it could continue on)");
       return false;
