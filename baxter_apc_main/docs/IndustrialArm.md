@@ -9,11 +9,11 @@
 
 # Payload Notes
 
-Max Product Payload: .386 kg
-ShadowHand: 4.2 kg
-ReflexHand: .8 kg
-Kinect 2: 2 kg
-Baxter Payload: 2.2 kg
+ - Max Product Payload: .386 kg
+ - ShadowHand: 4.2 kg
+ - ReflexHand: .8 kg
+ - Kinect 2: 2 kg
+ - Baxter Payload: 2.2 kg
 
 ## Power
 
@@ -22,6 +22,7 @@ Baxter Payload: 2.2 kg
 ## Potential Models From FANUC
 
 M10ia12s
+
 M20ia12l
 
 # Software Interface
