@@ -13,6 +13,7 @@ Max Product Payload: .386 kg
 ShadowHand: 4.2 kg
 ReflexHand: .8 kg
 Kinect 2: 2 kg
+Baxter Payload: 2.2 kg
 
 ## Power
 
