@@ -9,7 +9,7 @@ Panels:
         - /TF1/Frames1
         - /TF1/Tree1
       Splitter Ratio: 0.666041
-    Tree Height: 961
+    Tree Height: 437
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -322,7 +322,6 @@ Visualization Manager:
       Namespaces:
         Cylinder: true
         Shelf: true
-        Text: true
         mesh: true
       Queue Size: 100
       Value: true
@@ -623,22 +622,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 5.32365
+      Distance: 4.68481
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.23116
-        Y: 0.0623426
-        Z: 1.13687e-13
+        X: 1.37576
+        Y: -1.02196
+        Z: 9.53674e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.620399
+      Pitch: 0.320399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.72172
+      Yaw: 2.20671
     Saved: ~
 Window Geometry:
   Displays:
@@ -652,5 +651,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 757
-  X: 783
-  Y: 52
+  X: 773
+  Y: 14

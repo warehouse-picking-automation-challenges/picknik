@@ -5,7 +5,8 @@
  - Website: [http://picknik.io](http://picknik.io)
  - [Team Members](https://bitbucket.org/cuamazonchallenge/profile/members)
  - [Timeline](https://docs.google.com/spreadsheets/d/1GG_j6BVir-J8VGwbU8RWDHA8kD8ZSeXrtlLtW9N851o/edit?usp=sharing)
-
+ - [Item Data](https://docs.google.com/spreadsheets/d/1e0Fousz9TUxf9YHeVfnaKVgf06Z0WC50blMGBWJ9cp8/edit#gid=2088756835)
+ 
 ## Install
 
 Dave occasionally releases a new zip file with a lot of custom ROS code, that can be built into one workspace. Download the latest zip (~700MB) from here:
