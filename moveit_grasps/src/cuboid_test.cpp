@@ -29,6 +29,7 @@ namespace baxter_pick_place
   static const double CUBOID_WORKSPACE_MAX_Y = 0.5;
   static const double CUBOID_WORKSPACE_MIN_Z = 0.0;
   static const double CUBOID_WORKSPACE_MAX_Z = 1.0;
+
   // TODO: verify max object size Open Hand can grasp
   static const double OPEN_HAND_MAX_GRASP_SIZE= 0.10;
 
@@ -73,7 +74,6 @@ public:
 
     // set up rviz
     visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("base_link","/rviz_visual_tools"));
-    visual_tools_->setLifetime(120.0);
     visual_tools_->setMuted(false);
     visual_tools_->loadMarkerPub();
 
@@ -164,6 +164,11 @@ public:
     ROS_INFO_STREAM_NAMED("grasp", "generating random cuboid");
     generateRandomCuboid(cuboid_pose_,depth_,width_,height_);
 
+    // For testing
+    depth_ = 0.13;
+    width_ = 0.13;
+    height_ = 0.05;
+
     visual_tools_->publishRectangle(cuboid_pose_,depth_,width_,height_);
     visual_tools_->publishAxis(cuboid_pose_);
 
@@ -231,7 +236,8 @@ public:
     grasp_pose_msg.header.frame_id = grasp_data.base_link_;
 
     // grasp generator loop
-    double radius = grasp_data.grasp_depth_; 
+    double radius = 0; //grasp_data.grasp_depth_; 
+    double test = 0.207;
 
     moveit_msgs::Grasp new_grasp;
     static int grasp_id = 0;
@@ -250,20 +256,32 @@ public:
       {
       case X_AXIS:
 	// will rotate around x-axis testing grasps
-	grasp_translation = grasp_pose * Eigen::Vector3d(0, -width/2 - radius, 0) - Eigen::Vector3d(dx,dy,dz);
+	grasp_pose = cuboid_pose * 
+	  Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitX()) *
+	  Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitZ()); 
+
+	grasp_translation = grasp_pose * Eigen::Vector3d(0, 0, -width/2 - test) - Eigen::Vector3d(dx,dy,dz);
 	grasp_pose.translation() += grasp_translation;
+
 
 	break;
 
       case Y_AXIS:
 	// will rotate around y-axis testing grasps
-	grasp_translation = grasp_pose * Eigen::Vector3d(0, 0, -height/2 - radius) - Eigen::Vector3d(dx,dy,dz);
+	grasp_pose = cuboid_pose * 
+	  Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX());  
+	  //Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitX());
+
+	grasp_translation = grasp_pose * Eigen::Vector3d(0, 0, -height/2 - test) - Eigen::Vector3d(dx,dy,dz);
 	grasp_pose.translation() += grasp_translation;
 	break;
 
       case Z_AXIS:
 	// will rotate around z-axis testing grasps
-	grasp_translation = grasp_pose * Eigen::Vector3d(-depth/2 - radius, 0, 0) - Eigen::Vector3d(dx,dy,dz);
+	grasp_pose = cuboid_pose * 
+	  Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitX());
+
+	grasp_translation = grasp_pose * Eigen::Vector3d(0, 0, -depth/2 - test) - Eigen::Vector3d(dx,dy,dz);
 	grasp_pose.translation() += grasp_translation;
 	break;
 
@@ -331,9 +349,7 @@ int main(int argc, char** argv)
   // Seed random
   srand(ros::Time::now().toSec());
 
-  tester.animateGripperOpenClose(1);
-
+  tester.visual_tools_->deleteAllMarkers();
+  //tester.animateGripperOpenClose(1);
   tester.runTest(1);
-    
-
 }
