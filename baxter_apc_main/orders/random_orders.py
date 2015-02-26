@@ -82,7 +82,7 @@ def fill_bins_and_work_order(seed=None, probabilites=None):
         probabilites = [0.7, 0.2, 0.1]
 
     N_bins = 3*4
-    bins = ['bin_{}'.format(i) for i in string.letters[:N_bins]]
+    bins = ['bin_{}'.format(i.upper()) for i in string.letters[:N_bins]]
 
     # Let's maker sure generated filling fulfills rules
     n_items = [1, 1, 2, 2, 3, 3]
