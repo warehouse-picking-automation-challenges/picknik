@@ -43,6 +43,9 @@ private:
   std::vector<moveit_msgs::Grasp> possible_grasps_;
   moveit_grasps::GraspsPtr grasps_;
   Eigen::Affine3d object_global_transform_;
+  
+  // TODO: read in from param
+  int grasp_resolution_;
 
   enum grasp_axis_t {X_AXIS, Y_AXIS, Z_AXIS};
 
@@ -92,6 +95,9 @@ public:
     depth_ = CUBOID_MIN_SIZE;
     width_ = CUBOID_MIN_SIZE;
     height_ = CUBOID_MIN_SIZE;
+
+    // TODO: needs to be divisible by 4 with way I select points
+    grasp_resolution_ = 12;
     
   }
 
@@ -165,9 +171,9 @@ public:
     generateRandomCuboid(cuboid_pose_,depth_,width_,height_);
 
     // For testing
-    depth_ = 0.13;
+    depth_ = 0.05;
     width_ = 0.13;
-    height_ = 0.05;
+    height_ = 0.13;
 
     visual_tools_->publishRectangle(cuboid_pose_,depth_,width_,height_);
     visual_tools_->publishAxis(cuboid_pose_);
@@ -236,7 +242,7 @@ public:
     grasp_pose_msg.header.frame_id = grasp_data.base_link_;
 
     // grasp generator loop
-    double radius = 0; //grasp_data.grasp_depth_; 
+    double radius = 0.035; //grasp_data.grasp_depth_; 
     double test = 0.207;
 
     moveit_msgs::Grasp new_grasp;
@@ -251,19 +257,19 @@ public:
     double dz = cuboid_pose_.position.z;
 
     Eigen::Vector3d grasp_translation;
-
+    Eigen::ArrayXXf graspPoints;
     switch(axis)
       {
       case X_AXIS:
 	// will rotate around x-axis testing grasps
+
+	graspPoints = generateCuboidGraspPoints(width, height, radius);
 	grasp_pose = cuboid_pose * 
 	  Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitX()) *
 	  Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitZ()); 
 
 	grasp_translation = grasp_pose * Eigen::Vector3d(0, 0, -width/2 - test) - Eigen::Vector3d(dx,dy,dz);
 	grasp_pose.translation() += grasp_translation;
-
-
 	break;
 
       case Y_AXIS:
@@ -333,6 +339,41 @@ public:
     grasps_->publishGraspArrow(new_grasp.grasp_pose.pose, grasp_data_, rviz_visual_tools::YELLOW );
     visual_tools_->publishAxis(new_grasp.grasp_pose.pose);
   }
+
+  Eigen::ArrayXXf generateCuboidGraspPoints(double length, double width, double radius)
+  {
+    ROS_DEBUG_STREAM_NAMED("cuboid_test","generating possible grasp points around cuboid");
+
+    // discretize sides and each rounded corner by grasp_resolution_
+    int array_size = grasp_resolution_ + 1; 
+
+    Eigen::ArrayXXf top = Eigen::ArrayXXf::Zero(array_size,2);
+    Eigen::ArrayXXf bottom = Eigen::ArrayXXf::Zero(array_size,2);
+    Eigen::ArrayXXf right = Eigen::ArrayXXf::Zero(array_size,2);
+    Eigen::ArrayXXf left = Eigen::ArrayXXf::Zero(array_size,2);
+
+    Eigen::ArrayXXf corners = Eigen::ArrayXXf::Zero(array_size,2);
+
+    double topBottomDelta = length / grasp_resolution_;
+    double leftRightDelta = width / grasp_resolution_;
+    double cornersDelta = 2.0 * M_PI / grasp_resolution_;
+    
+    for (double i = 0; i < array_size; i++) 
+      {
+	top.row(i)    << -length / 2 + i * topBottomDelta , width / 2 + radius;
+	bottom.row(i) << -length / 2 + i * topBottomDelta , -width / 2 + radius;
+
+	right.row(i) << length / 2 + radius               , -width / 2 + i * leftRightDelta;
+	left.row(i)  << -length / 2 + radius              , -width / 2 + i * leftRightDelta;
+
+	corners.row(i)   << radius * cos(i * cornersDelta)   , radius * sin(i * cornersDelta);
+      }
+    
+    Eigen::ArrayXXf points = Eigen::ArrayXXf::Zero(array_size * 5,2);
+    points << top, bottom, left, right, corners;
+    ROS_DEBUG_STREAM_NAMED("cuboid_test", "points \n" << points);
+    return points;
+  } 
 
 }; // class
 
