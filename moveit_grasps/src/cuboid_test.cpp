@@ -264,12 +264,26 @@ public:
 	// will rotate around x-axis testing grasps
 
 	graspPoints = generateCuboidGraspPoints(width, height, radius);
-	grasp_pose = cuboid_pose * 
-	  Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitX()) *
-	  Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitZ()); 
 
-	grasp_translation = grasp_pose * Eigen::Vector3d(0, 0, -width/2 - test) - Eigen::Vector3d(dx,dy,dz);
-	grasp_pose.translation() += grasp_translation;
+	
+	ROS_DEBUG_STREAM_NAMED("cuboid_test","graspPoints.size() = " << graspPoints.size() / 3);
+	// TODO: how to get just length, not full size...
+	for (int i = 0; i < graspPoints.size() / 3; i++ )
+	  {
+	    // rotate to position of cuboid
+	    grasp_pose = cuboid_pose  
+	      * Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitX()) 
+	      * Eigen::AngleAxisd(M_PI / 2, Eigen::Vector3d::UnitZ())   
+	      * Eigen::AngleAxisd(graspPoints(i,2), Eigen::Vector3d::UnitY());
+
+	    // move to grasp position
+	    grasp_translation = grasp_pose * Eigen::Vector3d(graspPoints(i,0), 0, graspPoints(i,1)) - 
+	      Eigen::Vector3d(dx,dy,dz);
+	    grasp_pose.translation() += grasp_translation;    
+	    
+	    //visual_tools_->publishAxis(grasp_pose);
+	  }
+
 	break;
 
       case Y_AXIS:
@@ -304,15 +318,6 @@ public:
     new_grasp.pre_grasp_posture = grasp_data.pre_grasp_posture_;
     new_grasp.grasp_posture = grasp_data.grasp_posture_;
 
-    // TODO: figure out Dave's 90 deg hack
-    // TODO: Why have roll_gripper? why only about unit X?
-    //Eigen::Affine3d roll_gripper;
-    //roll_gripper = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitX());
-    //grasp_pose = grasp_pose * roll_gripper;
-
-    //grasp_pose = grasp_pose * grasp_data.grasp_pose_to_eef_pose_;
-
-    //tf::poseEigenToMsg(object_global_transform_ * grasp_pose, grasp_pose_msg.pose);
     tf::poseEigenToMsg(grasp_pose, grasp_pose_msg.pose);
 
     new_grasp.grasp_pose = grasp_pose_msg;
@@ -347,30 +352,54 @@ public:
     // discretize sides and each rounded corner by grasp_resolution_
     int array_size = grasp_resolution_ + 1; 
 
-    Eigen::ArrayXXf top = Eigen::ArrayXXf::Zero(array_size,2);
-    Eigen::ArrayXXf bottom = Eigen::ArrayXXf::Zero(array_size,2);
-    Eigen::ArrayXXf right = Eigen::ArrayXXf::Zero(array_size,2);
-    Eigen::ArrayXXf left = Eigen::ArrayXXf::Zero(array_size,2);
+    Eigen::ArrayXXf top = Eigen::ArrayXXf::Zero(array_size,3);
+    Eigen::ArrayXXf bottom = Eigen::ArrayXXf::Zero(array_size,3);
+    Eigen::ArrayXXf right = Eigen::ArrayXXf::Zero(array_size,3);
+    Eigen::ArrayXXf left = Eigen::ArrayXXf::Zero(array_size,3);
 
-    Eigen::ArrayXXf corners = Eigen::ArrayXXf::Zero(array_size,2);
+    Eigen::ArrayXXf corners = Eigen::ArrayXXf::Zero(array_size,3);
 
     double topBottomDelta = length / grasp_resolution_;
     double leftRightDelta = width / grasp_resolution_;
     double cornersDelta = 2.0 * M_PI / grasp_resolution_;
-    
-    for (double i = 0; i < array_size; i++) 
+    double cornerX = length / 2.0;
+    double cornerY = width / 2.0;
+
+    for (int i = 0; i < array_size; i++) 
       {
-	top.row(i)    << -length / 2 + i * topBottomDelta , width / 2 + radius;
-	bottom.row(i) << -length / 2 + i * topBottomDelta , -width / 2 + radius;
+	top.row(i)    << -length / 2 + i * topBottomDelta , width / 2 + radius, 0;
+	bottom.row(i) << -length / 2 + i * topBottomDelta , -width / 2 - radius, 0;
 
-	right.row(i) << length / 2 + radius               , -width / 2 + i * leftRightDelta;
-	left.row(i)  << -length / 2 + radius              , -width / 2 + i * leftRightDelta;
+	right.row(i) << length / 2 + radius               , -width / 2 + i * leftRightDelta, 0;
+	left.row(i)  << -length / 2 - radius              , -width / 2 + i * leftRightDelta, 0;
 
-	corners.row(i)   << radius * cos(i * cornersDelta)   , radius * sin(i * cornersDelta);
+	// add corner value to radius points
+	// TODO: assumes array_size % 4 = 0, need to fix
+	if (i == array_size / 4)
+	  cornerX *= -1;
+	if (i == array_size / 2)
+	  cornerY *= -1;
+	if (i == 3 * array_size / 4)
+	  cornerX *= -1;
+	
+	corners.row(i)   << cornerX + radius * cos(i * cornersDelta)   , cornerY + radius * sin(i * cornersDelta), 0;
       }
     
-    Eigen::ArrayXXf points = Eigen::ArrayXXf::Zero(array_size * 5,2);
-    points << top, bottom, left, right, corners;
+    // TODO: assumes array_size % 4 = 0, need to fix
+    Eigen::ArrayXXf points = Eigen::ArrayXXf::Zero(array_size * 5 - 8,3);
+    points << top.block(1,0,array_size-2,3), 
+      bottom.block(1,0,array_size-2,3), 
+      left.block(1,0,array_size-2,3), 
+      right.block(1,0,array_size-2,3), 
+      corners;
+
+    // get angles to points
+    for (int i = 0; i < points.size() / 3; i++)
+      {
+	points(i,2) = atan2(points(i,1),points(i,0));
+      }
+
+
     ROS_DEBUG_STREAM_NAMED("cuboid_test", "points \n" << points);
     return points;
   } 
