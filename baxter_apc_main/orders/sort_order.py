@@ -81,6 +81,16 @@ class ContestInterface(object):
 
 
     def sorted_order(self):
+        """Sort from hightest to lowest expected score.
+
+        The expected punctuation for each object is the product of the
+        probability of grasping it correctly (tweak them in
+        `items_data.csv`) times the score for doing it right (depends
+        on the number of objects in the bin). Then, if there're
+        multiple objects in the bin, we remove the product of the
+        number of objects in the bin times the probablity of removing
+        an object we shouldn't have touched and the score we'd lose.
+        """
         if not self.valid:
             return self.work_order
 
