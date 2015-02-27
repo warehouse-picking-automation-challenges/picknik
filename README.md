@@ -6,7 +6,7 @@
  - [Team Members](https://bitbucket.org/cuamazonchallenge/profile/members)
  - [Timeline](https://docs.google.com/spreadsheets/d/1GG_j6BVir-J8VGwbU8RWDHA8kD8ZSeXrtlLtW9N851o/edit?usp=sharing)
  - [Item Data](https://docs.google.com/spreadsheets/d/1e0Fousz9TUxf9YHeVfnaKVgf06Z0WC50blMGBWJ9cp8/edit#gid=2088756835)
- 
+
 ## Install
 
 Dave occasionally releases a new zip file with a lot of custom ROS code, that can be built into one workspace. Download the latest zip (~700MB) from here:
@@ -42,6 +42,26 @@ the likelyhood of the number of objects per bin too:
                             Quote delimited list of probabilites. Eg "[0.5, 0.2,
                             0.2, 0.1]"
       --seed SEED, -s SEED
+
+
+### Sort order in terms of priority
+
+Take an order, sort it according to the (decreasing) expected
+punctuation we might get from each object, and write a new sorted
+order:
+
+    rosrun baxter_apc_main sort_order.py order.json sorted_order.json
+
+Its help documentation:
+
+    usage: sort_order.py [-h] input_filename output_filename
+
+    positional arguments:
+      input_filename   filename for the json order
+      output_filename  filename for the sorted order
+
+    optional arguments:
+      -h, --help       show this help message and exit
 
 ### Setup Simulation
 
@@ -87,7 +107,7 @@ Check to make sure you have ``dialout`` group
 Rviz Visualizer of robot state
 
     roslaunch baxter_apc_main moveit_display_rviz.launch
-	
+
 Rviz Visualizer of planning scene and debug markers
 
     roslaunch baxter_apc_main moveit_rviz.launch
