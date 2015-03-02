@@ -25,7 +25,7 @@ Unzip the file and put into a catkin workspace. Build using catkin_tools.
 
 Create a simulated bin inventory and random order by running
 
-    rosrun baxter_apc_main random_orders.py order.json
+    rosrun picknik_main random_orders.py order.json
 
 Note that you can repeat experiments setting the used seed, and modify
 the likelyhood of the number of objects per bin too:
@@ -50,7 +50,7 @@ Take an order, sort it according to the (decreasing) expected
 punctuation we might get from each object, and write a new sorted
 order:
 
-    rosrun baxter_apc_main sort_order.py order.json sorted_order.json
+    rosrun picknik_main sort_order.py order.json sorted_order.json
 
 Its help documentation:
 
@@ -106,15 +106,15 @@ Check to make sure you have ``dialout`` group
 
 Rviz Visualizer of robot state
 
-    roslaunch baxter_apc_main moveit_display_rviz.launch
+    roslaunch picknik_main moveit_display_rviz.launch
 
 Rviz Visualizer of planning scene and debug markers
 
-    roslaunch baxter_apc_main moveit_rviz.launch
+    roslaunch picknik_main moveit_rviz.launch
 
 Run APC Manager (main program)
 
-    roslaunch baxter_apc_main apc_manager.launch mode:=1 verbose:=1 use_experience:=1 saving_enabled:=1 debug:=0 show_database:=0
+    roslaunch picknik_main baxter_apc.launch mode:=1 verbose:=1 use_experience:=1 saving_enabled:=1 debug:=0 show_database:=0
 
 Optional Arguments:
 
@@ -165,11 +165,11 @@ Start fake controllers
 
 Rviz Visualizer
 
-    roslaunch baxter_apc_main mesh_publisher_rviz.launch
+    roslaunch picknik_main mesh_publisher_rviz.launch
 
 Load meshes
 
-    rosrun baxter_apc_main mesh_publisher
+    rosrun picknik_main mesh_publisher
 
 ### Random Planning
 
@@ -184,7 +184,7 @@ Start fake controllers
 
 Rviz Visualizer
 
-    roslaunch baxter_apc_main moveit_rviz.launch
+    roslaunch picknik_main moveit_rviz.launch
 
 Planner
 
@@ -203,7 +203,7 @@ Start fake controllers
 
 Rviz Visualizer
 
-    roslaunch baxter_apc_main moveit_rviz.launch
+    roslaunch picknik_main moveit_rviz.launch
 
 Load meshes
 
