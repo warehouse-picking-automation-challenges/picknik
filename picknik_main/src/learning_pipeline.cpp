@@ -241,8 +241,7 @@ bool LearningPipeline::analyzeGrasps(const moveit::core::JointModelGroup* arm_jm
   std::cout << std::endl;
   std::cout << std::endl;
   ROS_INFO_STREAM_NAMED("learning_pipeline","Filtering grasps using IK, may take a minute");
-  grasp_filter_->filterGrasps(possible_grasps, filtered_grasps_, filter_pregrasps,
-                              grasp_datas_[arm_jmg].parent_link_name_, arm_jmg);
+  grasp_filter_->filterGrasps(possible_grasps, filtered_grasps_, filter_pregrasps, arm_jmg);                              
   total_valid_ik_grasps = filtered_grasps_.size();
 
   // Visulizations
@@ -308,8 +307,12 @@ bool LearningPipeline::planToGrasps(const moveit::core::JointModelGroup *arm_jmg
   moveit::core::RobotStatePtr start_state(new moveit::core::RobotState(*current_state_));
   moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_));
 
-  // Set start state to initial pose
-  setToDefaultPosition(start_state);
+  // Set goal state to initial pose
+  if (!start_state->setToDefaultValues(arm_jmg, start_pose_))
+  {
+    ROS_ERROR_STREAM_NAMED("learning","Failed to set pose '" << start_pose_ << "' for planning group '" << arm_jmg->getName() << "'");
+    return false;
+  }
 
   double path_length = 0;
   for (std::size_t i = 0; i < filtered_grasps_.size(); ++i)
@@ -325,7 +328,7 @@ bool LearningPipeline::planToGrasps(const moveit::core::JointModelGroup *arm_jmg
     bool show_database = true;
     if (!move(start_state, goal_state, arm_jmg, verbose_, execute_trajectory, show_database))
     {
-      ROS_ERROR_STREAM_NAMED("pipeline","Plan to grasp " << i << " failed");
+      ROS_ERROR_STREAM_NAMED("learning","Plan to grasp " << i << " failed");
       return false;
     }
   }
@@ -440,7 +443,7 @@ bool LearningPipeline::testSingleGraspIK()
       }
       else
       {
-        ROS_WARN_STREAM_NAMED("pipeline","Not filtering pre-grasp - GraspSolution may have bad data");
+        ROS_WARN_STREAM_NAMED("learning","Not filtering pre-grasp - GraspSolution may have bad data");
       }
       // Both grasp and pre-grasp have passed, create the solution
       GraspSolution grasp_solution;

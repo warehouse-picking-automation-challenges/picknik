@@ -27,7 +27,7 @@ namespace picknik_main
 
 ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
                                            planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                                           boost::shared_ptr<plan_execution::PlanExecution> plan_execution,        
+                                           boost::shared_ptr<plan_execution::PlanExecution> plan_execution,
                                            ShelfObjectPtr shelf, bool use_experience, bool show_database)
   : nh_("~")
   , verbose_(verbose)
@@ -134,24 +134,6 @@ bool ManipulationPipeline::loadRobotStates()
     ROS_WARN_STREAM_NAMED("temp","Unknown type of robot '" << robot_model_->getName() << "'");
     return false;
   }
-
-
-
-  // Check if variable exists
-  // if (current_state_->getVariablePosition("virtual_joint/trans_z") != 0.9)
-  // {
-  //   ROS_ERROR_STREAM_NAMED("pipeline","Robot state z translation should be 0.9!");
-  //   current_state_->setVariablePosition("virtual_joint/trans_z", 0.9);
-  // }
-
-
-  // Set robot to starting position
-  /*
-    if (!current_state_->setToDefaultValues(both_arms_, start_pose_))
-    {
-    ROS_ERROR_STREAM_NAMED("pipeline","Failed to set pose '" << start_pose_ << "' for planning group '" << both_arms_->getName() << "'");
-    }
-  */
 
   return true;
 }
@@ -269,6 +251,8 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
       case 1:  statusPublisher("Open end effectors");
 
         openEndEffectors(true);
+        ros::Duration(20).sleep();
+
         break;
 
         // #################################################################################################################
@@ -461,8 +445,7 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
   // Filter the grasp for only the ones that are reachable
   bool filter_pregrasps = true;
   std::vector<moveit_grasps::GraspSolution> filtered_grasps;
-  grasp_filter_->filterGrasps(possible_grasps, filtered_grasps, filter_pregrasps,
-                              grasp_datas_[arm_jmg].parent_link_name_, arm_jmg);
+  grasp_filter_->filterGrasps(possible_grasps, filtered_grasps, filter_pregrasps, arm_jmg);                              
 
   // Visualize them
   if (verbose)
@@ -502,42 +485,49 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
 
 const robot_model::JointModelGroup* ManipulationPipeline::chooseArm(const Eigen::Affine3d& object_pose)
 {
-  if (dual_arm_ || object_pose.translation().y() <= 0)
+  if (!dual_arm_) // jaco
   {
-    ROS_INFO_STREAM_NAMED("pipeline","Using RIGHT arm");
+    return right_arm_;
+  }
+  // Baxter: choose which arm
+  else if (object_pose.translation().y() <= 0)
+  {
+    ROS_INFO_STREAM_NAMED("pipeline","Using right arm to grasp product");
     return right_arm_;
   }
   else
   {
-    ROS_INFO_STREAM_NAMED("pipeline","Using LEFT arm");
+    ROS_INFO_STREAM_NAMED("pipeline","Using left arm to grasp product");
     return left_arm_;
   }
 }
 
-bool ManipulationPipeline::moveToStartPosition(const robot_model::JointModelGroup* jmg)
+bool ManipulationPipeline::moveToStartPosition(const robot_model::JointModelGroup* arm_jmg)
 {
+  // Get default arm(s) to move
+  if (!arm_jmg)
+    if (dual_arm_)
+      arm_jmg = both_arms_;
+    else
+      arm_jmg = right_arm_;
+
   // Set start state to current state
   {
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
     (*current_state_) = scene->getCurrentState();
   }
 
-  const robot_model::JointModelGroup* jmg_ready = both_arms_;
-
-  // Set to default group if needed
-  if (!jmg)
-    jmg = jmg_ready;
-
   moveit::core::RobotStatePtr start_state(new moveit::core::RobotState(*current_state_)); // Allocate robot states
 
   // Set goal state to initial pose
-  if (!start_state->setToDefaultValues(jmg_ready, start_pose_))
+  if (!start_state->setToDefaultValues(arm_jmg, start_pose_))
   {
-    ROS_ERROR_STREAM_NAMED("pipeline","Failed to set pose '" << start_pose_ << "' for planning group '" << jmg_ready->getName() << "'");
+    ROS_ERROR_STREAM_NAMED("pipeline","Failed to set pose '" << start_pose_ << "' for planning group '" << arm_jmg->getName() << "'");
+    return false;
   }
 
   // Check if already in start position
-  if (statesEqual(*current_state_, *start_state, jmg))
+  if (statesEqual(*current_state_, *start_state, arm_jmg))
   {
     ROS_WARN_STREAM_NAMED("pipeline","Not planning motion because current state and goal state are close enough.");
     return true;
@@ -545,7 +535,7 @@ bool ManipulationPipeline::moveToStartPosition(const robot_model::JointModelGrou
 
   // Plan
   bool execute_trajectory = true;
-  if (!move(current_state_, start_state, jmg, verbose_, execute_trajectory, show_database_))
+  if (!move(current_state_, start_state, arm_jmg, verbose_, execute_trajectory, show_database_))
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Unable to move to start position");
     return false;
@@ -558,7 +548,7 @@ bool ManipulationPipeline::moveToStartPosition(const robot_model::JointModelGrou
 }
 
 bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
-                                const robot_model::JointModelGroup* jmg, bool verbose, bool execute_trajectory,
+                                const robot_model::JointModelGroup* arm_jmg, bool verbose, bool execute_trajectory,
                                 bool show_database)
 {
   if (verbose)
@@ -576,14 +566,14 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
 
   // Create Goal constraint
   double tolerance_pose = 0.0001;
-  moveit_msgs::Constraints goal_constraint = kinematic_constraints::constructGoalConstraints(*goal, jmg,
+  moveit_msgs::Constraints goal_constraint = kinematic_constraints::constructGoalConstraints(*goal, arm_jmg,
                                                                                              tolerance_pose, tolerance_pose);
   req.goal_constraints.push_back(goal_constraint);
 
   // Other settings e.g. OMPL
   req.planner_id = "RRTConnectkConfigDefault";
   //req.planner_id = "RRTstarkConfigDefault";
-  req.group_name = jmg->getName();
+  req.group_name = arm_jmg->getName();
   req.num_planning_attempts = 1; // this must be one else it threads and doesn't use lightning/thunder correctly
   req.allowed_planning_time = 30; // seconds
   req.use_experience = use_experience_;
@@ -632,7 +622,6 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
   moveit_msgs::MotionPlanResponse response;
   response.trajectory = moveit_msgs::RobotTrajectory();
   res.getMessage(response);
-  //std::cout << "Trajectory debug:\n " << response.trajectory << std::endl;
 
   // Visualize trajectory in Rviz display
   bool wait_for_trajetory = false;
@@ -679,7 +668,7 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
     if (show_database)
     {
       ROS_ERROR_STREAM_NAMED("pipeline","Showing database...");
-      displayLightningPlans(experience_setup, jmg);
+      displayLightningPlans(experience_setup, arm_jmg);
     }
   }
 
@@ -699,10 +688,10 @@ bool ManipulationPipeline::testEndEffectors(bool open)
     openEndEffector(open, left_arm_);
 }
 
-bool ManipulationPipeline::executeState(const moveit::core::RobotStatePtr robot_state, const moveit::core::JointModelGroup *jmg)
+bool ManipulationPipeline::executeState(const moveit::core::RobotStatePtr robot_state, const moveit::core::JointModelGroup *arm_jmg)
 {
   // Convert state to trajecotry
-  robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, jmg));
+  robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, arm_jmg));
   double duration_from_previous = 1;
   robot_trajectory->addSuffixWayPoint(robot_state, duration_from_previous);
 
@@ -795,8 +784,6 @@ bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *
   // Visualize trajectory in Rviz display
   bool wait_for_trajetory = false;
   visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, wait_for_trajetory);
-
-  std::cout << "trajectory: " << cartesian_trajectory_msg << std::endl;
 
   // Execute
   if( !executeTrajectoryMsg(cartesian_trajectory_msg) )
@@ -1082,27 +1069,27 @@ bool ManipulationPipeline::openEndEffectors(bool open)
   return true;
 }
 
-bool ManipulationPipeline::openEndEffector(bool open, const robot_model::JointModelGroup* jmg)
+bool ManipulationPipeline::openEndEffector(bool open, const robot_model::JointModelGroup* arm_jmg)
 {
   moveit_msgs::RobotTrajectory trajectory_msg;
 
   robot_state::RobotState ee_state = planning_scene_monitor_->getPlanningScene()->getCurrentState();
 
   robot_trajectory::RobotTrajectoryPtr ee_traj(new robot_trajectory::RobotTrajectory(ee_state.getRobotModel(),
-                                                                                     grasp_datas_[jmg].ee_group_));
+                                                                                     grasp_datas_[arm_jmg].ee_group_));
 
   // Convert trajectory to a message
   ee_traj->getRobotTrajectoryMsg(trajectory_msg);
 
   if (open)
   {
-    ROS_INFO_STREAM_NAMED("pipeline","Opening end effector for " << grasp_datas_[jmg].ee_group_);
-    ee_traj->setRobotTrajectoryMsg(ee_state, grasp_datas_[jmg].pre_grasp_posture_); // open
+    ROS_INFO_STREAM_NAMED("pipeline","Opening end effector for " << grasp_datas_[arm_jmg].ee_group_);
+    ee_traj->setRobotTrajectoryMsg(ee_state, grasp_datas_[arm_jmg].pre_grasp_posture_); // open
   }
   else
   {
-    ROS_INFO_STREAM_NAMED("pipeline","Closing end effector for " << grasp_datas_[jmg].ee_group_);
-    ee_traj->setRobotTrajectoryMsg(ee_state, grasp_datas_[jmg].grasp_posture_); // closed
+    ROS_INFO_STREAM_NAMED("pipeline","Closing end effector for " << grasp_datas_[arm_jmg].ee_group_);
+    ee_traj->setRobotTrajectoryMsg(ee_state, grasp_datas_[arm_jmg].grasp_posture_); // closed
   }
 
   // Apply the open gripper state to the waypoint
@@ -1131,10 +1118,10 @@ bool ManipulationPipeline::setStateWithOpenEE(bool open, moveit::core::RobotStat
     for (std::size_t i = 0; i < grasp_datas_[right_arm_].grasp_posture_.joint_names.size(); ++i)
     {
       if (open)
-        robot_state->setVariablePosition(grasp_datas_[right_arm_].pre_grasp_posture_.joint_names[i], 
+        robot_state->setVariablePosition(grasp_datas_[right_arm_].pre_grasp_posture_.joint_names[i],
                                          grasp_datas_[right_arm_].pre_grasp_posture_.points.front().positions[i]);
       else
-        robot_state->setVariablePosition(grasp_datas_[right_arm_].grasp_posture_.joint_names[i], 
+        robot_state->setVariablePosition(grasp_datas_[right_arm_].grasp_posture_.joint_names[i],
                                          grasp_datas_[right_arm_].grasp_posture_.points.front().positions[i]);
     }
   }
@@ -1209,48 +1196,49 @@ bool ManipulationPipeline::executeTrajectoryMsg(moveit_msgs::RobotTrajectory tra
   return true;
 }
 
-bool ManipulationPipeline::allowFingerTouch(const std::string& object_name, const robot_model::JointModelGroup* jmg)
+bool ManipulationPipeline::allowFingerTouch(const std::string& object_name, const robot_model::JointModelGroup* arm_jmg)
 {
-  ROS_WARN_STREAM_NAMED("temp","NOT IMPLEMENTED allowFingerTouch");
-  /*
-    {
+  // TODO does this reset properly i.e. clear the matrix?
+
+  // Error check
+  if (arm_jmg != right_arm_ && arm_jmg != left_arm_)
+  {
+    ROS_ERROR_STREAM_NAMED("pipeline","Unknown joint model group passed to allowFingerTouch");
+    if (arm_jmg)
+      ROS_ERROR_STREAM_NAMED("pipeline","Joint model group: " << arm_jmg->getName());
+    return false;
+  }
+
+  // Lock planning scene
+  {
     planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning scene
 
+    // Get links of end effector
+    const std::vector<std::string> &ee_link_names = grasp_datas_[arm_jmg].joint_model_group_->getLinkModelNames();
+
     // Prevent fingers from causing collision with object
-    if (jmg == right_arm_)
+    for (std::size_t i = 0; i < ee_link_names.size(); ++i)
     {
-    scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, "right_gripper_r_finger", true);
-    scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, "right_gripper_l_finger", true);
-    }
-    else if (jmg == left_arm_)
-    {
-    scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, "left_gripper_r_finger", true);
-    scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, "left_gripper_l_finger", true);
-    }
-    else
-    {
-    ROS_ERROR_STREAM_NAMED("pipeline","Unknown joint model group passed to allowFingerTouch");
-    if (jmg)
-    ROS_ERROR_STREAM_NAMED("pipeline","Joint model group: " << jmg->getName());
-    return false;
+      ROS_DEBUG_STREAM_NAMED("pipeline","Prevent collision between " << object_name << " and " << ee_link_names[i]);
+      scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, ee_link_names[i], true);
     }
 
     // Prevent object from causing collision with shelf
     for (std::size_t i = 0; i < shelf_->getShelfParts().size(); ++i)
     {
-    ROS_DEBUG_STREAM_NAMED("pipeline","Prevent collision between " << object_name << " and " << shelf_->getShelfParts()[i].getName());
-    scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, shelf_->getShelfParts()[i].getName(), true);
+      ROS_DEBUG_STREAM_NAMED("pipeline","Prevent collision between " << object_name << " and " << shelf_->getShelfParts()[i].getName());
+      scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, shelf_->getShelfParts()[i].getName(), true);
     }
-    }
+  } // end lock planning scene
 
-    // Debug current matrix
-    if (false)
-    {
+  // Debug current matrix
+  if (false)
+  {
     moveit_msgs::AllowedCollisionMatrix msg;
     planning_scene_monitor_->getPlanningScene()->getAllowedCollisionMatrix().getMessage(msg);
     std::cout << "Current collision matrix: " << msg << std::endl;
-    }
-  */
+  }
+
   return true;
 }
 
@@ -1277,16 +1265,16 @@ bool ManipulationPipeline::orderPublisher(WorkOrder& order)
 }
 
 bool ManipulationPipeline::statesEqual(const moveit::core::RobotState &s1, const moveit::core::RobotState &s2,
-                                       const robot_model::JointModelGroup* jmg)
+                                       const robot_model::JointModelGroup* arm_jmg)
 {
   static const double STATES_EQUAL_THRESHOLD = 0.01;
 
-  double s1_vars[jmg->getActiveJointModels().size()];
-  double s2_vars[jmg->getActiveJointModels().size()];
-  s1.copyJointGroupPositions(jmg, s1_vars);
-  s2.copyJointGroupPositions(jmg, s2_vars);
+  double s1_vars[arm_jmg->getActiveJointModels().size()];
+  double s2_vars[arm_jmg->getActiveJointModels().size()];
+  s1.copyJointGroupPositions(arm_jmg, s1_vars);
+  s2.copyJointGroupPositions(arm_jmg, s2_vars);
 
-  for (std::size_t i = 0; i < jmg->getActiveJointModels().size(); ++i)
+  for (std::size_t i = 0; i < arm_jmg->getActiveJointModels().size(); ++i)
   {
     //std::cout << "Diff of " << i << " - " << fabs(s1_vars[i] - s2_vars[i]) << std::endl;
     if ( fabs(s1_vars[i] - s2_vars[i]) > STATES_EQUAL_THRESHOLD )
@@ -1299,7 +1287,7 @@ bool ManipulationPipeline::statesEqual(const moveit::core::RobotState &s1, const
 }
 
 void ManipulationPipeline::displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup,
-                                                 const robot_model::JointModelGroup* jmg)
+                                                 const robot_model::JointModelGroup* arm_jmg)
 {
   // Create a state space describing our robot's planning group
   moveit_ompl::ModelBasedStateSpacePtr model_state_space
@@ -1309,7 +1297,7 @@ void ManipulationPipeline::displayLightningPlans(ompl::tools::ExperienceSetupPtr
 
   // Load lightning and its database
   ompl::tools::LightningPtr lightning = boost::dynamic_pointer_cast<ompl::tools::Lightning>(experience_setup);
-  //7lightning.setFile(jmg->getName());
+  //7lightning.setFile(arm_jmg->getName());
 
   // Get all of the paths in the database
   std::vector<ompl::base::PlannerDataPtr> paths;
@@ -1329,7 +1317,7 @@ void ManipulationPipeline::displayLightningPlans(ompl::tools::ExperienceSetupPtr
 
   // Get tip links for this setup
   std::vector<const robot_model::LinkModel*> tips;
-  jmg->getEndEffectorTips(tips);
+  arm_jmg->getEndEffectorTips(tips);
   ROS_INFO_STREAM_NAMED("pipeline","Found " << tips.size() << " tips");
 
   bool show_trajectory_animated = false;//verbose_;
@@ -1338,20 +1326,9 @@ void ManipulationPipeline::displayLightningPlans(ompl::tools::ExperienceSetupPtr
   for (std::size_t path_id = 0; path_id < paths.size(); ++path_id)
   {
     std::cout << "Processing path " << path_id << std::endl;
-    ompl_visual_tools_->publishRobotPath(paths[path_id], jmg, tips, show_trajectory_animated);
+    ompl_visual_tools_->publishRobotPath(paths[path_id], arm_jmg, tips, show_trajectory_animated);
   }
 
-}
-
-bool ManipulationPipeline::setToDefaultPosition(moveit::core::RobotStatePtr robot_state)
-{
-  const robot_model::JointModelGroup* jmg_ready = both_arms_;
-  if (!robot_state->setToDefaultValues(jmg_ready, start_pose_))
-  {
-    ROS_ERROR_STREAM_NAMED("pipeline","Failed to set pose '" << start_pose_ << "' for planning group '" << jmg_ready->getName() << "'");
-    return false;
-  }
-  return true;
 }
 
 bool ManipulationPipeline::visualizeGrasps(std::vector<moveit_grasps::GraspSolution> filtered_grasps,

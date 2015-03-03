@@ -102,7 +102,7 @@ public:
    * \brief Choose the grasp for the object
    * \return true on success
    */
-  bool chooseGrasp(const Eigen::Affine3d& object_pose, const robot_model::JointModelGroup* jmg,
+  bool chooseGrasp(const Eigen::Affine3d& object_pose, const robot_model::JointModelGroup* arm_jmg,
                    moveit_grasps::GraspSolution& chosen, bool verbose);
 
   /**
@@ -115,14 +115,14 @@ public:
    * \brief Move both arms to their start location
    * \return true on success
    */
-  bool moveToStartPosition(const robot_model::JointModelGroup* jmg = NULL);
+  bool moveToStartPosition(const robot_model::JointModelGroup* arm_jmg = NULL);
 
   /**
    * \brief Send a planning request to moveit and execute
    * \return true on success
    */
   bool move(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
-            const robot_model::JointModelGroup* jmg, bool verbose, bool execute_trajectory = true,
+            const robot_model::JointModelGroup* arm_jmg, bool verbose, bool execute_trajectory = true,
             bool show_database = true);
 
   /**
@@ -135,7 +135,7 @@ public:
    * \brief Send a single state to the controllers for execution
    * \return true on success
    */
-  bool executeState(const moveit::core::RobotStatePtr robot_state, const moveit::core::JointModelGroup *jmg);
+  bool executeState(const moveit::core::RobotStatePtr robot_state, const moveit::core::JointModelGroup *arm_jmg);
 
   /**
    * \brief Generate the straight line path from pregrasp to grasp
@@ -157,7 +157,7 @@ public:
    * \brief After grasping an object, pull object out of shelf in reverse
    * \return true on success
    */
-  bool executeRetreatPath(const moveit::core::JointModelGroup *jmg);
+  bool executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg);
 
   /**
    * \brief Function for testing multiple directions
@@ -191,7 +191,7 @@ public:
    */
   bool convertRobotStatesToTrajectory(const std::vector<robot_state::RobotStatePtr>& robot_state_trajectory,
                                       moveit_msgs::RobotTrajectory& trajectory_msg,
-                                      const robot_model::JointModelGroup* jmg,
+                                      const robot_model::JointModelGroup* arm_jmg,
                                       const double &velocity_scaling_factor);
 
   /**
@@ -205,7 +205,7 @@ public:
    * \param bool if it should be open or closed
    * \return
    */
-  bool openEndEffector(bool open, const robot_model::JointModelGroup* jmg);
+  bool openEndEffector(bool open, const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Set a robot state to have an open or closed EE. Does not actually affect hardware
@@ -223,7 +223,7 @@ public:
    * \brief Prevent a product from colliding with the fingers
    * \return true on success
    */
-  bool allowFingerTouch(const std::string& object_name, const robot_model::JointModelGroup* jmg);
+  bool allowFingerTouch(const std::string& object_name, const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Load it
@@ -250,20 +250,13 @@ public:
    * \param only compare joints in this joint model group
    * \return true if states are close enough in similarity
    */
-  bool statesEqual(const moveit::core::RobotState &s1, const moveit::core::RobotState &s2, const robot_model::JointModelGroup* jmg);
+  bool statesEqual(const moveit::core::RobotState &s1, const moveit::core::RobotState &s2, const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Show the trajectories saved in the experience database
    * \return true on success
    */
-  void displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup, const robot_model::JointModelGroup* jmg);
-
-  /**
-   * \brief Set both arms to home position
-   * \param input - description
-   * \return true on success
-   */
-  bool setToDefaultPosition(moveit::core::RobotStatePtr robot_state);
+  void displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup, const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Getter for RobotState
@@ -355,7 +348,7 @@ protected:
   double wait_after_grasp_;
 
   // Robot-specific variables
-  std::string start_pose_; // where to move robot to initially
+  std::string start_pose_; // where to move robot to initially. should be for both arms if applicable
   std::string right_hand_name_;
   std::string left_hand_name_;
   std::string right_arm_name_;
