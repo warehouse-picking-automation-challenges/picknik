@@ -69,9 +69,9 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  LearningPipeline(bool verbose, 
-                   VisualsPtr visuals,
+  LearningPipeline(bool verbose, VisualsPtr visuals,                   
                    planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
+                   boost::shared_ptr<plan_execution::PlanExecution> plan_execution,
                    ShelfObjectPtr shelf, bool use_experience, bool show_database);
 
   /**

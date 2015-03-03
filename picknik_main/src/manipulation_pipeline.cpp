@@ -27,17 +27,18 @@ namespace picknik_main
 
 ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
                                            planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
+                                           boost::shared_ptr<plan_execution::PlanExecution> plan_execution,        
                                            ShelfObjectPtr shelf, bool use_experience, bool show_database)
   : nh_("~")
   , verbose_(verbose)
   , visuals_(visuals)
   , planning_scene_monitor_(planning_scene_monitor)
+  , plan_execution_(plan_execution)
   , shelf_(shelf)
   , use_experience_(use_experience)
   , show_database_(show_database)
   , use_logging_(true)
 {
-
   // Create initial robot state
   loadRobotStates();
 
@@ -60,11 +61,11 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   order_position_.translation().z() += 0.2;
 
   // Load grasp data specific to our robot
-  if (!grasp_datas_[left_arm_].loadRobotGraspData(nh_, "left_hand", robot_model_) ||
-      !grasp_datas_[right_arm_].loadRobotGraspData(nh_, "right_hand", robot_model_))
-  {
-    ROS_ERROR_STREAM_NAMED("pipeline","Unable to load grasp data");
-  }
+  if (!grasp_datas_[right_arm_].loadRobotGraspData(nh_, "right_hand", robot_model_))
+    ROS_ERROR_STREAM_NAMED("pipeline","Unable to load right arm grasp data");
+
+  if (dual_arm_ && !grasp_datas_[left_arm_].loadRobotGraspData(nh_, "left_hand", robot_model_))
+    ROS_ERROR_STREAM_NAMED("pipeline","Unable to load left arm grasp data");
 
   // Load grasp generator
   grasps_.reset( new moveit_grasps::Grasps(visuals_->visual_tools_) );
@@ -78,9 +79,6 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   getDoubleParameter(nh_, "retreat_velocity_scaling_factor", retreat_velocity_scaling_factor_);
   getDoubleParameter(nh_, "wait_before_grasp", wait_before_grasp_);
   getDoubleParameter(nh_, "wait_after_grasp", wait_after_grasp_);
-
-  // Load trajectory execution. Or, it will do it automatically later
-  //loadPlanExecution();
 
   // Load logging capability
   if (use_logging_ && use_experience)
@@ -105,23 +103,47 @@ bool ManipulationPipeline::loadRobotStates()
   visuals_->visual_tools_->getSharedRobotState() = current_state_; // allow visual_tools to have the correct virtual joint
   robot_model_ = current_state_->getRobotModel();
 
-  if (current_state_->getVariablePosition("virtual_joint/trans_z") != 0.9)
+  // Decide what robot we are working with
+  if (robot_model_->getName() == "baxter")
   {
-    ROS_ERROR_STREAM_NAMED("pipeline","Robot state z translation should be 0.9!");
-    current_state_->setVariablePosition("virtual_joint/trans_z", 0.9);
+    dual_arm_ = true;
+
+    // Load arm groups
+    left_arm_ = robot_model_->getJointModelGroup("left_arm");
+    right_arm_ = robot_model_->getJointModelGroup("right_arm");
+    both_arms_ = robot_model_->getJointModelGroup("both_arms");
+  }
+  else if (robot_model_->getName() == "jaco")
+  {
+    dual_arm_ = false;
+
+    // Load arm groups
+    left_arm_ = robot_model_->getJointModelGroup("manipulator");
+    right_arm_ = robot_model_->getJointModelGroup("manipulator");
+    both_arms_ = robot_model_->getJointModelGroup("manipulator");
+  }
+  else
+  {
+    ROS_WARN_STREAM_NAMED("temp","Unknown type of robot '" << robot_model_->getName() << "'");
+    return false;
   }
 
-  // Load arm groups
-  left_arm_ = robot_model_->getJointModelGroup("left_arm");
-  right_arm_ = robot_model_->getJointModelGroup("right_arm");
-  both_arms_ = robot_model_->getJointModelGroup("both_arms");
+
+
+  // Check if variable exists
+  // if (current_state_->getVariablePosition("virtual_joint/trans_z") != 0.9)
+  // {
+  //   ROS_ERROR_STREAM_NAMED("pipeline","Robot state z translation should be 0.9!");
+  //   current_state_->setVariablePosition("virtual_joint/trans_z", 0.9);
+  // }
+
 
   // Set robot to starting position
   /*
-  if (!current_state_->setToDefaultValues(both_arms_, START_POSE))
-  {
+    if (!current_state_->setToDefaultValues(both_arms_, START_POSE))
+    {
     ROS_ERROR_STREAM_NAMED("pipeline","Failed to set pose '" << START_POSE << "' for planning group '" << both_arms_->getName() << "'");
-  }
+    }
   */
 
   return true;
@@ -152,7 +174,7 @@ bool ManipulationPipeline::createCollisionWall()
   // Visualize
   shelf_->visualizeAxis(visuals_);
   visuals_->visual_tools_->publishCollisionWall( shelf_->shelf_distance_from_robot_, 0, 0, shelf_->shelf_width_ * 2.0, "SimpleCollisionWall",
-                                       rvt::BROWN );
+                                                 rvt::BROWN );
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
   ros::Duration(0.5).sleep();
 
@@ -168,7 +190,7 @@ bool ManipulationPipeline::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder
 
     collision_detection::World::ObjectConstPtr world_obj;
     world_obj = scene->getWorld()->getObject(coll_obj_name);
-    if (!world_obj) 
+    if (!world_obj)
     {
       ROS_ERROR_STREAM_NAMED("pipeline","Unable to find object " << coll_obj_name << " in planning scene world");
       return false;
@@ -236,14 +258,14 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         moveToStartPosition();
         break;
 
-      // #################################################################################################################
+        // #################################################################################################################
       case 1:  statusPublisher("Open end effectors");
 
         openEndEffectors(true);
         break;
 
-      // #################################################################################################################
-      case 2: statusPublisher("Generate and choose grasp for product " + order.product_->getName() + 
+        // #################################################################################################################
+      case 2: statusPublisher("Generate and choose grasp for product " + order.product_->getName() +
                               " from " + order.bin_->getName());
 
         // Create the collision objects
@@ -391,7 +413,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
 
         // Unattach from EE
         visuals_->visual_tools_->cleanupACO( order.product_->getCollisionName() ); // use unique name
-        
+
 
         // #################################################################################################################
       default:
@@ -473,15 +495,15 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
 
 const robot_model::JointModelGroup* ManipulationPipeline::chooseArm(const Eigen::Affine3d& object_pose)
 {
-  if (object_pose.translation().y() > 0)
-  {
-    ROS_INFO_STREAM_NAMED("pipeline","Using LEFT arm");
-    return robot_model_->getJointModelGroup("left_arm");
-  }
-  else
+  if (dual_arm_ || object_pose.translation().y() <= 0)
   {
     ROS_INFO_STREAM_NAMED("pipeline","Using RIGHT arm");
     return robot_model_->getJointModelGroup("right_arm");
+  }
+  else
+  {
+    ROS_INFO_STREAM_NAMED("pipeline","Using LEFT arm");
+    return robot_model_->getJointModelGroup("left_arm");
   }
 }
 
@@ -665,8 +687,9 @@ bool ManipulationPipeline::testEndEffectors(bool open)
 {
   setStateWithOpenEE(open, current_state_);
   visuals_->visual_tools_->publishRobotState(current_state_);
-  openEndEffector(open, left_arm_);
   openEndEffector(open, right_arm_);
+  if (dual_arm_)
+    openEndEffector(open, left_arm_);
 }
 
 bool ManipulationPipeline::executeState(const moveit::core::RobotStatePtr robot_state, const moveit::core::JointModelGroup *jmg)
@@ -720,8 +743,8 @@ bool ManipulationPipeline::generateApproachPath(const moveit::core::JointModelGr
   *pre_grasp_state = *robot_state_trajectory.front();
 
   /*
-  if (verbose)
-  {
+    if (verbose)
+    {
     ROS_INFO_STREAM_NAMED("pipeline","Visualizing pre-grasp");
     visuals_->visual_tools_->publishRobotState(pre_grasp_state, rvt::YELLOW);
     ros::Duration(0.1).sleep();
@@ -843,9 +866,9 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
   // Debug
   if (false)
   {
-    std::cout << "Tip Pose Start \n" << tip_pose_start.translation().x() << "\t" 
-              << tip_pose_start.translation().y() 
-              << "\t" << tip_pose_start.translation().z() << std::endl;    
+    std::cout << "Tip Pose Start \n" << tip_pose_start.translation().x() << "\t"
+              << tip_pose_start.translation().y()
+              << "\t" << tip_pose_start.translation().z() << std::endl;
   }
 
   if (verbose_)
@@ -967,7 +990,7 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
       {
         const Eigen::Affine3d tip_pose_start = robot_state_trajectory[i]->getGlobalLinkTransform(ik_tip_link_model);
         std::cout << tip_pose_start.translation().x() << "\t" << tip_pose_start.translation().y() <<
-          "\t" << tip_pose_start.translation().z() << std::endl;      
+          "\t" << tip_pose_start.translation().z() << std::endl;
       }
     }
 
@@ -1046,8 +1069,9 @@ bool ManipulationPipeline::convertRobotStatesToTrajectory(const std::vector<robo
 
 bool ManipulationPipeline::openEndEffectors(bool open)
 {
-  openEndEffector(true, left_arm_);
   openEndEffector(true, right_arm_);
+  if (dual_arm_)
+    openEndEffector(true, left_arm_);
   return true;
 }
 
@@ -1095,37 +1119,45 @@ bool ManipulationPipeline::openEndEffector(bool open, const robot_model::JointMo
 
 bool ManipulationPipeline::setStateWithOpenEE(bool open, moveit::core::RobotStatePtr robot_state)
 {
-  const double& left_open_position  = grasp_datas_[left_arm_].pre_grasp_posture_.points[0].positions[0];
-  const double& right_open_position  = grasp_datas_[right_arm_].pre_grasp_posture_.points[0].positions[0];
-
-  const double& left_close_position = grasp_datas_[left_arm_].grasp_posture_.points[0].positions[0];
-  const double& right_close_position = grasp_datas_[right_arm_].grasp_posture_.points[0].positions[0];
-
-  if (verbose_ && false)
+  if (!dual_arm_) // jaco mode
   {
-    std::cout << "Setting end effector to open: " << open << std::endl;
-    std::cout << "  right_open_position: " << right_open_position << std::endl;
-    std::cout << "  left_open_position: " << left_open_position << std::endl;
-    std::cout << "  right_close_position: " << right_close_position << std::endl;
-    std::cout << "  left_close_position: " << left_close_position << std::endl;
+    for (std::size_t i = 0; i < grasp_datas_[right_arm_].grasp_posture_.joint_names.size(); ++i)
+    {
+      if (open)
+        robot_state->setVariablePosition(grasp_datas_[right_arm_].pre_grasp_posture_.joint_names[i], 
+                                         grasp_datas_[right_arm_].pre_grasp_posture_.points.front().positions[i]);
+      else
+        robot_state->setVariablePosition(grasp_datas_[right_arm_].grasp_posture_.joint_names[i], 
+                                         grasp_datas_[right_arm_].grasp_posture_.points.front().positions[i]);
+    }
   }
+  else // Baxter mode
+  {
+    // TODO replace with method that moveit_grasps uses
 
-  if (open)
-  {
-    robot_state->setVariablePosition("left_gripper_r_finger_joint", left_open_position);
-    robot_state->setVariablePosition("left_gripper_l_finger_joint", -left_open_position);
-    // Specific to Yale-Arm:
-    robot_state->setVariablePosition("right_gripper_r_finger_joint", right_open_position);
-    robot_state->setVariablePosition("right_gripper_l_finger_joint", right_open_position);
-  }
-  else
-  {
-    robot_state->setVariablePosition("left_gripper_r_finger_joint", left_close_position);
-    robot_state->setVariablePosition("left_gripper_l_finger_joint", -left_close_position);
-    // Specific to Yale-Arm:
-    robot_state->setVariablePosition("right_gripper_r_finger_joint", right_close_position);
-    robot_state->setVariablePosition("right_gripper_l_finger_joint", right_close_position);
-  }
+    const double& right_open_position  = grasp_datas_[right_arm_].pre_grasp_posture_.points[0].positions[0];
+    const double& right_close_position = grasp_datas_[right_arm_].grasp_posture_.points[0].positions[0];
+    double left_open_position;
+    double left_close_position;
+    left_open_position  = grasp_datas_[left_arm_].pre_grasp_posture_.points[0].positions[0];
+    left_close_position = grasp_datas_[left_arm_].grasp_posture_.points[0].positions[0];
+
+    if (open)
+    {
+      robot_state->setVariablePosition("left_gripper_r_finger_joint", left_open_position);
+      robot_state->setVariablePosition("left_gripper_l_finger_joint", -left_open_position);
+      robot_state->setVariablePosition("right_gripper_r_finger_joint", right_open_position);
+      robot_state->setVariablePosition("right_gripper_l_finger_joint", right_open_position);
+    }
+    else
+    {
+      robot_state->setVariablePosition("left_gripper_r_finger_joint", left_close_position);
+      robot_state->setVariablePosition("left_gripper_l_finger_joint", -left_close_position);
+
+      robot_state->setVariablePosition("right_gripper_r_finger_joint", right_close_position);
+      robot_state->setVariablePosition("right_gripper_l_finger_joint", right_close_position);
+    }
+  } // end baxter mode
 }
 
 
@@ -1133,10 +1165,6 @@ bool ManipulationPipeline::setStateWithOpenEE(bool open, moveit::core::RobotStat
 bool ManipulationPipeline::executeTrajectoryMsg(moveit_msgs::RobotTrajectory trajectory_msg)
 {
   ROS_INFO_STREAM_NAMED("pipeline","Executing trajectory");
-
-  // Load if necessary
-  if( !trajectory_execution_manager_ )
-    loadPlanExecution();
 
   // Clear
   plan_execution_->getTrajectoryExecutionManager()->clear();
@@ -1176,44 +1204,46 @@ bool ManipulationPipeline::executeTrajectoryMsg(moveit_msgs::RobotTrajectory tra
 
 bool ManipulationPipeline::allowFingerTouch(const std::string& object_name, const robot_model::JointModelGroup* jmg)
 {
-  {
+  ROS_WARN_STREAM_NAMED("temp","NOT IMPLEMENTED allowFingerTouch");
+  /*
+    {
     planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning scene
 
     // Prevent fingers from causing collision with object
-    if (jmg == left_arm_)
+    if (jmg == right_arm_)
     {
-      scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, "left_gripper_r_finger", true);
-      scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, "left_gripper_l_finger", true);
+    scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, "right_gripper_r_finger", true);
+    scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, "right_gripper_l_finger", true);
     }
-    else if (jmg == right_arm_)
+    else if (jmg == left_arm_)
     {
-      scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, "right_gripper_r_finger", true);
-      scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, "right_gripper_l_finger", true);
+    scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, "left_gripper_r_finger", true);
+    scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, "left_gripper_l_finger", true);
     }
     else
     {
-      ROS_ERROR_STREAM_NAMED("pipeline","Unknown joint model group passed to allowFingerTouch");
-      if (jmg)
-        ROS_ERROR_STREAM_NAMED("pipeline","Joint model group: " << jmg->getName());
-      return false;
+    ROS_ERROR_STREAM_NAMED("pipeline","Unknown joint model group passed to allowFingerTouch");
+    if (jmg)
+    ROS_ERROR_STREAM_NAMED("pipeline","Joint model group: " << jmg->getName());
+    return false;
     }
 
     // Prevent object from causing collision with shelf
     for (std::size_t i = 0; i < shelf_->getShelfParts().size(); ++i)
     {
-      ROS_DEBUG_STREAM_NAMED("pipeline","Prevent collision between " << object_name << " and " << shelf_->getShelfParts()[i].getName());
-      scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, shelf_->getShelfParts()[i].getName(), true);
+    ROS_DEBUG_STREAM_NAMED("pipeline","Prevent collision between " << object_name << " and " << shelf_->getShelfParts()[i].getName());
+    scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, shelf_->getShelfParts()[i].getName(), true);
     }
-  }
+    }
 
-  // Debug current matrix
-  if (false)
-  {
+    // Debug current matrix
+    if (false)
+    {
     moveit_msgs::AllowedCollisionMatrix msg;
     planning_scene_monitor_->getPlanningScene()->getAllowedCollisionMatrix().getMessage(msg);
     std::cout << "Current collision matrix: " << msg << std::endl;
-  }
-
+    }
+  */
   return true;
 }
 
@@ -1224,18 +1254,6 @@ void ManipulationPipeline::loadPlanningPipeline()
     // Setup planning pipeline
     planning_pipeline_.reset(new planning_pipeline::PlanningPipeline(robot_model_, nh_, "planning_plugin", "request_adapters"));
   }
-}
-
-bool ManipulationPipeline::loadPlanExecution()
-{
-  // Create trajectory execution manager
-  if( !trajectory_execution_manager_ )
-  {
-    trajectory_execution_manager_.reset(new trajectory_execution_manager::TrajectoryExecutionManager
-                                        (planning_scene_monitor_->getRobotModel()));
-    plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
-  }
-  return true;
 }
 
 bool ManipulationPipeline::statusPublisher(const std::string &status)

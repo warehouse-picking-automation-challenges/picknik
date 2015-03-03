@@ -58,6 +58,7 @@ public:
   ManipulationPipeline(bool verbose,
                        VisualsPtr visuals,
                        planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
+                       boost::shared_ptr<plan_execution::PlanExecution> plan_execution,
                        ShelfObjectPtr shelf, bool use_experience, bool show_database);
 
   /**
@@ -232,12 +233,6 @@ public:
   void loadPlanningPipeline();
 
   /**
-   * \brief Create a trajectory execution manager
-   * \return true on success
-   */
-  bool loadPlanExecution();
-
-  /**
    * \brief Central Rviz status visualizer
    * \return true on success
    */
@@ -310,7 +305,7 @@ protected:
 
   // Show more visual and console output, with general slower run time.
   bool verbose_;
-
+  
   // For visualizing things in rviz
   VisualsPtr visuals_;
   ovt::OmplVisualToolsPtr ompl_visual_tools_;
@@ -319,9 +314,13 @@ protected:
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
   robot_model::RobotModelConstPtr robot_model_;
   planning_pipeline::PlanningPipelinePtr planning_pipeline_;
+  boost::shared_ptr<plan_execution::PlanExecution> plan_execution_;
 
   // Allocated memory for robot state
   moveit::core::RobotStatePtr current_state_;
+
+  // Logic on type of robot
+  bool dual_arm_;
 
   // Group for each arm
   const robot_model::JointModelGroup* left_arm_;
@@ -334,10 +333,6 @@ protected:
 
   // robot-specific data for generating grasps
   std::map<const robot_model::JointModelGroup*,moveit_grasps::GraspData> grasp_datas_;
-
-  // Trajectory execution
-  trajectory_execution_manager::TrajectoryExecutionManagerPtr trajectory_execution_manager_;
-  boost::shared_ptr<plan_execution::PlanExecution> plan_execution_;
 
   // Properties
   ShelfObjectPtr shelf_;

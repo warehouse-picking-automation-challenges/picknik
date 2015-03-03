@@ -22,6 +22,7 @@
 #include <picknik_main/manipulation_pipeline.h>
 #include <picknik_main/learning_pipeline.h>
 #include <picknik_main/visuals.h>
+#include <moveit/plan_execution/plan_execution.h>
 
 // ROS
 #include <ros/ros.h>
@@ -117,6 +118,10 @@ private:
   robot_model::RobotModelPtr robot_model_;
   planning_scene::PlanningScenePtr planning_scene_;
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
+
+  // Trajectory execution
+  trajectory_execution_manager::TrajectoryExecutionManagerPtr trajectory_execution_manager_;
+  boost::shared_ptr<plan_execution::PlanExecution> plan_execution_;
 
   // Properties
   ShelfObjectPtr shelf_;

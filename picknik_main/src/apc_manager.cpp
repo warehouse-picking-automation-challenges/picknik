@@ -65,7 +65,8 @@ bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t o
 {
   // Create the pick place pipeline
   pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
-                                           planning_scene_monitor_, shelf_, use_experience, show_database));
+                                           planning_scene_monitor_, plan_execution_,
+                                           shelf_, use_experience, show_database));
 
   std::cout << std::endl;
   ROS_INFO_STREAM_NAMED("apc_manager","Starting order ----------------------------");
@@ -92,7 +93,8 @@ bool APCManager::trainExperienceDatabase()
   bool use_experience = false;
   bool show_database = false;
   learning_.reset(new LearningPipeline(verbose_, visuals_,
-                                       planning_scene_monitor_, shelf_, use_experience, show_database));
+                                       planning_scene_monitor_, plan_execution_,
+                                       shelf_, use_experience, show_database));
 
   ROS_INFO_STREAM_NAMED("apc_manager","Training experience database");
   learning_->generateTrainingGoals(shelf_);
@@ -106,7 +108,9 @@ bool APCManager::testEndEffectors()
   bool use_experience = false;
   bool show_database = false;
   pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
-                                           planning_scene_monitor_, shelf_, use_experience, show_database));
+                                           planning_scene_monitor_, plan_execution_,
+                                           shelf_, use_experience, show_database));
+
 
   // Test visualization
   pipeline_->statusPublisher("Testing open close visualization of EE");
@@ -141,13 +145,14 @@ bool APCManager::testUpAndDown()
   bool use_experience = false;
   bool show_database = false;
   pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
-                                           planning_scene_monitor_, shelf_, use_experience, show_database));
+                                           planning_scene_monitor_, plan_execution_,
+                                           shelf_, use_experience, show_database));
 
   // Configure
   const robot_model::JointModelGroup* arm_jmg = robot_model_->getJointModelGroup("left_arm");
   double desired_lift_distance = 0.1;
 
-  // Test 
+  // Test
   pipeline_->statusPublisher("Testing up and down calculations");
   std::size_t i = 0;
   while (ros::ok())
@@ -180,7 +185,8 @@ bool APCManager::testShelfLocation()
   bool use_experience = false;
   bool show_database = false;
   pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
-                                           planning_scene_monitor_, shelf_, use_experience, show_database));
+                                           planning_scene_monitor_, plan_execution_,
+                                           shelf_, use_experience, show_database));
 
   // Configure
   const robot_model::JointModelGroup* arm_jmg = robot_model_->getJointModelGroup("left_arm");
@@ -248,6 +254,13 @@ bool APCManager::loadPlanningSceneMonitor()
   }
   ros::spinOnce();
   ros::Duration(0.5).sleep(); // when at 0.1, i believe sometimes vjoint not properly loaded
+
+  // Create trajectory execution manager
+  if( !trajectory_execution_manager_ )
+  {
+    trajectory_execution_manager_.reset(new trajectory_execution_manager::TrajectoryExecutionManager(robot_model_));
+    plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
+  }
 
   // Wait for complete state to be recieved
   std::vector<std::string> missing_joints;
