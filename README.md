@@ -48,9 +48,17 @@ the likelyhood of the number of objects per bin too:
 
 Take an order, sort it according to the (decreasing) expected
 punctuation we might get from each object, and write a new sorted
-order:
+order.
 
     rosrun picknik_main sort_order.py order.json sorted_order.json
+
+The expected score for each object is the product of the probability
+of grasping it correctly (tweak them in
+`baxter_apc_main/orders/items_data.csv`) times the score for doing it
+right (depends on the number of objects in the bin). Then, if there're
+multiple objects in the bin, we remove the product of the number of
+objects in the bin times the probablity of removing an object we
+shouldn't have touched and the score we'd lose.
 
 Its help documentation:
 

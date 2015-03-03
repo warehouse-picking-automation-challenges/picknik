@@ -83,7 +83,7 @@ class ContestInterface(object):
     def sorted_order(self):
         """Sort from hightest to lowest expected score.
 
-        The expected punctuation for each object is the product of the
+        The expected score for each object is the product of the
         probability of grasping it correctly (tweak them in
         `items_data.csv`) times the score for doing it right (depends
         on the number of objects in the bin). Then, if there're
