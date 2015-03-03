@@ -72,8 +72,8 @@ bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t o
   ROS_INFO_STREAM_NAMED("apc_manager","Starting order ----------------------------");
 
   // Grasps things
-  //for (std::size_t i = order_start; i < 1; ++i)
-  for (std::size_t i = order_start; i < orders_.size(); ++i)
+  for (std::size_t i = order_start; i < 1; ++i)
+    //for (std::size_t i = order_start; i < orders_.size(); ++i)
   {
     pipeline_->orderPublisher(orders_[i]); // feedback
 
@@ -147,36 +147,9 @@ bool APCManager::testUpAndDown()
   pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
                                            planning_scene_monitor_, plan_execution_,
                                            shelf_, use_experience, show_database));
+  pipeline_->testUpAndDown();
 
-  // Configure
-  const robot_model::JointModelGroup* arm_jmg = robot_model_->getJointModelGroup("left_arm");
-  double desired_lift_distance = 0.1;
-
-  // Test
-  pipeline_->statusPublisher("Testing up and down calculations");
-  std::size_t i = 0;
-  while (ros::ok())
-  {
-    std::cout << std::endl << std::endl;
-    if (i % 2 == 0)
-    {
-      std::cout << "Moving up --------------------------------------" << std::endl;
-      pipeline_->executeLiftPath(arm_jmg, desired_lift_distance, true);
-      ros::Duration(4.0).sleep();
-    }
-    else
-    {
-      std::cout << "Moving down ------------------------------------" << std::endl;
-      pipeline_->executeLiftPath(arm_jmg, desired_lift_distance, false);
-      ros::Duration(4.0).sleep();
-    }
-    ++i;
-  }
-
-  // EE min approach distance
-  //pipeline_->statusPublisher("Testing EE min approach distance");
-
-  ROS_INFO_STREAM_NAMED("apc_manager","Done testing end effectors");
+  ROS_INFO_STREAM_NAMED("apc_manager","Done testing up and down");
 }
 
 bool APCManager::testShelfLocation()
@@ -189,7 +162,7 @@ bool APCManager::testShelfLocation()
                                            shelf_, use_experience, show_database));
 
   // Configure
-  const robot_model::JointModelGroup* arm_jmg = robot_model_->getJointModelGroup("left_arm");
+  ROS_WARN_STREAM_NAMED("temp","TODO");
 
   // TODO
 

@@ -5,7 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Grid1/Offset1
-        - /Planning Start State1/Links1
         - /Trajectory1
         - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
@@ -128,10 +127,10 @@ Visualization Manager:
       Enabled: true
       Links:
         All Links Enabled: true
-        Expand Joint Details: true
-        Expand Link Details: true
-        Expand Tree: true
-        Link Tree Style: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
         jaco_api_origin:
           Alpha: 1
           Show Axes: false
@@ -370,7 +369,12 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Shelf
       Namespaces:
-        {}
+        Arrow: true
+        Cylinder: true
+        Line: true
+        Sphere: true
+        Text: true
+        end_effector: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -386,7 +390,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/display_contacts
       Name: MoveIt Contacts
       Namespaces:
-        {}
+        jaco_link_finger_1=SimpleCollisionWall: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -473,7 +477,7 @@ Visualization Manager:
       Robot Alpha: 1
       Robot Description: robot_description
       Show Robot Collision: false
-      Show Robot Visual: false
+      Show Robot Visual: true
       Show Trail: false
       State Display Time: REALTIME
       Trajectory Topic: /picknik_main/display_trajectory
@@ -571,7 +575,7 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-      Marker Scale: 0.1
+      Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
@@ -581,12 +585,12 @@ Visualization Manager:
       Update Interval: 0
       Value: false
     - Class: rviz/Axes
-      Enabled: false
+      Enabled: true
       Length: 0.5
       Name: Axes
       Radius: 0.05
       Reference Frame: world
-      Value: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -602,22 +606,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 8.57101
+      Distance: 4.00588
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.634625
-        Y: -5.39718
-        Z: -2.02656e-06
+        X: 1.92295
+        Y: -0.656828
+        Z: -1.07288e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.0153986
+      Pitch: 0.425399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 1.55538
+      Yaw: 2.70039
     Saved: ~
 Window Geometry:
   Displays:
@@ -631,5 +635,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1160
-  X: 1722
+  X: 1702
   Y: 14

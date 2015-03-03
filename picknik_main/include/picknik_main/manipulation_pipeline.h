@@ -132,6 +132,12 @@ public:
   bool testEndEffectors(bool open);
 
   /**
+   * \brief Simple testing script to raise and lower arm
+   * \return true on success
+   */
+  bool testUpAndDown();
+
+  /**
    * \brief Send a single state to the controllers for execution
    * \return true on success
    */

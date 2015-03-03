@@ -251,8 +251,6 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
       case 1:  statusPublisher("Open end effectors");
 
         openEndEffectors(true);
-        ros::Duration(20).sleep();
-
         break;
 
         // #################################################################################################################
@@ -427,14 +425,15 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
   // Generate all possible grasps
   std::vector<moveit_msgs::Grasp> possible_grasps;
   grasps_->setVerbose(true);
-  grasps_->generateAxisGrasps( object_pose, moveit_grasps::Y_AXIS, moveit_grasps::DOWN, moveit_grasps::HALF, 0,
+  double hand_roll = 0;
+  grasps_->generateAxisGrasps( object_pose, moveit_grasps::Y_AXIS, moveit_grasps::DOWN, moveit_grasps::HALF, hand_roll,
                                grasp_datas_[arm_jmg], possible_grasps);
 
   // Visualize
   if (verbose)
   {
     // Visualize animated grasps
-    double animation_speed = 0.01;
+    double animation_speed = 0.005;
     ROS_DEBUG_STREAM_NAMED("manipulation.animated_grasps","Showing animated grasps");
     ROS_DEBUG_STREAM_NAMED("manipulation.animated_grasps",
                            (visuals_->visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg, animation_speed) ? "Done" : "Failed"));
@@ -445,7 +444,11 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
   // Filter the grasp for only the ones that are reachable
   bool filter_pregrasps = true;
   std::vector<moveit_grasps::GraspSolution> filtered_grasps;
-  grasp_filter_->filterGrasps(possible_grasps, filtered_grasps, filter_pregrasps, arm_jmg);                              
+  if (!grasp_filter_->filterGrasps(possible_grasps, filtered_grasps, filter_pregrasps, arm_jmg))
+  {
+    ROS_ERROR_STREAM_NAMED("temp","Unable to filter grasps by IK");
+    return false;
+  }
 
   // Visualize them
   if (verbose)
@@ -465,7 +468,11 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
     (*current_state_) = scene->getCurrentState();
   }
   setStateWithOpenEE(true, current_state_); // to be passed to the grasp filter
-  grasp_filter_->filterGraspsInCollision(filtered_grasps, planning_scene_monitor_, arm_jmg, current_state_, verbose && false);
+  if (!grasp_filter_->filterGraspsInCollision(filtered_grasps, planning_scene_monitor_, arm_jmg, current_state_, verbose && false))
+  {
+    ROS_ERROR_STREAM_NAMED("temp","Unable to filter grasps by collision");
+    return false;
+  }
 
   // Visualize IK solutions
   double display_time = 0.5;
@@ -688,6 +695,34 @@ bool ManipulationPipeline::testEndEffectors(bool open)
     openEndEffector(open, left_arm_);
 }
 
+bool ManipulationPipeline::testUpAndDown()
+{
+  // Configure
+  const robot_model::JointModelGroup* arm_jmg = right_arm_; // TODO single/dual logic
+  double desired_lift_distance = 0.4;
+
+  // Test
+  statusPublisher("Testing up and down calculations");
+  std::size_t i = 0;
+  while (ros::ok())
+  {
+    std::cout << std::endl << std::endl;
+    if (i % 2 == 0)
+    {
+      std::cout << "Moving up --------------------------------------" << std::endl;
+      executeLiftPath(arm_jmg, desired_lift_distance, true);
+      ros::Duration(4.0).sleep();
+    }
+    else
+    {
+      std::cout << "Moving down ------------------------------------" << std::endl;
+      executeLiftPath(arm_jmg, desired_lift_distance, false);
+      ros::Duration(4.0).sleep();
+    }
+    ++i;
+  }
+}
+
 bool ManipulationPipeline::executeState(const moveit::core::RobotStatePtr robot_state, const moveit::core::JointModelGroup *arm_jmg)
 {
   // Convert state to trajecotry
@@ -851,7 +886,6 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
 
   // End effector parent link (arm tip for ik solving)
   const moveit::core::LinkModel *ik_tip_link_model = grasp_datas_[arm_jmg].parent_link_;
-  //const moveit::core::LinkModel *ik_tip_link_model = robot_model_->getLinkModel("left_gripper");
 
   // ---------------------------------------------------------------------------------------------
   // Show desired trajectory in BLACK
@@ -1115,6 +1149,11 @@ bool ManipulationPipeline::setStateWithOpenEE(bool open, moveit::core::RobotStat
 {
   if (!dual_arm_) // jaco mode
   {
+    if (open)
+      grasp_datas_[right_arm_].setRobotStatePreGrasp( robot_state );
+    else
+      grasp_datas_[right_arm_].setRobotStateGrasp( robot_state );
+    /*
     for (std::size_t i = 0; i < grasp_datas_[right_arm_].grasp_posture_.joint_names.size(); ++i)
     {
       if (open)
@@ -1124,6 +1163,7 @@ bool ManipulationPipeline::setStateWithOpenEE(bool open, moveit::core::RobotStat
         robot_state->setVariablePosition(grasp_datas_[right_arm_].grasp_posture_.joint_names[i],
                                          grasp_datas_[right_arm_].grasp_posture_.points.front().positions[i]);
     }
+    */
   }
   else // Baxter mode
   {

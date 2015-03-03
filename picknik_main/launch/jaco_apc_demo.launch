@@ -19,7 +19,6 @@
     <arg name="load_robot_description" value="true"/>
   </include>
 
-
   <!-- Run the main MoveIt executable without trajectory execution (we do not have controllers configured by default) -->
   <include file="$(find picknik_main)/launch/jaco_apc.launch">
     <arg name="mode" value="$(arg mode)"/>

@@ -53,10 +53,10 @@
 
   "work_order":
   [
-    {
-      "bin": "bin_A",
-      "item": "elmers_washable_no_run_school_glue"
-    },
+    // {
+    //   "bin": "bin_A",
+    //   "item": "elmers_washable_no_run_school_glue"
+    // },
     {
       "bin": "bin_D",
       "item": "crayola_64_ct"

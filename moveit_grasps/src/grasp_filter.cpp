@@ -153,7 +153,7 @@ bool GraspFilter::filterGraspsHelper(const std::vector<moveit_msgs::Grasp>& poss
     num_threads = possible_grasps.size();
 
   // Debug
-  if(verbose)
+  if(verbose || true)
   {
     num_threads = 1;
     ROS_WARN_STREAM_NAMED("grasp_filter","Using only " << num_threads << " threads");
@@ -185,12 +185,16 @@ bool GraspFilter::filterGraspsHelper(const std::vector<moveit_msgs::Grasp>& poss
   // bring the pose to the frame of the IK solver
   const std::string &ik_frame = kin_solvers_[arm_jmg->getName()][0]->getBaseFrame();
   Eigen::Affine3d link_transform;
+  ROS_DEBUG_STREAM_NAMED("temp","Frame transform: ik_frame: " << ik_frame << " and robot model frame: " << robot_state_->getRobotModel()->getModelFrame());
   if (!moveit::core::Transforms::sameFrame(ik_frame, robot_state_->getRobotModel()->getModelFrame()))
   {
     const robot_model::LinkModel *lm = robot_state_->getLinkModel((!ik_frame.empty() && ik_frame[0] == '/') ? ik_frame.substr(1) : ik_frame);
+    std::cout << "link model is  "<< lm->getName() << std::endl;
     if (!lm)
       return false;
     //pose = getGlobalLinkTransform(lm).inverse() * pose;
+    ROS_WARN_STREAM_NAMED("temp","remove this update call");
+    robot_state_->update();// TODO remove?
     link_transform = robot_state_->getGlobalLinkTransform(lm).inverse();
   }
 
@@ -260,10 +264,23 @@ void GraspFilter::filterGraspThread(IkThreadStruct ik_thread_struct)
 
     // Transform current pose to frame of planning group
     ik_pose = ik_thread_struct.possible_grasps_[i].grasp_pose;
+
     Eigen::Affine3d eigen_pose;
     tf::poseMsgToEigen(ik_pose.pose, eigen_pose);
     eigen_pose = ik_thread_struct.link_transform_ * eigen_pose;
     tf::poseEigenToMsg(eigen_pose, ik_pose.pose);
+    ik_pose.header.frame_id = "jaco_link_base";
+
+    //std::cout << "after link transform " << ik_pose << std::endl;
+    visual_tools_->publishArrow(ik_pose, rviz_visual_tools::ORANGE, rviz_visual_tools::LARGE, 0.1);
+
+    // if (ik_thread_struct.verbose_)
+    // {
+    //   std::cout << std::endl;
+    //   std::cout << "-------------------------------------------------------" << std::endl;
+    //   std::cout << "Msg: \n" << ik_thread_struct.possible_grasps_[i] << std::endl;
+    //   std::cout << "link transform: " << ik_thread_struct.link_transform_.translation() << std::endl;
+    // }
 
     // Debug: display grasp position
     if (ik_thread_struct.verbose_)
@@ -273,13 +290,13 @@ void GraspFilter::filterGraspThread(IkThreadStruct ik_thread_struct)
     }
 
     // Test it with IK
-    ik_thread_struct.kin_solver_->
-      searchPositionIK(ik_pose.pose, ik_seed_state, ik_thread_struct.timeout_, grasp_ik_solution, error_code);
+    ik_thread_struct.kin_solver_->searchPositionIK(ik_pose.pose, ik_seed_state, ik_thread_struct.timeout_, 
+                                                   grasp_ik_solution, error_code);      
 
     // Results
     if( error_code.val == moveit_msgs::MoveItErrorCodes::SUCCESS )
     {
-      //ROS_INFO_STREAM_NAMED("filter","Found IK Solution");
+      ROS_INFO_STREAM_NAMED("filter","Found IK Solution");
 
       // Copy solution to seed state so that next solution is faster
       ik_seed_state = grasp_ik_solution;
@@ -298,8 +315,7 @@ void GraspFilter::filterGraspThread(IkThreadStruct ik_thread_struct)
         tf::poseEigenToMsg(eigen_pose, ik_pose.pose);
 
         // Test it with IK
-        ik_thread_struct.kin_solver_->
-          searchPositionIK(ik_pose.pose, ik_seed_state, ik_thread_struct.timeout_, pregrasp_ik_solution, error_code);
+        ik_thread_struct.kin_solver_->searchPositionIK(ik_pose.pose, ik_seed_state, ik_thread_struct.timeout_, pregrasp_ik_solution, error_code);          
 
         // Results
         if( error_code.val == moveit_msgs::MoveItErrorCodes::NO_IK_SOLUTION )
