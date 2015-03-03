@@ -54,7 +54,8 @@
 	      --show_database $(arg show_database) --use_experience $(arg use_experience)">
 
     <!--remap from="/joint_states" to="/robot/joint_states"/-->
-    <remap from="/picknik_main/fake_controller_joint_states" to="/robot/joint_states"/>
+    <!--remap from="/picknik_main/fake_controller_joint_states" to="/robot/joint_states"/-->
+    <remap to="/jaco_arm_driver/out/joint_state" from="/robot/joint_states"/>
 
     <!-- Settings of robot -->
     <rosparam command="load" file="$(find jaco_moveit_config)/config/kinematics.yaml"/>

@@ -3,7 +3,7 @@
 # Robot Execution Speed
 main_velocity_scaling_factor: 0.5 # during planning
 approach_velocity_scaling_factor: 0.25
-lift_velocity_scaling_factor: 0.1 #0.5
+lift_velocity_scaling_factor: 1.0 #0.5
 retreat_velocity_scaling_factor: 0.8
 
 # Sleep timers

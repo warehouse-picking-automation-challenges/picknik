@@ -711,13 +711,13 @@ bool ManipulationPipeline::testUpAndDown()
     {
       std::cout << "Moving up --------------------------------------" << std::endl;
       executeLiftPath(arm_jmg, desired_lift_distance, true);
-      ros::Duration(4.0).sleep();
+      ros::Duration(0.0).sleep();
     }
     else
     {
       std::cout << "Moving down ------------------------------------" << std::endl;
       executeLiftPath(arm_jmg, desired_lift_distance, false);
-      ros::Duration(4.0).sleep();
+      ros::Duration(0.0).sleep();
     }
     ++i;
   }

@@ -134,7 +134,7 @@ Run APC Manager (main program) for JACO in simulation
 
 Plugin in robot then
 
-    roslaunch jaco_driver TODO
+	roslaunch jaco_driver jaco_arm.launch use_urdf:=true
 
 Rviz Visualizers of robot states and debug markers in differnet windows
 
