@@ -58,6 +58,9 @@
     <!-- Settings of Amazon competition -->
     <rosparam command="load" file="$(find picknik_main)/config/amazon_shelf.yaml"/>
 
+    <!-- Robot-specific settings -->
+    <rosparam command="load" file="$(find picknik_main)/config/baxter.yaml"/>
+
     <!-- Only used by Thunder, read within moveit_ompl -->
     <param name="use_scratch"     if="$(arg use_scratch)" value="true"/>
     <param name="use_scratch" unless="$(arg use_scratch)" value="false"/>

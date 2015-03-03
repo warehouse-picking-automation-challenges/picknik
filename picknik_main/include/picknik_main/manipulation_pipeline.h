@@ -44,7 +44,6 @@ namespace picknik_main
 
 MOVEIT_CLASS_FORWARD(ManipulationPipeline);
 
-static const std::string START_POSE = "both_neutral"; // where to move robot to initially
 const double APPROACH_DISTANCE_DESIRED = 0.1; // amount beyond min distance
 
 class ManipulationPipeline
@@ -354,6 +353,14 @@ protected:
   double retreat_velocity_scaling_factor_;
   double wait_before_grasp_;
   double wait_after_grasp_;
+
+  // Robot-specific variables
+  std::string start_pose_; // where to move robot to initially
+  std::string right_hand_name_;
+  std::string left_hand_name_;
+  std::string right_arm_name_;
+  std::string left_arm_name_;
+  std::string both_arms_name_;
 
 }; // end class
 

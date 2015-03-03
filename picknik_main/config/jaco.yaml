@@ -1,0 +1,19 @@
+# Note: Name of file should match name of robot in URDF
+
+# Robot Execution Speed
+main_velocity_scaling_factor: 0.5 # during planning
+approach_velocity_scaling_factor: 0.25
+lift_velocity_scaling_factor: 0.5
+retreat_velocity_scaling_factor: 0.8
+
+# Sleep timers
+wait_before_grasp: 0.1
+wait_after_grasp: 0.1
+
+# Semantics
+start_pose: RETRACT-RIGHT
+right_hand_name: gripper
+left_hand_name: gripper_DISABLED
+right_arm_name: manipulator
+left_arm_name: manipulator_DISABLED
+both_arms_name: manipulator_DISABLED

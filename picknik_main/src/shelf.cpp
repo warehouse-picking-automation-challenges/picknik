@@ -584,4 +584,18 @@ bool getDoubleParameter(ros::NodeHandle &nh, const std::string &param_name, doub
   return true;
 }
 
+bool getStringParameter(ros::NodeHandle &nh, const std::string &param_name, std::string &value)
+{
+  // Load a param
+  if (!nh.hasParam(param_name))
+  {
+    ROS_ERROR_STREAM_NAMED("shelf","Missing parameter '" << param_name << "'. Searching in namespace: " << nh.getNamespace());
+    return false;
+  }
+  nh.getParam(param_name, value);
+  ROS_DEBUG_STREAM_NAMED("shelf","Loaded parameter '" << param_name << "' with value " << value);
+
+  return true;
+}
+
 } // namespace

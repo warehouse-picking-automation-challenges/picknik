@@ -39,6 +39,22 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   , show_database_(show_database)
   , use_logging_(true)
 {
+  // Load performance variables
+  getDoubleParameter(nh_, "main_velocity_scaling_factor", main_velocity_scaling_factor_);
+  getDoubleParameter(nh_, "approach_velocity_scaling_factor", approach_velocity_scaling_factor_);
+  getDoubleParameter(nh_, "lift_velocity_scaling_factor", lift_velocity_scaling_factor_);
+  getDoubleParameter(nh_, "retreat_velocity_scaling_factor", retreat_velocity_scaling_factor_);
+  getDoubleParameter(nh_, "wait_before_grasp", wait_before_grasp_);
+  getDoubleParameter(nh_, "wait_after_grasp", wait_after_grasp_);
+
+  // Load semantics
+  getStringParameter(nh_, "start_pose", start_pose_);
+  getStringParameter(nh_, "right_hand_name", right_hand_name_);
+  getStringParameter(nh_, "left_hand_name", left_hand_name_);
+  getStringParameter(nh_, "right_arm_name", right_arm_name_);
+  getStringParameter(nh_, "left_arm_name", left_arm_name_);
+  getStringParameter(nh_, "both_arms_name", both_arms_name_);
+
   // Create initial robot state
   loadRobotStates();
 
@@ -61,24 +77,17 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   order_position_.translation().z() += 0.2;
 
   // Load grasp data specific to our robot
-  if (!grasp_datas_[right_arm_].loadRobotGraspData(nh_, "right_hand", robot_model_))
-    ROS_ERROR_STREAM_NAMED("pipeline","Unable to load right arm grasp data");
+  if (!grasp_datas_[right_arm_].loadRobotGraspData(nh_, right_hand_name_, robot_model_))
+    ROS_ERROR_STREAM_NAMED("pipeline","Unable to load right arm grasp data in namespace " << right_hand_name_);
 
-  if (dual_arm_ && !grasp_datas_[left_arm_].loadRobotGraspData(nh_, "left_hand", robot_model_))
-    ROS_ERROR_STREAM_NAMED("pipeline","Unable to load left arm grasp data");
+  if (dual_arm_ && !grasp_datas_[left_arm_].loadRobotGraspData(nh_, left_hand_name_, robot_model_))
+    ROS_ERROR_STREAM_NAMED("pipeline","Unable to load left arm grasp data in namespace " << left_hand_name_);
 
   // Load grasp generator
   grasps_.reset( new moveit_grasps::Grasps(visuals_->visual_tools_) );
   setStateWithOpenEE(true, current_state_); // so that grasp filter is started up with EE open
   grasp_filter_.reset(new moveit_grasps::GraspFilter(current_state_, visuals_->visual_tools_) );
 
-  // Load performance variables
-  getDoubleParameter(nh_, "main_velocity_scaling_factor", main_velocity_scaling_factor_);
-  getDoubleParameter(nh_, "approach_velocity_scaling_factor", approach_velocity_scaling_factor_);
-  getDoubleParameter(nh_, "lift_velocity_scaling_factor", lift_velocity_scaling_factor_);
-  getDoubleParameter(nh_, "retreat_velocity_scaling_factor", retreat_velocity_scaling_factor_);
-  getDoubleParameter(nh_, "wait_before_grasp", wait_before_grasp_);
-  getDoubleParameter(nh_, "wait_after_grasp", wait_after_grasp_);
 
   // Load logging capability
   if (use_logging_ && use_experience)
@@ -109,18 +118,16 @@ bool ManipulationPipeline::loadRobotStates()
     dual_arm_ = true;
 
     // Load arm groups
-    left_arm_ = robot_model_->getJointModelGroup("left_arm");
-    right_arm_ = robot_model_->getJointModelGroup("right_arm");
-    both_arms_ = robot_model_->getJointModelGroup("both_arms");
+    left_arm_ = robot_model_->getJointModelGroup(left_arm_name_);
+    right_arm_ = robot_model_->getJointModelGroup(right_arm_name_);
+    both_arms_ = robot_model_->getJointModelGroup(both_arms_name_);
   }
   else if (robot_model_->getName() == "jaco")
   {
     dual_arm_ = false;
 
     // Load arm groups
-    left_arm_ = robot_model_->getJointModelGroup("manipulator");
-    right_arm_ = robot_model_->getJointModelGroup("manipulator");
-    both_arms_ = robot_model_->getJointModelGroup("manipulator");
+    right_arm_ = robot_model_->getJointModelGroup(right_arm_name_);
   }
   else
   {
@@ -140,9 +147,9 @@ bool ManipulationPipeline::loadRobotStates()
 
   // Set robot to starting position
   /*
-    if (!current_state_->setToDefaultValues(both_arms_, START_POSE))
+    if (!current_state_->setToDefaultValues(both_arms_, start_pose_))
     {
-    ROS_ERROR_STREAM_NAMED("pipeline","Failed to set pose '" << START_POSE << "' for planning group '" << both_arms_->getName() << "'");
+    ROS_ERROR_STREAM_NAMED("pipeline","Failed to set pose '" << start_pose_ << "' for planning group '" << both_arms_->getName() << "'");
     }
   */
 
@@ -498,12 +505,12 @@ const robot_model::JointModelGroup* ManipulationPipeline::chooseArm(const Eigen:
   if (dual_arm_ || object_pose.translation().y() <= 0)
   {
     ROS_INFO_STREAM_NAMED("pipeline","Using RIGHT arm");
-    return robot_model_->getJointModelGroup("right_arm");
+    return right_arm_;
   }
   else
   {
     ROS_INFO_STREAM_NAMED("pipeline","Using LEFT arm");
-    return robot_model_->getJointModelGroup("left_arm");
+    return left_arm_;
   }
 }
 
@@ -524,9 +531,9 @@ bool ManipulationPipeline::moveToStartPosition(const robot_model::JointModelGrou
   moveit::core::RobotStatePtr start_state(new moveit::core::RobotState(*current_state_)); // Allocate robot states
 
   // Set goal state to initial pose
-  if (!start_state->setToDefaultValues(jmg_ready, START_POSE))
+  if (!start_state->setToDefaultValues(jmg_ready, start_pose_))
   {
-    ROS_ERROR_STREAM_NAMED("pipeline","Failed to set pose '" << START_POSE << "' for planning group '" << jmg_ready->getName() << "'");
+    ROS_ERROR_STREAM_NAMED("pipeline","Failed to set pose '" << start_pose_ << "' for planning group '" << jmg_ready->getName() << "'");
   }
 
   // Check if already in start position
@@ -1339,9 +1346,9 @@ void ManipulationPipeline::displayLightningPlans(ompl::tools::ExperienceSetupPtr
 bool ManipulationPipeline::setToDefaultPosition(moveit::core::RobotStatePtr robot_state)
 {
   const robot_model::JointModelGroup* jmg_ready = both_arms_;
-  if (!robot_state->setToDefaultValues(jmg_ready, START_POSE))
+  if (!robot_state->setToDefaultValues(jmg_ready, start_pose_))
   {
-    ROS_ERROR_STREAM_NAMED("pipeline","Failed to set pose '" << START_POSE << "' for planning group '" << jmg_ready->getName() << "'");
+    ROS_ERROR_STREAM_NAMED("pipeline","Failed to set pose '" << start_pose_ << "' for planning group '" << jmg_ready->getName() << "'");
     return false;
   }
   return true;

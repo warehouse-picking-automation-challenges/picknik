@@ -71,32 +71,6 @@ Its help documentation:
     optional arguments:
       -h, --help       show this help message and exit
 
-### Setup Simulation
-
-Start fake controllers
-
-    roslaunch baxter_control baxter_visualization.launch
-
-Now skip to section **Run Main Routine**
-
-### Setup Hardware
-
-#### Version 1
-
-BETA - Start actual controllers
-
-    roslaunch baxter_control baxter_hardware.launch
-
-Now go to section **Run Main Routine**
-
-#### Version 2
-
-Use Rethink's controllers
-
-    roslaunch baxter_control baxter_hardware_rethink.launch
-
-Make sure correct controller name is chosen in baxter_controllers.yaml
-
 ### Turn on Yale Controller
 
     roslaunch open_hand_controller controller_manager.launch
@@ -109,22 +83,69 @@ Check to make sure you have ``dialout`` group
 
     sudo adduser second_user dialout
 
+## Start Robots
 
-### Run Main Routine
+### Simulation of BAXTER
 
-Rviz Visualizer of robot state
+Start fake controllers
+
+    roslaunch baxter_control baxter_visualization.launch
+
+Rviz Visualizers of robot states and debug markers in differnet windows
 
     roslaunch picknik_main moveit_display_rviz.launch
-
-Rviz Visualizer of planning scene and debug markers
-
     roslaunch picknik_main moveit_rviz.launch
 
-Run APC Manager (main program)
+Run APC Manager (main program) for BAXTER
 
-    roslaunch picknik_main baxter_apc.launch mode:=1 verbose:=1 use_experience:=1 saving_enabled:=1 debug:=0 show_database:=0
+    roslaunch picknik_main baxter_apc.launch
+	
+### Setup Hardware of BAXTER
 
-Optional Arguments:
+Use Rethink's controllers
+
+    roslaunch baxter_control baxter_hardware_rethink.launch
+
+Rviz Visualizers of robot states and debug markers in differnet windows
+
+    roslaunch picknik_main moveit_display_rviz.launch
+    roslaunch picknik_main moveit_rviz.launch
+
+Run APC Manager (main program) for BAXTER
+
+    roslaunch picknik_main baxter_apc.launch
+	
+### Setup Simulation of JACO
+
+Start this separate to speed up launching:
+
+    roslaunch picknik_main jaco_helpers.launch
+
+Rviz Visualizers of robot states and debug markers in differnet windows
+
+    roslaunch picknik_main moveit_display_rviz.launch
+    roslaunch picknik_main moveit_rviz.launch
+
+Run APC Manager (main program) for JACO in simulation
+
+	roslaunch picknik_main jaco_apc_demo.launch
+
+### Setup Hardware of JACO
+
+Plugin in robot then
+
+    roslaunch jaco_driver TODO
+
+Rviz Visualizers of robot states and debug markers in differnet windows
+
+    roslaunch picknik_main moveit_display_rviz.launch
+    roslaunch picknik_main moveit_rviz.launch
+
+Run APC Manager (main program) for JACO on hardware
+
+	roslaunch picknik_main jaco_apc.launch
+
+### PickNik Main Optional Arguments:
 
     mode - what program to run inside the apc_manager, defaults to 1
 	  Available Modes:

@@ -1,6 +1,6 @@
 base_link: 'base'
 # =====================================================
-right_hand:
+gripper:
     end_effector_name: 'gripper'  #ee group name
 
     #actuated joints in end effector

@@ -347,6 +347,7 @@ typedef std::vector<WorkOrder> WorkOrders;
 // Helper Functions
 // -------------------------------------------------------------------------------------------------
 bool getDoubleParameter(ros::NodeHandle &nh, const std::string &param_name, double &value);
+bool getStringParameter(ros::NodeHandle &nh, const std::string &param_name, std::string &value);
 
 } // namespace
 
