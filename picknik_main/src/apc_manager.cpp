@@ -122,13 +122,13 @@ bool APCManager::testEndEffectors()
     {
       std::cout << "Showing closed EE of state " << std::endl;
       pipeline_->testEndEffectors(false);
-      ros::Duration(4.0).sleep();
+      ros::Duration(2.0).sleep();
     }
     else
     {
       std::cout << "Showing open EE of state " << std::endl;
       pipeline_->testEndEffectors(true);
-      ros::Duration(4.0).sleep();
+      ros::Duration(2.0).sleep();
     }
     ++i;
   }

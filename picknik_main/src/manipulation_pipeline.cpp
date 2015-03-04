@@ -1106,8 +1106,8 @@ bool ManipulationPipeline::openEndEffectors(bool open)
 
 bool ManipulationPipeline::openEndEffector(bool open, const robot_model::JointModelGroup* arm_jmg)
 {
-  std::cout << "Joints in group " << grasp_datas_[arm_jmg].ee_group_name_ << std::endl;
-  std::copy(grasp_datas_[arm_jmg].ee_jmg_->getJointModelNames().begin(), grasp_datas_[arm_jmg].ee_jmg_->getJointModelNames().end(), std::ostream_iterator<std::string>(std::cout, "\n"));
+  //std::cout << "Joints in group " << grasp_datas_[arm_jmg].ee_group_name_ << std::endl;
+  //std::copy(grasp_datas_[arm_jmg].ee_jmg_->getJointModelNames().begin(), grasp_datas_[arm_jmg].ee_jmg_->getJointModelNames().end(), std::ostream_iterator<std::string>(std::cout, "\n"));
 
   robot_state::RobotState ee_state = planning_scene_monitor_->getPlanningScene()->getCurrentState();
 
@@ -1136,7 +1136,9 @@ bool ManipulationPipeline::openEndEffector(bool open, const robot_model::JointMo
   ee_traj->getRobotTrajectoryMsg(trajectory_msg);
 
   // Hack to speed up gripping
-  trajectory_msg.joint_trajectory.points[0].time_from_start = ros::Duration(0.1);
+  // TODO sleep less
+  //trajectory_msg.joint_trajectory.points.push_back(trajectory_msg.joint_trajectory.points[0]);
+  trajectory_msg.joint_trajectory.points.back().time_from_start = ros::Duration(1);
 
   // Execute trajectory
   if( !executeTrajectory(trajectory_msg) )
