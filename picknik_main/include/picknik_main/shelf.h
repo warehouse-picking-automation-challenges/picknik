@@ -25,6 +25,7 @@
 namespace picknik_main
 {
 
+MOVEIT_CLASS_FORWARD(RectangleObject);
 MOVEIT_CLASS_FORWARD(ShelfObject);
 MOVEIT_CLASS_FORWARD(BinObject);
 MOVEIT_CLASS_FORWARD(ProductObject);
@@ -54,29 +55,14 @@ inline Eigen::Affine3d transform(const Eigen::Affine3d& pose, const Eigen::Affin
 // -------------------------------------------------------------------------------------------------
 // Rectangle Object
 // -------------------------------------------------------------------------------------------------
-class Rectangle
+class RectangleObject
 {
-protected:
-  // Name of object
-  std::string name_;
-
-  // Pointer to a pre-loaded visual_tools_ object
-  VisualsPtr visuals_;
-
 public:
-
-  // Poses relative to center bottom of robot
-  Eigen::Affine3d bottom_right_;
-  Eigen::Affine3d top_left_;
-
-  // Color of object
-  rvt::colors color_;
-
   /**
    * \brief Constructor
    * \return
    */
-  Rectangle(VisualsPtr visuals, const rvt::colors &color = rvt::RAND, const std::string &name = "");
+  RectangleObject(VisualsPtr visuals, const rvt::colors &color = rvt::RAND, const std::string &name = "");
   
   /**
    * \brief Show bin in Rviz (not collision bodies)
@@ -120,12 +106,46 @@ public:
    */
   void setName(std::string name);
 
+  /**
+   * \brief Getter for HighResMeshPath
+   */ 
+  const std::string& getHighResMeshPath()
+  {
+    return high_res_mesh_path_;
+  }
+  
+  /**
+   * \brief Setter for HighResMeshPath
+   */
+  void setHighResMeshPath(const std::string &high_res_mesh_path)
+  {
+    high_res_mesh_path_ = high_res_mesh_path;
+  }
+
+  // Poses relative to center bottom of robot
+  Eigen::Affine3d bottom_right_;
+  Eigen::Affine3d top_left_;
+
+  // Color of object
+  rvt::colors color_;
+  
+protected:
+
+  // Name of object
+  std::string name_;
+
+  // Pointer to a pre-loaded visual_tools_ object
+  VisualsPtr visuals_;
+
+  // High resolution mesh
+  std::string high_res_mesh_path_;
+
 };
 
 // -------------------------------------------------------------------------------------------------
 // Bin Object
 // -------------------------------------------------------------------------------------------------
-class BinObject : public Rectangle
+class BinObject : public RectangleObject
 {
   // Items in this bin
   std::vector<ProductObjectPtr> products_;
@@ -180,38 +200,9 @@ typedef std::map<std::string, BinObjectPtr> BinObjectMap;
 // Shelf Object
 // -------------------------------------------------------------------------------------------------
 
-class ShelfObject : public Rectangle
+class ShelfObject : public RectangleObject
 {
-  // Walls of shelf
-  std::vector<Rectangle> shelf_parts_;
-
-  // Bins of shelf
-  BinObjectMap bins_;
-
-  // STL Model
-  std::string mesh_path_;
-
 public:
-
-  // Loaded shelf parameter values
-  double shelf_distance_from_robot_;
-  double shelf_width_;
-  double shelf_height_;
-  double shelf_depth_;
-  double shelf_wall_width_;
-  double first_bin_from_bottom_;
-  double first_bin_from_right_;
-
-  // Loaded bin parameter values
-  double bin_width_;
-  double bin_middle_width_;
-  double bin_short_height_;
-  double bin_tall_height_;
-  double bin_depth_;
-  double bin_top_margin_;
-  double bin_left_margin_;
-  double num_bins_;
-
   /**
    * \brief Constructor
    * \param shelf_id
@@ -274,22 +265,54 @@ public:
    * \brief Get shelf parts for prevent collision with products
    * \return true on success
    */
-  const std::vector<Rectangle>& getShelfParts()
+  const std::vector<RectangleObject>& getShelfParts()
   {
     return shelf_parts_;
   }
+
+  // Loaded shelf parameter values
+  double shelf_distance_from_robot_;
+  double shelf_width_;
+  double shelf_height_;
+  double shelf_depth_;
+  double shelf_wall_width_;
+  double first_bin_from_bottom_;
+  double first_bin_from_right_;
+
+  // Loaded bin parameter values
+  double bin_width_;
+  double bin_middle_width_;
+  double bin_short_height_;
+  double bin_tall_height_;
+  double bin_depth_;
+  double bin_top_margin_;
+  double bin_left_margin_;
+  double num_bins_;
+
+  // Goal bin
+  double goal_bin_x_;
+  double goal_bin_y_;
+  double goal_bin_z_;
+
+private:
+  // Walls of shelf
+  std::vector<RectangleObject> shelf_parts_;
+
+  // Bins of shelf
+  BinObjectMap bins_;
+
+  // STL Model
+  std::string high_res_mesh_path_;
+
+  RectangleObjectPtr goal_bin_;
 
 }; // class
 
 // -------------------------------------------------------------------------------------------------
 // Product Object
 // -------------------------------------------------------------------------------------------------
-class ProductObject : public Rectangle
+class ProductObject : public RectangleObject
 {
-  std::string collision_object_name_;
-  std::string collision_mesh_path_;
-  std::string mesh_path_;
-
 public:
  /**
    * \brief Constructor
@@ -307,16 +330,15 @@ public:
   void setCollisionName(std::string name);
 
   /**
-   * \brief Show product in Rviz (not collision bodies)
-   * \param trans - transform from parent container to current container
-   */
-  bool visualize(const Eigen::Affine3d &trans) const;
-
-  /**
    * \brief Create collision bodies of rectangle
    * \param trans - transform from parent container to current container
    */
   bool createCollisionBodies(const Eigen::Affine3d &trans) const;
+
+private:
+
+  std::string collision_object_name_;
+  std::string collision_mesh_path_;
 
 }; // class
 

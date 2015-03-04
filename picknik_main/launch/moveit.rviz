@@ -371,10 +371,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Shelf
       Namespaces:
-        Arrow: true
         Cylinder: true
-        Line: true
-        Sphere: true
         Text: true
       Queue Size: 100
       Value: true
@@ -391,12 +388,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/display_contacts
       Name: MoveIt Contacts
       Namespaces:
-        crayola_64_ct_4=jaco_link_finger_1: true
-        crayola_64_ct_4=jaco_link_finger_3: true
-        jaco_link_finger_1=shelf_3: true
-        jaco_link_finger_1=wall_3: true
-        jaco_link_finger_3=shelf_3: true
-        jaco_link_finger_3=wall_3: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -574,7 +566,7 @@ Visualization Manager:
             Value: true
         Robot Alpha: 0.5
         Show Robot Collision: false
-        Show Robot Visual: false
+        Show Robot Visual: true
       Value: true
     - Class: rviz/TF
       Enabled: false
@@ -612,22 +604,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 6.87693
+      Distance: 5.38869
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 3.23995
-        Y: -2.66957
-        Z: 1.19209e-07
+        X: 1.36609
+        Y: -0.33989
+        Z: 5.96046e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.150399
+      Pitch: 0.840399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 2.38541
+      Yaw: 2.92541
     Saved: ~
 Window Geometry:
   Displays:
@@ -641,5 +633,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1160
-  X: 1692
+  X: 1682
   Y: 14
