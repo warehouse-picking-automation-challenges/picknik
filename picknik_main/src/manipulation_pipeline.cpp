@@ -1137,8 +1137,8 @@ bool ManipulationPipeline::openEndEffector(bool open, const robot_model::JointMo
 
   // Hack to speed up gripping
   // TODO sleep less
-  //trajectory_msg.joint_trajectory.points.push_back(trajectory_msg.joint_trajectory.points[0]);
-  trajectory_msg.joint_trajectory.points.back().time_from_start = ros::Duration(1);
+  trajectory_msg.joint_trajectory.points.push_back(trajectory_msg.joint_trajectory.points[0]);
+  trajectory_msg.joint_trajectory.points.back().time_from_start = ros::Duration(2);
 
   // Execute trajectory
   if( !executeTrajectory(trajectory_msg) )

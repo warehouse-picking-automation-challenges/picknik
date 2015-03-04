@@ -72,8 +72,8 @@ bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t o
   ROS_INFO_STREAM_NAMED("apc_manager","Starting order ----------------------------");
 
   // Grasps things
-  for (std::size_t i = order_start; i < 1; ++i)
-    //for (std::size_t i = order_start; i < orders_.size(); ++i)
+  //for (std::size_t i = order_start; i < 1; ++i)
+  for (std::size_t i = order_start; i < orders_.size(); ++i)
   {
     pipeline_->orderPublisher(orders_[i]); // feedback
 
@@ -122,13 +122,13 @@ bool APCManager::testEndEffectors()
     {
       std::cout << "Showing closed EE of state " << std::endl;
       pipeline_->testEndEffectors(false);
-      ros::Duration(2.0).sleep();
+      ros::Duration(4.0).sleep();
     }
     else
     {
       std::cout << "Showing open EE of state " << std::endl;
       pipeline_->testEndEffectors(true);
-      ros::Duration(2.0).sleep();
+      ros::Duration(4.0).sleep();
     }
     ++i;
   }
