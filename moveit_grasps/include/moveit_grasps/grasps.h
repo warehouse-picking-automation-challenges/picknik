@@ -95,7 +95,7 @@ public:
   /**
    * \brief Constructor
    */
-  Grasps(moveit_visual_tools::MoveItVisualToolsPtr rviz_tools, bool verbose = false);
+  Grasps(moveit_visual_tools::MoveItVisualToolsPtr visual_tools, bool verbose = false);
 
   /**
    * \brief Destructor

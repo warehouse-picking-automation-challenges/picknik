@@ -296,7 +296,7 @@ void GraspFilter::filterGraspThread(IkThreadStruct ik_thread_struct)
     // Results
     if( error_code.val == moveit_msgs::MoveItErrorCodes::SUCCESS )
     {
-      ROS_INFO_STREAM_NAMED("filter","Found IK Solution");
+      //ROS_INFO_STREAM_NAMED("filter","Found IK Solution");
 
       // Copy solution to seed state so that next solution is faster
       ik_seed_state = grasp_ik_solution;

@@ -94,7 +94,7 @@ public:
 
     // ---------------------------------------------------------------------------------------------
     // Load grasp generator
-    grasps_.reset( new moveit_grasps::Grasps(visual_tools_) );
+    grasps_.reset( new moveit_grasps::Grasps(visual_tools_, true) );
 
     geometry_msgs::Pose pose;
     visual_tools_->generateEmptyPose(pose);

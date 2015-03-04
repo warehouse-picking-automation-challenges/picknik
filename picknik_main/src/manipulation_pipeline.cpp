@@ -227,13 +227,10 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
     jump_to = 0;
   }
 
-
   // Jump to a particular step in the manipulation pipeline
-  for (std::size_t step = jump_to; step < 999; ++step) // 100 is just some large number, really it should quit when default is hit
+  std::size_t step = jump_to;
+  while(ros::ok())
   {
-    if (!ros::ok())
-      break;
-
     std::cout << std::endl;
     std::cout << std::endl;
     std::cout << "Running step: " << step << std::endl;
@@ -410,6 +407,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         return true;
 
     } // end switch
+    step++;
   } // end for
 
   return true;

@@ -117,6 +117,11 @@ Run APC Manager (main program) for BAXTER
 	
 ### Setup Simulation of JACO
 
+Start roscore then load the URDF:
+
+    roscore &
+    roslaunch jaco_moveit_config planning_context.launch load_robot_description:=true
+
 Start this separate to speed up launching:
 
     roslaunch picknik_main jaco_helpers.launch
