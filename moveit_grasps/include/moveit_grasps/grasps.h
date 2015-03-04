@@ -60,6 +60,8 @@
 #include <moveit_visual_tools/moveit_visual_tools.h>
 
 // C++
+#include <cstdlib>
+#include <string>
 #include <math.h>
 #define _USE_MATH_DEFINES
 
@@ -69,6 +71,20 @@ namespace moveit_grasps
 {
 
 static const double RAD2DEG = 57.2957795;
+
+// Size and location for randomly generated cuboids
+static const double CUBOID_MIN_SIZE = 0.02;
+static const double CUBOID_MAX_SIZE = 0.15;
+static const double CUBOID_WORKSPACE_MIN_X = 0.01; 
+static const double CUBOID_WORKSPACE_MAX_X = 0.5;
+static const double CUBOID_WORKSPACE_MIN_Y = -0.5;
+static const double CUBOID_WORKSPACE_MAX_Y = 0.5;
+static const double CUBOID_WORKSPACE_MIN_Z = 0.0;
+static const double CUBOID_WORKSPACE_MAX_Z = 1.0;
+
+// TODO: verify max object size Open Hand can grasp
+static const double MODEL_T_MAX_GRASP_SIZE = 0.10;
+
 
 // Grasp axis orientation
 enum grasp_axis_t {X_AXIS, Y_AXIS, Z_AXIS};
@@ -88,6 +104,9 @@ private:
 
   // Display more output both in console and in Rviz (with arrows and markers)
   bool verbose_;
+
+  // Number of grasp points to generate around 
+  int number_grasp_points_;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW // Eigen requires 128-bit alignment for the Eigen::Vector2d's array (of 2 doubles). With GCC, this is done with a attribute ((aligned(16))).
@@ -134,6 +153,42 @@ public:
     double hand_roll,
     const GraspData& grasp_data,
     std::vector<moveit_msgs::Grasp>& possible_grasps);
+
+  /**
+   * \brief Create possible grasp positions around a cuboid 
+   * \param cuboid_pose pose of cuboid 
+   * \param depth length of cuboid along local x-axis
+   * \param width length of cuboid along local y-axis
+   * \param height length of cuboid along local z-axis
+   * \param grasp_data data describing end effector
+   * \param possible_grasps possible grasps generated
+   * \return true if successful
+   */
+  bool generateCuboidGrasps(const Eigen::Affine3d& cuboid_pose, float depth, float width,float height,
+                            const moveit_grasps::GraspData& grasp_data, std::vector<moveit_msgs::Grasp>& possible_grasps);
+  
+  /**
+   * \brief Create grasp positions around one axis of a cuboid
+   * \param cuboid_pose pose of cuboid 
+   * \param depth length of cuboid along local x-axis
+   * \param width length of cuboid along local y-axis
+   * \param height length of cuboid along local z-axis
+   * \param axis axis of cuboid to generate grasps around
+   * \param grasp_data data describing end effector
+   * \param possible_grasps possible grasps generated
+   * \return true if successful
+   */
+  bool generateCuboidAxisGrasps(const Eigen::Affine3d& cuboid_pose, float depth, float width, float height, grasp_axis_t axis,
+				const moveit_grasps::GraspData& grasp_data, std::vector<moveit_msgs::Grasp>& possible_grasps);
+
+  /**
+   * \brief Generate grasp points around the perimeter of the cuboid
+   * \param depth length of cuboid along local x-axis
+   * \param width length of cuboid along local y-axis
+   * \param height length of cuboid along local z-axis
+   * \return a list of points around the cuboid
+   */
+  Eigen::ArrayXXf generateCuboidGraspPoints(double length, double width, double radius);
 
   /**
    * \brief Using an input grasp description, get the pregrasp pose
