@@ -56,7 +56,7 @@ GraspData::GraspData()
   , angle_resolution_(16)
 {}
 
-bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string& end_effector, 
+bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string& end_effector,
                                    moveit::core::RobotModelConstPtr robot_model)
 {
   std::vector<std::string> joint_names;
@@ -199,13 +199,15 @@ bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string&
   // Orientation
   ROS_ASSERT(grasp_pose_to_eef_rotation.size() == 3);
   ROS_ASSERT(grasp_pose_to_eef.size() == 3);
-  Eigen::Quaterniond quat(Eigen::AngleAxis<double>(double(grasp_pose_to_eef_rotation[1]), Eigen::Vector3d::UnitY())); // turn on Z axis
-  // TODO: rotate for roll and yaw also, not just pitch (unit y)
-  // but i don't need that feature right now and it might be tricky
+
+  Eigen::AngleAxisd rollAngle (grasp_pose_to_eef_rotation[0], Eigen::Vector3d::UnitZ());
+  Eigen::AngleAxisd pitchAngle(grasp_pose_to_eef_rotation[1], Eigen::Vector3d::UnitX());
+  Eigen::AngleAxisd yawAngle  (grasp_pose_to_eef_rotation[2], Eigen::Vector3d::UnitY());
+  Eigen::Quaternion<double> quat = rollAngle * yawAngle * pitchAngle;
+
   grasp_pose_to_eef_pose_ = Eigen::Translation3d(grasp_pose_to_eef[0],
                                                  grasp_pose_to_eef[1],
                                                  grasp_pose_to_eef[2]) * quat;
-    
 
   // -------------------------------
   // Create pre-grasp posture if specified
@@ -249,7 +251,7 @@ bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string&
 
   // Copy values from RobotModel
   joint_model_group_ = robot_model->getJointModelGroup(ee_group_);
-  parent_link_name_ = joint_model_group_->getEndEffectorParentGroup().second;    
+  parent_link_name_ = joint_model_group_->getEndEffectorParentGroup().second;
   parent_link_ = robot_model->getLinkModel(parent_link_name_);
 
   // Debug
@@ -269,17 +271,25 @@ bool GraspData::setRobotStateGrasp( robot_state::RobotStatePtr &robot_state )
 
 bool GraspData::setRobotState( robot_state::RobotStatePtr &robot_state, const trajectory_msgs::JointTrajectory &posture )
 {
+  // Assume joint trajectory has only 1 waypoint
+  if (posture.points.size() < 1)
+  {
+    ROS_ERROR_STREAM_NAMED("grasp_data","Posture trajectory must have at least 1 waypoint");
+    return false;
+  }
+
   // Do for every joint in end effector
   for (std::size_t i = 0; i < posture.joint_names.size(); ++i)
   {
     // Debug
-    std::cout << "Setting joint " << posture.joint_names[i] << " to value " 
-              << posture.points[i].positions[0] << std::endl;
+    std::cout << "Setting joint " << posture.joint_names[i] << " to value "
+              << posture.points[0].positions[i] << std::endl;
 
     // Set joint position
     robot_state->setJointPositions( posture.joint_names[i],
-                                    posture.points[i].positions );
+                                    posture.points[0].positions );
   }
+  return true;
 }
 
 void GraspData::print()

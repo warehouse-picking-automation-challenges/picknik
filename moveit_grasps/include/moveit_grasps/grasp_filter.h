@@ -76,32 +76,34 @@ struct GraspSolution
 
 /**
  * \brief Struct for passing parameters to threads, for cleaner code
- */ 
+ */
 struct IkThreadStruct
 {
   IkThreadStruct(
-    const std::vector<moveit_msgs::Grasp> &possible_grasps, // the input
-    std::vector<GraspSolution> &filtered_grasps, // the result
-    Eigen::Affine3d &link_transform,
-    int grasps_id_start,
-    int grasps_id_end,
-    kinematics::KinematicsBaseConstPtr kin_solver,
-    bool filter_pregrasp,
-    std::string ee_parent_link,
-    double timeout,
-    boost::mutex *lock,
-    int thread_id)
-    : possible_grasps_(possible_grasps),
-      filtered_grasps_(filtered_grasps),
-      link_transform_(link_transform),
-      grasps_id_start_(grasps_id_start),
-      grasps_id_end_(grasps_id_end),
-      kin_solver_(kin_solver),
-      filter_pregrasp_(filter_pregrasp),
-      ee_parent_link_(ee_parent_link),
-      timeout_(timeout),
-      lock_(lock),
-      thread_id_(thread_id)
+                 const std::vector<moveit_msgs::Grasp> &possible_grasps, // the input
+                 std::vector<GraspSolution> &filtered_grasps, // the result
+                 Eigen::Affine3d &link_transform,
+                 int grasps_id_start,
+                 int grasps_id_end,
+                 kinematics::KinematicsBaseConstPtr kin_solver,
+                 bool filter_pregrasp,
+                 const robot_model::JointModelGroup* ee_jmg,
+                 double timeout,
+                 boost::mutex *lock,
+                 bool verbose,
+                 int thread_id)
+  : possible_grasps_(possible_grasps),
+    filtered_grasps_(filtered_grasps),
+    link_transform_(link_transform),
+    grasps_id_start_(grasps_id_start),
+    grasps_id_end_(grasps_id_end),
+    kin_solver_(kin_solver),
+    filter_pregrasp_(filter_pregrasp),
+    ee_jmg_(ee_jmg),
+    timeout_(timeout),
+    lock_(lock),
+    verbose_(verbose),
+    thread_id_(thread_id)
   {
   }
   const std::vector<moveit_msgs::Grasp> &possible_grasps_;
@@ -111,9 +113,10 @@ struct IkThreadStruct
   int grasps_id_end_;
   kinematics::KinematicsBaseConstPtr kin_solver_;
   bool filter_pregrasp_;
-  std::string ee_parent_link_;
+  const robot_model::JointModelGroup* ee_jmg_;
   double timeout_;
   boost::mutex *lock_;
+  bool verbose_;
   int thread_id_;
 };
 
@@ -130,43 +133,38 @@ private:
   // class for publishing stuff to rviz
   moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
 
-  bool verbose_;
+  // Number of degrees of freedom for the IK solver to find
+  std::size_t num_variables_;
+
+  double solver_timeout_;
 
 public:
 
   // Constructor
-  GraspFilter( robot_state::RobotStatePtr robot_state, 
+  GraspFilter( robot_state::RobotStatePtr robot_state,
                moveit_visual_tools::MoveItVisualToolsPtr& visual_tools );
 
   // Destructor
   ~GraspFilter();
 
-  // Of an array of grasps, choose just one for use
+  /**
+   * \brief Of an array of grasps, choose just one for use
+   * \return true on success
+   */
   bool chooseBestGrasp( std::vector<GraspSolution>& filtered_grasps,
                         GraspSolution& chosen );
 
   /**
-   * \brief Choose the 1st grasp that is kinematically feasible
+   * \brief Return grasps that are kinematically feasible
    * \param possible_grasps - all possible grasps that this will test
    * \param filtered_grasps - result - only the grasps that are kinematically feasible
    * \param whether to also check ik feasibility for the pregrasp position
-   * \return true on success 
-   */ 
+   * \return true on success
+   */
   bool filterGrasps(const std::vector<moveit_msgs::Grasp>& possible_grasps,
                     std::vector<GraspSolution>& filtered_grasps,
-                    bool filter_pregrasp, 
-                    const std::string &ee_parent_link, 
-                    const robot_model::JointModelGroup* jmg);
-
-private:
-
-  /**
-   * \brief Thread for checking part of the possible grasps list
-   * \param 
-   */
-  void filterGraspThread(IkThreadStruct ik_thread_struct);
-
-public:
+                    bool filter_pregrasp,
+                    const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Filter using collision checking. Run this after filterGrasps()
@@ -176,23 +174,33 @@ public:
    */
   bool filterGraspsInCollision(std::vector<GraspSolution>& possible_grasps,
                                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                               const robot_model::JointModelGroup* jmg,
+                               const robot_model::JointModelGroup* arm_jmg,
                                robot_state::RobotStatePtr robot_state,
                                bool verbose = false);
-
-  bool filterGraspsInCollisionHelper(std::vector<GraspSolution>& possible_grasps,
-                                     planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                                     const robot_model::JointModelGroup* jmg,
-                                     robot_state::RobotStatePtr robot_state,
-                                     bool verbose);
+private:
 
   /**
-   * \brief Display collision points in Rviz
-   * \param state of robot
-   * \param planning scene
-   * \return true on success
+   * \brief Helper for filterGrasps
    */
-  bool publishContactPoints(const moveit::core::RobotStatePtr robot_state, planning_scene::PlanningScenePtr planning_scene);
+  bool filterGraspsHelper(const std::vector<moveit_msgs::Grasp>& possible_grasps,
+                          std::vector<GraspSolution>& filtered_grasps,
+                          bool filter_pregrasp, 
+                          const robot_model::JointModelGroup* ee_jmg,
+                          const robot_model::JointModelGroup* arm_jmg, bool verbose);
+
+  /**
+   * \brief Thread for checking part of the possible grasps list
+   */
+  void filterGraspThread(IkThreadStruct ik_thread_struct);
+
+  /**
+   * \brief Helper for filterGraspsInCollision
+   */
+  bool filterGraspsInCollisionHelper(std::vector<GraspSolution>& possible_grasps,
+                                     planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
+                                     const robot_model::JointModelGroup* arm_jmg,
+                                     robot_state::RobotStatePtr robot_state,
+                                     bool verbose);
 
 }; // end of class
 

@@ -1,0 +1,47 @@
+{
+  "bin_contents":
+  {
+    "bin_A":
+    [
+      "oreo_mega_stuff","champion_copper_plus_spark_plug"
+    ],
+    "bin_B":
+    [
+      "mark_twain_huckleberry_finn"
+    ],
+    "bin_C":
+    [
+      "expo_dry_erase_board_eraser"
+    ],
+    "bin_D":
+    [
+    ],
+    "bin_E":
+    [
+    ],
+    "bin_F":
+    [
+
+    ],
+    "bin_G":
+    [
+
+    ],
+    "bin_H":
+    [
+
+    ]
+  },
+
+  "work_order":
+  [
+    {
+      "bin": "bin_A",
+      "item": "oreo_mega_stuff"
+    },
+    {
+      "bin": "bin_B",
+      "item": "mark_twain_huckleberry_finn"
+    }
+  ]
+}

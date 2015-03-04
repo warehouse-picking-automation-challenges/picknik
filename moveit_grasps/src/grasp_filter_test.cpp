@@ -121,7 +121,7 @@ public:
     // ---------------------------------------------------------------------------------------------
     // Load planning scene to share
     planning_scene_monitor_.reset(new planning_scene_monitor::PlanningSceneMonitor("robot_description"));    
-    const robot_model::JointModelGroup* joint_model_group = planning_scene_monitor_->getPlanningScene()->getCurrentState().getRobotModel()->getJointModelGroup(planning_group_name_);
+    const robot_model::JointModelGroup* arm_jmg = planning_scene_monitor_->getPlanningScene()->getCurrentState().getRobotModel()->getJointModelGroup(planning_group_name_);
 
     // ---------------------------------------------------------------------------------------------
     // Load the Robot Viz Tools for publishing to Rviz
@@ -182,8 +182,7 @@ public:
 
       // Filter the grasp for only the ones that are reachable
       bool filter_pregrasps = true;
-      grasp_filter_->filterGrasps(possible_grasps, filtered_grasps, filter_pregrasps, ee_jmg->getEndEffectorParentGroup().second, 
-                                  joint_model_group);
+      grasp_filter_->filterGrasps(possible_grasps, filtered_grasps, filter_pregrasps, arm_jmg);
 
       // Show all generated grasps (non-filtered)
       visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg);      

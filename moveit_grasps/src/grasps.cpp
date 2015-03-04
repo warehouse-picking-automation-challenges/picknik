@@ -323,13 +323,14 @@ geometry_msgs::PoseStamped Grasps::getPreGraspPose(const moveit_msgs::Grasp &gra
 }
 
 void Grasps::publishGraspArrow(geometry_msgs::Pose grasp, const GraspData& grasp_data,
-                               const rviz_visual_tools::colors &color)
+                               const rviz_visual_tools::colors &color, double approach_length)
 {
   Eigen::Affine3d eigen_grasp_pose;
   // Convert each grasp back to forward-facing error (undo end effector custom rotation)
   tf::poseMsgToEigen(grasp, eigen_grasp_pose);
   eigen_grasp_pose = eigen_grasp_pose * grasp_data.grasp_pose_to_eef_pose_.inverse();
-  visual_tools_->publishArrow(eigen_grasp_pose, color);
+
+  visual_tools_->publishArrow(eigen_grasp_pose, color, rviz_visual_tools::REGULAR);
 }
 
 Eigen::ArrayXXf Grasps::generateCuboidGraspPoints(double length, double width, double radius)

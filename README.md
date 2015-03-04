@@ -4,6 +4,8 @@
 
  - Website: [http://picknik.io](http://picknik.io)
  - [Team Members](https://bitbucket.org/cuamazonchallenge/profile/members)
+ - [Timeline](https://docs.google.com/spreadsheets/d/1GG_j6BVir-J8VGwbU8RWDHA8kD8ZSeXrtlLtW9N851o/edit?usp=sharing)
+ - [Item Data](https://docs.google.com/spreadsheets/d/1e0Fousz9TUxf9YHeVfnaKVgf06Z0WC50blMGBWJ9cp8/edit#gid=2088756835)
 
 ## Install
 
@@ -15,13 +17,15 @@ Dave occasionally releases a new zip file with a lot of custom ROS code, that ca
 
 Unzip the file and put into a catkin workspace. Build using catkin_tools.
 
+![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/baxter_apc_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
+
 ## Run
 
 ### Generate Mock Amazon order
 
 Create a simulated bin inventory and random order by running
 
-    rosrun baxter_apc_main random_orders.py order.json
+    rosrun picknik_main random_orders.py order.json
 
 Note that you can repeat experiments setting the used seed, and modify
 the likelyhood of the number of objects per bin too:
@@ -39,44 +43,139 @@ the likelyhood of the number of objects per bin too:
                             0.2, 0.1]"
       --seed SEED, -s SEED
 
-### Setup Simulation
+
+### Sort order in terms of priority
+
+Take an order, sort it according to the (decreasing) expected
+punctuation we might get from each object, and write a new sorted
+order.
+
+    rosrun picknik_main sort_order.py order.json sorted_order.json
+
+The expected score for each object is the product of the probability
+of grasping it correctly (tweak them in
+`baxter_apc_main/orders/items_data.csv`) times the score for doing it
+right (depends on the number of objects in the bin). Then, if there're
+multiple objects in the bin, we remove the product of the number of
+objects in the bin times the probablity of removing an object we
+shouldn't have touched and the score we'd lose.
+
+Its help documentation:
+
+    usage: sort_order.py [-h] input_filename output_filename
+
+    positional arguments:
+      input_filename   filename for the json order
+      output_filename  filename for the sorted order
+
+    optional arguments:
+      -h, --help       show this help message and exit
+
+### Turn on Yale Controller
+
+    roslaunch open_hand_controller controller_manager.launch
+
+Check for correct USB
+
+    ls /dev/ttyUSB*
+
+Check to make sure you have ``dialout`` group
+
+    sudo adduser second_user dialout
+
+## Start Robots
+
+### Simulation of BAXTER
 
 Start fake controllers
 
     roslaunch baxter_control baxter_visualization.launch
 
-Rviz Visualizer
+Rviz Visualizers of robot states and debug markers in differnet windows
 
-    roslaunch baxter_apc_main moveit_rviz.launch
+    roslaunch picknik_main moveit_display_rviz.launch
+    roslaunch picknik_main moveit_rviz.launch
 
-Now skip to section **Run Main Routine**
+Run APC Manager (main program) for BAXTER
 
-### Setup Hardware
+    roslaunch picknik_main baxter_apc.launch
+	
+### Setup Hardware of BAXTER
 
-BETA - Start actual controllers
+Use Rethink's controllers
 
-    roslaunch baxter_control baxter_hardware.launch
+    roslaunch baxter_control baxter_hardware_rethink.launch
 
-Rviz Visualizer
+Rviz Visualizers of robot states and debug markers in differnet windows
 
-    roslaunch baxter_apc_main moveit_rviz.launch
+    roslaunch picknik_main moveit_display_rviz.launch
+    roslaunch picknik_main moveit_rviz.launch
 
-Now go to section **Run Main Routine**
+Run APC Manager (main program) for BAXTER
 
-### Run Main Routine
+    roslaunch picknik_main baxter_apc.launch
+	
+### Setup Simulation of JACO
 
-Run APC Manager (main program)
+Start roscore then load the URDF:
 
-    roslaunch baxter_apc_main apc_manager.launch mode:=1 verbose:=1 use_experience:=1 saving_enabled:=1 debug:=0 show_database:=0 order:=order.json
+    roscore &
+    roslaunch jaco_moveit_config planning_context.launch load_robot_description:=true
 
-Optional Arguments:
+Start this separate to speed up launching:
+
+    roslaunch picknik_main jaco_helpers.launch
+
+Rviz Visualizers of robot states and debug markers in differnet windows
+
+    roslaunch picknik_main moveit_display_rviz.launch
+    roslaunch picknik_main moveit_rviz.launch
+
+Run APC Manager (main program) for JACO in simulation
+
+	roslaunch picknik_main jaco_apc_demo.launch
+
+### Setup Hardware of JACO
+
+Plugin in robot then
+
+	roslaunch jaco_driver jaco_arm.launch use_urdf:=true
+
+Rviz Visualizers of robot states and debug markers in differnet windows
+
+    roslaunch picknik_main moveit_display_rviz.launch
+    roslaunch picknik_main moveit_rviz.launch
+
+Run APC Manager (main program) for JACO on hardware
+
+	roslaunch picknik_main jaco_apc.launch
+
+### PickNik Main Optional Arguments:
 
     mode - what program to run inside the apc_manager, defaults to 1
 	  Available Modes:
 	    1. Actual APC contest mode
 		2. Train experience database mode / workspace analysis
 		3. Test end effectors mode
+		4. Only load JSON and visualize shelf
+		5. Raise the roof (go up and down)
+	jump_to - which step in the manipulation pipeline to start on
+	  Steps:
+	    0. Move to initial position
+		1. Open end effectors
+		2. Generate and choose grasp
+		3. Setting the-grasp
+		4. Get pre-grasp by generateApproachPath()
+		5. N/A
+		6. Moving to pre-grasp position
+		7. Cartesian move to the-grasp position
+		8. Grasping
+		9. Lifting product UP slightly
+		10. Moving BACK to pre-grasp position
+		11. Moving back to INITIAL position
+		12. Releasing product
     order - which json file to use, defaults to orders/simple.json
+	order_start - specify the index of the product to skip to, based on the ordering in the json file
 	use_experience - whether to use cached planned (Lightning Database) or not
 	saving_enabled - allow new plans to be saved to experience database
 	show_database - whether to pause between motion plans and show all the saved paths (debug)
@@ -89,9 +188,9 @@ simulation, hardware, or both.
 
 ### Loading meshes
 
-Simply displays all meshes from our mesh library in Rviz. Be sure to set the right planning scene in Rviz by changing it to '/mesh_publisher/baxter_apc_planning_scene'
+Simply displays all meshes from our mesh library in Rviz.
 
- - Visualization: Working Jan 30
+ - Visualization: Working Feb 11
  - Hardware: N/A
 
 Start fake controllers
@@ -100,11 +199,11 @@ Start fake controllers
 
 Rviz Visualizer
 
-    roslaunch baxter_apc_main moveit_rviz.launch
+    roslaunch picknik_main mesh_publisher_rviz.launch
 
 Load meshes
 
-    rosrun baxter_apc_main mesh_publisher
+    rosrun picknik_main mesh_publisher
 
 ### Random Planning
 
@@ -119,7 +218,7 @@ Start fake controllers
 
 Rviz Visualizer
 
-    roslaunch baxter_apc_main moveit_rviz.launch
+    roslaunch picknik_main moveit_rviz.launch
 
 Planner
 
@@ -138,7 +237,7 @@ Start fake controllers
 
 Rviz Visualizer
 
-    roslaunch baxter_apc_main moveit_rviz.launch
+    roslaunch picknik_main moveit_rviz.launch
 
 Load meshes
 

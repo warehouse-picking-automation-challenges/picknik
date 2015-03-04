@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+
+ <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
+  <include file="$(find baxter_moveit_config)/launch/planning_context.launch">
+    <arg name="load_robot_description" value="true"/>
+  </include>
+
+  <!-- GDB Debug Option -->
+  <arg name="debug" default="false" />
+  <arg unless="$(arg debug)" name="launch_prefix" value="" />
+  <arg     if="$(arg debug)" name="launch_prefix" 
+	   value="gdb -x $(find picknik_main)/launch/debug_settings.gdb --ex run --args" />
+
+  <!-- Command line arguments -->
+  <arg name="mode" default="1" />
+  <arg name="verbose" default="1" />
+  <arg name="use_experience" default="1" />
+  <arg name="order" default="$(find picknik_main)/orders/simple.json" />
+  <arg name="order_start" default="0" />
+  <arg name="jump_to" default="0" />
+  <arg name="show_database" default="0" />
+
+  <!-- Ignore for now -->
+  <arg name="saving_enabled" default="1" />
+  <arg name="use_scratch" default="1" />
+
+
+  <!-- Planning Functionality -->
+  <include ns="picknik_main" file="$(find baxter_moveit_config)/launch/planning_pipeline.launch.xml">
+    <arg name="pipeline" value="ompl" />
+  </include>
+
+  <!-- Sensors Functionality -->
+  <!--include ns="picknik_main" file="$(find baxter_moveit_config)/launch/sensor_manager.launch.xml" >
+    <arg name="moveit_sensor_manager" value="BAXTER" /> 
+  </include-->
+
+  <arg name="allow_trajectory_execution" default="true"/>
+
+  <!-- Launch controller manager in this namespace -->
+  <include ns="picknik_main" file="$(find baxter_moveit_config)/launch/trajectory_execution.launch.xml">
+    <arg name="moveit_controller_manager" value="baxter" /> 
+    <arg name="moveit_manage_controllers" value="true" />
+  </include>
+
+  <!-- Main process -->
+  <node name="picknik_main" pkg="picknik_main" type="main" respawn="false" 
+	launch-prefix="$(arg launch_prefix)" output="screen" 
+	args="--mode $(arg mode) --verbose $(arg verbose) --order $(arg order) --order_start $(arg order_start) 
+	      --jump_to $(arg jump_to) 
+	      --show_database $(arg show_database) --use_experience $(arg use_experience)">
+
+    <!-- Settings of robot -->
+    <rosparam command="load" file="$(find baxter_moveit_config)/config/kinematics.yaml"/>
+    <rosparam command="load" file="$(find moveit_grasps)/config/baxter_grasp_data.yaml"/>
+
+    <!-- Settings of Amazon competition -->
+    <rosparam command="load" file="$(find picknik_main)/config/amazon_shelf.yaml"/>
+
+    <!-- Robot-specific settings -->
+    <rosparam command="load" file="$(find picknik_main)/config/baxter.yaml"/>
+
+    <!-- Only used by Thunder, read within moveit_ompl -->
+    <param name="use_scratch"     if="$(arg use_scratch)" value="true"/>
+    <param name="use_scratch" unless="$(arg use_scratch)" value="false"/>
+    <param name="saving_enabled"     if="$(arg saving_enabled)" value="true"/>
+    <param name="saving_enabled" unless="$(arg saving_enabled)" value="false"/>
+
+  </node>
+
+</launch>

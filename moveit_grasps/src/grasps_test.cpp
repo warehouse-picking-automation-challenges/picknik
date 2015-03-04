@@ -1,7 +1,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2014, University of Colorado, Boulder
+ *  Copyright (c) 2015, University of Colorado, Boulder
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -66,7 +66,6 @@ private:
   moveit_grasps::GraspData grasp_data_;
 
   // which baxter arm are we using
-  std::string arm_;
   std::string ee_group_name_;
   std::string planning_group_name_;
 
@@ -76,51 +75,46 @@ public:
   GraspGeneratorTest(int num_tests)
     : nh_("~")
   {
-    nh_.param("arm", arm_, std::string("left"));
-    nh_.param("ee_group_name", ee_group_name_, std::string(arm_ + "_hand"));
-    planning_group_name_ = arm_ + "_arm";
+    nh_.param("ee_group_name", ee_group_name_, std::string("left_hand"));
 
-    ROS_INFO_STREAM_NAMED("test","Arm: " << arm_);
     ROS_INFO_STREAM_NAMED("test","End Effector: " << ee_group_name_);
     ROS_INFO_STREAM_NAMED("test","Planning Group: " << planning_group_name_);
 
     // ---------------------------------------------------------------------------------------------
     // Load the Robot Viz Tools for publishing to Rviz
-    ROS_ERROR_STREAM_NAMED("temp","Warning: i hacked the base link to be hard coded string, is likely wrong");
-    visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("base_link"));
-    visual_tools_->setLifetime(120.0);
-    visual_tools_->setMuted(false);
-    visual_tools_->loadMarkerPub();
+    visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("base"));
+    visual_tools_->deleteAllMarkers();
 
     // ---------------------------------------------------------------------------------------------
     // Load grasp data specific to our robot
     if (!grasp_data_.loadRobotGraspData(nh_, ee_group_name_, visual_tools_->getRobotModel()))
       ros::shutdown();
 
-    const moveit::core::JointModelGroup* ee_jmg 
-      = visual_tools_->getRobotModel()->getJointModelGroup(ee_group_name_);
+    const moveit::core::JointModelGroup* ee_jmg = visual_tools_->getRobotModel()->getJointModelGroup(ee_group_name_);
 
     // ---------------------------------------------------------------------------------------------
     // Load grasp generator
-    grasps_.reset( new moveit_grasps::Grasps(visual_tools_) );
+    grasps_.reset( new moveit_grasps::Grasps(visual_tools_, true) );
 
     geometry_msgs::Pose pose;
     visual_tools_->generateEmptyPose(pose);
 
     // ---------------------------------------------------------------------------------------------
     // Animate open and closing end effector
-
-    for (std::size_t i = 0; i < 4; ++i)
+    if (false)
     {
-      // Test visualization of end effector in OPEN position
-      grasp_data_.setRobotStatePreGrasp( visual_tools_->getSharedRobotState() );
-      visual_tools_->publishEEMarkers(pose, ee_jmg, rviz_visual_tools::ORANGE, "test_eef");
-      ros::Duration(1.0).sleep();
+      for (std::size_t i = 0; i < 4; ++i)
+      {
+        // Test visualization of end effector in OPEN position
+        grasp_data_.setRobotStatePreGrasp( visual_tools_->getSharedRobotState() );
+        visual_tools_->publishEEMarkers(pose, ee_jmg, rviz_visual_tools::ORANGE, "test_eef");
+        ros::Duration(1.0).sleep();
 
-      // Test visualization of end effector in CLOSED position
-      grasp_data_.setRobotStateGrasp( visual_tools_->getSharedRobotState() );
-      visual_tools_->publishEEMarkers(pose, ee_jmg, rviz_visual_tools::GREEN, "test_eef");
-      ros::Duration(1.0).sleep();      
+        // Test visualization of end effector in CLOSED position
+        grasp_data_.setRobotStateGrasp( visual_tools_->getSharedRobotState() );
+        visual_tools_->publishEEMarkers(pose, ee_jmg, rviz_visual_tools::GREEN, "test_eef");
+        ros::Duration(1.0).sleep();      
+      }
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -146,11 +140,15 @@ public:
       possible_grasps.clear();
 
       // Generate set of grasps for one object
-      grasps_->generateBlockGrasps( visual_tools_->convertPose(object_pose), grasp_data_, possible_grasps);
+      //grasps_->generateBlockGrasps( visual_tools_->convertPose(object_pose), grasp_data_, possible_grasps);
+      grasps_->generateAxisGrasps( visual_tools_->convertPose(object_pose), moveit_grasps::Y_AXIS, moveit_grasps::DOWN, 
+                                   moveit_grasps::HALF, 0, grasp_data_, possible_grasps);
+                                   
 
       // Visualize them
-      visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg);
-      //visual_tools_->publishGrasps(possible_grasps, grasp_data_.ee_parent_link_);
+      //visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg);
+      double animate_speed = 1;
+      visual_tools_->publishGrasps(possible_grasps, ee_jmg, animate_speed);
 
       // Test if done
       ++i;
@@ -211,7 +209,7 @@ public:
 
 int main(int argc, char *argv[])
 {
-  int num_tests = 10;
+  int num_tests = 1;
   ros::init(argc, argv, "grasp_generator_test");
 
   ROS_INFO_STREAM_NAMED("main","Grasps Test");
@@ -233,8 +231,6 @@ int main(int argc, char *argv[])
   double duration = (ros::Time::now() - start_time).toNSec() * 1e-6;
   ROS_INFO_STREAM_NAMED("","Total time: " << duration);
   //std::cout << duration << "\t" << num_tests << std::endl;
-
-  ros::Duration(1.0).sleep(); // let rviz markers finish publishing
 
   return 0;
 }

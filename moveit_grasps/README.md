@@ -30,10 +30,6 @@ A demo with Baxter:
 
 ### Ubuntu Debian
 
-Hydro:
-```
-sudo apt-get install ros-hydro-moveit-grasps
-```
 Indigo:
 ```
 sudo apt-get install ros-indigo-moveit-grasps
@@ -43,10 +39,6 @@ sudo apt-get install ros-indigo-moveit-grasps
 
 Clone this repository into a catkin workspace, then use the rosdep install tool to automatically download its dependencies. Depending on your current version of ROS, use:
 
-Hydro:
-```
-rosdep install --from-paths src --ignore-src --rosdistro hydro
-```
 Indigo:
 ```
 rosdep install --from-paths src --ignore-src --rosdistro indigo
@@ -54,9 +46,38 @@ rosdep install --from-paths src --ignore-src --rosdistro indigo
 
 ## Robot-Agnostic Configuration
 
-You will first need a configuration file that described your robot's end effector geometry. Currently an example format can be seen in this repository at [config/baxter_grasp_data.yaml](https://github.com/davetcoleman/moveit_grasps/blob/hydro-devel/config/baxter_grasp_data.yaml). See the comments within that file for explanations. 
+You will first need a configuration file that described your robot's end effector geometry. Currently an example format can be seen in this repository at [config/baxter_grasp_data.yaml](https://github.com/davetcoleman/moveit_grasps/blob/indigo-devel/config/baxter_grasp_data.yaml). See the comments within that file for explanations. 
 
-To load that file at launch, you copy the example in the file [launch/grasp_test.launch](https://github.com/davetcoleman/moveit_grasps/blob/hydro-devel/launch/grasp_test.launch) where you should see the line ``<rosparam command="load" file="$(find moveit_grasps)/config/baxter_grasp_data.yaml"/>``.
+To load that file at launch, you copy the example in the file [launch/grasp_test.launch](https://github.com/davetcoleman/moveit_grasps/blob/indigo-devel/launch/grasp_test.launch) where you should see the line ``<rosparam command="load" file="$(find moveit_grasps)/config/baxter_grasp_data.yaml"/>``.
+
+Within that file you can specify the following (example taken from jaco):
+
+    # ee group name as defined in the MoveIt! SRDF
+    end_effector_name: 'gripper'  
+
+    # actuated joints in end effector
+    joints : ['jaco_joint_finger_1','jaco_joint_finger_2','jaco_joint_finger_3']
+
+    # open position (pre-grasp)
+    pregrasp_posture : [0.697, 0.697, 0.697]
+
+    # time to wait before grasping
+    pregrasp_time_from_start : 4.0
+
+    # close position (grasp)
+    grasp_posture : [0.0, 0.0, 0.0]
+
+    # time to wait after grasping
+    grasp_time_from_start : 4.0
+
+    # desired pose from end effector to grasp - [x,y,z]
+    grasp_pose_to_eef :  [-0.05, 0, 0]
+
+    # desired pose from end effector to grasp - [roll, pitch, yall], in standard 3,2,1 notation
+    grasp_pose_to_eef_rotation : [1.5707, 0, 0]
+
+    # max depth of fingers - distance from finger tip to inner palm
+    finger_to_palm_depth : 0.11
 
 ## Code Usage
 
@@ -142,7 +163,7 @@ visual_tools_->publishAnimatedGrasps(possible_grasps, grasp_data_.ee_parent_link
 
 This component creates several threads and tests a large number of potential grasps for kinematic feasibility.
 
-<img align="right" src="https://raw.github.com/davetcoleman/moveit_grasps/hydro-devel/resources/filter.png" />
+<img align="right" src="https://raw.github.com/davetcoleman/moveit_grasps/indigo-devel/resources/filter.png" />
 
 To filter grasps after generating them:
 ```
@@ -170,7 +191,7 @@ A new (still in development) example tool is ``moveit_blocks.h`` located in the 
 
 There are currently example implementations:
 
- - [baxter_pick_place](https://github.com/davetcoleman/baxter_cpp/tree/hydro-devel/baxter_pick_place)
+ - [baxter_pick_place](https://github.com/davetcoleman/baxter_cpp/tree/indigo-devel/baxter_pick_place)
  - [reem_tabletop_grasping](https://github.com/pal-robotics/reem_tabletop_grasping)
  - [clam_pick_place](https://github.com/davetcoleman/clam/tree/master/clam_pick_place)
 

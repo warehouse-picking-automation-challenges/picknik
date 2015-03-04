@@ -100,7 +100,7 @@ public:
   /**
    * \brief Constructor
    */
-  Grasps(moveit_visual_tools::MoveItVisualToolsPtr rviz_tools, bool verbose = false);
+  Grasps(moveit_visual_tools::MoveItVisualToolsPtr visual_tools, bool verbose = false);
 
   /**
    * \brief Destructor
@@ -192,7 +192,7 @@ public:
    * \param arm - the planning group of the arm we want to display
    * \return true on success
    */
-  void publishGraspArrow(geometry_msgs::Pose grasp, const GraspData& grasp_data, const rviz_visual_tools::colors &color);
+  void publishGraspArrow(geometry_msgs::Pose grasp, const GraspData& grasp_data, const rviz_visual_tools::colors &color, double approach_length);
 
   /**
    * \brief Getter for Verbose
