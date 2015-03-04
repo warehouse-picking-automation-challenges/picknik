@@ -384,8 +384,8 @@ Eigen::ArrayXXf Grasps::generateCuboidGraspPoints(double length, double width, d
   ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points", "number of points = " << points.size() / 3);
 
   // create points along side of cuboid and add them to array
-  size_t offset = 0;
-  size_t left_right_offset = 0;
+  int offset = 0;
+  int left_right_offset = 0;
   if (top_bottom_array_size != 0)
   {
     ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points", "generating top/bottom points");
@@ -395,6 +395,7 @@ Eigen::ArrayXXf Grasps::generateCuboidGraspPoints(double length, double width, d
       bottom.row(i) << -length / 2 + i * top_bottom_delta , -width / 2 - radius, 0;
     }
     offset = top_bottom_array_size - 2;
+    ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points", "offset = " << offset);
     points.block(0,      0, offset, 3) =    top.block(1, 0, offset, 3);
     points.block(offset, 0, offset, 3) = bottom.block(1, 0, offset, 3);
   }
@@ -408,7 +409,9 @@ Eigen::ArrayXXf Grasps::generateCuboidGraspPoints(double length, double width, d
       right.row(i) << -length / 2 - radius, -width / 2 + i * left_right_delta, 0;
     }
     offset *= 2;
+    ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points", "offset = " << offset);
     left_right_offset = left_right_array_size - 2;
+    ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points", "left_right_offset = " << left_right_offset);
     points.block(offset,                     0, left_right_offset, 3) = left.block(1,0,left_right_offset,3);
     points.block(offset + left_right_offset, 0, left_right_offset, 3) = right.block(1,0,left_right_offset,3);
   }
@@ -416,6 +419,7 @@ Eigen::ArrayXXf Grasps::generateCuboidGraspPoints(double length, double width, d
   // create points along corners and add them to array
   ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points", "generating corner points");
   offset += 2 * left_right_offset;
+  ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points", "offset = " << offset);
   for (size_t j = 0; j < 4; j++)
   {
     // get corner coordinates
@@ -438,6 +442,7 @@ Eigen::ArrayXXf Grasps::generateCuboidGraspPoints(double length, double width, d
                               << cornerX << ", cornerY = " << cornerY);
         break;
     }
+    ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points", "corner = " << cornerX << ", " << cornerY);
 
     // translate to corner and rotate
     for (size_t i = 0; i < corner_array_size; i++)
@@ -446,20 +451,29 @@ Eigen::ArrayXXf Grasps::generateCuboidGraspPoints(double length, double width, d
         cornerX + radius * cos((j * M_PI / 2) + i * corner_delta), 
         cornerY + radius * sin((j * M_PI / 2) + i * corner_delta), 0;
     }
-    points.block(offset + corner_array_size * j, 0, corner_array_size, 3) = corners;
+    ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points", "corners =\n" << corners);
+
+    points.block(offset, 0, corner_array_size, 3) = corners;
+    ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points", "points =\n" << points);
+
+    offset += corner_array_size;
+    ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points", "offset = " << offset);
   }
 
   // get angle from centroid to grasp point
+  ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points", "calculating angles...");
   for (size_t i = 0; i < points.size() / 3; i++)
   {
     points(i,2) = atan2(points(i,1),points(i,0));
   }
 
-  ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points.points","top \n = " << top);
-  ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points.points","bottom \n = " << bottom);
-  ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points.points","left \n = " << left);
-  ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points.points","right \n = " << right);
-  ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points.points","points \n = " << points);
+  ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points","top \n = " << top);
+  ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points","bottom \n = " << bottom);
+  ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points","left \n = " << left);
+  ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points","right \n = " << right);
+  ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points","points \n = " << points);
+
+  ROS_INFO_STREAM_NAMED("cuboid_grasp_points", "Generated " << points.size() / 3 << " possible grasp points");
 
   return points;
 } 
@@ -558,8 +572,6 @@ bool Grasps::generateCuboidAxisGrasps(const Eigen::Affine3d& cuboid_pose, float 
       ROS_WARN_STREAM_NAMED("cuboid_axis_grasps","grasp axis may not be defined properly");
       break;
   }
-
-  ROS_INFO_STREAM_NAMED("cuboid_axis_grasps","grasp_points.size() = " << grasp_points.size() / 3);
 
   for (size_t i = 0; i < grasp_points.size() / 3; i++ )
   {

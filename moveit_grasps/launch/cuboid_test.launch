@@ -7,15 +7,9 @@
   <arg unless="$(arg debug)" name="launch_prefix" value="" />
   <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
 
-  <!-- Verbose mode -->
+  <!-- Command line arguments -->
   <arg name="verbose" default="false" />
-  <arg unless="$(arg verbose)" name="verbose_arg" value="" />
-  <arg     if="$(arg verbose)" name="verbose_arg" value="--verbose" />
-
-  <!-- Number of trials -->
   <arg name="trials" default="1" />
-  <arg unless="$(arg trials)" name="trials_arg" value="" />
-  <arg     if="$(arg trials)" name="trials_arg" value="--trials $(arg trials)" />
 
   <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
   <include file="$(find baxter_moveit_config)/launch/planning_context.launch">
@@ -30,7 +24,7 @@
 
   <!-- Start the test -->
   <node name="cuboid_grasp_test" launch-prefix="$(arg launch_prefix)" pkg="moveit_grasps" 
-	type="cuboid_grasp_test" output="screen" args="$(arg verbose_arg) $(arg trials_arg)">
+	type="cuboid_grasp_test" output="screen" args="--verbose $(arg verbose) --trials $(arg trials)">
     <param name="arm" value="$(arg arm)"/>
     <rosparam command="load" file="$(find moveit_grasps)/config/baxter_grasp_data.yaml"/>
   </node>

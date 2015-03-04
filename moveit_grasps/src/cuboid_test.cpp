@@ -131,23 +131,22 @@ public:
     l = fRand(CUBOID_MIN_SIZE, CUBOID_MAX_SIZE);
     w = fRand(CUBOID_MIN_SIZE, CUBOID_MAX_SIZE);
     h = fRand(CUBOID_MIN_SIZE, CUBOID_MAX_SIZE);
-    ROS_DEBUG_STREAM_NAMED("random","Size = " << l << ", "<< w << ", " << h);
+    ROS_DEBUG_STREAM_NAMED("random_cuboid","Size = " << l << ", "<< w << ", " << h);
 
     // Position
     // Values chosen to be within shelf boundary for Amazon pick & place challenge
     // TODO: get right values
-    //visual_tools_->random_pose_bounds_.row(0) << CUBOID_WORKSPACE_MIN_X, CUBOID_WORKSPACE_MAX_X, 1;
-    //visual_tools_->random_pose_bounds_.row(1) << CUBOID_WORKSPACE_MIN_Y, CUBOID_WORKSPACE_MAX_Y, 1;
-    //visual_tools_->random_pose_bounds_.row(2) << CUBOID_WORKSPACE_MIN_Z, CUBOID_WORKSPACE_MAX_Z, 1;
-    //ROS_DEBUG_STREAM_NAMED("random","Bounds = " << visual_tools_->random_pose_bounds_.row(0)
-    //                       << "\n" << visual_tools_->random_pose_bounds_.row(1)
-    //                       << "\n" << visual_tools_->random_pose_bounds_.row(2));
+    visual_tools_->random_pose_bounds_.row(0) << CUBOID_WORKSPACE_MIN_X, CUBOID_WORKSPACE_MAX_X, 1;
+    visual_tools_->random_pose_bounds_.row(1) << CUBOID_WORKSPACE_MIN_Y, CUBOID_WORKSPACE_MAX_Y, 1;
+    visual_tools_->random_pose_bounds_.row(2) << CUBOID_WORKSPACE_MIN_Z, CUBOID_WORKSPACE_MAX_Z, 1;
+    ROS_DEBUG_STREAM_NAMED("random","Bounds = \n" << visual_tools_->random_pose_bounds_);
+
     // Orientation 
     visual_tools_->generateRandomPose(cuboid_pose);
 
-    ROS_DEBUG_STREAM_NAMED("random","Position = " << cuboid_pose.position.x << ", " << 
+    ROS_INFO_STREAM_NAMED("random_cuboid","Position = " << cuboid_pose.position.x << ", " << 
     			   cuboid_pose.position.y << ", " << cuboid_pose.position.z);
-    ROS_DEBUG_STREAM_NAMED("random","Quaternion = " << cuboid_pose.orientation.x << ", " <<
+    ROS_INFO_STREAM_NAMED("random_cuboid","Quaternion = " << cuboid_pose.orientation.x << ", " <<
 			   cuboid_pose.orientation.y << ", " << cuboid_pose.orientation.z);
   }
 
@@ -175,20 +174,26 @@ int main(int argc, char** argv)
     {
       if (strcmp(argv[i], "--verbose") == 0)
       {
-        ROS_INFO_STREAM_NAMED("main","Running in VERBOSE mode (slower)");
-        verbose = true;
+        i++;
+        if (strcmp(argv[i], "true") == 0 )
+        {
+          ROS_INFO_STREAM_NAMED("main","Running in VERBOSE mode (slower)");
+          verbose = true;
+        }
+        continue;
       }
 
       if (strcmp(argv[i], "--trials" ) == 0)
       {
         i++;
         number_of_trials = std::atoi(argv[i]);
+        continue;
       }  
     }
     ROS_INFO_STREAM_NAMED("main","Running " << number_of_trials << " trials");
 
   }
-  moveit_grasps::CuboidGraspGeneratorTest tester(verbose, number_of_trials);
+  moveit_grasps::CuboidGraspGeneratorTest tester(number_of_trials, verbose);
 
   return 0;
 }
