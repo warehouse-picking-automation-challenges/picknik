@@ -235,7 +235,7 @@ bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string&
 
   // -------------------------------
   // SRDF Info
-  ee_group_ = end_effector_name;
+  ee_group_name_ = end_effector_name;
 
   // -------------------------------
   // Geometry data
@@ -250,8 +250,8 @@ bool GraspData::loadRobotGraspData(const ros::NodeHandle& nh, const std::string&
   angle_resolution_ = 32; //TODO parametrize this, or move to action interface
 
   // Copy values from RobotModel
-  joint_model_group_ = robot_model->getJointModelGroup(ee_group_);
-  parent_link_name_ = joint_model_group_->getEndEffectorParentGroup().second;
+  ee_jmg_ = robot_model->getJointModelGroup(ee_group_name_);
+  parent_link_name_ = ee_jmg_->getEndEffectorParentGroup().second;
   parent_link_ = robot_model->getLinkModel(parent_link_name_);
 
   // Debug
@@ -296,13 +296,13 @@ void GraspData::print()
 {
   ROS_WARN_STREAM_NAMED("grasp_data","Debug Grasp Data variable values:");
   std::cout << "grasp_pose_to_eef_pose_: \n" << grasp_pose_to_eef_pose_.translation() << "\n" << grasp_pose_to_eef_pose_.rotation() <<std::endl;
-  std::cout << "pre_grasp_posture_: \n" << pre_grasp_posture_<<std::endl;
-  std::cout << "grasp_posture_: \n" << grasp_posture_<<std::endl;
-  std::cout << "base_link_: " << base_link_<<std::endl;
-  std::cout << "ee_group_: " << ee_group_<<std::endl;
-  std::cout << "grasp_depth_: " << grasp_depth_<<std::endl;
-  std::cout << "angle_resolution_: " << angle_resolution_<<std::endl;
-  std::cout << "finger_to_palm_depth_: " << finger_to_palm_depth_<<std::endl;
+  std::cout << "pre_grasp_posture_: \n" << pre_grasp_posture_ << std::endl;
+  std::cout << "grasp_posture_: \n" << grasp_posture_ << std::endl;
+  std::cout << "base_link_: " << base_link_ << std::endl;
+  std::cout << "ee_group_: " << ee_group_name_  <<  std::endl;
+  std::cout << "grasp_depth_: " << grasp_depth_ << std::endl;
+  std::cout << "angle_resolution_: " << angle_resolution_ << std::endl;
+  std::cout << "finger_to_palm_depth_: " << finger_to_palm_depth_ << std::endl;
 }
 
 } // namespace

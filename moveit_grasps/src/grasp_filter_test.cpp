@@ -159,7 +159,7 @@ public:
     std::vector<moveit_msgs::Grasp> possible_grasps;
     std::vector<GraspSolution> filtered_grasps;
 
-    const moveit::core::JointModelGroup* ee_jmg = robot_state->getRobotModel()->getJointModelGroup(grasp_data_.ee_group_);
+    const moveit::core::JointModelGroup* ee_jmg = robot_state->getRobotModel()->getJointModelGroup(grasp_data_.ee_group_name_);
   
     // Loop
     for (int i = 0; i < num_tests; ++i)

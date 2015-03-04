@@ -240,7 +240,6 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
       // #################################################################################################################
       case 0: statusPublisher("Moving to initial position");
 
-        openEndEffectors(false);
         moveToStartPosition();
         break;
 
@@ -328,7 +327,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, wait_for_trajetory);
 
         // Run
-        if( !executeTrajectoryMsg(approach_trajectory_msg) )
+        if( !executeTrajectory(approach_trajectory_msg) )
         {
           ROS_ERROR_STREAM_NAMED("pipeline","Failed to execute trajectory");
         }
@@ -416,7 +415,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
 bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_model::JointModelGroup* arm_jmg,
                                        moveit_grasps::GraspSolution& chosen, bool verbose)
 {
-  const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[arm_jmg].ee_group_);
+  const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[arm_jmg].ee_group_name_);
 
   visuals_->visual_tools_->publishAxis(object_pose);
 
@@ -639,11 +638,15 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
   // Execute trajectory
   if (execute_trajectory)
   {
-    if( !executeTrajectoryMsg(response.trajectory) )
+    if( !executeTrajectory(response.trajectory) )
     {
       ROS_ERROR_STREAM_NAMED("pipeline","Failed to execute trajectory");
       return false;
     }
+  }
+  else
+  {
+    ROS_WARN_STREAM_NAMED("pipeline","Execute trajectory currently disabled by user");
   }
 
   // Save Experience Database
@@ -733,7 +736,7 @@ bool ManipulationPipeline::executeState(const moveit::core::RobotStatePtr robot_
   robot_trajectory->getRobotTrajectoryMsg(trajectory_msg);
 
   // Execute
-  if( !executeTrajectoryMsg(trajectory_msg) )
+  if( !executeTrajectory(trajectory_msg) )
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Failed to execute trajectory");
   }
@@ -819,7 +822,7 @@ bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *
   visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, wait_for_trajetory);
 
   // Execute
-  if( !executeTrajectoryMsg(cartesian_trajectory_msg) )
+  if( !executeTrajectory(cartesian_trajectory_msg) )
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Failed to execute trajectory");
     return false;
@@ -863,7 +866,7 @@ bool ManipulationPipeline::executeRetreatPath(const moveit::core::JointModelGrou
   visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, wait_for_trajetory);
 
   // Execute
-  if( !executeTrajectoryMsg(cartesian_trajectory_msg) )
+  if( !executeTrajectory(cartesian_trajectory_msg) )
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Failed to execute trajectory");
     return false;
@@ -1103,24 +1106,26 @@ bool ManipulationPipeline::openEndEffectors(bool open)
 
 bool ManipulationPipeline::openEndEffector(bool open, const robot_model::JointModelGroup* arm_jmg)
 {
-  moveit_msgs::RobotTrajectory trajectory_msg;
+  std::cout << "Joints in group " << grasp_datas_[arm_jmg].ee_group_name_ << std::endl;
+  std::copy(grasp_datas_[arm_jmg].ee_jmg_->getJointModelNames().begin(), grasp_datas_[arm_jmg].ee_jmg_->getJointModelNames().end(), std::ostream_iterator<std::string>(std::cout, "\n"));
 
   robot_state::RobotState ee_state = planning_scene_monitor_->getPlanningScene()->getCurrentState();
 
   robot_trajectory::RobotTrajectoryPtr ee_traj(new robot_trajectory::RobotTrajectory(ee_state.getRobotModel(),
-                                                                                     grasp_datas_[arm_jmg].ee_group_));
+                                                                                     grasp_datas_[arm_jmg].ee_group_name_));
 
   // Convert trajectory to a message
+  moveit_msgs::RobotTrajectory trajectory_msg;
   ee_traj->getRobotTrajectoryMsg(trajectory_msg);
 
   if (open)
   {
-    ROS_INFO_STREAM_NAMED("pipeline","Opening end effector for " << grasp_datas_[arm_jmg].ee_group_);
+    ROS_INFO_STREAM_NAMED("pipeline","Opening end effector for " << grasp_datas_[arm_jmg].ee_group_name_);
     ee_traj->setRobotTrajectoryMsg(ee_state, grasp_datas_[arm_jmg].pre_grasp_posture_); // open
   }
   else
   {
-    ROS_INFO_STREAM_NAMED("pipeline","Closing end effector for " << grasp_datas_[arm_jmg].ee_group_);
+    ROS_INFO_STREAM_NAMED("pipeline","Closing end effector for " << grasp_datas_[arm_jmg].ee_group_name_);
     ee_traj->setRobotTrajectoryMsg(ee_state, grasp_datas_[arm_jmg].grasp_posture_); // closed
   }
 
@@ -1134,7 +1139,7 @@ bool ManipulationPipeline::openEndEffector(bool open, const robot_model::JointMo
   trajectory_msg.joint_trajectory.points[0].time_from_start = ros::Duration(0.1);
 
   // Execute trajectory
-  if( !executeTrajectoryMsg(trajectory_msg) )
+  if( !executeTrajectory(trajectory_msg) )
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Failed to execute grasp trajectory");
     return false;
@@ -1194,9 +1199,12 @@ bool ManipulationPipeline::setStateWithOpenEE(bool open, moveit::core::RobotStat
 
 
 
-bool ManipulationPipeline::executeTrajectoryMsg(moveit_msgs::RobotTrajectory trajectory_msg)
+bool ManipulationPipeline::executeTrajectory(moveit_msgs::RobotTrajectory trajectory_msg)
 {
   ROS_INFO_STREAM_NAMED("pipeline","Executing trajectory");
+
+  // Debug
+  ROS_DEBUG_STREAM_NAMED("pipeline.trajectory","Executing trajectory:\n" << trajectory_msg);
 
   // Clear
   plan_execution_->getTrajectoryExecutionManager()->clear();
@@ -1252,7 +1260,7 @@ bool ManipulationPipeline::allowFingerTouch(const std::string& object_name, cons
     planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning scene
 
     // Get links of end effector
-    const std::vector<std::string> &ee_link_names = grasp_datas_[arm_jmg].joint_model_group_->getLinkModelNames();
+    const std::vector<std::string> &ee_link_names = grasp_datas_[arm_jmg].ee_jmg_->getLinkModelNames();
 
     // Prevent fingers from causing collision with object
     for (std::size_t i = 0; i < ee_link_names.size(); ++i)

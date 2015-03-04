@@ -220,10 +220,10 @@ public:
   bool setStateWithOpenEE(bool open, moveit::core::RobotStatePtr robot_state);
 
   /**
-   * \brief Send trajectories to Robot
+   * \brief Send trajectory message to robot controllers
    * \return true on success
    */
-  bool executeTrajectoryMsg(moveit_msgs::RobotTrajectory trajectory_msg);
+  bool executeTrajectory(moveit_msgs::RobotTrajectory trajectory_msg);
 
   /**
    * \brief Prevent a product from colliding with the fingers

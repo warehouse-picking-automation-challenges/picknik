@@ -102,14 +102,16 @@ public:
   trajectory_msgs::JointTrajectory pre_grasp_posture_; // when the end effector is in "open" position
   trajectory_msgs::JointTrajectory grasp_posture_; // when the end effector is in "close" position
   std::string base_link_; // name of global frame with z pointing up
-  std::string ee_group_; // the end effector name
+
+  std::string ee_group_name_; // the end effector name
+  const robot_model::JointModelGroup* ee_jmg_; // this end effector
+
   double grasp_depth_; // distance from center point of object to end effector
   int angle_resolution_; // generate grasps at PI/angle_resolution increments
 
   double finger_to_palm_depth_;
 
   // Duplicate end effector data copied from RobotModel
-  const robot_model::JointModelGroup* joint_model_group_; // this end effector
   const robot_model::LinkModel* parent_link_; // the last link in the kinematic chain before the end effector, e.g. "/gripper_roll_link"
   std::string parent_link_name_; // the last link in the kinematic chain before the end effector, e.g. "/gripper_roll_link"
 
