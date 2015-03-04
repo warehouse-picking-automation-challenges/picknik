@@ -151,10 +151,14 @@ public:
     // Position
     // Values chosen to be within shelf boundary for Amazon pick & place challenge
     // TODO: get right values
-    visual_tools_->random_pose_bounds_.row(0) << CUBOID_WORKSPACE_MIN_X, CUBOID_WORKSPACE_MAX_X, 1;
-    visual_tools_->random_pose_bounds_.row(1) << CUBOID_WORKSPACE_MIN_Y, CUBOID_WORKSPACE_MAX_Y, 1;
-    visual_tools_->random_pose_bounds_.row(2) << CUBOID_WORKSPACE_MIN_Z, CUBOID_WORKSPACE_MAX_Z, 1;
-    ROS_DEBUG_STREAM_NAMED("random","Bounds = \n" << visual_tools_->random_pose_bounds_);
+    visual_tools_->random_pose_bounds_.x_min_ = CUBOID_WORKSPACE_MIN_X; 
+    visual_tools_->random_pose_bounds_.x_max_ =  CUBOID_WORKSPACE_MAX_X;
+
+    visual_tools_->random_pose_bounds_.y_min_ = CUBOID_WORKSPACE_MIN_Y; 
+    visual_tools_->random_pose_bounds_.y_max_ =  CUBOID_WORKSPACE_MAX_Y;
+
+    visual_tools_->random_pose_bounds_.z_min_ = CUBOID_WORKSPACE_MIN_Z; 
+    visual_tools_->random_pose_bounds_.z_max_ =  CUBOID_WORKSPACE_MAX_Z;
 
     // Orientation 
     visual_tools_->generateRandomPose(cuboid_pose);
