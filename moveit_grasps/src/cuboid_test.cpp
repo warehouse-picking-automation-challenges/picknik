@@ -7,6 +7,18 @@
 namespace moveit_grasps
 {
 
+// Size and location for randomly generated cuboids
+static const double CUBOID_MIN_SIZE = 0.02;
+static const double CUBOID_MAX_SIZE = 0.15;
+static const double CUBOID_WORKSPACE_MIN_X = 0.01; 
+static const double CUBOID_WORKSPACE_MAX_X = 0.5;
+static const double CUBOID_WORKSPACE_MIN_Y = -0.5;
+static const double CUBOID_WORKSPACE_MAX_Y = 0.5;
+static const double CUBOID_WORKSPACE_MIN_Z = 0.0;
+static const double CUBOID_WORKSPACE_MAX_Z = 1.0;
+
+// TODO: verify max object size Open Hand can grasp
+static const double MODEL_T_MAX_GRASP_SIZE = 0.10;
 
 class CuboidGraspGeneratorTest
 {
@@ -18,6 +30,7 @@ private:
   double depth_;
   double width_;
   double height_;
+  double max_grasp_size_;
   geometry_msgs::Pose cuboid_pose_;
   moveit_grasps::GraspsPtr grasps_;
   moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
@@ -48,7 +61,7 @@ public:
     ROS_INFO_STREAM_NAMED("init", "Planning Group: " << planning_group_name_);
 
     // set up rviz
-    visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("base_link","/rviz_visual_tools"));
+    visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("base","/rviz_visual_tools"));
     visual_tools_->setMuted(false);
     visual_tools_->loadMarkerPub();
 
@@ -67,7 +80,7 @@ public:
     depth_ = CUBOID_MIN_SIZE;
     width_ = CUBOID_MIN_SIZE;
     height_ = CUBOID_MIN_SIZE;
-
+    max_grasp_size_ = MODEL_T_MAX_GRASP_SIZE;
     // Seed random
     srand(ros::Time::now().toSec());
 
@@ -89,7 +102,8 @@ public:
     
       possible_grasps_.clear();
 
-      grasps_->generateCuboidGrasps( visual_tools_->convertPose(cuboid_pose_), depth_, width_, height_, grasp_data_, possible_grasps_);
+      grasps_->generateCuboidGrasps( visual_tools_->convertPose(cuboid_pose_), depth_, width_, height_, 
+                                     max_grasp_size_, grasp_data_, possible_grasps_);
 
       //visual_tools_->publishAnimatedGrasps(possible_grasps_, ee_jmg_);
 
@@ -104,7 +118,8 @@ public:
 
   }
 
-  void animateGripperOpenClose(int number_of_trials) {
+  void animateGripperOpenClose(int number_of_trials) 
+  {
     geometry_msgs::Pose pose;
     visual_tools_->generateEmptyPose(pose);
 

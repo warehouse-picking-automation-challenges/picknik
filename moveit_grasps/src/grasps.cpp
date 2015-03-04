@@ -451,13 +451,9 @@ Eigen::ArrayXXf Grasps::generateCuboidGraspPoints(double length, double width, d
         cornerX + radius * cos((j * M_PI / 2) + i * corner_delta), 
         cornerY + radius * sin((j * M_PI / 2) + i * corner_delta), 0;
     }
-    ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points", "corners =\n" << corners);
-
     points.block(offset, 0, corner_array_size, 3) = corners;
-    ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points", "points =\n" << points);
-
     offset += corner_array_size;
-    ROS_DEBUG_STREAM_NAMED("cuboid_grasp_points", "offset = " << offset);
+
   }
 
   // get angle from centroid to grasp point
@@ -617,22 +613,22 @@ bool Grasps::generateCuboidAxisGrasps(const Eigen::Affine3d& cuboid_pose, float 
 }
 
 bool Grasps::generateCuboidGrasps(const Eigen::Affine3d& cuboid_pose, float depth, float width,float height, 
-                          const moveit_grasps::GraspData& grasp_data, std::vector<moveit_msgs::Grasp>& possible_grasps)
+                                  float max_grasp_size, const moveit_grasps::GraspData& grasp_data, std::vector<moveit_msgs::Grasp>& possible_grasps)
 {
   // generate grasps over axes that aren't too wide to grip with Open Hand
-  if (depth <= MODEL_T_MAX_GRASP_SIZE ) // depth = size along x-axis
+  if (depth <= max_grasp_size ) // depth = size along x-axis
   {
     ROS_INFO_STREAM_NAMED("cuboid_grasps","generating grasps around x-axis of cuboid");
     generateCuboidAxisGrasps(cuboid_pose, depth, width, height, X_AXIS, grasp_data, possible_grasps);
   }
 
-  if (width <= MODEL_T_MAX_GRASP_SIZE ) // width = size along y-axis
+  if (width <= max_grasp_size ) // width = size along y-axis
   {
     ROS_INFO_STREAM_NAMED("cuboid_grasps","generating grasps around y-axis of cuboid");
     generateCuboidAxisGrasps(cuboid_pose, depth, width, height, Y_AXIS, grasp_data, possible_grasps);
   }
 
-  if (height <= MODEL_T_MAX_GRASP_SIZE ) // height = size along z-axis
+  if (height <= max_grasp_size ) // height = size along z-axis
   {
     ROS_INFO_STREAM_NAMED("cuboid_grasps","generating grasps around z-axis of cuboid");
     generateCuboidAxisGrasps(cuboid_pose, depth, width, height, Z_AXIS, grasp_data, possible_grasps);

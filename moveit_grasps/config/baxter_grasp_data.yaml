@@ -7,15 +7,17 @@ left_hand:
     joints : ['left_gripper_l_finger_joint']
 
     #open position
-    pregrasp_posture : [-0.0125]
+    pregrasp_posture : [0.0095]
     pregrasp_time_from_start : 4.0
 
     #close position
-    grasp_posture : [0.0095]
+    grasp_posture : [-0.0125]
     grasp_time_from_start : 4.0
 
     #desired pose from end effector to grasp - [x,y,z]
-    grasp_pose_to_eef : [-0.14, 0, 0]
+    #grasp_pose_to_eef : [-0.14, 0, 0] # NOTE: use when tip of arm is NOT left_gripper
+    #grasp_pose_to_eef :  [-0.095, 0, 0] # NOTE: use when tip of arm is left_gripper. CALCULATED
+    grasp_pose_to_eef :  [-0.05, 0, 0] # NOTE: use when tip of arm is left_gripper. HACK
 
     #desired pose from end effector to grasp - [r, p, y]
     grasp_pose_to_eef_rotation : [0, 1.5708, 0] # 1.5707 = PI/2
@@ -31,11 +33,12 @@ right_hand:
     joints : ['right_gripper_l_finger_joint']
 
     #open position
-    pregrasp_posture : [0.0] #[-1.57]
+    pregrasp_posture : [0.49]
     pregrasp_time_from_start : 4.0
 
     #close position
-    grasp_posture : [1.57] 
+    grasp_posture : [1.25]
+    # grasp_posture : [1.5708] # THIS IS MAX CLOSURE, DANGEROUS
     grasp_time_from_start : 4.0
 
     #desired pose from end effector to grasp - [x,y,z]
