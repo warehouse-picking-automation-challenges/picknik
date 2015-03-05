@@ -126,6 +126,12 @@ public:
   bool moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg = NULL);
 
   /**
+   * \brief Move to any pose as defined in the SRDF
+   * \return true on success
+   */
+  bool moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name);
+
+  /**
    * \brief Get the XML of a SDF pose of joints
    * \return true on success
    */

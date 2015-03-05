@@ -232,6 +232,8 @@ bool APCManager::loadPlanningSceneMonitor()
     planning_scene_monitor_->startStateMonitor(JOINT_STATE_TOPIC, "/attached_collision_object");
     planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE,
                                                           "picknik_planning_scene");
+    ROS_WARN_STREAM_NAMED("temp","CHECK SCENE NAME");
+    //planning_scene_monitor_->getPlanningScene()->setName("picknik_planning_scene");
   }
   else
   {

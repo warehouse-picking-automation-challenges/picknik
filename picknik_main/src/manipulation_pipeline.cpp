@@ -340,7 +340,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         if (!openEndEffector(false, arm_jmg))
         {
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to close end effector");
-          return false;
+          //return false;
         }
 
         // Attach collision object
@@ -375,7 +375,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
 
         createCollisionWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
 
-        if (!moveToStartPosition(arm_jmg))
+        if (!moveToDropOffPosition(arm_jmg))
         {
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to plan");
           return false;
@@ -388,7 +388,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         if (!openEndEffector(true, arm_jmg))
         {
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to close end effector");
-          return false;
+          //return false;
         }
 
         // Delete from planning scene the product
@@ -503,47 +503,15 @@ const robot_model::JointModelGroup* ManipulationPipeline::chooseArm(const Eigen:
 
 bool ManipulationPipeline::moveToStartPosition(const robot_model::JointModelGroup* arm_jmg)
 {
-  // Get default arm(s) to move
-  if (!arm_jmg)
-    if (dual_arm_)
-      arm_jmg = both_arms_;
-    else
-      arm_jmg = right_arm_;
-
-  // Set start state to current state
-  getCurrentState();
-
-  moveit::core::RobotStatePtr start_state(new moveit::core::RobotState(*current_state_)); // Allocate robot states
-
-  // Set goal state to initial pose
-  if (!start_state->setToDefaultValues(arm_jmg, start_pose_))
-  {
-    ROS_ERROR_STREAM_NAMED("pipeline","Failed to set pose '" << start_pose_ << "' for planning group '" << arm_jmg->getName() << "'");
-    return false;
-  }
-
-  // Check if already in start position
-  if (statesEqual(*current_state_, *start_state, arm_jmg))
-  {
-    ROS_WARN_STREAM_NAMED("pipeline","Not planning motion because current state and goal state are close enough.");
-    return true;
-  }
-
-  // Plan
-  bool execute_trajectory = true;
-  if (!move(current_state_, start_state, arm_jmg, verbose_, execute_trajectory, show_database_))
-  {
-    ROS_ERROR_STREAM_NAMED("pipeline","Unable to move to start position");
-    return false;
-  }
-
-  // Open gripper
-  // TODO jmg might be both arms openEndEffector(true, jmg);
-
-  return true;
+  return moveToPose(arm_jmg, start_pose_);
 }
 
 bool ManipulationPipeline::moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg)
+{
+  return moveToPose(arm_jmg, dropoff_pose_);
+}
+
+bool ManipulationPipeline::moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name)
 {
   // Get default arm(s) to move
   if (!arm_jmg)
@@ -552,20 +520,20 @@ bool ManipulationPipeline::moveToDropOffPosition(const robot_model::JointModelGr
     else
       arm_jmg = right_arm_;
 
-  // Set start state to current state
+  // Set new state to current state
   getCurrentState();
 
-  moveit::core::RobotStatePtr start_state(new moveit::core::RobotState(*current_state_)); // Allocate robot states
+  moveit::core::RobotStatePtr new_state(new moveit::core::RobotState(*current_state_)); // Allocate robot states
 
   // Set goal state to initial pose
-  if (!start_state->setToDefaultValues(arm_jmg, dropoff_pose_))
+  if (!new_state->setToDefaultValues(arm_jmg, pose_name))
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Failed to set pose '" << dropoff_pose_ << "' for planning group '" << arm_jmg->getName() << "'");
     return false;
   }
 
-  // Check if already in start position
-  if (statesEqual(*current_state_, *start_state, arm_jmg))
+  // Check if already in new position
+  if (statesEqual(*current_state_, *new_state, arm_jmg))
   {
     ROS_WARN_STREAM_NAMED("pipeline","Not planning motion because current state and goal state are close enough.");
     return true;
@@ -573,9 +541,9 @@ bool ManipulationPipeline::moveToDropOffPosition(const robot_model::JointModelGr
 
   // Plan
   bool execute_trajectory = true;
-  if (!move(current_state_, start_state, arm_jmg, verbose_, execute_trajectory, show_database_))
+  if (!move(current_state_, new_state, arm_jmg, verbose_, execute_trajectory, show_database_))
   {
-    ROS_ERROR_STREAM_NAMED("pipeline","Unable to move to start position");
+    ROS_ERROR_STREAM_NAMED("pipeline","Unable to move to new position");
     return false;
   }
 

@@ -68,6 +68,8 @@ public:
    */
   MeshPublisher(bool verbose)
     : verbose_(verbose)
+    , test_rviz_visual_tools_(true)
+    , test_planning_scene_(true)
   {
     // Visualizer
     visual_tools_.reset(new mvt::MoveItVisualTools("/world", "/amazon_shelf_markers"));
@@ -75,17 +77,22 @@ public:
     visual_tools_->loadPlanningSceneMonitor();
     ros::spinOnce();
     ros::Duration(1.0).sleep();
-    
+
     visual_tools_->deleteAllMarkers();
     visual_tools_->removeAllCollisionObjects();
-    visual_tools_->triggerPlanningSceneUpdate();
-    visual_tools_->setManualSceneUpdating(true);
-    visual_tools_->enableBatchPublishing(true);
+    //visual_tools_->triggerPlanningSceneUpdate();
+    //visual_tools_->setManualSceneUpdating(true);
+    //visual_tools_->enableBatchPublishing(true);
 
+    ROS_INFO_STREAM_NAMED("mesh_publisher","MeshPublisher Ready.");
+  }
+
+  bool publishAll(double y)
+  {
     // TEST REGULAR MESHES -----------------------------
     // std::string home_dir = getenv("HOME");
     // if (false)
-    // {  
+    // {
     //   static const std::string pr2 = "file://" + home_dir + "/ros/mesh_models/amazon_picking_challenge/crayola_64_ct/textured_meshes/completed_tsdf_texture_mapped_mesh.dae";
     //   Eigen::Affine3d pose1 = Eigen::Affine3d::Identity();
     //   visual_tools_->publishMesh(pose1, pr2);
@@ -101,56 +108,73 @@ public:
     std::cout << "Directory: " << target_dir.string() << std::endl;
 
     Eigen::Affine3d pose = Eigen::Affine3d::Identity();
-    std::size_t counter = 1;
+    pose.translation().y() = y;
+    static std::size_t counter = 0;
 
     BOOST_FOREACH(fs::path const &p, std::make_pair(it, eod))
     {
+      if (!ros::ok())
+        return true;
+
       // Don't publish this mesh
       if (p.stem().string() == "kiva_pod")
         continue;
+      //if (p.stem().string() == "goal_bin")
+      //  continue;
 
       //ROS_DEBUG_STREAM_NAMED("temp","File: " << p.string());
       ROS_INFO_STREAM_NAMED("temp","Processing mesh " << p.stem().string());
 
-      // if (p.stem().string() != "goal_bin")
-      //   continue;
-      // std::cout << "HERE " << std::endl;
-
       processProductMeshes(p, pose);
       pose.translation().x() += 0.25;
-      visual_tools_->triggerBatchPublish();
+
       ros::Duration(0.1).sleep();
+
+      std::cout << std::endl;
+      std::cout << "Completed " << counter++ << " meshes" << std::endl;
     }
 
-
-    ROS_INFO_STREAM_NAMED("mesh_publisher","MeshPublisher Ready.");
+    return true;
   }
 
   bool processProductMeshes(fs::path const &p, Eigen::Affine3d pose)
   {
+    // Collision Name
+    static std::size_t counter = 0;
+    std::string collision_name = "object"+boost::lexical_cast<std::string>(counter++);
+
     // Show Label
     Eigen::Affine3d text_pose = pose;
     text_pose.translation().z() += 0.1;
     text_pose.translation().y() += 0.1;
-    visual_tools_->publishText(text_pose, p.filename().string(), rvt::WHITE, rvt::SMALL, false);
+    //visual_tools_->publishText(text_pose, p.filename().string(), rvt::WHITE, rvt::SMALL, false);
+    visual_tools_->publishText(text_pose, collision_name, rvt::WHITE, rvt::SMALL, false);
 
     // Show Product Axis
     visual_tools_->publishAxis(pose);
 
-    // Show Prodcut Display
-    // fs::path display_file_name("recommended.dae");
-    // fs::path display_mesh_path = p / display_file_name;    
-    // visual_tools_->publishMesh(pose, "file://" + display_mesh_path.string());
+    // Files
+    fs::path display_file_name("recommended.dae");
+    fs::path display_mesh_path = p / display_file_name;
+    fs::path collision_file_name("collision.stl");
+    fs::path collision_mesh_path = p / collision_file_name;
+
+    // Show Product Display
+    if (test_rviz_visual_tools_)
+    {
+      visual_tools_->publishMesh(pose, "file://" + display_mesh_path.string());
+      visual_tools_->triggerBatchPublish();
+    }
 
     // Show Product Collision
-    Eigen::Affine3d collision_pose = pose;
-    fs::path collision_file_name("collision.stl");
-    collision_pose.translation().y() += 0.2;
-    fs::path collision_mesh_path = p / collision_file_name;
-    static std::size_t counter = 0;
-    std::string collision_name = "object"+boost::lexical_cast<std::string>(counter++);
-    visual_tools_->publishCollisionMesh(collision_pose, collision_name, "file://" + collision_mesh_path.string(), rvt::RAND);
-    visual_tools_->triggerPlanningSceneUpdate();
+    if (test_planning_scene_)
+    {
+      Eigen::Affine3d collision_pose = pose;
+      collision_pose.translation().y() += 0.2;
+      visual_tools_->publishCollisionMesh(collision_pose, collision_name, "file://" + collision_mesh_path.string(), rvt::RAND);
+      //visual_tools_->publishCollisionMesh(collision_pose, collision_name, "file://" + display_mesh_path.string(), rvt::RAND);
+      //visual_tools_->triggerPlanningSceneUpdate();
+    }
   }
 
   /**
@@ -168,6 +192,9 @@ private:
 
   // Show more visual and console output, with general slower run time.
   bool verbose_;
+
+  bool test_rviz_visual_tools_;
+  bool test_planning_scene_;
 
 }; // end class
 
@@ -201,6 +228,16 @@ int main(int argc, char** argv)
   }
 
   picknik_main::MeshPublisher server(verbose);
+  for (double y = 0; y < 5; y += 0.5)
+  {
+    if (!ros::ok())
+      return 0;
+
+    std::cout << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+    std::cout << "Publishing y: " << y << std::endl;
+    server.publishAll(y);
+  }
 
   ROS_INFO_STREAM_NAMED("main", "Shutting down.");
   ros::shutdown();

@@ -429,7 +429,7 @@ bool ShelfObject::visualize() const
   }
 
   // Show goal bin
-  //goal_bin_->visualize(bottom_right_);
+  goal_bin_->visualize(bottom_right_);
 }
 
 bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool just_frame, bool show_all_products) const
