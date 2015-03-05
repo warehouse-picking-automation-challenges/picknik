@@ -49,6 +49,7 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
 
   // Load semantics
   getStringParameter(nh_, "start_pose", start_pose_);
+  getStringParameter(nh_, "dropoff_pose", dropoff_pose_);
   getStringParameter(nh_, "right_hand_name", right_hand_name_);
   getStringParameter(nh_, "left_hand_name", left_hand_name_);
   getStringParameter(nh_, "right_arm_name", right_arm_name_);
@@ -109,6 +110,7 @@ bool ManipulationPipeline::loadRobotStates()
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
     current_state_.reset(new moveit::core::RobotState(scene->getCurrentState()));
   }
+
   visuals_->visual_tools_->getSharedRobotState() = current_state_; // allow visual_tools to have the correct virtual joint
   robot_model_ = current_state_->getRobotModel();
 
@@ -306,11 +308,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         // #################################################################################################################
       case 6: statusPublisher("Moving to pre-grasp position");
 
-        // Get current state
-        {
-          planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
-          (*current_state_) = scene->getCurrentState();
-        }
+        getCurrentState();
         setStateWithOpenEE(true, current_state_);
 
         if (!move(current_state_, pre_grasp_state, arm_jmg, verbose, execute_trajectory, show_database_))
@@ -460,10 +458,7 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
   ROS_INFO_STREAM_NAMED("pipeline","Filtering grasps by collision");
 
   // Filter grasps based on collision
-  {
-    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
-    (*current_state_) = scene->getCurrentState();
-  }
+  getCurrentState();
   setStateWithOpenEE(true, current_state_); // to be passed to the grasp filter
   if (!grasp_filter_->filterGraspsInCollision(filtered_grasps, planning_scene_monitor_, arm_jmg, current_state_, verbose && false))
   {
@@ -516,10 +511,7 @@ bool ManipulationPipeline::moveToStartPosition(const robot_model::JointModelGrou
       arm_jmg = right_arm_;
 
   // Set start state to current state
-  {
-    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
-    (*current_state_) = scene->getCurrentState();
-  }
+  getCurrentState();
 
   moveit::core::RobotStatePtr start_state(new moveit::core::RobotState(*current_state_)); // Allocate robot states
 
@@ -549,6 +541,79 @@ bool ManipulationPipeline::moveToStartPosition(const robot_model::JointModelGrou
   // TODO jmg might be both arms openEndEffector(true, jmg);
 
   return true;
+}
+
+bool ManipulationPipeline::moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg)
+{
+  // Get default arm(s) to move
+  if (!arm_jmg)
+    if (dual_arm_)
+      arm_jmg = both_arms_;
+    else
+      arm_jmg = right_arm_;
+
+  // Set start state to current state
+  getCurrentState();
+
+  moveit::core::RobotStatePtr start_state(new moveit::core::RobotState(*current_state_)); // Allocate robot states
+
+  // Set goal state to initial pose
+  if (!start_state->setToDefaultValues(arm_jmg, dropoff_pose_))
+  {
+    ROS_ERROR_STREAM_NAMED("pipeline","Failed to set pose '" << dropoff_pose_ << "' for planning group '" << arm_jmg->getName() << "'");
+    return false;
+  }
+
+  // Check if already in start position
+  if (statesEqual(*current_state_, *start_state, arm_jmg))
+  {
+    ROS_WARN_STREAM_NAMED("pipeline","Not planning motion because current state and goal state are close enough.");
+    return true;
+  }
+
+  // Plan
+  bool execute_trajectory = true;
+  if (!move(current_state_, start_state, arm_jmg, verbose_, execute_trajectory, show_database_))
+  {
+    ROS_ERROR_STREAM_NAMED("pipeline","Unable to move to start position");
+    return false;
+  }
+
+  // Open gripper
+  // TODO jmg might be both arms openEndEffector(true, jmg);
+
+  return true;
+}
+
+bool ManipulationPipeline::getSRDFPose(const robot_model::JointModelGroup* jmg)
+{
+  // Get default arm(s) to move
+  if (!jmg)
+    if (dual_arm_)
+      jmg = both_arms_;
+    else
+      jmg = right_arm_;
+
+  const std::vector<const moveit::core::JointModel*> joints = jmg->getJointModels();
+
+  while(ros::ok())
+  {
+    ROS_INFO_STREAM("SDF Code for joint values pose:\n");
+
+    // Get current state after grasping
+    getCurrentState();
+
+    // Output XML
+    std::cout << "<group_state name=\"\" group=\"" << jmg->getName() << "\">\n";
+    for (std::size_t i = 0; i < joints.size(); ++i)
+    {
+      std::cout << "  <joint name=\"" << joints[i]->getName() <<"\" value=\"" 
+                << current_state_->getJointPositions(joints[i])[0] << "\" />\n";
+    }
+    std::cout << "</group_state>\n\n\n\n";
+
+    ros::Duration(4.0).sleep();
+  }
 }
 
 bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
@@ -787,11 +852,7 @@ bool ManipulationPipeline::generateApproachPath(const moveit::core::JointModelGr
 
 bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up)
 {
-  // Get current state after grasping
-  {
-    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
-    (*current_state_) = scene->getCurrentState();
-  }
+  getCurrentState();
 
   // Clear all collision objects
   visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
@@ -834,10 +895,7 @@ bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *
 bool ManipulationPipeline::executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg)
 {
   // Get current state after grasping
-  {
-    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
-    (*current_state_) = scene->getCurrentState();
-  }
+  getCurrentState();
 
   // Compute straight line in reverse from grasp
   Eigen::Vector3d approach_direction;
@@ -1441,6 +1499,12 @@ bool ManipulationPipeline::visualizeIKSolutions(std::vector<moveit_grasps::Grasp
   }
 
   return visuals_->visual_tools_->publishIKSolutions(ik_solutions, arm_jmg->getName(), display_time);
+}
+
+void ManipulationPipeline::getCurrentState()
+{
+  planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
+  (*current_state_) = scene->getCurrentState();
 }
 
 } // end namespace

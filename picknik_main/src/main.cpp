@@ -132,7 +132,14 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Verify shelf location");
       manager.testShelfLocation();
       break;
-    // case 4:
+    case 7:
+      ROS_INFO_STREAM_NAMED("main","Get SRDF pose");
+      manager.getPose();
+      break;
+    // case 8:
+    //   ROS_INFO_STREAM_NAMED("main"," mode");
+    //   break;
+    // case 9:
     //   ROS_INFO_STREAM_NAMED("main"," mode");
     //   break;
     default:

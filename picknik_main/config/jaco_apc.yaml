@@ -12,6 +12,7 @@ wait_after_grasp: 0.1
 
 # Semantics
 start_pose: HOME
+dropoff_pose: goal_bin_pose
 right_hand_name: gripper
 left_hand_name: gripper_DISABLED
 right_arm_name: manipulator
