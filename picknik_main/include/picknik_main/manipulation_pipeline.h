@@ -395,6 +395,7 @@ protected:
   
   // Remote control
   ros::Subscriber remote_control_;
+  bool use_remote_control_;
   bool next_step_ready_;
 
 }; // end class

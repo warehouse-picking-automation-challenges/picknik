@@ -38,6 +38,7 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   , use_experience_(use_experience)
   , show_database_(show_database)
   , use_logging_(true)
+  , use_remote_control_(true)
   , next_step_ready_(false)
 {
   // Load performance variables
@@ -103,8 +104,11 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   }
 
   // Subscribe to remote control topic
-  std::size_t queue_size = 10;
-  remote_control_ = nh_.subscribe("/remote_control", queue_size, &ManipulationPipeline::remoteCallback, this);
+  if (use_remote_control_)
+  {
+    std::size_t queue_size = 10;
+    remote_control_ = nh_.subscribe("/remote_control", queue_size, &ManipulationPipeline::remoteCallback, this);
+  }
 
   // Done
   ROS_INFO_STREAM_NAMED("pipeline","Pipeline Ready.");
@@ -246,27 +250,36 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
     jump_to = 0;
   }
 
-  ROS_INFO_STREAM_NAMED("pipeline","Waiting for remote control to be triggered to start");
+  if (use_remote_control_)
+  {
+    visuals_->start_state_->publishRobotState(current_state_, rvt::GREEN);    
+    ROS_INFO_STREAM_NAMED("pipeline","Waiting for remote control to be triggered to start");
+  }
 
   // Jump to a particular step in the manipulation pipeline
   std::size_t step = jump_to;
   while(ros::ok())
   {
-    // Wait until next step is ready
-    if (!next_step_ready_)
+    if (use_remote_control_)
     {
-      ros::Duration(0.25).sleep();
-      continue;
+      std::cout << std::endl;
+      std::cout << std::endl;
+      std::cout << "Ready for step: " << step << std::endl;
+      // Wait until next step is ready
+      while (!next_step_ready_ && ros::ok())
+      {
+        ros::Duration(0.25).sleep();
+      }
+      if (!ros::ok())
+        return false;
+      next_step_ready_ = false;
     }
     else
     {
-      next_step_ready_ = false;
+      std::cout << std::endl;
+      std::cout << std::endl;
+      std::cout << "Running step: " << step << std::endl;
     }
-
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << "Running step: " << step << std::endl;
-
 
     switch (step)
     {
@@ -312,17 +325,29 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
           ROS_ERROR_STREAM_NAMED("pipeline","No grasps found");
           return false;
         }
-        break;
-
-        // #################################################################################################################
-      case 3: statusPublisher("Setting the-grasp (actual grasp)");
 
         the_grasp_state->setJointGroupPositions(arm_jmg, chosen.grasp_ik_solution_);
         setStateWithOpenEE(true, the_grasp_state);
+
+        if (use_remote_control_)
+        {
+          visuals_->visual_tools_->publishRobotState(the_grasp_state, rvt::PURPLE);
+        }
+
         break;
 
         // #################################################################################################################
+      case 3: // Not implemented
+
+        step++;
+
+        // #################################################################################################################
       case 4: statusPublisher("Get pre-grasp by generateApproachPath()");
+
+        if (use_remote_control_)
+        {
+          visuals_->visual_tools_->hideRobot();
+        }
 
         if (!generateApproachPath(arm_jmg, approach_trajectory_msg, pre_grasp_state, the_grasp_state, verbose))
         {
@@ -402,7 +427,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         break;
 
         // #################################################################################################################
-      case 11: statusPublisher("Moving back to INITIAL position");
+      case 11: statusPublisher("Placing product in bin");
 
         createCollisionWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
 
@@ -427,7 +452,13 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
 
         // Unattach from EE
         visuals_->visual_tools_->cleanupACO( order.product_->getCollisionName() ); // use unique name
+        visuals_->visual_tools_->cleanupCO( order.product_->getCollisionName() ); // use unique name
+        break;
 
+      // #################################################################################################################
+      case 13: statusPublisher("Moving to initial position");
+
+        moveToStartPosition();
 
         // #################################################################################################################
       default:
@@ -613,7 +644,6 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
 {
   if (verbose)
   {
-    ROS_INFO_STREAM_NAMED("pipeline","Showing start and goal state");
     visuals_->start_state_->publishRobotState(start, rvt::GREEN);
     visuals_->goal_state_->publishRobotState(goal, rvt::ORANGE);
   }
@@ -897,7 +927,7 @@ bool ManipulationPipeline::executeRetreatPath(const moveit::core::JointModelGrou
   // Compute straight line in reverse from grasp
   Eigen::Vector3d approach_direction;
   approach_direction << -1, 0, 0; // backwards towards robot body
-  double desired_approach_distance = 0.2; //0.15;
+  double desired_approach_distance = 0.25; //0.15;
   double path_length;
   std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
   bool reverse_path = false;
@@ -1180,7 +1210,6 @@ bool ManipulationPipeline::openEndEffector(bool open, const robot_model::JointMo
   // Show the change in end effector
   if (verbose_)
   {
-    ROS_INFO_STREAM_NAMED("pipeline","Showing start and goal state");
     visuals_->start_state_->publishRobotState(current_state_, rvt::GREEN);
     visuals_->goal_state_->publishRobotState(ee_traj->getLastWayPoint(), rvt::ORANGE);
   }

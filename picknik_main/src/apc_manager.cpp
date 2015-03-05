@@ -231,11 +231,8 @@ bool APCManager::loadPlanningSceneMonitor()
     plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
   }
 
-  std::cout << "before sleep " << std::endl;
   ros::spinOnce();
-  ros::Duration(1.5).sleep(); // when at 0.1, i believe sometimes vjoint not properly loaded
-  std::cout << "after sleep " << std::endl;
-
+  ros::Duration(0.5).sleep(); // when at 0.1, i believe sometimes vjoint not properly loaded
 
   if (planning_scene_monitor_->getPlanningScene())
   {
