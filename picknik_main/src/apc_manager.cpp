@@ -61,7 +61,8 @@ APCManager::APCManager(bool verbose, std::string order_fp)
   ROS_INFO_STREAM_NAMED("apc_manager","APC Manager Ready.");
 }
 
-bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t order_start, std::size_t jump_to)
+bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t order_start, std::size_t jump_to, 
+                          std::size_t num_orders)
 {
   // Create the pick place pipeline
   pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
@@ -71,9 +72,12 @@ bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t o
   std::cout << std::endl;
   ROS_INFO_STREAM_NAMED("apc_manager","Starting order ----------------------------");
 
+  // Decide how many products to pick
+  if (num_orders == 0)
+    num_orders = orders_.size();
+
   // Grasps things
-  //for (std::size_t i = order_start; i < 1; ++i)
-  for (std::size_t i = order_start; i < orders_.size(); ++i)
+  for (std::size_t i = order_start; i < num_orders; ++i)
   {
     pipeline_->orderPublisher(orders_[i]); // feedback
 
@@ -232,8 +236,7 @@ bool APCManager::loadPlanningSceneMonitor()
     planning_scene_monitor_->startStateMonitor(JOINT_STATE_TOPIC, "/attached_collision_object");
     planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE,
                                                           "picknik_planning_scene");
-    ROS_WARN_STREAM_NAMED("temp","CHECK SCENE NAME");
-    //planning_scene_monitor_->getPlanningScene()->setName("picknik_planning_scene");
+    planning_scene_monitor_->getPlanningScene()->setName("picknik_planning_scene");
   }
   else
   {

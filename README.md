@@ -178,6 +178,7 @@ Run APC Manager (main program) for JACO on hardware
 		12. Releasing product
     order - which json file to use, defaults to orders/simple.json
 	order_start - specify the index of the product to skip to, based on the ordering in the json file
+	num_orders -how many products to pick from the order, 0 = all
 	use_experience - whether to use cached planned (Lightning Database) or not
 	saving_enabled - allow new plans to be saved to experience database
 	show_database - whether to pause between motion plans and show all the saved paths (debug)

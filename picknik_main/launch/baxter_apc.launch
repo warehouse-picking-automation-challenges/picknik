@@ -18,6 +18,7 @@
   <arg name="use_experience" default="1" />
   <arg name="order" default="$(find picknik_main)/orders/simple.json" />
   <arg name="order_start" default="0" />
+  <arg name="num_orders" default="0" />
   <arg name="jump_to" default="0" />
   <arg name="show_database" default="0" />
 
@@ -48,7 +49,7 @@
   <node name="picknik_main" pkg="picknik_main" type="main" respawn="false" 
 	launch-prefix="$(arg launch_prefix)" output="screen" 
 	args="--mode $(arg mode) --verbose $(arg verbose) --order $(arg order) --order_start $(arg order_start) 
-	      --jump_to $(arg jump_to) 
+	      --jump_to $(arg jump_to) --num_orders $(arg num_orders) 
 	      --show_database $(arg show_database) --use_experience $(arg use_experience)">
 
     <!-- Settings of robot -->

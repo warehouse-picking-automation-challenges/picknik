@@ -373,7 +373,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         // #################################################################################################################
       case 11: statusPublisher("Moving back to INITIAL position");
 
-        createCollisionWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
+        //createCollisionWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
 
         if (!moveToDropOffPosition(arm_jmg))
         {

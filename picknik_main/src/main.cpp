@@ -33,6 +33,7 @@ int main(int argc, char** argv)
   std::size_t mode = 1;
   std::size_t order_start = 0;
   std::size_t jump_to = 0;
+  std::size_t num_orders = 0;
   bool verbose = false;
   bool use_experience = true;
   bool show_database = false;
@@ -96,6 +97,13 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Jumping to maniplation step " << jump_to);
       continue;
     }
+    if( std::string(argv[i]).compare("--num_orders") == 0 )
+    {
+      ++i;
+      num_orders = atoi(argv[i]);
+      ROS_INFO_STREAM_NAMED("main","Number of products to process for the order: " << num_orders);
+      continue;
+    }
   }
 
   if (order_fp.empty()) 
@@ -110,7 +118,7 @@ int main(int argc, char** argv)
   {
     case 1:
       ROS_INFO_STREAM_NAMED("main","Run actual Amazon Picking Challenge mode");
-      manager.runOrder(use_experience, show_database, order_start, jump_to);
+      manager.runOrder(use_experience, show_database, order_start, jump_to, num_orders);
       break;
     case 2:
       ROS_INFO_STREAM_NAMED("main","Train experience database mode");
