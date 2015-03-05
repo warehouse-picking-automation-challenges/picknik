@@ -4,7 +4,7 @@
   <arg name="mode" default="1" />
   <arg name="debug" default="false" />
   <arg name="verbose" default="1" />
-  <arg name="use_experience" default="1" />
+  <arg name="use_experience" default="0" />
   <arg name="order" default="$(find picknik_main)/orders/simple.json" />
   <arg name="order_start" default="0" />
   <arg name="num_orders" default="0" />

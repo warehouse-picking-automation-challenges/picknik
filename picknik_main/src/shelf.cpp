@@ -46,11 +46,14 @@ bool RectangleObject::visualize(const Eigen::Affine3d& trans) const
 {
   if (!high_res_mesh_path_.empty())
   {
+    Eigen::Affine3d centroid;
+    getCentroid(centroid);
+
     // Show axis
-    visuals_->visual_tools_display_->publishAxis(transform(bottom_right_, trans), 0.1/2, 0.01/2);
+    visuals_->visual_tools_display_->publishAxis(transform(centroid, trans), 0.1/2, 0.01/2);
 
     // Show full resolution mesh
-    return visuals_->visual_tools_display_->publishMesh(transform(bottom_right_, trans), high_res_mesh_path_);
+    return visuals_->visual_tools_display_->publishMesh(transform(centroid, trans), high_res_mesh_path_);
   }
 
   // Show simple geometric shape
@@ -63,10 +66,22 @@ bool RectangleObject::createCollisionBodies(const Eigen::Affine3d &trans) const
 {
   ROS_DEBUG_STREAM_NAMED("shelf","Creating collision rectangle with name " << name_);
 
-  // Show bin
+  // Check if mesh is provided
+  if (!collision_mesh_path_.empty())
+  {
+    Eigen::Affine3d centroid;
+    getCentroid(centroid);
+
+    // Show mesh
+    visuals_->visual_tools_->publishCollisionMesh(transform(centroid, trans), collision_object_name_, 
+                                                  collision_mesh_path_, color_);
+    return true;
+  }
+
+  // Just use basic rectangle
   visuals_->visual_tools_->publishCollisionRectangle( transform(bottom_right_, trans).translation(),
-                                            transform(top_left_, trans).translation(),
-                                            name_, color_ );
+                                                      transform(top_left_, trans).translation(),
+                                                      name_, color_ );
   return true;
 }
 
@@ -379,6 +394,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   goal_bin_->top_left_.translation().z() += 0.2032; // goal bin height
 
   goal_bin_->setHighResMeshPath("file://" + package_path + "/meshes/goal_bin/goal_bin.stl");
+  goal_bin_->setCollisionMeshPath("file://" + package_path + "/meshes/goal_bin/goal_bin.stl");
 
   // Load mesh file name
   high_res_mesh_path_ = "file://" + package_path + "/meshes/kiva_pod/meshes/pod_lowres.stl";
@@ -430,6 +446,14 @@ bool ShelfObject::visualize() const
 
   // Show goal bin
   goal_bin_->visualize(bottom_right_);
+
+  // Show workspace
+  static const double GAP_TO_SHELF = 0.1;
+  const double x1 = shelf_distance_from_robot_ - GAP_TO_SHELF;
+  const double x2 = shelf_distance_from_robot_ - GAP_TO_SHELF - 2;
+  const Eigen::Vector3d point1(x1, 1, 0);
+  const Eigen::Vector3d point2(x2, -1, 0.001);
+  visuals_->visual_tools_display_->publishRectangle(point1, point2, rvt::DARK_GREY);
 }
 
 bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool just_frame, bool show_all_products) const
@@ -572,7 +596,8 @@ ProductObject::ProductObject(VisualsPtr visuals,
   collision_mesh_path_ = "file://" + package_path + "/meshes/" + name_ + "/collision.stl";
 
   // Debug
-  ROS_DEBUG_STREAM_NAMED("shelf","Creating collision product with name " << collision_object_name_ << " from mesh " << high_res_mesh_path_ << " and collision mesh " << collision_mesh_path_);
+  ROS_DEBUG_STREAM_NAMED("shelf","Creating collision product with name " << collision_object_name_ << " from mesh " 
+                         << high_res_mesh_path_ << " and collision mesh " << collision_mesh_path_);
 }
 
 std::string ProductObject::getCollisionName() const
@@ -583,21 +608,6 @@ std::string ProductObject::getCollisionName() const
 void ProductObject::setCollisionName(std::string name)
 {
   collision_object_name_ = name;
-}
-
-bool ProductObject::createCollisionBodies(const Eigen::Affine3d &trans) const
-{
-  // Show product mesh
-  if (!visuals_->visual_tools_->publishCollisionMesh(transform(bottom_right_, trans), collision_object_name_, collision_mesh_path_, rvt::RAND))
-  {
-    // Fall back to publishing rectangles
-    visuals_->visual_tools_->publishCollisionRectangle( transform(bottom_right_, trans).translation(),
-                                              transform(top_left_, trans).translation(),
-                                              collision_object_name_, color_ );
-    return false;
-  }
-
-  return true;
 }
 
 bool getDoubleParameter(ros::NodeHandle &nh, const std::string &param_name, double &value)

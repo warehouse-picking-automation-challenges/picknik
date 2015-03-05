@@ -7,11 +7,11 @@ gripper:
     joints : ['jaco_joint_finger_1','jaco_joint_finger_2','jaco_joint_finger_3']
 
     #open position
-    pregrasp_posture : [0.697, 0.697, 0.697]
+    pregrasp_posture : [0.6, 0.6, 0.6]
     pregrasp_time_from_start : 4.0
 
     #close position
-    grasp_posture : [0.0, 0.0, 0.0]
+    grasp_posture : [0.697, 0.697, 0.697]
     grasp_time_from_start : 4.0
 
     #desired pose from end effector to grasp - [x,y,z]

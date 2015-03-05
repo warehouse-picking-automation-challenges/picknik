@@ -153,7 +153,7 @@ bool GraspFilter::filterGraspsHelper(const std::vector<moveit_msgs::Grasp>& poss
     num_threads = possible_grasps.size();
 
   // Debug
-  if(verbose || true)
+  if(verbose)
   {
     num_threads = 1;
     ROS_WARN_STREAM_NAMED("grasp_filter","Using only " << num_threads << " threads");
@@ -272,7 +272,7 @@ void GraspFilter::filterGraspThread(IkThreadStruct ik_thread_struct)
     ik_pose.header.frame_id = "jaco_link_base";
 
     //std::cout << "after link transform " << ik_pose << std::endl;
-    visual_tools_->publishArrow(ik_pose, rviz_visual_tools::ORANGE, rviz_visual_tools::LARGE, 0.1);
+    //visual_tools_->publishArrow(ik_pose, rviz_visual_tools::ORANGE, rviz_visual_tools::LARGE, 0.1);
 
     // if (ik_thread_struct.verbose_)
     // {
@@ -434,7 +434,6 @@ bool GraspFilter::filterGraspsInCollisionHelper(std::vector<GraspSolution>& poss
   for (std::vector<GraspSolution>::iterator grasp_it = possible_grasps.begin();
        grasp_it != possible_grasps.end(); /*it++*/)
   {
-    std::cout << "checking " << std::endl;
     // -----------------------------------------------------------------------------------
     // Check grasp ik solution
     robot_state_->setJointGroupPositions(arm_jmg, grasp_it->grasp_ik_solution_);

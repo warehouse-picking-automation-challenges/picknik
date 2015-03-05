@@ -223,7 +223,19 @@ bool APCManager::loadPlanningSceneMonitor()
                                                                                  tf_,
                                                                                  PLANNING_SCENE_MONITOR_NAME));
   ros::spinOnce();
-  ros::Duration(0.5).sleep();
+
+  // Create trajectory execution manager
+  if( !trajectory_execution_manager_ )
+  {
+    trajectory_execution_manager_.reset(new trajectory_execution_manager::TrajectoryExecutionManager(robot_model_));
+    plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
+  }
+
+  std::cout << "before sleep " << std::endl;
+  ros::spinOnce();
+  ros::Duration(1.5).sleep(); // when at 0.1, i believe sometimes vjoint not properly loaded
+  std::cout << "after sleep " << std::endl;
+
 
   if (planning_scene_monitor_->getPlanningScene())
   {
@@ -242,15 +254,6 @@ bool APCManager::loadPlanningSceneMonitor()
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Planning scene not configured");
     return false;
-  }
-  ros::spinOnce();
-  ros::Duration(0.5).sleep(); // when at 0.1, i believe sometimes vjoint not properly loaded
-
-  // Create trajectory execution manager
-  if( !trajectory_execution_manager_ )
-  {
-    trajectory_execution_manager_.reset(new trajectory_execution_manager::TrajectoryExecutionManager(robot_model_));
-    plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
   }
 
   // Wait for complete state to be recieved

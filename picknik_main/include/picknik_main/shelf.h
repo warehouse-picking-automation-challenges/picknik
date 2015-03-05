@@ -122,6 +122,22 @@ public:
     high_res_mesh_path_ = high_res_mesh_path;
   }
 
+  /**
+   * \brief Getter for CollisionMeshPath
+   */ 
+  const std::string& getCollisionMeshPath()
+  {
+    return collision_mesh_path_;
+  }
+  
+  /**
+   * \brief Setter for CollisionMeshPath
+   */
+  void setCollisionMeshPath(const std::string &collision_mesh_path)
+  {
+    collision_mesh_path_ = collision_mesh_path;
+  }
+
   // Poses relative to center bottom of robot
   Eigen::Affine3d bottom_right_;
   Eigen::Affine3d top_left_;
@@ -137,9 +153,12 @@ protected:
   // Pointer to a pre-loaded visual_tools_ object
   VisualsPtr visuals_;
 
-  // High resolution mesh
+  // Mesh paths
   std::string high_res_mesh_path_;
+  std::string collision_mesh_path_;
 
+  // A unique name to the world, whereas name_ can be duplicate e.g. oreo and oreo 
+  std::string collision_object_name_;
 };
 
 // -------------------------------------------------------------------------------------------------
@@ -270,6 +289,22 @@ public:
     return shelf_parts_;
   }
 
+  /**
+   * \brief Getter for GoalBin
+   */ 
+  RectangleObjectPtr getGoalBin()
+  {
+    return goal_bin_;
+  }
+  
+  /**
+   * \brief Setter for GoalBin
+   */
+  void setGoalBin(RectangleObjectPtr goal_bin)
+  {
+    goal_bin_ = goal_bin;
+  }
+  
   // Loaded shelf parameter values
   double shelf_distance_from_robot_;
   double shelf_width_;
@@ -301,9 +336,6 @@ private:
   // Bins of shelf
   BinObjectMap bins_;
 
-  // STL Model
-  std::string high_res_mesh_path_;
-
   RectangleObjectPtr goal_bin_;
 
 }; // class
@@ -329,16 +361,7 @@ public:
    */
   void setCollisionName(std::string name);
 
-  /**
-   * \brief Create collision bodies of rectangle
-   * \param trans - transform from parent container to current container
-   */
-  bool createCollisionBodies(const Eigen::Affine3d &trans) const;
-
 private:
-
-  std::string collision_object_name_;
-  std::string collision_mesh_path_;
 
 }; // class
 
