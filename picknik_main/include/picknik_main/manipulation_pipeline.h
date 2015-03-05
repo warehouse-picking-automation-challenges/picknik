@@ -113,9 +113,23 @@ public:
 
   /**
    * \brief Move both arms to their start location
+   * \param optionally specify which arm to use
    * \return true on success
    */
   bool moveToStartPosition(const robot_model::JointModelGroup* arm_jmg = NULL);
+
+  /**
+   * \brief Move to location to get rid of product
+   * \param optionally specify which arm to use
+   * \return true on success
+   */
+  bool moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg = NULL);
+
+  /**
+   * \brief Get the XML of a SDF pose of joints
+   * \return true on success
+   */
+  bool getSRDFPose(const robot_model::JointModelGroup* jmg = NULL);
 
   /**
    * \brief Send a planning request to moveit and execute
@@ -220,10 +234,10 @@ public:
   bool setStateWithOpenEE(bool open, moveit::core::RobotStatePtr robot_state);
 
   /**
-   * \brief Send trajectories to Robot
+   * \brief Send trajectory message to robot controllers
    * \return true on success
    */
-  bool executeTrajectoryMsg(moveit_msgs::RobotTrajectory trajectory_msg);
+  bool executeTrajectory(moveit_msgs::RobotTrajectory trajectory_msg);
 
   /**
    * \brief Prevent a product from colliding with the fingers
@@ -296,6 +310,11 @@ public:
   bool visualizeIKSolutions(std::vector<moveit_grasps::GraspSolution> filtered_grasps, const moveit::core::JointModelGroup* arm_jmg,
                             double display_time = 2);
 
+  /**
+   * \brief Update the current_state_ RobotState with latest from planning scene
+   */
+  void getCurrentState();
+
 protected:
 
   // A shared node handle
@@ -355,6 +374,7 @@ protected:
 
   // Robot-specific variables
   std::string start_pose_; // where to move robot to initially. should be for both arms if applicable
+  std::string dropoff_pose_; // where to discard picked items
   std::string right_hand_name_;
   std::string left_hand_name_;
   std::string right_arm_name_;

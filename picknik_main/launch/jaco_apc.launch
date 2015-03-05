@@ -15,7 +15,7 @@
   <!-- Command line arguments -->
   <arg name="mode" default="1" />
   <arg name="verbose" default="1" />
-  <arg name="use_experience" default="1" />
+  <arg name="use_experience" default="0" />
   <arg name="order" default="$(find picknik_main)/orders/simple.json" />
   <arg name="order_start" default="0" />
   <arg name="jump_to" default="0" />
@@ -64,7 +64,7 @@
     <rosparam command="load" file="$(find picknik_main)/config/amazon_shelf.yaml"/>
 
     <!-- Robot-specific settings -->
-    <rosparam command="load" file="$(find picknik_main)/config/jaco.yaml"/>
+    <rosparam command="load" file="$(find picknik_main)/config/jaco_apc.yaml"/>
 
     <!-- Only used by Thunder, read within moveit_ompl -->
     <param name="use_scratch"     if="$(arg use_scratch)" value="true"/>

@@ -159,6 +159,8 @@ Run APC Manager (main program) for JACO on hardware
 		3. Test end effectors mode
 		4. Only load JSON and visualize shelf
 		5. Raise the roof (go up and down)
+		6. Verify shelf location
+		7. Get the current pose of the robot for the SRDF
 	jump_to - which step in the manipulation pipeline to start on
 	  Steps:
 	    0. Move to initial position

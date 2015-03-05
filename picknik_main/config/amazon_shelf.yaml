@@ -31,3 +31,7 @@ retreat_velocity_scaling_factor: 0.8
 wait_before_grasp: 0.1
 wait_after_grasp: 0.1
 
+# Goal bin
+goal_bin_x: -0.51
+goal_bin_y: 1.02
+goal_bin_z: 0.98

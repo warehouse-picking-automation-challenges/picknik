@@ -605,7 +605,7 @@ bool Grasps::generateCuboidAxisGrasps(const Eigen::Affine3d& cuboid_pose, float 
 
     if (verbose_)
     {
-      publishGraspArrow(new_grasp.grasp_pose.pose, grasp_data, rviz_visual_tools::YELLOW );
+      // TEMP publishGraspArrow(new_grasp.grasp_pose.pose, grasp_data, rviz_visual_tools::YELLOW );
       visual_tools_->publishSphere(poseCenter, rviz_visual_tools::PINK, 0.01);
     }
 

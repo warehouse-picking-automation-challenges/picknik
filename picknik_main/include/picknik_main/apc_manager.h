@@ -86,6 +86,12 @@ public:
   bool testShelfLocation();
 
   /**
+   * \brief Get the XML of a SDF pose of joints
+   * \return true on success
+   */
+  bool getPose();
+
+  /**
    * \brief Load shelf contents
    * \return true on success
    */

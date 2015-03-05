@@ -83,18 +83,19 @@ public:
     visual_tools_->enableBatchPublishing(true);
 
     // TEST REGULAR MESHES -----------------------------
-    std::string home_dir = getenv("HOME");
-    if (false)
-    {  
-      static const std::string pr2 = "file://" + home_dir + "/ros/mesh_models/amazon_picking_challenge/crayola_64_ct/textured_meshes/completed_tsdf_texture_mapped_mesh.dae";
-      Eigen::Affine3d pose1 = Eigen::Affine3d::Identity();
-      visual_tools_->publishMesh(pose1, pr2);
-      ros::Duration(10).sleep();
-    }
+    // std::string home_dir = getenv("HOME");
+    // if (false)
+    // {  
+    //   static const std::string pr2 = "file://" + home_dir + "/ros/mesh_models/amazon_picking_challenge/crayola_64_ct/textured_meshes/completed_tsdf_texture_mapped_mesh.dae";
+    //   Eigen::Affine3d pose1 = Eigen::Affine3d::Identity();
+    //   visual_tools_->publishMesh(pose1, pr2);
+    //   ros::Duration(10).sleep();
+    // }
 
     // TEST COLLISION MESHES ---------------------------
 
-    fs::path target_dir(home_dir + "/ros/ws_baxter/src/picknik/picknik_main/meshes/");
+    std::string package_path = ros::package::getPath("picknik_main");
+    fs::path target_dir(package_path + "/meshes/");
 
     fs::directory_iterator it(target_dir), eod;
     std::cout << "Directory: " << target_dir.string() << std::endl;
@@ -111,10 +112,14 @@ public:
       //ROS_DEBUG_STREAM_NAMED("temp","File: " << p.string());
       ROS_INFO_STREAM_NAMED("temp","Processing mesh " << p.stem().string());
 
+      // if (p.stem().string() != "goal_bin")
+      //   continue;
+      // std::cout << "HERE " << std::endl;
+
       processProductMeshes(p, pose);
       pose.translation().x() += 0.25;
       visual_tools_->triggerBatchPublish();
-      ros::Duration(1).sleep();
+      ros::Duration(0.1).sleep();
     }
 
 
@@ -133,9 +138,9 @@ public:
     visual_tools_->publishAxis(pose);
 
     // Show Prodcut Display
-    fs::path display_file_name("recommended.dae");
-    fs::path display_mesh_path = p / display_file_name;    
-    visual_tools_->publishMesh(pose, "file://" + display_mesh_path.string());
+    // fs::path display_file_name("recommended.dae");
+    // fs::path display_mesh_path = p / display_file_name;    
+    // visual_tools_->publishMesh(pose, "file://" + display_mesh_path.string());
 
     // Show Product Collision
     Eigen::Affine3d collision_pose = pose;

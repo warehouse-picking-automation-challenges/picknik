@@ -89,7 +89,7 @@ bool LearningPipeline::generateTrainingGoals(ShelfObjectPtr shelf)
 
 bool LearningPipeline::visualizePose(Eigen::Affine3d grasp_pose, const moveit::core::JointModelGroup *arm_jmg)
 {
-  const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[arm_jmg].ee_group_);
+  const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[arm_jmg].ee_group_name_);
 
   // Rotate based on EE type
   grasp_pose = grasp_pose * grasp_datas_[arm_jmg].grasp_pose_to_eef_pose_;
@@ -122,7 +122,7 @@ bool LearningPipeline::generateTrainingGoalsBin(Eigen::Affine3d bin_transpose, E
 
 bool LearningPipeline::analyzeGrasps(const moveit::core::JointModelGroup* arm_jmg)
 {
-  const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[arm_jmg].ee_group_);
+  const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[arm_jmg].ee_group_name_);
 
   // Convert grasp vectors to grasp msgs
   std::vector<moveit_msgs::Grasp> possible_grasps;
@@ -355,7 +355,7 @@ bool LearningPipeline::testSingleGraspIK()
 {
   /*
   const moveit::core::JointModelGroup* jmg = left_arm_;
-  const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[jmg].ee_group_);
+  const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[jmg].ee_group_name_);
 
   BinExperienceData &data = bin_experience_data_["bin_H"];
 
