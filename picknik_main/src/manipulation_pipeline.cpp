@@ -1280,7 +1280,7 @@ bool ManipulationPipeline::executeTrajectory(moveit_msgs::RobotTrajectory trajec
   ROS_INFO_STREAM_NAMED("pipeline","Executing trajectory");
 
   // Debug
-  ROS_DEBUG_STREAM_NAMED("pipeline.trajectory","Executing trajectory:\n" << trajectory_msg);
+  ROS_DEBUG_STREAM_NAMED("pipeline.trajectory","Publishing:\n" << trajectory_msg);
 
   // Clear
   plan_execution_->getTrajectoryExecutionManager()->clear();
