@@ -89,20 +89,10 @@ public:
 
   bool publishAll(double y)
   {
-    // TEST REGULAR MESHES -----------------------------
-    // std::string home_dir = getenv("HOME");
-    // if (false)
-    // {
-    //   static const std::string pr2 = "file://" + home_dir + "/ros/mesh_models/amazon_picking_challenge/crayola_64_ct/textured_meshes/completed_tsdf_texture_mapped_mesh.dae";
-    //   Eigen::Affine3d pose1 = Eigen::Affine3d::Identity();
-    //   visual_tools_->publishMesh(pose1, pr2);
-    //   ros::Duration(10).sleep();
-    // }
-
     // TEST COLLISION MESHES ---------------------------
 
     std::string package_path = ros::package::getPath("picknik_main");
-    fs::path target_dir(package_path + "/meshes/");
+    fs::path target_dir(package_path + "/meshes/products/");
 
     fs::directory_iterator it(target_dir), eod;
     std::cout << "Directory: " << target_dir.string() << std::endl;
@@ -115,12 +105,6 @@ public:
     {
       if (!ros::ok())
         return true;
-
-      // Don't publish this mesh
-      if (p.stem().string() == "kiva_pod")
-        continue;
-      //if (p.stem().string() == "goal_bin")
-      //  continue;
 
       //ROS_DEBUG_STREAM_NAMED("temp","File: " << p.string());
       ROS_INFO_STREAM_NAMED("temp","Processing mesh " << p.stem().string());

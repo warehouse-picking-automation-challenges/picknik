@@ -592,8 +592,8 @@ ProductObject::ProductObject(VisualsPtr visuals,
   collision_object_name_ = name + "_" + boost::lexical_cast<std::string>(product_id);
 
   // Cache the object's mesh
-  high_res_mesh_path_ = "file://" + package_path + "/meshes/" + name_ + "/recommended.dae";
-  collision_mesh_path_ = "file://" + package_path + "/meshes/" + name_ + "/collision.stl";
+  high_res_mesh_path_ = "file://" + package_path + "/meshes/products/" + name_ + "/recommended.dae";
+  collision_mesh_path_ = "file://" + package_path + "/meshes/products/" + name_ + "/collision.stl";
 
   // Debug
   ROS_DEBUG_STREAM_NAMED("shelf","Creating collision product with name " << collision_object_name_ << " from mesh " 
