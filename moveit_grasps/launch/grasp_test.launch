@@ -13,7 +13,7 @@
   <arg     if="$(arg verbose)" name="command_args" value="--verbose" />
 
   <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
-  <include file="$(find jaco_moveit_config)/launch/planning_context.launch">
+  <include file="$(find jacob_moveit_config)/launch/planning_context.launch">
     <arg name="load_robot_description" value="true"/>
   </include>
 

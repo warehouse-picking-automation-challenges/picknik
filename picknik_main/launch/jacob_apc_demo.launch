@@ -16,12 +16,12 @@
   <arg name="use_scratch" default="1" />
 
   <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
-  <include file="$(find jaco_moveit_config)/launch/planning_context.launch">
+  <include file="$(find jacob_moveit_config)/launch/planning_context.launch">
     <arg name="load_robot_description" value="true"/>
   </include>
 
   <!-- Run the main MoveIt executable without trajectory execution (we do not have controllers configured by default) -->
-  <include file="$(find picknik_main)/launch/jaco_apc.launch">
+  <include file="$(find picknik_main)/launch/jacob_apc.launch">
     <arg name="mode" value="$(arg mode)"/>
     <arg name="debug" value="$(arg debug)"/>
     <arg name="verbose" value="$(arg verbose)"/>

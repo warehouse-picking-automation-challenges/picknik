@@ -134,7 +134,7 @@ bool ManipulationPipeline::loadRobotStates()
     right_arm_ = robot_model_->getJointModelGroup(right_arm_name_);
     both_arms_ = robot_model_->getJointModelGroup(both_arms_name_);
   }
-  else if (robot_model_->getName() == "jaco")
+  else if (robot_model_->getName() == "jacob")
   {
     dual_arm_ = false;
 
@@ -546,7 +546,7 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
 
 const robot_model::JointModelGroup* ManipulationPipeline::chooseArm(const Eigen::Affine3d& object_pose)
 {
-  if (!dual_arm_) // jaco
+  if (!dual_arm_) // jacob
   {
     return right_arm_;
   }
@@ -1242,7 +1242,7 @@ bool ManipulationPipeline::openEndEffector(bool open, const robot_model::JointMo
 
 bool ManipulationPipeline::setStateWithOpenEE(bool open, moveit::core::RobotStatePtr robot_state)
 {
-  if (!dual_arm_) // jaco mode
+  if (!dual_arm_) // jacob mode
   {
     if (open)
       grasp_datas_[right_arm_].setRobotStatePreGrasp( robot_state );

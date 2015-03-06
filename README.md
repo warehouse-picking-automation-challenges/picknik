@@ -115,27 +115,27 @@ Run APC Manager (main program) for BAXTER
 
     roslaunch picknik_main baxter_apc.launch
 	
-### Setup Simulation of JACO
+### Setup Simulation of JACOB
 
 Start roscore then load the URDF:
 
     roscore &
-    roslaunch jaco_moveit_config planning_context.launch load_robot_description:=true
+    roslaunch jacob_moveit_config planning_context.launch load_robot_description:=true
 
 Start this separate to speed up launching:
 
-    roslaunch picknik_main jaco_helpers.launch
+    roslaunch picknik_main jacob_helpers.launch
 
 Rviz Visualizers of robot states and debug markers in differnet windows
 
     roslaunch picknik_main moveit_display_rviz.launch
     roslaunch picknik_main moveit_rviz.launch
 
-Run APC Manager (main program) for JACO in simulation
+Run APC Manager (main program) for JACOB in simulation
 
-	roslaunch picknik_main jaco_apc_demo.launch
+	roslaunch picknik_main jacob_apc_demo.launch
 
-### Setup Hardware of JACO
+### Setup Hardware of JACOB
 
 Plugin in robot then
 
@@ -146,9 +146,9 @@ Rviz Visualizers of robot states and debug markers in differnet windows
     roslaunch picknik_main moveit_display_rviz.launch
     roslaunch picknik_main moveit_rviz.launch
 
-Run APC Manager (main program) for JACO on hardware
+Run APC Manager (main program) for JACOB on hardware
 
-	roslaunch picknik_main jaco_apc.launch
+	roslaunch picknik_main jacob_apc.launch
 
 ### PickNik Main Optional Arguments:
 
