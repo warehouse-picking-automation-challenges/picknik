@@ -41,7 +41,6 @@ private:
   // TODO: read in from param
 
   // arm description
-  std::string arm_;
   std::string ee_group_name_;
   std::string planning_group_name_;
 
@@ -52,11 +51,8 @@ public:
   CuboidGraspGeneratorTest(size_t number_of_trials, bool verbose) : nh_("~")
   {
     // get arm parameters
-    nh_.param("arm", arm_, std::string("right"));
-    nh_.param("ee_group_name", ee_group_name_, std::string(arm_ + "_hand"));
-    planning_group_name_ = arm_ + "_arm";
+    nh_.param("ee_group_name", ee_group_name_, std::string("left_hand"));
 
-    ROS_INFO_STREAM_NAMED("init", "Arm: " << arm_);
     ROS_INFO_STREAM_NAMED("init", "End Effector: " << ee_group_name_);
     ROS_INFO_STREAM_NAMED("init", "Planning Group: " << planning_group_name_);
 
@@ -106,6 +102,7 @@ public:
                                      max_grasp_size_, grasp_data_, possible_grasps_);
 
       //visual_tools_->publishAnimatedGrasps(possible_grasps_, ee_jmg_);
+      visual_tools_->publishGrasps(possible_grasps_, ee_jmg_);
 
       completed_trials++;
       if (completed_trials == number_of_trials)
