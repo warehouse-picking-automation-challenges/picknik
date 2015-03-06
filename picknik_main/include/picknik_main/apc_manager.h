@@ -52,6 +52,16 @@ public:
   {}
 
   /**
+   * \brief Remote control from Rviz
+   */
+  void remoteNextCallback(const std_msgs::Bool::ConstPtr& msg);
+
+  /**
+   * \brief Remote control from Rviz
+   */
+  void remoteRunCallback(const std_msgs::Bool::ConstPtr& msg);
+
+  /**
    * \brief Main program runner
    * \param Use an experience database in planning
    * \param Show the experience database after each plan
@@ -142,6 +152,10 @@ private:
 
   // Helper classes
   LearningPipelinePtr learning_;
+
+  // Remote control
+  ros::Subscriber remote_next_control_;
+  ros::Subscriber remote_run_control_;
 
 }; // end class
 

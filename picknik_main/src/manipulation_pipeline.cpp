@@ -103,13 +103,6 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
     logging_file_.open("/home/dave/ompl_storage/lightning_whole_body_logging.csv", std::ios::out | std::ios::app);
   }
 
-  // Subscribe to remote control topic
-  if (use_remote_control_)
-  {
-    std::size_t queue_size = 10;
-    remote_control_ = nh_.subscribe("/remote_control", queue_size, &ManipulationPipeline::remoteCallback, this);
-  }
-
   // Done
   ROS_INFO_STREAM_NAMED("pipeline","Pipeline Ready.");
 }
@@ -213,15 +206,6 @@ bool ManipulationPipeline::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder
   return true;
 }
 
-void ManipulationPipeline::remoteCallback(const geometry_msgs::Twist::ConstPtr& msg)
-{
-  if (msg->linear.x > 0 || msg->linear.y > 0 || msg->linear.z > 0 ||
-      msg->linear.x < 0 || msg->linear.y < 0 || msg->linear.z < 0)
-  {
-    next_step_ready_ = true;
-  }
-}
-
 bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t jump_to)
 {
   // Error check
@@ -266,7 +250,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
       std::cout << std::endl;
       std::cout << "Ready for step: " << step << std::endl;
       // Wait until next step is ready
-      while (!next_step_ready_ && ros::ok())
+      while (!next_step_ready_ && use_remote_control_ && ros::ok())
       {
         ros::Duration(0.25).sleep();
       }

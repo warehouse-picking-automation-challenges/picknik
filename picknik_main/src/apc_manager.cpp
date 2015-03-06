@@ -55,10 +55,27 @@ APCManager::APCManager(bool verbose, std::string order_fp)
   }
   loadShelfContents(order_fp);
 
+  // Subscribe to remote control topic
+  std::size_t queue_size = 10;
+  remote_next_control_ = nh_.subscribe("/picknik_main/next", queue_size, &APCManager::remoteNextCallback, this);
+  remote_run_control_ = nh_.subscribe("/picknik_main/run", queue_size, &APCManager::remoteRunCallback, this);
+
+
   // Visualize
   visualizeShelf();
 
   ROS_INFO_STREAM_NAMED("apc_manager","APC Manager Ready.");
+}
+
+void APCManager::remoteNextCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+  pipeline_->next_step_ready_ = true;
+}
+
+void APCManager::remoteRunCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+  std::cout << "use_remote_control = false " << std::endl;
+  pipeline_->use_remote_control_ = false;
 }
 
 bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t order_start, std::size_t jump_to, 

@@ -22,7 +22,7 @@
 // ROS
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
-#include <geometry_msgs/Twist.h>
+#include <std_msgs/Bool.h>
 
 // MoveIt
 #include <moveit/collision_detection/world.h>
@@ -92,11 +92,6 @@ public:
    * \return true on success
    */
   bool getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose);
-
-  /**
-   * \brief Remote control from Rviz
-   */
-  void remoteCallback(const geometry_msgs::Twist::ConstPtr& msg);
   
   /**
    * \brief Grasp object once we know the pose
@@ -327,6 +322,12 @@ public:
    */
   void getCurrentState();
 
+public:
+
+  // Remote control
+  bool use_remote_control_;
+  bool next_step_ready_;
+
 protected:
 
   // A shared node handle
@@ -393,11 +394,6 @@ protected:
   std::string left_arm_name_;
   std::string both_arms_name_;
   
-  // Remote control
-  ros::Subscriber remote_control_;
-  bool use_remote_control_;
-  bool next_step_ready_;
-
 }; // end class
 
 } // end namespace
