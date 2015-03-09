@@ -1,0 +1,18 @@
+# An action for calibrating the shelf
+
+# GOAL ======================================================
+
+# When a goal is recieved, start calibrating the shelf
+
+---
+# RESULT ====================================================
+
+# When you have enough data from calibration, return true
+bool succeeded
+
+---
+# FEEDBACK ==================================================
+
+# Value between 0 and 100. If not feedback is recieved after a certain
+# period of time the pipeline will skip this product
+float32 percent_complete
