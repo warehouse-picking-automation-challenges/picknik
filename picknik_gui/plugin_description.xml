@@ -1,0 +1,9 @@
+<library path="lib/libpicknik_gui">
+  <class name="picknik_gui/PickNik"
+         type="picknik_gui::PickNikPanel"
+         base_class_type="rviz::Panel">
+    <description>
+      A panel widget allowing control of the PickNik pipeline
+    </description>
+  </class>
+</library>

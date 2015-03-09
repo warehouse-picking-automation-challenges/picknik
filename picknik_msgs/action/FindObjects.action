@@ -1,0 +1,39 @@
+# An action for locating known objects
+
+# GOAL ======================================================
+
+# Name of the object we are trying to find at this instance
+string desired_object_name
+
+# Names of all the objects expected in the scene, 
+# including the previous 'desired_object_name' object
+string[] expected_objects_names
+
+# Current pose of the camera that is to remain fixed until result returned
+geometry_msgs/Pose camera_pose
+
+---
+# RESULT ====================================================
+
+# If the camera angle was bad or some other failure, return false
+bool succeeded
+
+# The pose in some frame with units radians/meters
+geometry_msgs/Pose desired_object_pose
+
+# Sometimes, you can only provide a bounding box/shape, even in 3d
+# This is in the pose frame
+shape_msgs/Mesh bounding_mesh
+
+# The poses of all the objects expected in the scene,
+geometry_msgs/Pose[] expected_objects_poses
+
+# Value between 0 and 1 for each expected object's confidence of its pose
+float32[] expected_object_confidence
+
+---
+# FEEDBACK ==================================================
+
+# Value between 0 and 100. If not feedback is recieved after a certain
+# period of time the pipeline will skip this product
+float32 percent_complete
