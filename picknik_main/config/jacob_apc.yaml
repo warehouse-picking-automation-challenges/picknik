@@ -18,3 +18,6 @@ left_hand_name: gripper_DISABLED
 right_arm_name: manipulator
 left_arm_name: manipulator_DISABLED
 both_arms_name: manipulator_DISABLED
+
+# Topics
+joint_state_topic: /jaco2/joint_states

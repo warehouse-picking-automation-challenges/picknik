@@ -248,18 +248,20 @@ bool APCManager::loadPlanningSceneMonitor()
     plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
   }
 
-  ros::spinOnce();
-  ros::Duration(0.5).sleep(); // when at 0.1, i believe sometimes vjoint not properly loaded
+  // Get the joint state topic
+  std::string joint_state_topic;
+  getStringParameter(nh_, "joint_state_topic", joint_state_topic);
 
   if (planning_scene_monitor_->getPlanningScene())
   {
     // Optional monitors to start:
     bool use_octomap_monitor = false; // this prevents a /tf warning
-    planning_scene_monitor_->startWorldGeometryMonitor(planning_scene_monitor::PlanningSceneMonitor::DEFAULT_COLLISION_OBJECT_TOPIC,
-                                                       planning_scene_monitor::PlanningSceneMonitor::DEFAULT_PLANNING_SCENE_WORLD_TOPIC,
-                                                       use_octomap_monitor);
+    //planning_scene_monitor_->startWorldGeometryMonitor(planning_scene_monitor::PlanningSceneMonitor::DEFAULT_COLLISION_OBJECT_TOPIC,
+    //                                                   "",
+                                                       //planning_scene_monitor::PlanningSceneMonitor::DEFAULT_PLANNING_SCENE_WORLD_TOPIC,
+    //                                                   use_octomap_monitor);
     //planning_scene_monitor_->startSceneMonitor("/move_group/monitored_planning_scene");
-    planning_scene_monitor_->startStateMonitor(JOINT_STATE_TOPIC, "/attached_collision_object");
+    planning_scene_monitor_->startStateMonitor(joint_state_topic, ""); ///attached_collision_object");
     planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE,
                                                           "picknik_planning_scene");
     planning_scene_monitor_->getPlanningScene()->setName("picknik_planning_scene");
@@ -269,6 +271,9 @@ bool APCManager::loadPlanningSceneMonitor()
     ROS_ERROR_STREAM_NAMED("apc_manager","Planning scene not configured");
     return false;
   }
+
+  ros::spinOnce();
+  ros::Duration(1.0).sleep(); // when at 0.1, i believe sometimes vjoint not properly loaded
 
   // Wait for complete state to be recieved
   std::vector<std::string> missing_joints;

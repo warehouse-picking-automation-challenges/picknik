@@ -55,7 +55,7 @@
 	      --show_database $(arg show_database) --use_experience $(arg use_experience)">
 
     <remap from="/picknik_main/fake_controller_joint_states" to="/robot/joint_states" if="$(arg fake_execution)"/>
-    <remap to="/jaco_arm_driver/out/joint_state" from="/robot/joint_states" unless="$(arg fake_execution)"/>
+    <!--remap to="/jaco2/joint_states" from="/robot/joint_states" unless="$(arg fake_execution)"/-->
 
     <!-- Settings of robot -->
     <rosparam command="load" file="$(find jacob_moveit_config)/config/kinematics.yaml"/>

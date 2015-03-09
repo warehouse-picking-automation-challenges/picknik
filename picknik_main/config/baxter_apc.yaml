@@ -17,3 +17,6 @@ left_hand_name: left_hand
 right_arm_name: right_arm
 left_arm_name: left_arm
 both_arms_name: both_arms
+
+# Topics
+joint_state_topic: /robot/joint_states
