@@ -137,15 +137,25 @@ Run APC Manager (main program) for JACOB in simulation
 
 ### Setup Hardware of JACOB
 
-Plugin in robot then
+There is a lot, sorry. The next two commands can be run quickly then that terminal window used again:
 
-	#roslaunch jaco_driver jaco_arm.launch use_urdf:=true
-	roslaunch jacob_control jacob_arm.launch
-
-Rviz Visualizers of robot states and debug markers in differnet windows
+    roscore &
+	roslaunch jacob_moveit_config planning_context.launch load_robot_description:=true
+	
+Rviz Visualizers of robot states and debug markers in differnet windows (different windows)
 
     roslaunch picknik_main moveit_display_rviz.launch
     roslaunch picknik_main moveit_rviz.launch
+	
+Plugin in robot then choose one of the 2 control methods:
+
+	roslaunch jacob_control jacob_arm_old.launch  # uses velocity+position trajectory controller
+	roslaunch jacob_control jacob_arm.launch      # experimental ros_control method
+
+Note: to switch between control methods you must edit several files:
+
+    rosed jacob_moveit_config moveit_controllers.yaml
+	rosed picknik_main jacob_apc.yaml
 
 Run APC Manager (main program) for JACOB on hardware
 
