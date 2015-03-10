@@ -465,10 +465,26 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
 
   // Generate all possible grasps
   std::vector<moveit_msgs::Grasp> possible_grasps;
-  grasps_->setVerbose(true);
-  double hand_roll = 0;
-  grasps_->generateAxisGrasps( object_pose, moveit_grasps::Y_AXIS, moveit_grasps::DOWN, moveit_grasps::HALF, hand_roll,
-                               grasp_datas_[arm_jmg], possible_grasps);
+
+  grasps_->setVerbose(false);
+
+  bool use_new_method = true;
+  if (use_new_method)
+  {
+    double depth = 0.05;
+    double width = 0.05;
+    double height = 0.05;
+    double max_grasp_size = 0.10; // TODO: verify max object size Open Hand can grasp
+    grasps_->generateCuboidGrasps( object_pose, depth, width, height, max_grasp_size,
+                                   grasp_datas_[arm_jmg], possible_grasps);
+  }
+  else
+  {
+    ROS_WARN_STREAM_NAMED("temp","USING OLD METHOD");
+    double hand_roll =
+    grasps_->generateAxisGrasps( object_pose, moveit_grasps::Y_AXIS, moveit_grasps::DOWN, moveit_grasps::HALF, hand_roll,
+                                 grasp_datas_[arm_jmg], possible_grasps);
+  }
 
   // Visualize
   if (verbose)
