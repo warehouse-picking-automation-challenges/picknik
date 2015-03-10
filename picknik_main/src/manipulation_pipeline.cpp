@@ -788,13 +788,13 @@ bool ManipulationPipeline::testUpAndDown()
     {
       std::cout << "Moving up --------------------------------------" << std::endl;
       executeLiftPath(arm_jmg, desired_lift_distance, true);
-      ros::Duration(5.).sleep();
+      ros::Duration(5.0).sleep();
     }
     else
     {
       std::cout << "Moving down ------------------------------------" << std::endl;
       executeLiftPath(arm_jmg, desired_lift_distance, false);
-      ros::Duration(5.).sleep();
+      ros::Duration(5.0).sleep();
     }
     ++i;
   }
@@ -1211,8 +1211,8 @@ bool ManipulationPipeline::openEndEffector(bool open, const robot_model::JointMo
 
   // Hack to speed up gripping
   // TODO sleep less
-  trajectory_msg.joint_trajectory.points.push_back(trajectory_msg.joint_trajectory.points[0]);
-  trajectory_msg.joint_trajectory.points.back().time_from_start = ros::Duration(2);
+  //trajectory_msg.joint_trajectory.points.push_back(trajectory_msg.joint_trajectory.points[0]);
+  //trajectory_msg.joint_trajectory.points.back().time_from_start = ros::Duration(2);
 
   // Execute trajectory
   if( !executeTrajectory(trajectory_msg) )

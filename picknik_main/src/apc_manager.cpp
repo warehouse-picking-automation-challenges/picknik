@@ -273,7 +273,7 @@ bool APCManager::loadPlanningSceneMonitor()
   }
 
   ros::spinOnce();
-  ros::Duration(1.0).sleep(); // when at 0.1, i believe sometimes vjoint not properly loaded
+  ros::Duration(0.5).sleep(); // when at 0.1, i believe sometimes vjoint not properly loaded
 
   // Wait for complete state to be recieved
   std::vector<std::string> missing_joints;
