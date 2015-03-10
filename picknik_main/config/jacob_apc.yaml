@@ -20,4 +20,5 @@ left_arm_name: manipulator_DISABLED
 both_arms_name: manipulator_DISABLED
 
 # Topics
-joint_state_topic: /jaco2/joint_states
+#joint_state_topic: /jaco2/joint_states
+joint_state_topic: /jaco2_arm_driver/out/joint_state

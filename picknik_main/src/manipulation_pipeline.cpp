@@ -786,6 +786,8 @@ bool ManipulationPipeline::testEndEffectors(bool open)
   openEndEffector(open, right_arm_);
   if (dual_arm_)
     openEndEffector(open, left_arm_);
+
+  return true;
 }
 
 bool ManipulationPipeline::testUpAndDown()
