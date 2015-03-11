@@ -123,7 +123,7 @@ Start roscore:
 
 Start this separate to speed up launching:
 
-    roslaunch picknik_main jacob_helpers.launch
+    roslaunch jacob_control jacob_visulization.launch
 
 Rviz Visualizers of robot states and debug markers in differnet windows
 
@@ -147,8 +147,8 @@ Rviz Visualizers of robot states and debug markers in differnet windows (differe
 	
 Plugin in robot then choose one of the 2 control methods:
 
-	roslaunch jacob_control jacob_arm_old.launch  # uses velocity+position trajectory controller
-	roslaunch jacob_control jacob_arm.launch      # experimental ros_control method
+	roslaunch jacob_control jacob_control_old.launch  # uses velocity+position trajectory controller
+	roslaunch jacob_control jacob_control.launch      # experimental ros_control method
 
 Note: to switch between control methods you must edit several files:
 
