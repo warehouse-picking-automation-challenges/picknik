@@ -123,7 +123,7 @@ Start roscore:
 
 Start this separate to speed up launching:
 
-    roslaunch jacob_control jacob_visulization.launch
+    roslaunch jacob_control jacob_sim_hardware.launch
 
 Rviz Visualizers of robot states and debug markers in differnet windows
 
@@ -132,7 +132,7 @@ Rviz Visualizers of robot states and debug markers in differnet windows
 
 Run APC Manager (main program) for JACOB in simulation
 
-	roslaunch picknik_main jacob_apc_demo.launch
+	roslaunch picknik_main jacob_apc.launch fake_execution:=true
 
 ### Setup Hardware of JACOB
 
