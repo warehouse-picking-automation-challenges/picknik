@@ -19,6 +19,11 @@ Unzip the file and put into a catkin workspace. Build using catkin_tools.
 
 ![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/baxter_apc_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
 
+Also, to reduce debug output add the following to your bashrc:
+
+    export ROSCONSOLE_CONFIG_FILE=~/ws_picknik/src/picknik/rosconsole.yaml
+    export ROSCONSOLE_FORMAT='${severity} ${logger}: ${message}'
+
 ## Run
 
 ### Generate Mock Amazon order
