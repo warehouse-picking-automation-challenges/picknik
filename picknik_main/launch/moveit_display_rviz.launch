@@ -4,6 +4,15 @@
   <arg unless="$(arg debug)" name="launch_prefix" value="" />
   <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
 
+  <!-- Choose whether to launch Baxter or Jacob -->
+  <arg name="jacob" default="true" />
+  <include file="$(find jacob_moveit_config)/launch/planning_context.launch" if="$(arg jacob)">
+    <arg name="load_robot_description" value="true"/>
+  </include>
+  <include file="$(find baxter_moveit_config)/launch/planning_context.launch" unless="$(arg jacob)">
+    <arg name="load_robot_description" value="true"/>
+  </include>
+
   <arg name="config" default="true" />
   <arg unless="$(arg config)" name="command_args" value="" />
   <arg     if="$(arg config)" name="command_args" value="-d $(find picknik_main)/launch/moveit_display.rviz" />

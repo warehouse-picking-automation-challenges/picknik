@@ -93,8 +93,8 @@ Start fake controllers
 
 Rviz Visualizers of robot states and debug markers in differnet windows
 
-    roslaunch picknik_main moveit_display_rviz.launch
-    roslaunch picknik_main moveit_rviz.launch
+    roslaunch picknik_main moveit_display_rviz.launch jacob:=false
+    roslaunch picknik_main moveit_rviz.launch jacob:=false
 
 Run APC Manager (main program) for BAXTER
 
@@ -108,8 +108,8 @@ Use Rethink's controllers
 
 Rviz Visualizers of robot states and debug markers in differnet windows
 
-    roslaunch picknik_main moveit_display_rviz.launch
-    roslaunch picknik_main moveit_rviz.launch
+    roslaunch picknik_main moveit_display_rviz.launch jacob:=false
+    roslaunch picknik_main moveit_rviz.launch jacob:=false
 
 Run APC Manager (main program) for BAXTER
 
@@ -117,10 +117,9 @@ Run APC Manager (main program) for BAXTER
 	
 ### Setup Simulation of JACOB
 
-Start roscore then load the URDF:
+Start roscore:
 
     roscore &
-    roslaunch jacob_moveit_config planning_context.launch load_robot_description:=true
 
 Start this separate to speed up launching:
 
@@ -128,7 +127,7 @@ Start this separate to speed up launching:
 
 Rviz Visualizers of robot states and debug markers in differnet windows
 
-    roslaunch picknik_main moveit_display_rviz.launch
+    roslaunch picknik_main moveit_display_rviz.launch 
     roslaunch picknik_main moveit_rviz.launch
 
 Run APC Manager (main program) for JACOB in simulation
@@ -137,10 +136,9 @@ Run APC Manager (main program) for JACOB in simulation
 
 ### Setup Hardware of JACOB
 
-There is a lot, sorry. The next two commands can be run quickly then that terminal window used again:
+Start roscore:
 
     roscore &
-	roslaunch jacob_moveit_config planning_context.launch load_robot_description:=true
 	
 Rviz Visualizers of robot states and debug markers in differnet windows (different windows)
 
