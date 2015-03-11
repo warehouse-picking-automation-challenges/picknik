@@ -1541,6 +1541,41 @@ void ManipulationPipeline::getCurrentState()
   (*current_state_) = scene->getCurrentState();
 }
 
+bool ManipulationPipeline::checkInCollision()
+{
+  // Copy planning scene that is locked
+  planning_scene::PlanningScenePtr cloned_scene;
+  {
+    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_);
+    cloned_scene = planning_scene::PlanningScene::clone(scene);
+    (*current_state_) = scene->getCurrentState();
+  }
+
+  // Check for collisions
+  bool verbose = true;
+  if (cloned_scene->isStateColliding(*current_state_, right_arm_->getName(), verbose))
+  {
+    ROS_WARN_STREAM_NAMED("pipeline","State is colliding");
+    // Show collisions
+    visuals_->visual_tools_->publishContactPoints(*current_state_, cloned_scene.get());
+  }
+  else
+  {
+    ROS_INFO_STREAM_NAMED("pipeline","State is not colliding");
+  }
+
+  // Check if satisfies bounds
+  double margin = 0.0001;
+  if (!current_state_->satisfiesBounds(margin))
+  {
+    ROS_WARN_STREAM_NAMED("pipeline","State does not satisfy bounds");
+  }
+  else
+  {
+    ROS_INFO_STREAM_NAMED("pipeline","State satisfies bounds");
+  }
+}
+
 } // end namespace
 
 namespace

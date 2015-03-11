@@ -322,6 +322,12 @@ public:
    */
   void getCurrentState();
 
+  /**
+   * \brief Check if current state is in collision
+   * \return true on success
+   */
+  bool checkInCollision();
+
 public:
 
   // Remote control

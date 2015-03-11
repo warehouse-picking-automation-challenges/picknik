@@ -170,6 +170,8 @@ Run APC Manager (main program) for JACOB on hardware
 		5. Raise the roof (go up and down)
 		6. Verify shelf location
 		7. Get the current pose of the robot for the SRDF
+		8. Go to goal bin pose
+		9. Check if current state is in collision
 	jump_to - which step in the manipulation pipeline to start on
 	  Steps:
 	    0. Move to initial position

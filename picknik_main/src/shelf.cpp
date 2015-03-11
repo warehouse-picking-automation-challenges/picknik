@@ -330,7 +330,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   base.top_left_.translation().x() += shelf_depth_;
   base.top_left_.translation().y() += shelf_width_;
   base.top_left_.translation().z() += first_bin_from_bottom_;
-  base.bottom_right_.translation().x() -= 1;
+  //base.bottom_right_.translation().x() -= 1;
 
   // Walls
   double previous_y = shelf_wall_width_ * 0.5;

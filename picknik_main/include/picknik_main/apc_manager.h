@@ -99,6 +99,18 @@ public:
   bool testShelfLocation();
 
   /**
+   * \brief Send to goal bin location
+   * \return true on success
+   */
+  bool testGoalBinPose();
+
+  /**
+   * \brief Check if current state is in collision
+   * \return true on success
+   */
+  bool testInCollision();
+
+  /**
    * \brief Get the XML of a SDF pose of joints
    * \return true on success
    */
@@ -119,6 +131,11 @@ public:
    * \brief Connect to the MoveIt! planning scene messages
    */
   bool loadPlanningSceneMonitor();
+
+  /**
+   * \brief Publish where the robot currently is
+   */
+  void publishCurrentState();
 
 private:
 

@@ -130,7 +130,6 @@ int main(int argc, char** argv)
       break;
     case 4:
       ROS_INFO_STREAM_NAMED("main","Only visualizing shelf... ready to shutdown.");
-      ros::spin();
       break;
     case 5:
        ROS_INFO_STREAM_NAMED("main","Raise the roof (go up and down)");
@@ -144,10 +143,22 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Get SRDF pose");
       manager.getPose();
       break;
-    // case 8:
+    case 8:
+      ROS_INFO_STREAM_NAMED("main","Going to goal_bin place pose");
+      manager.testGoalBinPose();
+      break;
+    case 9:
+      ROS_INFO_STREAM_NAMED("main","Check if current state is in collision");
+      manager.testInCollision();
+      ros::Duration(5.0).sleep();
+      break;
+    // case 10:
     //   ROS_INFO_STREAM_NAMED("main"," mode");
     //   break;
-    // case 9:
+    // case 11:
+    //   ROS_INFO_STREAM_NAMED("main"," mode");
+    //   break;
+    // case 12:
     //   ROS_INFO_STREAM_NAMED("main"," mode");
     //   break;
     default:
@@ -156,7 +167,6 @@ int main(int argc, char** argv)
 
   // Shutdown
   ROS_INFO_STREAM_NAMED("main", "Shutting down.");
-  ros::Duration(5.0).sleep();
   ros::shutdown();
 
   return 0;

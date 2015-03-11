@@ -60,7 +60,6 @@ APCManager::APCManager(bool verbose, std::string order_fp)
   remote_next_control_ = nh_.subscribe("/picknik_main/next", queue_size, &APCManager::remoteNextCallback, this);
   remote_run_control_ = nh_.subscribe("/picknik_main/run", queue_size, &APCManager::remoteRunCallback, this);
 
-
   // Visualize
   visualizeShelf();
 
@@ -190,6 +189,37 @@ bool APCManager::testShelfLocation()
   ROS_INFO_STREAM_NAMED("apc_manager","Done testing shelf location");
 }
 
+bool APCManager::testGoalBinPose()
+{
+  // Create the pick place pipeline
+  bool use_experience = false;
+  bool show_database = false;
+  pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
+                                           planning_scene_monitor_, plan_execution_,
+                                           shelf_, use_experience, show_database));
+  pipeline_->moveToDropOffPosition();
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Done going to goal bin pose");  
+}
+
+bool APCManager::testInCollision()
+{
+  // Create the pick place pipeline
+  bool use_experience = false;
+  bool show_database = false;
+  pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
+                                           planning_scene_monitor_, plan_execution_,
+                                           shelf_, use_experience, show_database));
+
+  while (ros::ok())
+  {
+    pipeline_->checkInCollision();
+    ros::Duration(1).sleep();
+  }
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Done checking if in collision");  
+}
+
 bool APCManager::getPose()
 {
   // Create the pick place pipeline
@@ -226,6 +256,9 @@ bool APCManager::visualizeShelf()
   shelf_->createCollisionBodies("", just_frame, show_all_products); // only show the frame
   shelf_->visualizeAxis(visuals_);
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
+
+  // Show the current state just for the heck of it
+  publishCurrentState();
 
   return true;
 }
@@ -298,5 +331,10 @@ bool APCManager::loadPlanningSceneMonitor()
   return true;
 }
 
+void APCManager::publishCurrentState()
+{
+  planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
+  visuals_->visual_tools_->publishRobotState(scene->getCurrentState());
+}
 
 } // end namespace

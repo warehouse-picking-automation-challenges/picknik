@@ -1,14 +1,12 @@
 # Shelf parameters
-shelf_distance_from_robot: 1.0
-
 shelf_width: 0.873
 shelf_height: 2.37
 shelf_depth: 0.875
 shelf_wall_width: 0.02
 
 # Bin parameters
-first_bin_from_bottom: 0.98
-#first_bin_from_bottom: 0.81 # If at correct competition height
+#first_bin_from_bottom: 0.98
+first_bin_from_bottom: 0.81 # If at correct competition height
 first_bin_from_right: 0.025
 bin_width: 0.250825
 bin_middle_width: 0.2921
@@ -32,6 +30,6 @@ wait_before_grasp: 0.1
 wait_after_grasp: 0.1
 
 # Goal bin
-goal_bin_x: -0.6
-goal_bin_y: 1.02
-goal_bin_z: 0.98
+goal_bin_x: -0.64
+goal_bin_y: 0.65
+goal_bin_z: 0.28
