@@ -185,6 +185,15 @@ std::vector<ProductObjectPtr>& BinObject::getProducts()
   return products_;
 }
 
+void BinObject::getProducts(std::vector<std::string> &products)
+{
+  products.clear();
+  for (std::size_t i = 0; i < products_.size(); ++i)
+  {
+    products.push_back(products_[i]->getName());
+  }
+}
+
 ProductObjectPtr BinObject::getProduct(const std::string& name)
 {
   // Find correct product

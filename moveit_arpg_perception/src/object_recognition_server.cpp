@@ -41,7 +41,7 @@
 // ROS
 #include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
-#include <object_recognition_msgs/ObjectRecognitionAction.h>
+#include <picknik_msgs/FindObjectsAction.h>
 #include <moveit_visual_tools/moveit_visual_tools.h>
 
 namespace moveit_arpg_perception
@@ -55,7 +55,7 @@ private:
   ros::NodeHandle nh_;
 
   // Actionlib
-  actionlib::SimpleActionServer<object_recognition_msgs::ObjectRecognitionAction> action_server_;
+  actionlib::SimpleActionServer<picknik_msgs::FindObjectsAction> action_server_;
 
   // Show more visual and console output, with general slower run time.
   bool verbose_;
@@ -71,7 +71,7 @@ public:
    */
   ObjectRecognitionServer(bool verbose)
     : verbose_(verbose),
-      action_server_("/recognize_objects", false) // Load the action server
+      action_server_("recognize_objects", false) // Load the action server
   {
 
     // Register the goal and feeback callbacks.
@@ -81,9 +81,8 @@ public:
     // Load collision object publisher
     visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("base","/moveit_visual_tools"));
 
-
     // Allow time to publish messages
-    ros::Duration(1.0).sleep();
+    ros::Duration(0.1).sleep();
     ros::spinOnce();
     ROS_INFO_STREAM_NAMED("obj_recognition","ObjectRecognitionServer Ready.");
   }
@@ -106,15 +105,14 @@ public:
     ROS_INFO_STREAM_NAMED("obj_recognition","Current recognized objected requested");
 
     // Accept the new goal
-    //object_recognition_msgs::ObjectRecognitionGoalConstPtr goal_;
-    //goal_ =
-    action_server_.acceptNewGoal();
+    picknik_msgs::FindObjectsGoalConstPtr goal;
+    goal = action_server_.acceptNewGoal();
+
 
     // ============================================================
     // Publish test objects
     // ============================================================
     // Here I will show several methods for publishing objects
-    geometry_msgs::Pose pose;
 
     /*
     // Create collision block
@@ -134,7 +132,7 @@ public:
     // ============================================================
     // Publish Mesh
     // ============================================================
-
+    /*
     // Header-type properties
     moveit_msgs::CollisionObject collision_obj;
     collision_obj.header.stamp = ros::Time::now();
@@ -149,27 +147,27 @@ public:
     int num_triangles = 50; // times 3
     for (std::size_t i = 0; i < num_triangles*3; ++i)
     {
-      visual_tools_->generateRandomPose(pose);
-      mesh1.vertices.push_back(pose.position);
+    visual_tools_->generateRandomPose(pose);
+    mesh1.vertices.push_back(pose.position);
     }
     // Attach verticies randomly
     for (std::size_t i = 0; i < num_triangles; ++i)
     {
-      // Create single triangle
-      shape_msgs::MeshTriangle t1;
-      for (std::size_t j = 0; j < 3; ++j)
-      {
-        t1.vertex_indices[j] = visual_tools_->iRand(0,num_triangles*3-1);
-      }
+    // Create single triangle
+    shape_msgs::MeshTriangle t1;
+    for (std::size_t j = 0; j < 3; ++j)
+    {
+    t1.vertex_indices[j] = visual_tools_->iRand(0,num_triangles*3-1);
+    }
 
-      // Add to mesh
-      mesh1.triangles.push_back(t1);
+    // Add to mesh
+    mesh1.triangles.push_back(t1);
     }
 
     collision_obj.meshes.push_back(mesh1);
 
     // Create pose of mesh
-    geometry_msgs::Pose mesh_pose;    
+    geometry_msgs::Pose mesh_pose;
     mesh_pose.position.x = 0.6;
     mesh_pose.position.y = -0.5;
     mesh_pose.position.z = -0.7;
@@ -181,12 +179,38 @@ public:
     visual_tools_->processCollisionObjectMsg(collision_obj);
     ros::Duration(1).sleep();
     ros::spinOnce();
-
+    */
 
     // ================================================================
+    // Return a dummy object
+    // ================================================================
+    picknik_msgs::FindObjectsResult result;
+    geometry_msgs::Pose pose;
+    rviz_visual_tools::RandomPoseBounds pose_bounds;
+
+    // If the camera angle was bad or some other failure, return false
+    result.succeeded = true;
+
+    // The pose in some frame with units radians/meters
+    visual_tools_->generateRandomPose(pose, pose_bounds);
+    result.desired_object_pose = pose;
+
+    // Sometimes, you can only provide a bounding box/shape, even in 3d
+    // This is in the pose frame
+    //result.bounding_mesh
+
+    // For each object in the bin
+    for (std::size_t i = 0; i < goal->expected_objects_names.size(); ++i)
+    {
+      // The poses of all the objects expected in the scene,
+      visual_tools_->generateRandomPose(pose, pose_bounds);
+      result.expected_objects_poses.push_back(pose);
+
+      // Value between 0 and 1 for each expected object's confidence of its pose
+      result.expected_object_confidence.push_back(1.0); // we're super confident ;-)
+    }
 
     // Mark action as completed
-    object_recognition_msgs::ObjectRecognitionResult result;
     action_server_.setSucceeded(result);
   }
 

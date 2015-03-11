@@ -33,6 +33,7 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   , verbose_(verbose)
   , visuals_(visuals)
   , planning_scene_monitor_(planning_scene_monitor)
+  , find_objects_action_("perception/recognize_objects")
   , plan_execution_(plan_execution)
   , shelf_(shelf)
   , use_experience_(use_experience)
@@ -107,6 +108,14 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   ROS_INFO_STREAM_NAMED("pipeline","Pipeline Ready.");
 }
 
+bool ManipulationPipeline::checkSystemReady()
+{
+  ROS_INFO_STREAM_NAMED("pipeline","Waiting for find block perception server.");
+  find_objects_action_.waitForServer();
+
+  return true;
+}
+
 bool ManipulationPipeline::loadRobotStates()
 {
   {
@@ -179,28 +188,62 @@ bool ManipulationPipeline::createCollisionWall()
 
 bool ManipulationPipeline::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose)
 {
-  // TODO: communicate with perception pipeline
-  const std::string& coll_obj_name = order.product_->getCollisionName();
+  if (false)
   {
-    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
+    // Communicate with perception pipeline
 
-    collision_detection::World::ObjectConstPtr world_obj;
-    world_obj = scene->getWorld()->getObject(coll_obj_name);
-    if (!world_obj)
+    // Setup goal
+    picknik_msgs::FindObjectsGoal find_object_goal;
+    find_object_goal.desired_object_name = order.product_->getName();
+
+    // Get all of the products in the bin
+    order.bin_->getProducts(find_object_goal.expected_objects_names);
+
+    // Get the camera pose
+    getCurrentState();
+    /// TODO - add a better link
+    find_object_goal.camera_pose = visuals_->visual_tools_->convertPose(current_state_->getGlobalLinkTransform("jaco2_end_effector"));
+
+    find_objects_action_.sendGoal(find_object_goal);
+
+    //wait for the action to return
+    bool finished_before_timeout = find_objects_action_.waitForResult(ros::Duration(30.0));
+
+    if (finished_before_timeout)
     {
-      ROS_ERROR_STREAM_NAMED("pipeline","Unable to find object " << coll_obj_name << " in planning scene world");
-      return false;
+      actionlib::SimpleClientGoalState state = find_objects_action_.getState();
+      ROS_INFO_STREAM_NAMED("pipeline","Percetion action finished: " << state.toString());
     }
-    if (!world_obj->shape_poses_.size())
+    else
     {
-      ROS_ERROR_STREAM_NAMED("pipeline","Object " << coll_obj_name << " has no shapes!");
-      return false;
+      ROS_ERROR_STREAM_NAMED("pipeline","Percetion action did not finish before the time out.");
     }
-    if (!world_obj->shape_poses_.size() > 1)
+  }
+  else // old method
+  {
+
+    const std::string& coll_obj_name = order.product_->getCollisionName();
     {
-      ROS_WARN_STREAM_NAMED("pipeline","Unknown situation - object " << coll_obj_name << " has more than one shape");
+      planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
+
+      collision_detection::World::ObjectConstPtr world_obj;
+      world_obj = scene->getWorld()->getObject(coll_obj_name);
+      if (!world_obj)
+      {
+        ROS_ERROR_STREAM_NAMED("pipeline","Unable to find object " << coll_obj_name << " in planning scene world");
+        return false;
+      }
+      if (!world_obj->shape_poses_.size())
+      {
+        ROS_ERROR_STREAM_NAMED("pipeline","Object " << coll_obj_name << " has no shapes!");
+        return false;
+      }
+      if (!world_obj->shape_poses_.size() > 1)
+      {
+        ROS_WARN_STREAM_NAMED("pipeline","Unknown situation - object " << coll_obj_name << " has more than one shape");
+      }
+      object_pose = world_obj->shape_poses_[0];
     }
-    object_pose = world_obj->shape_poses_[0];
   }
 
   return true;
@@ -1550,6 +1593,9 @@ bool ManipulationPipeline::checkInCollision()
     cloned_scene = planning_scene::PlanningScene::clone(scene);
     (*current_state_) = scene->getCurrentState();
   }
+
+  // Check robot state
+  visuals_->visual_tools_->publishRobotState(current_state_, rvt::PURPLE);
 
   // Check for collisions
   bool verbose = true;

@@ -15,14 +15,18 @@
 #ifndef PICKNIK_MAIN__MANIPULATION_PIPELINE
 #define PICKNIK_MAIN__MANIPULATION_PIPELINE
 
+// Picknik
 #include <picknik_main/shelf.h>
 #include <picknik_main/namespaces.h>
 #include <picknik_main/visuals.h>
+#include <picknik_msgs/FindObjectsAction.h>
 
 // ROS
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
 #include <std_msgs/Bool.h>
+#include <actionlib/client/simple_action_client.h>
+#include <actionlib/client/terminal_state.h>
 
 // MoveIt
 #include <moveit/collision_detection/world.h>
@@ -66,6 +70,12 @@ public:
    */
   ~ManipulationPipeline()
   {}
+
+  /**
+   * \brief Check if all communication is properly active
+   * \return true on success
+   */
+  bool checkSystemReady();
 
   /**
    * \brief Helper for initilizing the robot states
@@ -400,6 +410,10 @@ protected:
   std::string left_arm_name_;
   std::string both_arms_name_;
   
+  // Perception pipeline communication
+  actionlib::SimpleActionClient<picknik_msgs::FindObjectsAction> find_objects_action_;
+
+
 }; // end class
 
 } // end namespace

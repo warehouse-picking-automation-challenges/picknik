@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   moveit_visual_tools
   ompl_visual_tools
   cmake_modules
+  picknik_msgs
 )
 
 find_package(Eigen REQUIRED)
@@ -20,6 +21,7 @@ catkin_package(
     moveit_grasps
     moveit_visual_tools
     moveit_ompl
+    picknik_msgs
   DEPENDS
     Eigen
   INCLUDE_DIRS 
@@ -81,6 +83,7 @@ target_link_libraries(shelf
 add_library(manipulation_pipeline
   src/manipulation_pipeline.cpp
 )
+add_dependencies(manipulation_pipeline picknik_main_generate_messages_cpp)
 target_link_libraries(manipulation_pipeline
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}

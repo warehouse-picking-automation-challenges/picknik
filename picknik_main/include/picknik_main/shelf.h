@@ -207,6 +207,11 @@ public:
   std::vector<ProductObjectPtr>& getProducts();
 
   /**
+   * \brief Getter for the products names
+   */ 
+  void getProducts(std::vector<std::string> &products);
+
+  /**
    * \brief Getter for a product
    */ 
   ProductObjectPtr getProduct(const std::string& name);

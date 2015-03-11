@@ -86,6 +86,10 @@ bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t o
                                            shelf_, use_experience, show_database));
 
   std::cout << std::endl;
+
+  // Make sure we are connected to perception
+  pipeline_->checkSystemReady();
+
   ROS_INFO_STREAM_NAMED("apc_manager","Starting order ----------------------------");
 
   // Decide how many products to pick

@@ -5,7 +5,7 @@ project(moveit_arpg_perception)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  object_recognition_msgs
+  picknik_msgs
   roscpp
   actionlib
   moveit_visual_tools
@@ -68,7 +68,7 @@ find_package(Boost REQUIRED COMPONENTS system)
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   object_recognition_msgs
+#   picknik_msgs
 # )
 
 ###################################
@@ -84,7 +84,7 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES moveit_arpg_perception
   CATKIN_DEPENDS 
-    object_recognition_msgs 
+    picknik_msgs 
     roscpp
     actionlib
     moveit_visual_tools
