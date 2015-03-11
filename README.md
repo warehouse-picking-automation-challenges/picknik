@@ -98,7 +98,7 @@ Rviz Visualizers of robot states and debug markers in differnet windows
 
 Run APC Manager (main program) for BAXTER
 
-    roslaunch picknik_main baxter_apc.launch
+    roslaunch picknik_main baxter_apc.launch mode:=1
 	
 ### Setup Hardware of BAXTER
 
@@ -113,7 +113,7 @@ Rviz Visualizers of robot states and debug markers in differnet windows
 
 Run APC Manager (main program) for BAXTER
 
-    roslaunch picknik_main baxter_apc.launch
+    roslaunch picknik_main baxter_apc.launch mode:=1
 	
 ### Setup Simulation of JACOB
 
@@ -159,7 +159,7 @@ Note: to switch between control methods you must edit several files:
 
 Run APC Manager (main program) for JACOB on hardware
 
-	roslaunch picknik_main jacob_apc.launch
+	roslaunch picknik_main jacob_apc.launch mode:=1
 
 ### PickNik Main Optional Arguments:
 
