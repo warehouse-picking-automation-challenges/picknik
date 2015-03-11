@@ -73,12 +73,11 @@ void APCManager::remoteNextCallback(const std_msgs::Bool::ConstPtr& msg)
 
 void APCManager::remoteRunCallback(const std_msgs::Bool::ConstPtr& msg)
 {
-  std::cout << "use_remote_control = false " << std::endl;
-  pipeline_->use_remote_control_ = false;
+  pipeline_->autonomous_ = true;
 }
 
 bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t order_start, std::size_t jump_to, 
-                          std::size_t num_orders)
+                          std::size_t num_orders, bool autonomous)
 {
   // Create the pick place pipeline
   pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
@@ -89,6 +88,9 @@ bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t o
 
   // Make sure we are connected to perception
   pipeline_->checkSystemReady();
+
+  // Set autonomy
+  pipeline_->autonomous_ = autonomous;
 
   ROS_INFO_STREAM_NAMED("apc_manager","Starting order ----------------------------");
 
@@ -338,7 +340,7 @@ bool APCManager::loadPlanningSceneMonitor()
 void APCManager::publishCurrentState()
 {
   planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
-  visuals_->visual_tools_->publishRobotState(scene->getCurrentState());
+  visuals_->visual_tools_->publishRobotState(scene->getCurrentState(), rvt::PURPLE);
 }
 
 } // end namespace

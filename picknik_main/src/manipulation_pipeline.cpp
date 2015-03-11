@@ -39,7 +39,7 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   , use_experience_(use_experience)
   , show_database_(show_database)
   , use_logging_(true)
-  , use_remote_control_(true)
+  , autonomous_(false)
   , next_step_ready_(false)
 {
   // Load performance variables
@@ -277,7 +277,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
     jump_to = 0;
   }
 
-  if (use_remote_control_)
+  if (!autonomous_)
   {
     visuals_->start_state_->publishRobotState(current_state_, rvt::GREEN);    
     ROS_INFO_STREAM_NAMED("pipeline","Waiting for remote control to be triggered to start");
@@ -287,13 +287,13 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
   std::size_t step = jump_to;
   while(ros::ok())
   {
-    if (use_remote_control_)
+    if (!autonomous_)
     {
       std::cout << std::endl;
       std::cout << std::endl;
       std::cout << "Ready for step: " << step << std::endl;
       // Wait until next step is ready
-      while (!next_step_ready_ && use_remote_control_ && ros::ok())
+      while (!next_step_ready_ && !autonomous_ && ros::ok())
       {
         ros::Duration(0.25).sleep();
       }
@@ -356,7 +356,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         the_grasp_state->setJointGroupPositions(arm_jmg, chosen.grasp_ik_solution_);
         setStateWithOpenEE(true, the_grasp_state);
 
-        if (use_remote_control_)
+        if (!autonomous_)
         {
           visuals_->visual_tools_->publishRobotState(the_grasp_state, rvt::PURPLE);
         }
@@ -371,7 +371,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         // #################################################################################################################
       case 4: statusPublisher("Get pre-grasp by generateApproachPath()");
 
-        if (use_remote_control_)
+        if (!autonomous_)
         {
           visuals_->visual_tools_->hideRobot();
         }

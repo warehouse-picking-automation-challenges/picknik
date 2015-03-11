@@ -72,7 +72,7 @@ PickNikPanel::PickNikPanel( QWidget* parent )
 
   // Create a push button
   btn_run_ = new QPushButton(this);
-  btn_run_->setText("Continue");
+  btn_run_->setText("Auto");
   connect( btn_run_, SIGNAL( clicked() ), this, SLOT( moveRun() ) );
   
   // Buttons horizontal

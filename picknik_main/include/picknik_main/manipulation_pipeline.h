@@ -341,7 +341,7 @@ public:
 public:
 
   // Remote control
-  bool use_remote_control_;
+  bool autonomous_;
   bool next_step_ready_;
 
 protected:

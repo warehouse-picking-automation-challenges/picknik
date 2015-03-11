@@ -37,6 +37,7 @@ int main(int argc, char** argv)
   bool verbose = false;
   bool use_experience = true;
   bool show_database = false;
+  bool autonomous = false;
   std::string order_fp;
 
   // Parse command line arguments
@@ -58,6 +59,14 @@ int main(int argc, char** argv)
       }
       order_fp = argv[i];
       ROS_INFO_STREAM_NAMED("main","Using order file " << order_fp);
+      continue;
+    }
+
+    if( std::string(argv[i]).compare("--autonomous") == 0 )
+    {
+      ++i;
+      autonomous = atoi(argv[i]);
+      ROS_INFO_STREAM_NAMED("main","Using autonomous: " << autonomous);
       continue;
     }
 
@@ -118,7 +127,7 @@ int main(int argc, char** argv)
   {
     case 1:
       ROS_INFO_STREAM_NAMED("main","Run actual Amazon Picking Challenge mode");
-      manager.runOrder(use_experience, show_database, order_start, jump_to, num_orders);
+      manager.runOrder(use_experience, show_database, order_start, jump_to, num_orders, autonomous);
       break;
     case 2:
       ROS_INFO_STREAM_NAMED("main","Train experience database mode");
