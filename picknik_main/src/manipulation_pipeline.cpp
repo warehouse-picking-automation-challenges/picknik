@@ -176,8 +176,13 @@ bool ManipulationPipeline::createCollisionWall()
 
   // Visualize
   shelf_->visualizeAxis(visuals_);
-  visuals_->visual_tools_->publishCollisionWall( shelf_->shelf_distance_from_robot_, 0, 0, shelf_->shelf_width_ * 2.0, "SimpleCollisionWall",
-                                                 rvt::BROWN );
+  double width = shelf_->shelf_width_ * 2.0;
+  double x = shelf_->shelf_distance_from_robot_ + width / 2.0;
+  double y = 0;
+  double angle = 0;
+
+  visuals_->visual_tools_->publishCollisionWall( x, y, angle, width, "SimpleCollisionWall", rvt::BROWN );
+                                                 
   shelf_->getGoalBin()->createCollisionBodies(shelf_->bottom_right_);
 
   visuals_->visual_tools_->triggerPlanningSceneUpdate();

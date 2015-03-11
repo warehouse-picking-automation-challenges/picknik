@@ -47,13 +47,18 @@ Visualization Manager:
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: true
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        gantry:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_api_origin:
           Alpha: 1
           Show Axes: false
@@ -116,14 +121,13 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
       Name: Robot State
       Robot Alpha: 1
       Robot Description: robot_description
       Robot State Topic: /picknik_main/robot_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
       Visual Enabled: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
@@ -135,6 +139,11 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        gantry:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_api_origin:
           Alpha: 1
           Show Axes: false
@@ -197,7 +206,6 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
       Name: Planning Start State
       Robot Alpha: 1
       Robot Description: robot_description
@@ -216,6 +224,11 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        gantry:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_api_origin:
           Alpha: 1
           Show Axes: false
@@ -278,7 +291,6 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
       Name: Planning Goal State
       Robot Alpha: 1
       Robot Description: robot_description
@@ -297,6 +309,11 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        gantry:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_api_origin:
           Alpha: 1
           Show Axes: false
@@ -359,7 +376,6 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
       Name: OMPL State
       Robot Alpha: 1
       Robot Description: robot_description
@@ -373,7 +389,10 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Visual Tools
       Namespaces:
+        Arrow: true
         Cylinder: true
+        Line: true
+        Sphere: true
         Text: true
       Queue Size: 100
       Value: true
@@ -409,6 +428,11 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        gantry:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_api_origin:
           Alpha: 1
           Show Axes: false
@@ -471,7 +495,6 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
       Loop Animation: false
       Name: Trajectory
       Robot Alpha: 1
@@ -503,6 +526,11 @@ Visualization Manager:
           Expand Link Details: false
           Expand Tree: false
           Link Tree Style: Links in Alphabetic Order
+          gantry:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
           jaco2_api_origin:
             Alpha: 1
             Show Axes: false
@@ -565,7 +593,6 @@ Visualization Manager:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-            Value: true
         Robot Alpha: 0.5
         Show Robot Collision: false
         Show Robot Visual: false
@@ -606,22 +633,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.27449
+      Distance: 3.76155
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.679372
-        Y: -1.01119
-        Z: 2.38417e-07
+        X: 0.450134
+        Y: -0.120851
+        Z: 4.76836e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.284797
+      Pitch: 0.539797
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 2.13541
+      Yaw: 2.61043
     Saved: ~
 Window Geometry:
   Displays:
@@ -637,5 +664,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1162
-  X: 1521
+  X: 1511
   Y: 14
