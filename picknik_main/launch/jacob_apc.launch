@@ -55,6 +55,8 @@
 	      --order_start $(arg order_start) --jump_to $(arg jump_to) --num_orders $(arg num_orders) 
 	      --show_database $(arg show_database) --use_experience $(arg use_experience)">
 
+    <remap from="/picknik_main/next" to="/jacob/button1"/>
+
     <remap from="/picknik_main/fake_controller_joint_states" to="/robot/joint_states" if="$(arg fake_execution)"/>
     <!--remap to="/jaco2/joint_states" from="/robot/joint_states" unless="$(arg fake_execution)"/-->
 

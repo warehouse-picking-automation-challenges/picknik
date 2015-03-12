@@ -193,7 +193,7 @@ bool ManipulationPipeline::createCollisionWall()
   // Visualize
   shelf_->visualizeAxis(visuals_);
   double width = shelf_->shelf_width_ * 2.0;
-  double x = shelf_->shelf_distance_from_robot_ + width / 2.0;
+  double x = shelf_->shelf_distance_from_robot_ + 0.1 / 2;
   double y = 0;
   double angle = 0;
 
@@ -811,6 +811,10 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
   // Focus on execution (unless we are in debug mode)
   if (!error)
     visuals_->visual_tools_->hideRobot();
+
+  // Do not execute a bad trajectory
+  if (error)
+    return false;
 
   // Execute trajectory
   if (execute_trajectory)
