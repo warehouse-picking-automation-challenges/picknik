@@ -62,7 +62,7 @@ int main(int argc, char** argv)
       continue;
     }
 
-    if( std::string(argv[i]).compare("--autonomous") == 0 )
+    if( std::string(argv[i]).compare("--auto") == 0 )
     {
       ++i;
       autonomous = atoi(argv[i]);

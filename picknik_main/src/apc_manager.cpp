@@ -219,7 +219,7 @@ bool APCManager::testInCollision()
 
   while (ros::ok())
   {
-    pipeline_->checkInCollision();
+    pipeline_->checkCurrentCollisionAndBounds();
     ros::Duration(1).sleep();
   }
 

@@ -5,7 +5,6 @@ shelf_depth: 0.875
 shelf_wall_width: 0.02
 
 # Bin parameters
-#first_bin_from_bottom: 0.98
 first_bin_from_bottom: 0.81 # If at correct competition height
 first_bin_from_right: 0.025
 bin_width: 0.250825

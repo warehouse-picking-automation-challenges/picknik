@@ -14,6 +14,7 @@
 
   <!-- Command line arguments -->
   <arg name="mode" default="1" />
+  <arg name="auto" default="0" />
   <arg name="verbose" default="1" />
   <arg name="use_experience" default="0" />
   <arg name="order" default="$(find picknik_main)/orders/simple.json" />
@@ -50,8 +51,8 @@
   <!-- Main process -->
   <node name="picknik_main" pkg="picknik_main" type="main" respawn="false" 
 	launch-prefix="$(arg launch_prefix)" output="screen" 
-	args="--mode $(arg mode) --verbose $(arg verbose) --order $(arg order) --order_start $(arg order_start) 
-	      --jump_to $(arg jump_to) --num_orders $(arg num_orders) 
+	args="--mode $(arg mode) --auto $(arg auto) --verbose $(arg verbose) --order $(arg order) 
+	      --order_start $(arg order_start) --jump_to $(arg jump_to) --num_orders $(arg num_orders) 
 	      --show_database $(arg show_database) --use_experience $(arg use_experience)">
 
     <remap from="/picknik_main/fake_controller_joint_states" to="/robot/joint_states" if="$(arg fake_execution)"/>

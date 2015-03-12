@@ -333,11 +333,19 @@ public:
   void getCurrentState();
 
   /**
-   * \brief Check if current state is in collision
-   * \return true on success
+   * \brief Check if current state is in collision or out of bounds
+   * \return true if not in collision and not out of bounds
    */
-  bool checkInCollision();
+  bool checkCurrentCollisionAndBounds();
 
+  /**
+   * \brief Check if states are in collision or out of bounds
+   * \param start_state to check
+   * \param goal_state OPTIONAL to check
+   * \return true if not in collision and not out of bounds
+   */
+  bool checkCollisionAndBounds(const robot_state::RobotStatePtr &start_state, 
+                               const robot_state::RobotStatePtr &goal_state = robot_state::RobotStatePtr());
 public:
 
   // Remote control

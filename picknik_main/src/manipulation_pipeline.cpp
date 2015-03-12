@@ -110,8 +110,24 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
 
 bool ManipulationPipeline::checkSystemReady()
 {
+  // Check Perception
   ROS_INFO_STREAM_NAMED("pipeline","Waiting for find block perception server.");
   find_objects_action_.waitForServer();
+
+  // Check robot state valid
+  while (ros::ok() && !checkCurrentCollisionAndBounds())
+  {
+    ros::Duration(1.0).sleep();
+  }
+
+  // Check robot calibrated
+  // TODO
+
+  // Check gantry calibrated
+  // TODO
+  
+  // Check end effectors calibrated
+  // TODO
 
   return true;
 }
@@ -318,13 +334,21 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
       // #################################################################################################################
       case 0: statusPublisher("Moving to initial position");
 
-        moveToStartPosition();
+        if (!moveToStartPosition())
+        {
+          ROS_ERROR_STREAM_NAMED("pipeline","Unable to move to initial position");
+          return false;
+        }
         break;
 
         // #################################################################################################################
       case 1:  statusPublisher("Open end effectors");
 
-        openEndEffectors(true);
+        if (!openEndEffectors(true))
+        {
+          ROS_ERROR_STREAM_NAMED("pipeline","Unable to open end effectors");
+          return false;
+        }
         break;
 
         // #################################################################################################################
@@ -415,7 +439,8 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         // Run
         if( !executeTrajectory(approach_trajectory_msg) )
         {
-          ROS_ERROR_STREAM_NAMED("pipeline","Failed to execute trajectory");
+          ROS_ERROR_STREAM_NAMED("pipeline","Failed to move to the-grasp position");
+          return false;
         }
 
         ROS_INFO_STREAM_NAMED("pipeline","Waiting " << wait_before_grasp_ << " seconds before grasping");
@@ -428,7 +453,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         if (!openEndEffector(false, arm_jmg))
         {
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to close end effector");
-          //return false;
+          return false;
         }
 
         // Attach collision object
@@ -476,7 +501,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         if (!openEndEffector(true, arm_jmg))
         {
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to close end effector");
-          //return false;
+          return false;
         }
 
         // Delete from planning scene the product
@@ -490,7 +515,11 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
       // #################################################################################################################
       case 13: statusPublisher("Moving to initial position");
 
-        moveToStartPosition();
+        if (!moveToStartPosition())
+        {
+          ROS_ERROR_STREAM_NAMED("pipeline","Unable to move to initial position");
+          return false;
+        }
 
         // #################################################################################################################
       default:
@@ -690,6 +719,14 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
                                 const robot_model::JointModelGroup* arm_jmg, bool verbose, bool execute_trajectory,
                                 bool show_database)
 {
+  // Check validity of start and goal
+  if (!checkCollisionAndBounds(start, goal))
+  {
+    ROS_ERROR_STREAM_NAMED("pipeline","Potential issue with start and goal state, but perhaps this should not fail in the future");
+    return false;
+  }
+
+  // Visualize start and goal
   if (verbose)
   {
     visuals_->start_state_->publishRobotState(start, rvt::GREEN);
@@ -1035,6 +1072,7 @@ bool ManipulationPipeline::computeStraightLinePath( Eigen::Vector3d approach_dir
               << "\t" << tip_pose_start.translation().z() << std::endl;
   }
 
+  // Visualize start and goal state
   if (verbose_)
   {
     visuals_->visual_tools_->publishSphere(tip_pose_start, rvt::RED, rvt::LARGE);
@@ -1589,8 +1627,10 @@ void ManipulationPipeline::getCurrentState()
   (*current_state_) = scene->getCurrentState();
 }
 
-bool ManipulationPipeline::checkInCollision()
+bool ManipulationPipeline::checkCurrentCollisionAndBounds()
 {
+  bool result = true;
+
   // Copy planning scene that is locked
   planning_scene::PlanningScenePtr cloned_scene;
   {
@@ -1609,6 +1649,7 @@ bool ManipulationPipeline::checkInCollision()
     ROS_WARN_STREAM_NAMED("pipeline","State is colliding");
     // Show collisions
     visuals_->visual_tools_->publishContactPoints(*current_state_, cloned_scene.get());
+    result = false;
   }
   else
   {
@@ -1620,11 +1661,71 @@ bool ManipulationPipeline::checkInCollision()
   if (!current_state_->satisfiesBounds(margin))
   {
     ROS_WARN_STREAM_NAMED("pipeline","State does not satisfy bounds");
+    result = false;
   }
   else
   {
     ROS_INFO_STREAM_NAMED("pipeline","State satisfies bounds");
   }
+  return result;
+}
+
+bool ManipulationPipeline::checkCollisionAndBounds(const robot_state::RobotStatePtr &start_state, 
+                                                   const robot_state::RobotStatePtr &goal_state)
+{
+  bool result = true;
+  bool verbose = true;
+  double margin = 0.0001;
+
+  // Check if satisfies bounds  --------------------------------------------------------
+
+  // Start
+  if (!start_state->satisfiesBounds(margin))
+  {
+    ROS_WARN_STREAM_NAMED("pipeline","Start state does not satisfy bounds");
+    result = false;
+  }
+
+  // Goal
+  if (goal_state && !goal_state->satisfiesBounds(margin))
+  {
+    ROS_WARN_STREAM_NAMED("pipeline","Goal state does not satisfy bounds");
+
+
+    std::cout << "bounds: " << robot_model_->getJointModel("jaco2_joint_6")->getVariableBoundsMsg()[0] << std::endl;
+
+
+    result = false;
+  }
+
+  // Check for collisions --------------------------------------------------------
+
+  // Get planning scene lock
+  {
+    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_);
+
+    // Start
+    if (scene->isStateColliding(*start_state, right_arm_->getName(), verbose))
+    {
+      ROS_WARN_STREAM_NAMED("pipeline","Start state is colliding");
+      // Show collisions
+      visuals_->visual_tools_->publishContactPoints(*start_state, planning_scene_monitor_->getPlanningScene().get());
+      result = false;
+    }
+
+    goal_state->update();
+
+    // Goal
+    if (goal_state && scene->isStateColliding(*goal_state, right_arm_->getName(), verbose))
+    {
+      ROS_WARN_STREAM_NAMED("pipeline","Goal state is colliding");
+      // Show collisions
+      visuals_->visual_tools_->publishContactPoints(*goal_state, planning_scene_monitor_->getPlanningScene().get());
+      result = false;
+    }
+  }
+
+  return result;
 }
 
 } // end namespace
