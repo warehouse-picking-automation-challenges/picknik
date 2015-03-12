@@ -102,7 +102,13 @@ public:
    * \return true on success
    */
   bool getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose);
-  
+
+  /**
+   * \brief Wait until user presses a button
+   * \return true on success
+   */
+  bool waitForNextStep();  
+
   /**
    * \brief Grasp object once we know the pose
    * \return true on success

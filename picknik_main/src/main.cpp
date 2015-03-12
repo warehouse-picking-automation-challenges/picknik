@@ -45,7 +45,7 @@ int main(int argc, char** argv)
   {
     if (strcmp(argv[i], "--verbose") == 0)
     {
-      ROS_INFO_STREAM_NAMED("main","Running in VERBOSE mode (slower)");
+      ROS_DEBUG_STREAM_NAMED("main","Running in VERBOSE mode (slower)");
       verbose = true;
       continue;
     }
@@ -58,7 +58,7 @@ int main(int argc, char** argv)
         return 1;
       }
       order_fp = argv[i];
-      ROS_INFO_STREAM_NAMED("main","Using order file " << order_fp);
+      ROS_DEBUG_STREAM_NAMED("main","Using order file " << order_fp);
       continue;
     }
 
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
     {
       ++i;
       autonomous = atoi(argv[i]);
-      ROS_INFO_STREAM_NAMED("main","Using autonomous: " << autonomous);
+      ROS_DEBUG_STREAM_NAMED("main","Using autonomous: " << autonomous);
       continue;
     }
 
@@ -74,7 +74,7 @@ int main(int argc, char** argv)
     {
       ++i;
       use_experience = atoi(argv[i]);
-      ROS_INFO_STREAM_NAMED("main","Using experience: " << use_experience);
+      ROS_DEBUG_STREAM_NAMED("main","Using experience: " << use_experience);
       continue;
     }
 
@@ -82,35 +82,35 @@ int main(int argc, char** argv)
     {
       ++i;
       show_database = atoi(argv[i]);
-      ROS_INFO_STREAM_NAMED("main","Showing database: " << show_database);
+      ROS_DEBUG_STREAM_NAMED("main","Showing database: " << show_database);
       continue;
     }
     if( std::string(argv[i]).compare("--mode") == 0 )
     {
       ++i;
       mode = atoi(argv[i]);
-      //ROS_INFO_STREAM_NAMED("main","In mode " << mode);
+      //ROS_DEBUG_STREAM_NAMED("main","In mode " << mode);
       continue;
     }
     if( std::string(argv[i]).compare("--order_start") == 0 )
     {
       ++i;
       order_start = atoi(argv[i]);
-      ROS_INFO_STREAM_NAMED("main","Starting on order item " << order_start);
+      ROS_DEBUG_STREAM_NAMED("main","Starting on order item " << order_start);
       continue;
     }
     if( std::string(argv[i]).compare("--jump_to") == 0 )
     {
       ++i;
       jump_to = atoi(argv[i]);
-      ROS_INFO_STREAM_NAMED("main","Jumping to maniplation step " << jump_to);
+      ROS_DEBUG_STREAM_NAMED("main","Jumping to maniplation step " << jump_to);
       continue;
     }
     if( std::string(argv[i]).compare("--num_orders") == 0 )
     {
       ++i;
       num_orders = atoi(argv[i]);
-      ROS_INFO_STREAM_NAMED("main","Number of products to process for the order: " << num_orders);
+      ROS_DEBUG_STREAM_NAMED("main","Number of products to process for the order: " << num_orders);
       continue;
     }
   }

@@ -270,6 +270,24 @@ bool ManipulationPipeline::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder
   return true;
 }
 
+bool ManipulationPipeline::waitForNextStep()
+{
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << "Waiting for next step" << std::endl;
+
+    // Wait until next step is ready
+    while (!next_step_ready_ && !autonomous_ && ros::ok())
+    {
+      ros::Duration(0.25).sleep();
+    }
+    if (!ros::ok())
+      return false;
+    next_step_ready_ = false;
+
+  return true;
+}
+
 bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t jump_to)
 {
   // Error check
@@ -308,19 +326,10 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
   std::size_t step = jump_to;
   while(ros::ok())
   {
+
     if (!autonomous_)
     {
-      std::cout << std::endl;
-      std::cout << std::endl;
-      std::cout << "Ready for step: " << step << std::endl;
-      // Wait until next step is ready
-      while (!next_step_ready_ && !autonomous_ && ros::ok())
-      {
-        ros::Duration(0.25).sleep();
-      }
-      if (!ros::ok())
-        return false;
-      next_step_ready_ = false;
+      waitForNextStep();
     }
     else
     {
@@ -334,6 +343,10 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
       // #################################################################################################################
       case 0: statusPublisher("Moving to initial position");
 
+        // Clear the temporary purple robot state image
+        visuals_->visual_tools_->hideRobot();
+
+        // Move
         if (!moveToStartPosition())
         {
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to move to initial position");
@@ -400,10 +413,8 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         // #################################################################################################################
       case 4: statusPublisher("Get pre-grasp by generateApproachPath()");
 
-        if (!autonomous_)
-        {
-          visuals_->visual_tools_->hideRobot();
-        }
+        // Hide the purple robot
+        visuals_->visual_tools_->hideRobot();
 
         if (!generateApproachPath(arm_jmg, approach_trajectory_msg, pre_grasp_state, the_grasp_state, verbose))
         {
@@ -423,6 +434,8 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         getCurrentState();
         setStateWithOpenEE(true, current_state_);
 
+        createCollisionWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
+
         if (!move(current_state_, pre_grasp_state, arm_jmg, verbose, execute_trajectory, show_database_))
         {
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to plan");
@@ -433,8 +446,17 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         // #################################################################################################################
       case 7: statusPublisher("Cartesian move to the-grasp position");
 
+        // Create the collision objects
+        if (!setupPlanningScene( order.bin_->getName() ))
+        {
+          ROS_ERROR_STREAM_NAMED("pipeline","Unable to setup planning scene");
+          return false;
+        }
+
         // Visualize trajectory in Rviz display
         visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, wait_for_trajetory);
+
+        waitForNextStep();
 
         // Run
         if( !executeTrajectory(approach_trajectory_msg) )
@@ -816,6 +838,10 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
   if (error)
     return false;
 
+  // Confirm trajectory before continuing
+  if (!autonomous_)
+    waitForNextStep();
+
   // Execute trajectory
   if (execute_trajectory)
   {
@@ -1000,6 +1026,8 @@ bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *
   bool wait_for_trajetory = false;
   visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, wait_for_trajetory);
 
+  waitForNextStep();
+
   // Execute
   if( !executeTrajectory(cartesian_trajectory_msg) )
   {
@@ -1040,6 +1068,8 @@ bool ManipulationPipeline::executeRetreatPath(const moveit::core::JointModelGrou
   // Visualize trajectory in Rviz display
   bool wait_for_trajetory = false;
   visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, wait_for_trajetory);
+
+  waitForNextStep();
 
   // Execute
   if( !executeTrajectory(cartesian_trajectory_msg) )
