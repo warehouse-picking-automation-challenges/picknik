@@ -47,6 +47,8 @@
 //ARPG includes
 #include <Node/Node.h>
 #include "ExampleMessage.pb.h"
+#include "findObject.pb.h"
+#include "ObjectPose.pb.h"
 
 using std::string;
 
@@ -76,6 +78,8 @@ private:
   string nodeName;
   string ddtrNode;
   string ddtrGetObjects;
+  int seqToDDTR;
+  int seqFromDDTR;
   
 public:
 
@@ -102,7 +106,8 @@ public:
     n.init(nodeName);
     ddtrNode = "ddtr";
     ddtrGetObjects = "getObjects";
-    
+    seqToDDTR = 0;
+    seqFromDDTR = 0;
     ROS_INFO_STREAM_NAMED("obj_recognition","ObjectRecognitionServer Ready.");
   }
 
@@ -134,11 +139,22 @@ public:
 
     int res;
     FindObjectMsg sendMsg;
-    sendMsg.set_objectName
-    sendMsg.set_value("Requesting object");
-    n.call_rpc(rpc_call, sendMsg, sendMsg);
+    sendMsg.set_objectname(goal->desired_object_name);
+    for (int i=0; i<goal->expected_objects_names.size(); i++)
+      {
+	sendMsg.add_cellobjects(goal->expected_objects_names[i]);
+      }
+    
+    sendMsg.set_sequence(seqToDDTR++);
 
-    ROS_INFO("Got reply: [%s]", sendMsg.value().c_str());
+    ObjectPoseMsg recvMsg;
+    n.call_rpc(rpc_call, sendMsg, recvMsg);
+
+    ROS_INFO("Got object pose in reply : [%1.2f, %1.2f, %1.2f], seq %d",
+	     recvMsg.x(),
+	     recvMsg.y(),
+	     recvMsg.z(),
+	     recvMsg.sequence());
     // ============================================================
     // Publish test objects
     // ============================================================

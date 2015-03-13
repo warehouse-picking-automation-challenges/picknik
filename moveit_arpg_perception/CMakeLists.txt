@@ -30,7 +30,8 @@ find_package(MINIGLOG QUIET)
 #Generate Protobuf messages
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
 				 msgs/ExampleMessage.proto
-				 msgs/findObject.proto)
+				 msgs/findObject.proto
+				 msgs/ObjectPose.proto)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
