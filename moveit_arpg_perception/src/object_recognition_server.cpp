@@ -42,11 +42,13 @@
 #include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
 #include <picknik_msgs/FindObjectsAction.h>
+#include <tf/transform_datatypes.h>
+
 //#include <moveit_visual_tools/moveit_visual_tools.h>
 
 //ARPG includes
 #include <Node/Node.h>
-#include "ExampleMessage.pb.h"
+
 #include "findObject.pb.h"
 #include "ObjectPose.pb.h"
 
@@ -126,11 +128,11 @@ public:
    */
   void goalCallback()
   {
-    ROS_INFO_STREAM_NAMED("obj_recognition","Current recognized objected requested");
-
+    
     // Accept the new goal
     picknik_msgs::FindObjectsGoalConstPtr goal;
     goal = action_server_.acceptNewGoal();
+    ROS_INFO("obj_recognition: Current recognized objected requested: Looking for [%s]", goal->desired_object_name.c_str());
 
     //Tell DDTR that we need some info - pass the Node message 
 
@@ -148,9 +150,11 @@ public:
     sendMsg.set_sequence(seqToDDTR++);
 
     ObjectPoseMsg recvMsg;
+    ROS_INFO("obj_recognition: Requesting pose for object [%s] from Node [%s] via RPC", goal->desired_object_name.c_str(), rpc_call.c_str());
+    
     n.call_rpc(rpc_call, sendMsg, recvMsg);
 
-    ROS_INFO("Got object pose in reply : [%1.2f, %1.2f, %1.2f], seq %d",
+    ROS_INFO("obj_recognition: Got object pose in reply : [%1.3f, %1.3f, %1.3f], seq %d",
 	     recvMsg.x(),
 	     recvMsg.y(),
 	     recvMsg.z(),
@@ -228,6 +232,15 @@ public:
     */
     
     picknik_msgs::FindObjectsResult result;
+    geometry_msgs::Pose pose;
+    
+    pose.position.x = recvMsg.x();
+    pose.position.y = recvMsg.y();
+    pose.position.z = recvMsg.z();
+
+    pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(recvMsg.p(),
+							   recvMsg.q(),
+							   recvMsg.r());
     result.succeeded = true;
     /*
     // ================================================================
@@ -261,6 +274,7 @@ public:
     */
     
     // Mark action as completed
+    result.expected_objects_poses.push_back(pose);
     action_server_.setSucceeded(result);
   }
 

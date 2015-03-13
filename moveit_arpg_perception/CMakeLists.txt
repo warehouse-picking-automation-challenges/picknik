@@ -3,7 +3,7 @@ cmake_policy(SET CMP0054 OLD)
 
 project(moveit_arpg_perception)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -std=c++11")
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS
@@ -135,6 +135,7 @@ include_directories(
 add_executable(object_recognition_server src/object_recognition_server.cpp ${PROTO_SRCS} ${PROTO_HDRS} )
 
 add_executable(fakeDDTR tests/fakeDDTR.cpp ${PROTO_SRCS} ${PROTO_HDRS})
+add_executable(reqDDTR tests/reqDDTR.cpp ${PROTO_SRCS} ${PROTO_HDRS})
 
 
 ## Specify libraries to link a library or executable target against
@@ -160,6 +161,16 @@ target_link_libraries(fakeDDTR
    dl
 )
 
+target_link_libraries(reqDDTR
+   ${catkin_LIBRARIES}
+   ${Boost_LIBRARIES}
+   ${HAL_LIBRARIES}
+   ${Node_LIBRARIES}
+   ${PbMsgs_LIBRARIES}
+   ${MINIGLOG_LIBRARIES}	
+   ${PROTOBUF_LIBRARIES}
+   dl
+)
 #############
 ## Install ##
 #############

@@ -23,12 +23,12 @@ void getObjects( FindObjectMsg& Req, ObjectPoseMsg& Rep, void* )
 
   // prepare reply message
   Rep.set_objectname(Req.objectname());
-  Rep.set_x(rand()/rand());
-  Rep.set_y(rand()/rand());
-  Rep.set_z(rand()/rand());
+  Rep.set_x((double)rand()/(double)rand());
+  Rep.set_y((double)rand()/(double)rand());
+  Rep.set_z((double)rand()/(double)rand());
   Rep.set_p(0);
-  Rep.set_q(3.14/2);
-  Rep.set_r(-3.14/2);
+  Rep.set_q(((double)3.14)/2);
+  Rep.set_r(((double)-3.14)/2);
   Rep.set_sequence(seqOut++);
   Rep.set_success(true);
   
