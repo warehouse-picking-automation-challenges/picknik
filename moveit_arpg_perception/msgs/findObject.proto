@@ -1,0 +1,6 @@
+message FindObjectMsg{
+	string objectName = 1;
+	repeated string cellObjects = 2;
+	optional double device_time = 3;
+	optional int32 sequence = 4;
+}

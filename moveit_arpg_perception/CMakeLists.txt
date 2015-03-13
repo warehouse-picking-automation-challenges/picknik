@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
+cmake_policy(SET CMP0054 OLD)
+
 project(moveit_arpg_perception)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS
@@ -8,11 +12,25 @@ find_package(catkin REQUIRED COMPONENTS
   picknik_msgs
   roscpp
   actionlib
-  moveit_visual_tools
+  #moveit_visual_tools
 )
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
+
+#ARPG dependencies
+
+find_package(Node  REQUIRED)
+find_package(Protobuf REQUIRED)
+find_package(HAL)
+find_package(PbMsgs 0.1 REQUIRED)
+find_package(MINIGLOG QUIET)
+
+
+#Generate Protobuf messages
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+				 msgs/ExampleMessage.proto
+				 msgs/findObject.proto)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -87,7 +105,7 @@ catkin_package(
     picknik_msgs 
     roscpp
     actionlib
-    moveit_visual_tools
+    #moveit_visual_tools
 #  DEPENDS system_lib
 )
 
@@ -100,6 +118,11 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${Node_INCLUDE_DIRS}
+  ${HAL_INCLUDE_DIRS}
+  ${PbMsgs_INCLUDE_DIRS}
+  ${MINIGLOG_INCLUDE_DIRS}
+  ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 ## Declare a cpp library
@@ -108,10 +131,32 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(object_recognition_server src/object_recognition_server.cpp)
+add_executable(object_recognition_server src/object_recognition_server.cpp ${PROTO_SRCS} ${PROTO_HDRS} )
+
+add_executable(fakeDDTR tests/fakeDDTR.cpp ${PROTO_SRCS} ${PROTO_HDRS})
+
+
 ## Specify libraries to link a library or executable target against
 target_link_libraries(object_recognition_server
-  ${catkin_LIBRARIES} ${Boost_LIBRARIES}
+   ${catkin_LIBRARIES}
+   ${Boost_LIBRARIES}
+   ${HAL_LIBRARIES}
+   ${Node_LIBRARIES}
+   ${PbMsgs_LIBRARIES}
+   ${MINIGLOG_LIBRARIES}
+   ${PROTOBUF_LIBRARIES}
+   dl
+)
+
+target_link_libraries(fakeDDTR
+   ${catkin_LIBRARIES}
+   ${Boost_LIBRARIES}
+   ${HAL_LIBRARIES}
+   ${Node_LIBRARIES}
+   ${PbMsgs_LIBRARIES}
+   ${MINIGLOG_LIBRARIES}	
+   ${PROTOBUF_LIBRARIES}
+   dl
 )
 
 #############

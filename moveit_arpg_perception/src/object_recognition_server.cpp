@@ -42,7 +42,13 @@
 #include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
 #include <picknik_msgs/FindObjectsAction.h>
-#include <moveit_visual_tools/moveit_visual_tools.h>
+//#include <moveit_visual_tools/moveit_visual_tools.h>
+
+//ARPG includes
+#include <Node/Node.h>
+#include "ExampleMessage.pb.h"
+
+using std::string;
 
 namespace moveit_arpg_perception
 {
@@ -51,6 +57,7 @@ class ObjectRecognitionServer
 {
 private:
 
+  //ROS-related:
   // A shared node handle
   ros::NodeHandle nh_;
 
@@ -61,8 +68,15 @@ private:
   bool verbose_;
 
   // For visualizing things in rviz
-  moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
+  //moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
 
+
+  //ARPG Node related:
+  node::node n;
+  string nodeName;
+  string ddtrNode;
+  string ddtrGetObjects;
+  
 public:
 
   /**
@@ -79,11 +93,16 @@ public:
     action_server_.start();
 
     // Load collision object publisher
-    visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("base","/moveit_visual_tools"));
+    //visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("base","/moveit_visual_tools"));
 
     // Allow time to publish messages
     ros::Duration(0.1).sleep();
     ros::spinOnce();
+    nodeName = "ObjectRecognitionServer";
+    n.init(nodeName);
+    ddtrNode = "ddtr";
+    ddtrGetObjects = "getObjects";
+    
     ROS_INFO_STREAM_NAMED("obj_recognition","ObjectRecognitionServer Ready.");
   }
 
@@ -108,7 +127,18 @@ public:
     picknik_msgs::FindObjectsGoalConstPtr goal;
     goal = action_server_.acceptNewGoal();
 
+    //Tell DDTR that we need some info - pass the Node message 
 
+    string rpc_call = ddtrNode.append("/");
+    rpc_call.append(ddtrGetObjects);
+
+    int res;
+    FindObjectMsg sendMsg;
+    sendMsg.set_objectName
+    sendMsg.set_value("Requesting object");
+    n.call_rpc(rpc_call, sendMsg, sendMsg);
+
+    ROS_INFO("Got reply: [%s]", sendMsg.value().c_str());
     // ============================================================
     // Publish test objects
     // ============================================================
@@ -180,7 +210,10 @@ public:
     ros::Duration(1).sleep();
     ros::spinOnce();
     */
-
+    
+    picknik_msgs::FindObjectsResult result;
+    result.succeeded = true;
+    /*
     // ================================================================
     // Return a dummy object
     // ================================================================
@@ -209,7 +242,8 @@ public:
       // Value between 0 and 1 for each expected object's confidence of its pose
       result.expected_object_confidence.push_back(1.0); // we're super confident ;-)
     }
-
+    */
+    
     // Mark action as completed
     action_server_.setSucceeded(result);
   }
