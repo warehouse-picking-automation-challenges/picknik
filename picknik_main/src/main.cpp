@@ -115,7 +115,7 @@ int main(int argc, char** argv)
     }
   }
 
-  if (order_fp.empty()) 
+  if (order_fp.empty())
   {
     ROS_ERROR_STREAM_NAMED("main","No order json file passed in as argument, aborting.");
     return 1; // error
@@ -161,14 +161,32 @@ int main(int argc, char** argv)
       manager.testInCollision();
       ros::Duration(5.0).sleep();
       break;
-    // case 10:
-    //   ROS_INFO_STREAM_NAMED("main"," mode");
-    //   break;
-    // case 11:
-    //   ROS_INFO_STREAM_NAMED("main"," mode");
+    case 10:
+      ROS_INFO_STREAM_NAMED("main","Plan to random valid locations");
+      manager.testRandomValidMotions();
+      break;
+    case 11:
+      ROS_INFO_STREAM_NAMED("main","Moving to camera positions");
+      manager.testCameraPositions();
+      break;
+    case 12:
+      ROS_INFO_STREAM_NAMED("main","Test camera calibration");
+      manager.testCalibration();
+      break;
+    // case 12:
+    //   ROS_INFO_STREAM_NAMED("main","");
     //   break;
     // case 12:
-    //   ROS_INFO_STREAM_NAMED("main"," mode");
+    //   ROS_INFO_STREAM_NAMED("main","");
+    //   break;
+    // case 12:
+    //   ROS_INFO_STREAM_NAMED("main","");
+    //   break;
+    // case 12:
+    //   ROS_INFO_STREAM_NAMED("main","");
+    //   break;
+    // case 12:
+    //   ROS_INFO_STREAM_NAMED("main","");
     //   break;
     default:
       ROS_WARN_STREAM_NAMED("main","Unkown mode: " << mode);

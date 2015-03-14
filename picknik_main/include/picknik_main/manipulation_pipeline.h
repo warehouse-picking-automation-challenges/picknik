@@ -96,6 +96,18 @@ public:
   bool createCollisionWall();
 
   /**
+   * \brief Move camera to in front of bin
+   * \return true on success
+   */
+  bool moveCameraToBin(BinObjectPtr bin);
+
+  /**
+   * \brief Run calibration routine
+   * \return true on success
+   */
+  bool calibrateCamera();
+
+  /**
    * \brief Get the pose of a requested object
    * \param object_pose
    * \param order - desired object
@@ -260,7 +272,13 @@ public:
    * \brief Send trajectory message to robot controllers
    * \return true on success
    */
-  bool executeTrajectory(moveit_msgs::RobotTrajectory trajectory_msg);
+  bool executeTrajectory(const moveit_msgs::RobotTrajectory &trajectory_msg);
+
+  /**
+   * \brief Save a trajectory as CSV to file
+   * \return true on success
+   */
+  bool saveTrajectory(const moveit_msgs::RobotTrajectory &trajectory_msg, const std::string &file_name);
 
   /**
    * \brief Prevent a product from colliding with the fingers
@@ -352,11 +370,29 @@ public:
    */
   bool checkCollisionAndBounds(const robot_state::RobotStatePtr &start_state, 
                                const robot_state::RobotStatePtr &goal_state = robot_state::RobotStatePtr());
-public:
 
-  // Remote control
-  bool autonomous_;
-  bool next_step_ready_;
+  /**
+   * \brief Plan to a random valid state
+   * \return true on success
+   */
+  bool planToRandomValid();
+
+  /**
+   * \brief Get location to save a CSV file
+   * \param file_path - the variable to populate with a path
+   * \param file_name - the desired name of the file
+   * \return true on success
+   */
+  bool getFilePath(std::string &file_path, const std::string &file_name = "moveit_export.csv") const;
+
+  /**
+   * \brief Step to next step
+   * \return true on success
+   */
+  bool setReadyForNextStep();
+  bool setAutonomous();
+
+public:
 
 protected:
 
@@ -423,10 +459,23 @@ protected:
   std::string right_arm_name_;
   std::string left_arm_name_;
   std::string both_arms_name_;
+
+  // Perception variables
+  double camera_x_translation_from_bin_;
+  double camera_y_translation_from_bin_;
+  double camera_z_translation_from_bin_;
+  double camera_x_rotation_from_standard_grasp_;
+  double camera_y_rotation_from_standard_grasp_;
+  double camera_z_rotation_from_standard_grasp_;
+  double camera_lift_distance_;
   
   // Perception pipeline communication
   actionlib::SimpleActionClient<picknik_msgs::FindObjectsAction> find_objects_action_;
 
+  // Remote control
+  bool autonomous_;
+  bool next_step_ready_;
+  bool is_waiting_;
 
 }; // end class
 

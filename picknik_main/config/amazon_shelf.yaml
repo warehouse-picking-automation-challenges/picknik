@@ -32,3 +32,12 @@ wait_after_grasp: 0.1
 goal_bin_x: -0.64
 goal_bin_y: 0.65
 goal_bin_z: 0.28
+
+# Perception Data
+camera_x_translation_from_bin: -0.9 # meters
+camera_y_translation_from_bin: 0.0 # meters
+camera_z_translation_from_bin: 0.0 # meters
+camera_x_rotation_from_standard_grasp: -0.2  # radians
+camera_y_rotation_from_standard_grasp: 0.0  # radians
+camera_z_rotation_from_standard_grasp: 1.4  # radians
+camera_lift_distance: 0.05

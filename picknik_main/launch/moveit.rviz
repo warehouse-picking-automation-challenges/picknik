@@ -4,8 +4,6 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
-        - /Status1
         - /Grid1/Offset1
         - /Trajectory1
         - /PlanningScene1
@@ -13,7 +11,7 @@ Panels:
         - /PlanningScene1/Scene Robot1
         - /TF1/Frames1
       Splitter Ratio: 0.683582
-    Tree Height: 827
+    Tree Height: 826
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -389,7 +387,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Visual Tools
       Namespaces:
-        Arrow: true
+        Collision: true
         Cylinder: true
         Line: true
         Sphere: true
@@ -405,13 +403,13 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /picknik_main/display_contacts
       Name: MoveIt Contacts
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /move_group/display_grasp_markers
@@ -497,7 +495,7 @@ Visualization Manager:
           Show Trail: false
       Loop Animation: false
       Name: Trajectory
-      Robot Alpha: 1
+      Robot Alpha: 0.5
       Robot Description: robot_description
       Show Robot Collision: false
       Show Robot Visual: true
@@ -633,24 +631,26 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.76155
+      Distance: 2.98639
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.450134
-        Y: -0.120851
-        Z: 4.76836e-07
+        X: 0.697322
+        Y: -0.0933199
+        Z: 1.19209e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.539797
+      Pitch: 0.770398
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 2.61043
+      Yaw: 3.04539
     Saved: ~
 Window Geometry:
+  Camera:
+    collapsed: false
   Displays:
     collapsed: false
   Height: 1028
@@ -660,9 +660,9 @@ Window Geometry:
   Hide Right Dock: false
   PickNik:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd000000010000000000000193000003e6fc020000000bfb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c00610079007301000000000000037c000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000145000000cb000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000230000001b60000000000000000fb0000000c00540065006c0065006f00700000000331000000b50000000000000000fb0000000e005000690063006b004e0069006b0100000382000000640000004300ffffff000002f1000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000001000000000000010f000003e6fc020000000cfb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c00610079007301000000000000037b000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000145000000cb000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000230000001b60000000000000000fb0000000c00540065006c0065006f00700000000331000000b50000000000000000fb0000000e005000690063006b004e0069006b0100000381000000650000004300fffffffb0000000c00430061006d00650072006100000003d000000016000000160000001600000375000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
   Views:
     collapsed: false
   Width: 1162
-  X: 1511
+  X: 1531
   Y: 14

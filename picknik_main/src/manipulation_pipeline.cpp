@@ -12,15 +12,25 @@
    Desc:   Manage the manipulation of MoveIt
 */
 
+// PickNik
 #include <picknik_main/manipulation_pipeline.h>
 
 // MoveIt
 #include <moveit/trajectory_processing/iterative_time_parameterization.h>
 #include <moveit/ompl/model_based_planning_context.h>
 
+// OMPL
 #include <ompl/tools/lightning/Lightning.h>
 
+// C++
 #include <algorithm>
+
+// basic file operations
+#include <iostream>
+#include <fstream>
+
+// Boost
+#include <boost/filesystem.hpp>
 
 namespace picknik_main
 {
@@ -41,6 +51,7 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   , use_logging_(true)
   , autonomous_(false)
   , next_step_ready_(false)
+  , is_waiting_(false)
 {
   // Load performance variables
   getDoubleParameter(nh_, "main_velocity_scaling_factor", main_velocity_scaling_factor_);
@@ -49,6 +60,15 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   getDoubleParameter(nh_, "retreat_velocity_scaling_factor", retreat_velocity_scaling_factor_);
   getDoubleParameter(nh_, "wait_before_grasp", wait_before_grasp_);
   getDoubleParameter(nh_, "wait_after_grasp", wait_after_grasp_);
+
+  // Load perception variables
+  getDoubleParameter(nh_, "camera_x_translation_from_bin", camera_x_translation_from_bin_);
+  getDoubleParameter(nh_, "camera_y_translation_from_bin", camera_y_translation_from_bin_);
+  getDoubleParameter(nh_, "camera_z_translation_from_bin", camera_z_translation_from_bin_);  
+  getDoubleParameter(nh_, "camera_x_rotation_from_standard_grasp", camera_x_rotation_from_standard_grasp_);
+  getDoubleParameter(nh_, "camera_y_rotation_from_standard_grasp", camera_y_rotation_from_standard_grasp_);
+  getDoubleParameter(nh_, "camera_z_rotation_from_standard_grasp", camera_z_rotation_from_standard_grasp_);
+  getDoubleParameter(nh_, "camera_lift_distance", camera_lift_distance_);
 
   // Load semantics
   getStringParameter(nh_, "start_pose", start_pose_);
@@ -63,7 +83,7 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   loadRobotStates();
 
   // Decide where to publish text
-  status_position_ = shelf_->bottom_right_;
+  status_position_ = shelf_->getBottomRight();
   bool show_text_for_video = false;
   if (show_text_for_video)
   {
@@ -125,7 +145,7 @@ bool ManipulationPipeline::checkSystemReady()
 
   // Check gantry calibrated
   // TODO
-  
+
   // Check end effectors calibrated
   // TODO
 
@@ -198,8 +218,8 @@ bool ManipulationPipeline::createCollisionWall()
   double angle = 0;
 
   visuals_->visual_tools_->publishCollisionWall( x, y, angle, width, "SimpleCollisionWall", rvt::BROWN );
-                                                 
-  shelf_->getGoalBin()->createCollisionBodies(shelf_->bottom_right_);
+
+  shelf_->getGoalBin()->createCollisionBodies(shelf_->getBottomRight());
 
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
   ros::Duration(0.25).sleep();
@@ -207,9 +227,108 @@ bool ManipulationPipeline::createCollisionWall()
   return true;
 }
 
+bool ManipulationPipeline::moveCameraToBin(BinObjectPtr bin)
+{
+  // Create start
+  getCurrentState();
+
+  // Create goal
+  moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_));
+
+  // Create pose to find IK solver
+  Eigen::Affine3d grasp_pose = bin->getCentroid();
+  grasp_pose = transform(grasp_pose, shelf_->getBottomRight());
+
+  // Move centroid backwards
+  grasp_pose.translation().x() += camera_x_translation_from_bin_;
+  grasp_pose.translation().y() += camera_y_translation_from_bin_;
+  grasp_pose.translation().z() += camera_z_translation_from_bin_;
+
+  grasp_pose = grasp_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
+  grasp_pose = grasp_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitZ());
+
+  // Translate to custom end effector geometry
+  grasp_pose = grasp_pose * grasp_datas_[right_arm_].grasp_pose_to_eef_pose_;
+
+  // Roll Angle
+  grasp_pose = grasp_pose * Eigen::AngleAxisd(camera_z_rotation_from_standard_grasp_, Eigen::Vector3d::UnitZ());  
+  // Pitch Angle
+  grasp_pose = grasp_pose * Eigen::AngleAxisd(camera_x_rotation_from_standard_grasp_, Eigen::Vector3d::UnitX());  
+  // Yaw Angle
+  grasp_pose = grasp_pose * Eigen::AngleAxisd(camera_y_rotation_from_standard_grasp_, Eigen::Vector3d::UnitY());  
+
+  // Debug
+  visuals_->visual_tools_->publishAxis(grasp_pose);
+
+  {
+    // Collision check
+    bool collision_checking_verbose = false;
+    boost::scoped_ptr<planning_scene_monitor::LockedPlanningSceneRO> ls;
+    ls.reset(new planning_scene_monitor::LockedPlanningSceneRO(planning_scene_monitor_));
+    robot_state::GroupStateValidityCallbackFn constraint_fn
+      = boost::bind(&isStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
+                    collision_checking_verbose, visuals_, _1, _2, _3);
+
+    std::size_t attempts = 3;
+    double timeout = 0.1; // TODO
+    if (!goal_state->setFromIK(right_arm_, grasp_pose, attempts, timeout, constraint_fn))
+    {
+      ROS_ERROR_STREAM_NAMED("pipeline","Unable to find arm pose for camera view");
+    }
+  }
+
+  // Debug
+  visuals_->visual_tools_->publishRobotState( goal_state, rvt::PURPLE );
+
+  // Plan to this position
+  bool verbose = true;
+  bool execute_trajectory = true;
+  bool show_database = false;
+  if (!move(current_state_, goal_state, right_arm_, verbose, execute_trajectory, show_database))
+  {
+    ROS_ERROR_STREAM_NAMED("pipeline","Failed to move camera to bin");
+    return false;
+  }
+
+  ROS_INFO_STREAM_NAMED("pipeline","Moved camera to bin successfullly");
+  
+  return true;
+}
+
+bool ManipulationPipeline::calibrateCamera()
+{
+  ROS_INFO_STREAM_NAMED("pipeline","Calibrating camera");
+
+  bool result = false; // we want to achieve at least one camera pose
+
+  std::vector<std::string> poses;
+  //poses.push_back("shelf_calibration1");
+  poses.push_back("shelf_calibration2");
+  poses.push_back("shelf_calibration3");
+  poses.push_back("shelf_calibration4");
+
+  // Move to each pose
+  for (std::size_t i = 0; i < poses.size(); ++i)
+  {
+    ROS_INFO_STREAM_NAMED("pipeline","Moving to camera pose " << poses[i]);
+
+    if (!moveToPose(right_arm_, poses[i]))
+    {
+      ROS_ERROR_STREAM_NAMED("pipeline","Unable to move to pose " << poses[i]);
+      return false;
+    }
+    else
+    {
+      result = true;
+    }
+  }
+
+  return true;
+}
+
 bool ManipulationPipeline::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose)
 {
-  if (false)
+  if (true)
   {
     // Communicate with perception pipeline
 
@@ -227,21 +346,46 @@ bool ManipulationPipeline::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder
 
     find_objects_action_.sendGoal(find_object_goal);
 
-    //wait for the action to return
-    bool finished_before_timeout = find_objects_action_.waitForResult(ros::Duration(30.0));
+    // Move camera up
+    // ROS_INFO_STREAM_NAMED("pipeline","Lifting camera distance " << camera_lift_distance_);
+    // if (!executeLiftPath(right_arm_, camera_lift_distance_))
+    // {
+    //   ROS_ERROR_STREAM_NAMED("pipeline","Unable to move up");
+    // }
 
-    if (finished_before_timeout)
+    // Move camera down
+    ROS_INFO_STREAM_NAMED("pipeline","Lowering camera distance " << camera_lift_distance_ * 2.0);
+    bool up = false;
+    if (!executeLiftPath(right_arm_, camera_lift_distance_ * 2.0, up))
     {
-      actionlib::SimpleClientGoalState state = find_objects_action_.getState();
-      ROS_INFO_STREAM_NAMED("pipeline","Percetion action finished: " << state.toString());
+      ROS_ERROR_STREAM_NAMED("pipeline","Unable to move down");
     }
-    else
+
+    //wait for the action to return
+    if (!find_objects_action_.waitForResult(ros::Duration(30.0)))
     {
       ROS_ERROR_STREAM_NAMED("pipeline","Percetion action did not finish before the time out.");
+      return false;
     }
+
+    // Get goal state
+    actionlib::SimpleClientGoalState goal_state = find_objects_action_.getState();
+    ROS_INFO_STREAM_NAMED("pipeline","Percetion action finished: " << goal_state.toString());
+
+    // Get result
+    picknik_msgs::FindObjectsResultConstPtr perception_result = find_objects_action_.getResult();
+    std::cout << "Perception_Result:\n " << *perception_result << std::endl;
+
+    // Set new pose
+    order.product_->setBottomRight(visuals_->visual_tools_->convertPose(perception_result->desired_object_pose));
+    
+    // Update location visually
+    order.product_->visualize(shelf_->getBottomRight());
+
   }
   else // old method
   {
+    ROS_WARN_STREAM_NAMED("pipeline","Using fake perception system");
 
     const std::string& coll_obj_name = order.product_->getCollisionName();
     {
@@ -272,19 +416,16 @@ bool ManipulationPipeline::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder
 
 bool ManipulationPipeline::waitForNextStep()
 {
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << "Waiting for next step" << std::endl;
-
-    // Wait until next step is ready
-    while (!next_step_ready_ && !autonomous_ && ros::ok())
-    {
-      ros::Duration(0.25).sleep();
-    }
-    if (!ros::ok())
-      return false;
-    next_step_ready_ = false;
-
+  is_waiting_ = true;
+  // Wait until next step is ready
+  while (!next_step_ready_ && !autonomous_ && ros::ok())
+  {
+    ros::Duration(0.25).sleep();
+  }
+  if (!ros::ok())
+    return false;
+  next_step_ready_ = false;
+  is_waiting_ = false;
   return true;
 }
 
@@ -318,7 +459,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
 
   if (!autonomous_)
   {
-    visuals_->start_state_->publishRobotState(current_state_, rvt::GREEN);    
+    visuals_->start_state_->publishRobotState(current_state_, rvt::GREEN);
     ROS_INFO_STREAM_NAMED("pipeline","Waiting for remote control to be triggered to start");
   }
 
@@ -329,6 +470,9 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
 
     if (!autonomous_)
     {
+      std::cout << std::endl;
+      std::cout << std::endl;
+      std::cout << "Waiting for step: " << step << std::endl;
       waitForNextStep();
     }
     else
@@ -343,6 +487,8 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
       // #################################################################################################################
       case 0: statusPublisher("Moving to initial position");
 
+        createCollisionWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
+
         // Clear the temporary purple robot state image
         visuals_->visual_tools_->hideRobot();
 
@@ -352,11 +498,12 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to move to initial position");
           return false;
         }
-        break;
+        //break;
+        step++;
 
         // #################################################################################################################
-      case 1:  statusPublisher("Open end effectors");
-
+      case 1: statusPublisher("Open end effectors");
+        
         if (!openEndEffectors(true))
         {
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to open end effectors");
@@ -365,13 +512,19 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         break;
 
         // #################################################################################################################
-      case 2: statusPublisher("Generate and choose grasp for product " + order.product_->getName() +
-                              " from " + order.bin_->getName());
+      case 2: statusPublisher("Finding location of product " + order.product_->getName() + " from " + order.bin_->getName());
 
         // Create the collision objects
         if (!setupPlanningScene( order.bin_->getName() ))
         {
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to setup planning scene");
+          return false;
+        }
+
+        // Move camera to correct shelf
+        if (!moveCameraToBin( order.bin_ ))
+        {
+          ROS_ERROR_STREAM_NAMED("pipeline","Unable to position camera in front of bin");
           return false;
         }
 
@@ -381,6 +534,11 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to get object pose");
           return false;
         }
+
+        break;
+
+        // #################################################################################################################
+      case 3: statusPublisher("Get grasp for product " + order.product_->getName() + " from " + order.bin_->getName());                              
 
         // Choose which arm to use
         arm_jmg = chooseArm(object_pose);
@@ -406,11 +564,6 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         break;
 
         // #################################################################################################################
-      case 3: // Not implemented
-
-        step++;
-
-        // #################################################################################################################
       case 4: statusPublisher("Get pre-grasp by generateApproachPath()");
 
         // Hide the purple robot
@@ -421,11 +574,17 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to generate straight approach path");
           return false;
         }
+
+        // Visualize trajectory in Rviz display
+        visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, current_state_, wait_for_trajetory);
+
         break;
+        //step++;
 
         // #################################################################################################################
       case 5: // Not implemented
 
+        //break
         step++;
 
         // #################################################################################################################
@@ -454,8 +613,8 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         }
 
         // Visualize trajectory in Rviz display
-        visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, wait_for_trajetory);
-
+        visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, current_state_, wait_for_trajetory);
+        std::cout << "Waiting for next step - DEBUG " << std::endl;
         waitForNextStep();
 
         // Run
@@ -534,7 +693,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         visuals_->visual_tools_->cleanupCO( order.product_->getCollisionName() ); // use unique name
         break;
 
-      // #################################################################################################################
+        // #################################################################################################################
       case 13: statusPublisher("Moving to initial position");
 
         if (!moveToStartPosition())
@@ -581,8 +740,8 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
   {
     ROS_WARN_STREAM_NAMED("temp","USING OLD METHOD");
     double hand_roll =
-    grasps_->generateAxisGrasps( object_pose, moveit_grasps::Y_AXIS, moveit_grasps::DOWN, moveit_grasps::HALF, hand_roll,
-                                 grasp_datas_[arm_jmg], possible_grasps);
+      grasps_->generateAxisGrasps( object_pose, moveit_grasps::Y_AXIS, moveit_grasps::DOWN, moveit_grasps::HALF, hand_roll,
+                                   grasp_datas_[arm_jmg], possible_grasps);
   }
 
   // Visualize
@@ -606,15 +765,11 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
     return false;
   }
 
-  // Visualize them
-  if (verbose)
-  {
-    // Visualize valid grasps as arrows with cartesian path as well
-    bool show_cartesian_path = false;
-    ROS_DEBUG_STREAM_NAMED("manipulation.ik_filtered_grasps", "Showing ik filtered grasps");
-    ROS_DEBUG_STREAM_NAMED("manipulation.ik_filtered_grasps",
-                           (visualizeGrasps(filtered_grasps, arm_jmg, show_cartesian_path) ? "Done" : "Failed"));
-  }
+  // Visualize valid grasps as arrows with cartesian path as well
+  bool show_cartesian_path = false;
+  ROS_DEBUG_STREAM_NAMED("manipulation.ik_filtered_grasps", "Showing ik filtered grasps");
+  ROS_DEBUG_STREAM_NAMED("manipulation.ik_filtered_grasps",
+                         (visualizeGrasps(filtered_grasps, arm_jmg, show_cartesian_path) ? "Done" : "Failed"));
 
   ROS_INFO_STREAM_NAMED("pipeline","Filtering grasps by collision");
 
@@ -627,7 +782,13 @@ bool ManipulationPipeline::chooseGrasp(const Eigen::Affine3d& object_pose, const
     return false;
   }
 
-  // Visualize IK solutions
+  // Visualize final filtered valid grasps as arrows with cartesian path as well
+  show_cartesian_path = false;
+  ROS_DEBUG_STREAM_NAMED("manipulation.collision_filtered_grasps", "Showing collision filtered grasps");
+  ROS_DEBUG_STREAM_NAMED("manipulation.collision_filtered_grasps",
+                         (visualizeGrasps(filtered_grasps, arm_jmg, show_cartesian_path) ? "Done" : "Failed"));
+
+  // Visualize Final Filtered IK solutions
   double display_time = 0.5;
   ROS_DEBUG_STREAM_NAMED("manipulation.collision_filtered_solutions","Publishing collision filtered solutions");
   ROS_DEBUG_STREAM_NAMED("manipulation.collision_filtered_solutions",
@@ -685,8 +846,8 @@ bool ManipulationPipeline::moveToPose(const robot_model::JointModelGroup* arm_jm
   getCurrentState();
 
   // Set goal state to initial pose
-  moveit::core::RobotStatePtr new_state(new moveit::core::RobotState(*current_state_)); // Allocate robot states
-  if (!new_state->setToDefaultValues(arm_jmg, pose_name))
+  moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_)); // Allocate robot states
+  if (!goal_state->setToDefaultValues(arm_jmg, pose_name))
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Failed to set pose '" << pose_name << "' for planning group '" << arm_jmg->getName() << "'");
     return false;
@@ -694,14 +855,11 @@ bool ManipulationPipeline::moveToPose(const robot_model::JointModelGroup* arm_jm
 
   // Plan
   bool execute_trajectory = true;
-  if (!move(current_state_, new_state, arm_jmg, verbose_, execute_trajectory, show_database_))
+  if (!move(current_state_, goal_state, arm_jmg, verbose_, execute_trajectory, show_database_))
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Unable to move to new position");
     return false;
   }
-
-  // Open gripper
-  // TODO jmg might be both arms openEndEffector(true, jmg);
 
   return true;
 }
@@ -728,7 +886,7 @@ bool ManipulationPipeline::getSRDFPose(const robot_model::JointModelGroup* jmg)
     std::cout << "<group_state name=\"\" group=\"" << jmg->getName() << "\">\n";
     for (std::size_t i = 0; i < joints.size(); ++i)
     {
-      std::cout << "  <joint name=\"" << joints[i]->getName() <<"\" value=\"" 
+      std::cout << "  <joint name=\"" << joints[i]->getName() <<"\" value=\""
                 << current_state_->getJointPositions(joints[i])[0] << "\" />\n";
     }
     std::cout << "</group_state>\n\n\n\n";
@@ -828,7 +986,7 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
 
   // Visualize trajectory in Rviz display
   bool wait_for_trajetory = false;
-  visuals_->visual_tools_->publishTrajectoryPath(response.trajectory, wait_for_trajetory);
+  visuals_->visual_tools_->publishTrajectoryPath(response.trajectory, current_state_, wait_for_trajetory);
 
   // Focus on execution (unless we are in debug mode)
   if (!error)
@@ -837,10 +995,6 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
   // Do not execute a bad trajectory
   if (error)
     return false;
-
-  // Confirm trajectory before continuing
-  if (!autonomous_)
-    waitForNextStep();
 
   // Execute trajectory
   if (execute_trajectory)
@@ -1024,9 +1178,7 @@ bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *
 
   // Visualize trajectory in Rviz display
   bool wait_for_trajetory = false;
-  visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, wait_for_trajetory);
-
-  waitForNextStep();
+  visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, current_state_, wait_for_trajetory);
 
   // Execute
   if( !executeTrajectory(cartesian_trajectory_msg) )
@@ -1067,9 +1219,7 @@ bool ManipulationPipeline::executeRetreatPath(const moveit::core::JointModelGrou
 
   // Visualize trajectory in Rviz display
   bool wait_for_trajetory = false;
-  visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, wait_for_trajetory);
-
-  waitForNextStep();
+  visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, current_state_, wait_for_trajetory);
 
   // Execute
   if( !executeTrajectory(cartesian_trajectory_msg) )
@@ -1371,15 +1521,15 @@ bool ManipulationPipeline::setStateWithOpenEE(bool open, moveit::core::RobotStat
     else
       grasp_datas_[right_arm_].setRobotStateGrasp( robot_state );
     /*
-    for (std::size_t i = 0; i < grasp_datas_[right_arm_].grasp_posture_.joint_names.size(); ++i)
-    {
+      for (std::size_t i = 0; i < grasp_datas_[right_arm_].grasp_posture_.joint_names.size(); ++i)
+      {
       if (open)
-        robot_state->setVariablePosition(grasp_datas_[right_arm_].pre_grasp_posture_.joint_names[i],
-                                         grasp_datas_[right_arm_].pre_grasp_posture_.points.front().positions[i]);
+      robot_state->setVariablePosition(grasp_datas_[right_arm_].pre_grasp_posture_.joint_names[i],
+      grasp_datas_[right_arm_].pre_grasp_posture_.points.front().positions[i]);
       else
-        robot_state->setVariablePosition(grasp_datas_[right_arm_].grasp_posture_.joint_names[i],
-                                         grasp_datas_[right_arm_].grasp_posture_.points.front().positions[i]);
-    }
+      robot_state->setVariablePosition(grasp_datas_[right_arm_].grasp_posture_.joint_names[i],
+      grasp_datas_[right_arm_].grasp_posture_.points.front().positions[i]);
+      }
     */
   }
   else // Baxter mode
@@ -1413,12 +1563,42 @@ bool ManipulationPipeline::setStateWithOpenEE(bool open, moveit::core::RobotStat
 
 
 
-bool ManipulationPipeline::executeTrajectory(moveit_msgs::RobotTrajectory trajectory_msg)
+bool ManipulationPipeline::executeTrajectory(const moveit_msgs::RobotTrajectory &trajectory_msg)
 {
   ROS_INFO_STREAM_NAMED("pipeline","Executing trajectory");
 
   // Debug
   ROS_DEBUG_STREAM_NAMED("pipeline.trajectory","Publishing:\n" << trajectory_msg);
+
+  // Save to file
+  if (true)
+  {
+    // Only save non-finger trajectories
+    if (trajectory_msg.joint_trajectory.joint_names.size() > 3)
+    {
+      static std::size_t trajectory_count = 0;
+      //saveTrajectory(trajectory_msg, "trajectory_"+ boost::lexical_cast<std::string>(trajectory_count));
+      saveTrajectory(trajectory_msg, "trajectory");
+      trajectory_count++;
+    }
+  }
+
+  // Confirm trajectory before continuing
+  if (!autonomous_)
+  {
+    // Set robot state
+    //moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_));
+    //current_state_->setJointGroupPositions(right_arm_, trajectory_msg.joint_trajectory.points.back().positions);
+
+    // Check robot state
+    //visuals_->goal_state_->publishRobotState(current_state_, rvt::ORANGE);
+
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << "Waiting before executing trajectory" << std::endl;
+
+    waitForNextStep();
+  }
 
   // Clear
   plan_execution_->getTrajectoryExecutionManager()->clear();
@@ -1453,6 +1633,59 @@ bool ManipulationPipeline::executeTrajectory(moveit_msgs::RobotTrajectory trajec
     return false;
   }
 
+  return true;
+}
+
+bool ManipulationPipeline::saveTrajectory(const moveit_msgs::RobotTrajectory &trajectory_msg, const std::string &file_name)
+{
+  const trajectory_msgs::JointTrajectory &joint_trajectory = trajectory_msg.joint_trajectory;
+  if (!joint_trajectory.points.size() || !joint_trajectory.points[0].positions.size())
+  {
+    ROS_ERROR_STREAM_NAMED("pipeline","No trajectory points available to save");
+    return false;
+  }
+
+  ROS_INFO_STREAM_NAMED("pipeline","Saving trajectory to file");
+
+  std::string file_path;
+  getFilePath(file_path, file_name);
+  std::ofstream output_file;
+  output_file.open (file_path.c_str());
+
+  // Output header -------------------------------------------------------
+  output_file << "time_from_start,";
+  for (std::size_t j = 0; j < joint_trajectory.joint_names.size(); ++j)
+  {
+    output_file << joint_trajectory.joint_names[j] << "_pos,"
+                << joint_trajectory.joint_names[j] << "_vel,"
+                << joint_trajectory.joint_names[j] << "_acc,";
+  }
+  output_file << std::endl;
+
+  // Output data ------------------------------------------------------
+
+  // Subtract starting time
+
+  for (std::size_t i = 0; i < joint_trajectory.points.size(); ++i)
+  {
+    // Timestamp
+    output_file.precision(20);
+    output_file << joint_trajectory.points[i].time_from_start.toSec() << ",";
+    output_file.precision(5);
+    // Output entire trajectory to single line
+    for (std::size_t j = 0; j < joint_trajectory.points[i].positions.size(); ++j)
+    {
+      // Output State
+      output_file << joint_trajectory.points[i].positions[j] << ","
+                  << joint_trajectory.points[i].velocities[j] << ","
+                  << joint_trajectory.points[i].accelerations[j] << ",";
+
+    }
+
+    output_file << std::endl;
+  }
+  output_file.close();
+  ROS_INFO_STREAM_NAMED("pipeline","Wrote to file " << file_path);
   return true;
 }
 
@@ -1673,9 +1906,6 @@ bool ManipulationPipeline::checkCurrentCollisionAndBounds()
     (*current_state_) = scene->getCurrentState();
   }
 
-  // Check robot state
-  visuals_->visual_tools_->publishRobotState(current_state_, rvt::PURPLE);
-
   // Check for collisions
   bool verbose = true;
   if (cloned_scene->isStateColliding(*current_state_, right_arm_->getName(), verbose))
@@ -1704,7 +1934,7 @@ bool ManipulationPipeline::checkCurrentCollisionAndBounds()
   return result;
 }
 
-bool ManipulationPipeline::checkCollisionAndBounds(const robot_state::RobotStatePtr &start_state, 
+bool ManipulationPipeline::checkCollisionAndBounds(const robot_state::RobotStatePtr &start_state,
                                                    const robot_state::RobotStatePtr &goal_state)
 {
   bool result = true;
@@ -1744,22 +1974,111 @@ bool ManipulationPipeline::checkCollisionAndBounds(const robot_state::RobotState
       ROS_WARN_STREAM_NAMED("pipeline","Start state is colliding");
       // Show collisions
       visuals_->visual_tools_->publishContactPoints(*start_state, planning_scene_monitor_->getPlanningScene().get());
+      visuals_->visual_tools_->publishRobotState(*start_state, rvt::RED);
       result = false;
     }
 
-    goal_state->update();
-
     // Goal
-    if (goal_state && scene->isStateColliding(*goal_state, right_arm_->getName(), verbose))
+    if (goal_state)
     {
-      ROS_WARN_STREAM_NAMED("pipeline","Goal state is colliding");
-      // Show collisions
-      visuals_->visual_tools_->publishContactPoints(*goal_state, planning_scene_monitor_->getPlanningScene().get());
-      result = false;
+      goal_state->update();
+
+      if (scene->isStateColliding(*goal_state, right_arm_->getName(), verbose))
+      {
+        ROS_WARN_STREAM_NAMED("pipeline","Goal state is colliding");
+        // Show collisions
+        visuals_->visual_tools_->publishContactPoints(*goal_state, planning_scene_monitor_->getPlanningScene().get());
+        visuals_->visual_tools_->publishRobotState(*goal_state, rvt::RED);
+        result = false;
+      }
     }
   }
 
   return result;
+}
+
+bool ManipulationPipeline::planToRandomValid()
+{
+  static const std::size_t MAX_ATTEMPTS = 200;
+  for (std::size_t i = 0; i < MAX_ATTEMPTS; ++i)
+  {    
+    // Create start
+    getCurrentState();
+
+    // Create goal
+    moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_));
+    goal_state->setToRandomPositions(right_arm_);
+
+    // Check if random goal state is valid
+    if (checkCollisionAndBounds(goal_state))
+    {
+      // Plan to this position
+      bool verbose = true;
+      bool execute_trajectory = true;
+      bool show_database = false;
+      if (move(current_state_, goal_state, right_arm_, verbose, execute_trajectory, show_database))
+      {
+        ROS_INFO_STREAM_NAMED("pipeline","Planned to random valid state successfullly");
+        return true;
+      }
+      else
+      {
+        ROS_ERROR_STREAM_NAMED("pipeline","Failed to plan to random valid state");
+        return false;
+      }
+    }
+  }
+  ROS_ERROR_STREAM_NAMED("pipeline","Unable to find random valid state after " << MAX_ATTEMPTS << " attempts");
+  return false;
+}
+
+bool ManipulationPipeline::getFilePath(std::string &file_path, const std::string &file_name) const
+                                                      
+{
+  namespace fs = boost::filesystem;
+
+  // Check that the directory exists, if not, create it
+  fs::path rootPath;
+  if (!std::string(getenv("HOME")).empty())
+    rootPath = fs::path(getenv("HOME")); // Support Linux/Mac
+  else if (!std::string(getenv("HOMEPATH")).empty())
+    rootPath = fs::path(getenv("HOMEPATH")); // Support Windows
+  else
+  {
+    ROS_WARN("Unable to find a home path for this computer");
+    rootPath = fs::path("");
+  }
+
+  std::string directory = "ros/ws_robots/src/matlab_trajectory_analysis";
+  rootPath = rootPath / fs::path(directory);
+
+  boost::system::error_code returnedError;
+  fs::create_directories( rootPath, returnedError );
+
+  if ( returnedError )
+  {
+    //did not successfully create directories
+    ROS_ERROR("Unable to create directory %s", directory.c_str());
+    return false;
+  }
+
+  //directories successfully created, append the group name as the file name
+  rootPath = rootPath / fs::path(file_name + ".csv");
+  file_path = rootPath.string();
+  ROS_INFO_STREAM_NAMED("pipeline","Saving trajectories to file " << file_path);
+
+  return true;
+}
+
+bool ManipulationPipeline::setReadyForNextStep()
+{
+  if (is_waiting_)
+    next_step_ready_ = true;
+}
+
+bool ManipulationPipeline::setAutonomous()
+{
+  autonomous_ = true;
 }
 
 } // end namespace

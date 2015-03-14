@@ -56,11 +56,13 @@ APCManager::APCManager(bool verbose, std::string order_fp)
   loadShelfContents(order_fp);
 
   // Subscribe to remote control topic
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Subscribing to button topics");
   std::size_t queue_size = 10;
   remote_next_control_ = nh_.subscribe("/picknik_main/next", queue_size, &APCManager::remoteNextCallback, this);
   remote_run_control_ = nh_.subscribe("/picknik_main/run", queue_size, &APCManager::remoteRunCallback, this);
 
   // Visualize
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Visualizing shelf");
   visualizeShelf();
 
   ROS_INFO_STREAM_NAMED("apc_manager","APC Manager Ready.");
@@ -68,12 +70,12 @@ APCManager::APCManager(bool verbose, std::string order_fp)
 
 void APCManager::remoteNextCallback(const std_msgs::Bool::ConstPtr& msg)
 {
-  pipeline_->next_step_ready_ = true;
+  pipeline_->setReadyForNextStep();
 }
 
 void APCManager::remoteRunCallback(const std_msgs::Bool::ConstPtr& msg)
 {
-  pipeline_->autonomous_ = true;
+  pipeline_->setAutonomous();
 }
 
 bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t order_start, std::size_t jump_to, 
@@ -90,7 +92,8 @@ bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t o
   pipeline_->checkSystemReady();
 
   // Set autonomy
-  pipeline_->autonomous_ = autonomous;
+  if (autonomous)
+    pipeline_->setAutonomous();
 
   ROS_INFO_STREAM_NAMED("apc_manager","Starting order ----------------------------");
 
@@ -224,6 +227,117 @@ bool APCManager::testInCollision()
   }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done checking if in collision");  
+}
+
+bool APCManager::testRandomValidMotions()
+{
+  // Create the pick place pipeline
+  bool use_experience = false;
+  bool show_database = false;
+  pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
+                                           planning_scene_monitor_, plan_execution_,
+                                           shelf_, use_experience, show_database));
+
+  while (ros::ok())
+  {
+    pipeline_->planToRandomValid();
+    ros::Duration(1).sleep();
+  }
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Done planning to random valid");  
+}
+
+bool APCManager::testCameraPositions()
+{
+  // Create the pick place pipeline
+  bool use_experience = false;
+  bool show_database = false;
+  pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
+                                           planning_scene_monitor_, plan_execution_,
+                                           shelf_, use_experience, show_database));
+
+  std::size_t bin_skipper = 0;
+  for (BinObjectMap::const_iterator bin_it = shelf_->getBins().begin(); bin_it != shelf_->getBins().end(); bin_it++)
+  {
+    if (!ros::ok())
+      return true;
+
+    // Skip first row
+    if (bin_skipper < 3 && false)
+    {
+      bin_skipper++;
+      continue;
+    }
+
+
+    const BinObjectPtr bin = bin_it->second;
+
+    // Check if there are any objects to get
+    if (bin->getProducts().size() == 0)
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","No products in bin");
+      return false;
+    }
+    // Choose first object
+    const ProductObjectPtr product = bin->getProducts()[0];
+
+    // DEBUG
+    {
+      printTransform(shelf_->getBottomRight());
+
+      Eigen::Affine3d rand_pose;
+      geometry_msgs::Pose temp = visuals_->visual_tools_->convertPose(rand_pose);
+      visuals_->visual_tools_->generateRandomPose(temp);
+      product->setCentroid(rand_pose);
+      // Set new pose
+      //order.product_->getBottomRight() = visuals_->visual_tools_->convertPose(perception_result->desired_object_pose);
+    
+      printTransform(shelf_->getBottomRight());
+
+      // Update location visually
+      product->visualize(shelf_->getBottomRight());
+    }
+    continue;
+
+    // Move camera to the bin
+    ROS_INFO_STREAM_NAMED("apc_manager","Moving to bin " << bin_it->first);
+    if (!pipeline_->moveCameraToBin(bin))
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
+      return false;
+    }
+
+    // Tell perception pipeline to detect
+    ROS_INFO_STREAM_NAMED("apc_manager","Getting object pose");
+    Eigen::Affine3d object_pose;
+    bool verbose = true;
+    WorkOrder order(bin, product);
+    if (!pipeline_->getObjectPose(object_pose, order, verbose))
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to get product");
+      return false;
+    }
+
+    std::cout << "DONE " << std::endl;
+
+    return true;
+  }
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Done planning to random valid");  
+}
+
+bool APCManager::testCalibration()
+{
+  // Create the pick place pipeline
+  bool use_experience = false;
+  bool show_database = false;
+  pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
+                                           planning_scene_monitor_, plan_execution_,
+                                           shelf_, use_experience, show_database));
+
+  pipeline_->calibrateCamera();
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Done calibrating camera");  
 }
 
 bool APCManager::getPose()

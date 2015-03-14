@@ -67,7 +67,7 @@ bool LearningPipeline::generateTrainingGoals(ShelfObjectPtr shelf)
     bin_experience_data_[bin->getName()] = BinExperienceData();
 
     // Populate poses
-    generateTrainingGoalsBin( shelf->bottom_right_ * bin->bottom_right_, bin_experience_data_[bin->getName()].poses);
+    generateTrainingGoalsBin( shelf->getBottomRight() * bin->getBottomRight(), bin_experience_data_[bin->getName()].poses);
   }
 
   // Display grasps

@@ -112,6 +112,24 @@ public:
   bool testInCollision();
 
   /**
+   * \brief Plan to random valid motions
+   * \return true on success
+   */
+  bool testRandomValidMotions();
+
+  /**
+   * \brief Send arm to camera positions
+   * \return true on success
+   */
+  bool testCameraPositions();
+
+  /**
+   * \brief Test moving the camera around for calibration
+   * \return true on success
+   */
+  bool testCalibration();
+
+  /**
    * \brief Get the XML of a SDF pose of joints
    * \return true on success
    */
