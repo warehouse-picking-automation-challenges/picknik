@@ -42,7 +42,17 @@
 #include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
 #include <picknik_msgs/FindObjectsAction.h>
-#include <moveit_visual_tools/moveit_visual_tools.h>
+#include <tf/transform_datatypes.h>
+
+//#include <moveit_visual_tools/moveit_visual_tools.h>
+
+//ARPG includes
+#include <Node/Node.h>
+
+#include "findObject.pb.h"
+#include "ObjectPose.pb.h"
+
+using std::string;
 
 namespace moveit_arpg_perception
 {
@@ -51,6 +61,7 @@ class ObjectRecognitionServer
 {
 private:
 
+  //ROS-related:
   // A shared node handle
   ros::NodeHandle nh_;
 
@@ -61,8 +72,17 @@ private:
   bool verbose_;
 
   // For visualizing things in rviz
-  moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
+  //moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
 
+
+  //ARPG Node related:
+  node::node n;
+  string nodeName;
+  string ddtrNode;
+  string ddtrGetObjects;
+  int seqToDDTR;
+  int seqFromDDTR;
+  
 public:
 
   /**
@@ -79,11 +99,17 @@ public:
     action_server_.start();
 
     // Load collision object publisher
-    visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("base","/moveit_visual_tools"));
+    //visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("base","/moveit_visual_tools"));
 
     // Allow time to publish messages
     ros::Duration(0.1).sleep();
     ros::spinOnce();
+    nodeName = "ObjectRecognitionServer";
+    n.init(nodeName);
+    ddtrNode = "ddtr";
+    ddtrGetObjects = "getObjects";
+    seqToDDTR = 0;
+    seqFromDDTR = 0;
     ROS_INFO_STREAM_NAMED("obj_recognition","ObjectRecognitionServer Ready.");
   }
 
@@ -102,13 +128,46 @@ public:
    */
   void goalCallback()
   {
-    ROS_INFO_STREAM_NAMED("obj_recognition","Current recognized objected requested");
-
+    
     // Accept the new goal
     picknik_msgs::FindObjectsGoalConstPtr goal;
     goal = action_server_.acceptNewGoal();
+    ROS_INFO("obj_recognition: Current recognized objected requested: Looking for [%s]", goal->desired_object_name.c_str());
 
+    //Tell DDTR that we need some info - pass the Node message 
 
+    string rpc_call = ddtrNode.append("/");
+    rpc_call.append(ddtrGetObjects);
+
+    int res;
+    FindObjectMsg sendMsg;
+    sendMsg.set_objectname(goal->desired_object_name);
+    for (int i=0; i<goal->expected_objects_names.size(); i++)
+      {
+	sendMsg.add_cellobjects(goal->expected_objects_names[i]);
+      }
+    
+    sendMsg.set_sequence(seqToDDTR++);
+
+    ObjectPoseMsg recvMsg;
+    ROS_INFO("obj_recognition: Requesting pose for object [%s] from Node [%s] via RPC", goal->desired_object_name.c_str(), rpc_call.c_str());
+
+    //Extract the camera pose, send to object recognition
+    sendMsg.set_cam_x(goal->camera_pose.position.x);
+    sendMsg.set_cam_y(goal->camera_pose.position.y);
+    sendMsg.set_cam_z(goal->camera_pose.position.z);
+    sendMsg.set_cam_qx(goal->camera_pose.orientation.x);
+    sendMsg.set_cam_qy(goal->camera_pose.orientation.y);
+    sendMsg.set_cam_qz(goal->camera_pose.orientation.z);
+    sendMsg.set_cam_qw(goal->camera_pose.orientation.w);
+    
+    n.call_rpc(rpc_call, sendMsg, recvMsg);
+
+    ROS_INFO("obj_recognition: Got object pose in reply : [%1.3f, %1.3f, %1.3f], seq %d",
+	     recvMsg.x(),
+	     recvMsg.y(),
+	     recvMsg.z(),
+	     recvMsg.sequence());
     // ============================================================
     // Publish test objects
     // ============================================================
@@ -180,7 +239,19 @@ public:
     ros::Duration(1).sleep();
     ros::spinOnce();
     */
+    
+    picknik_msgs::FindObjectsResult result;
+    geometry_msgs::Pose pose;
+    
+    pose.position.x = recvMsg.x();
+    pose.position.y = recvMsg.y();
+    pose.position.z = recvMsg.z();
 
+    pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(recvMsg.p(),
+							   recvMsg.q(),
+							   recvMsg.r());
+    result.succeeded = true;
+    /*
     // ================================================================
     // Return a dummy object
     // ================================================================
@@ -209,8 +280,10 @@ public:
       // Value between 0 and 1 for each expected object's confidence of its pose
       result.expected_object_confidence.push_back(1.0); // we're super confident ;-)
     }
-
+    */
+    
     // Mark action as completed
+    result.expected_objects_poses.push_back(pose);
     action_server_.setSucceeded(result);
   }
 
