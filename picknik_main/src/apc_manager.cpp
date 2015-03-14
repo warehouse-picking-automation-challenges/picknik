@@ -269,22 +269,18 @@ bool APCManager::testCameraPositions()
       continue;
     }
 
-
+    // Get bin and product
     const BinObjectPtr bin = bin_it->second;
-
-    // Check if there are any objects to get
-    if (bin->getProducts().size() == 0)
+    if (bin->getProducts().size() == 0) // Check if there are any objects to get
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","No products in bin");
       return false;
     }
-    // Choose first object
-    const ProductObjectPtr product = bin->getProducts()[0];
+    const ProductObjectPtr product = bin->getProducts()[0]; // Choose first object
 
     // DEBUG
+    if (false)
     {
-      printTransform(shelf_->getBottomRight());
-
       Eigen::Affine3d rand_pose;
       geometry_msgs::Pose temp = visuals_->visual_tools_->convertPose(rand_pose);
       visuals_->visual_tools_->generateRandomPose(temp);
@@ -292,12 +288,12 @@ bool APCManager::testCameraPositions()
       // Set new pose
       //order.product_->getBottomRight() = visuals_->visual_tools_->convertPose(perception_result->desired_object_pose);
     
-      printTransform(shelf_->getBottomRight());
+      printTransform(bin->getBottomRight());
 
       // Update location visually
-      product->visualize(shelf_->getBottomRight());
+      product->visualize(bin->getBottomRight());
+      break;    
     }
-    continue;
 
     // Move camera to the bin
     ROS_INFO_STREAM_NAMED("apc_manager","Moving to bin " << bin_it->first);

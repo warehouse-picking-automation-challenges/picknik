@@ -52,12 +52,14 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   , autonomous_(false)
   , next_step_ready_(false)
   , is_waiting_(false)
+  , fake_perception_(true)
 {
   // Load performance variables
   getDoubleParameter(nh_, "main_velocity_scaling_factor", main_velocity_scaling_factor_);
   getDoubleParameter(nh_, "approach_velocity_scaling_factor", approach_velocity_scaling_factor_);
   getDoubleParameter(nh_, "lift_velocity_scaling_factor", lift_velocity_scaling_factor_);
   getDoubleParameter(nh_, "retreat_velocity_scaling_factor", retreat_velocity_scaling_factor_);
+  getDoubleParameter(nh_, "calibration_velocity_scaling_factor", calibration_velocity_scaling_factor_);
   getDoubleParameter(nh_, "wait_before_grasp", wait_before_grasp_);
   getDoubleParameter(nh_, "wait_after_grasp", wait_after_grasp_);
 
@@ -131,8 +133,11 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
 bool ManipulationPipeline::checkSystemReady()
 {
   // Check Perception
-  ROS_INFO_STREAM_NAMED("pipeline","Waiting for find block perception server.");
-  find_objects_action_.waitForServer();
+  if (!fake_perception_)
+  {
+    ROS_INFO_STREAM_NAMED("pipeline","Waiting for find block perception server.");
+    find_objects_action_.waitForServer();
+  }
 
   // Check robot state valid
   while (ros::ok() && !checkCurrentCollisionAndBounds())
@@ -284,7 +289,7 @@ bool ManipulationPipeline::moveCameraToBin(BinObjectPtr bin)
   bool verbose = true;
   bool execute_trajectory = true;
   bool show_database = false;
-  if (!move(current_state_, goal_state, right_arm_, verbose, execute_trajectory, show_database))
+  if (!move(current_state_, goal_state, right_arm_, main_velocity_scaling_factor_, verbose, execute_trajectory, show_database))
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Failed to move camera to bin");
     return false;
@@ -302,17 +307,24 @@ bool ManipulationPipeline::calibrateCamera()
   bool result = false; // we want to achieve at least one camera pose
 
   std::vector<std::string> poses;
-  //poses.push_back("shelf_calibration1");
+  poses.push_back("shelf_calibration1");
   poses.push_back("shelf_calibration2");
   poses.push_back("shelf_calibration3");
   poses.push_back("shelf_calibration4");
+  poses.push_back("shelf_calibration5");
+  poses.push_back("shelf_calibration6");
 
-  // Move to each pose
+  // Move to each pose. The first move is full speed, the others are slow
+  double velcity_scaling_factor = main_velocity_scaling_factor_;
   for (std::size_t i = 0; i < poses.size(); ++i)
   {
-    ROS_INFO_STREAM_NAMED("pipeline","Moving to camera pose " << poses[i]);
+    ROS_INFO_STREAM_NAMED("pipeline","Moving to camera pose " << poses[i] << " with scaling factor " << calibration_velocity_scaling_factor_);
 
-    if (!moveToPose(right_arm_, poses[i]))
+    // First one goes fast
+    if (i > 0)
+      velcity_scaling_factor = calibration_velocity_scaling_factor_;
+
+    if (!moveToPose(right_arm_, poses[i], velcity_scaling_factor))
     {
       ROS_ERROR_STREAM_NAMED("pipeline","Unable to move to pose " << poses[i]);
       return false;
@@ -328,7 +340,7 @@ bool ManipulationPipeline::calibrateCamera()
 
 bool ManipulationPipeline::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose)
 {
-  if (true)
+  if (!fake_perception_)
   {
     // Communicate with perception pipeline
 
@@ -595,7 +607,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
 
         createCollisionWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
 
-        if (!move(current_state_, pre_grasp_state, arm_jmg, verbose, execute_trajectory, show_database_))
+        if (!move(current_state_, pre_grasp_state, arm_jmg, main_velocity_scaling_factor_, verbose, execute_trajectory, show_database_))
         {
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to plan");
           return false;
@@ -825,15 +837,16 @@ const robot_model::JointModelGroup* ManipulationPipeline::chooseArm(const Eigen:
 
 bool ManipulationPipeline::moveToStartPosition(const robot_model::JointModelGroup* arm_jmg)
 {
-  return moveToPose(arm_jmg, start_pose_);
+  return moveToPose(arm_jmg, start_pose_, main_velocity_scaling_factor_);
 }
 
 bool ManipulationPipeline::moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg)
 {
-  return moveToPose(arm_jmg, dropoff_pose_);
+  return moveToPose(arm_jmg, dropoff_pose_, main_velocity_scaling_factor_);
 }
 
-bool ManipulationPipeline::moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name)
+bool ManipulationPipeline::moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name, 
+                                      double velocity_scaling_factor)
 {
   // Get default arm(s) to move
   if (!arm_jmg)
@@ -855,7 +868,9 @@ bool ManipulationPipeline::moveToPose(const robot_model::JointModelGroup* arm_jm
 
   // Plan
   bool execute_trajectory = true;
-  if (!move(current_state_, goal_state, arm_jmg, verbose_, execute_trajectory, show_database_))
+  bool show_database = false;
+  if (!move(current_state_, goal_state, arm_jmg, velocity_scaling_factor,
+            verbose_, execute_trajectory, show_database))
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Unable to move to new position");
     return false;
@@ -896,9 +911,11 @@ bool ManipulationPipeline::getSRDFPose(const robot_model::JointModelGroup* jmg)
 }
 
 bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
-                                const robot_model::JointModelGroup* arm_jmg, bool verbose, bool execute_trajectory,
-                                bool show_database)
+                                const robot_model::JointModelGroup* arm_jmg, double velocity_scaling_factor,
+                                bool verbose, bool execute_trajectory, bool show_database)
+                                
 {
+  ROS_ERROR_STREAM_NAMED("temp","velocity_scaling_factor " << velocity_scaling_factor);
   // Check validity of start and goal
   if (!checkCollisionAndBounds(start, goal))
   {
@@ -940,7 +957,7 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
   req.allowed_planning_time = 30; // seconds
   req.use_experience = use_experience_;
   req.experience_method = "lightning";
-  req.max_velocity_scaling_factor = main_velocity_scaling_factor_;
+  req.max_velocity_scaling_factor = velocity_scaling_factor;
 
   // Parameters for the workspace that the planner should work inside relative to center of robot
   double workspace_size = 1;
@@ -2016,7 +2033,7 @@ bool ManipulationPipeline::planToRandomValid()
       bool verbose = true;
       bool execute_trajectory = true;
       bool show_database = false;
-      if (move(current_state_, goal_state, right_arm_, verbose, execute_trajectory, show_database))
+      if (move(current_state_, goal_state, right_arm_, main_velocity_scaling_factor_, verbose, execute_trajectory, show_database))
       {
         ROS_INFO_STREAM_NAMED("pipeline","Planned to random valid state successfullly");
         return true;

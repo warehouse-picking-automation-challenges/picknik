@@ -139,6 +139,8 @@ int main(int argc, char** argv)
       break;
     case 4:
       ROS_INFO_STREAM_NAMED("main","Only visualizing shelf... ready to shutdown.");
+      ros::spinOnce();
+      ros::Duration(4).sleep();
       break;
     case 5:
        ROS_INFO_STREAM_NAMED("main","Raise the roof (go up and down)");

@@ -158,7 +158,7 @@ public:
    * \brief Move to any pose as defined in the SRDF
    * \return true on success
    */
-  bool moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name);
+  bool moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name, double velocity_scaling_factor);
 
   /**
    * \brief Get the XML of a SDF pose of joints
@@ -171,8 +171,8 @@ public:
    * \return true on success
    */
   bool move(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
-            const robot_model::JointModelGroup* arm_jmg, bool verbose, bool execute_trajectory = true,
-            bool show_database = true);
+            const robot_model::JointModelGroup* arm_jmg, double velocity_scaling_factor,
+            bool verbose, bool execute_trajectory = true, bool show_database = true);            
 
   /**
    * \brief Simple testing script to open close EEs
@@ -448,6 +448,7 @@ protected:
   double approach_velocity_scaling_factor_;
   double lift_velocity_scaling_factor_;
   double retreat_velocity_scaling_factor_;
+  double calibration_velocity_scaling_factor_;
   double wait_before_grasp_;
   double wait_after_grasp_;
 
@@ -477,6 +478,8 @@ protected:
   bool next_step_ready_;
   bool is_waiting_;
 
+  // Perception
+  bool fake_perception_;
 }; // end class
 
 } // end namespace
