@@ -3,4 +3,11 @@ message FindObjectMsg{
 	repeated string cellObjects = 2;
 	optional double device_time = 3;
 	required int32 sequence = 4;
+	required double cam_x = 5;
+	required double cam_y = 6;
+	required double cam_z = 7;
+	required double cam_qx = 8;
+	required double cam_qy = 9;
+	required double cam_qz = 10;
+	required double cam_qw = 11;
 }

@@ -151,6 +151,15 @@ public:
 
     ObjectPoseMsg recvMsg;
     ROS_INFO("obj_recognition: Requesting pose for object [%s] from Node [%s] via RPC", goal->desired_object_name.c_str(), rpc_call.c_str());
+
+    //Extract the camera pose, send to object recognition
+    sendMsg.set_cam_x(goal->camera_pose.position.x);
+    sendMsg.set_cam_y(goal->camera_pose.position.y);
+    sendMsg.set_cam_z(goal->camera_pose.position.z);
+    sendMsg.set_cam_qx(goal->camera_pose.orientation.x);
+    sendMsg.set_cam_qy(goal->camera_pose.orientation.y);
+    sendMsg.set_cam_qz(goal->camera_pose.orientation.z);
+    sendMsg.set_cam_qw(goal->camera_pose.orientation.w);
     
     n.call_rpc(rpc_call, sendMsg, recvMsg);
 

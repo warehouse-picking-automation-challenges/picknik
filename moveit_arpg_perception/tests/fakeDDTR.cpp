@@ -21,6 +21,18 @@ void getObjects( FindObjectMsg& Req, ObjectPoseMsg& Rep, void* )
   // do something
   // gText = Req.value();
 
+  //Print out request:
+  printf("Got request for object [%s]\n");
+  printf("Camera pose: (%1.3f %1.3f %1.3f), (%1.3f, %1.3f, %1.3f, %1.3f)\n",
+	 Req.cam_x(),
+	 Req.cam_y(),
+	 Req.cam_z(),
+	 Req.cam_qx(),
+	 Req.cam_qy(),
+	 Req.cam_qz(),
+	 Req.cam_qw());
+	 
+  
   // prepare reply message
   Rep.set_objectname(Req.objectname());
   Rep.set_x((double)rand()/(double)rand());
