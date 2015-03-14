@@ -35,9 +35,10 @@ goal_bin_z: 0.28
 
 # Perception Data
 camera_x_translation_from_bin: -0.9 # meters
-camera_y_translation_from_bin: 0.0 # meters
-camera_z_translation_from_bin: 0.0 # meters
-camera_x_rotation_from_standard_grasp: -0.2  # radians
-camera_y_rotation_from_standard_grasp: 0.0  # radians
+camera_y_translation_from_bin: 0.0 # negative is right looking at shelf
+camera_z_translation_from_bin: -0.2 # negative is down
+camera_x_rotation_from_standard_grasp: -0.4 #-0.2  # radians
+camera_y_rotation_from_standard_grasp: -0.4  # negative is torwards right of shelf
 camera_z_rotation_from_standard_grasp: 1.4  # radians
 camera_lift_distance: 0.05
+camera_left_distance: 0.05

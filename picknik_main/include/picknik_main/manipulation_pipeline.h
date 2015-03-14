@@ -207,6 +207,7 @@ public:
    * \return true on success
    */
   bool executeLiftPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true);
+  bool executeLeftPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool left = true);
 
   /**
    * \brief After grasping an object, pull object out of shelf in reverse
@@ -392,8 +393,6 @@ public:
   bool setReadyForNextStep();
   bool setAutonomous();
 
-public:
-
 protected:
 
   // A shared node handle
@@ -469,6 +468,7 @@ protected:
   double camera_y_rotation_from_standard_grasp_;
   double camera_z_rotation_from_standard_grasp_;
   double camera_lift_distance_;
+  double camera_left_distance_;
   
   // Perception pipeline communication
   actionlib::SimpleActionClient<picknik_msgs::FindObjectsAction> find_objects_action_;

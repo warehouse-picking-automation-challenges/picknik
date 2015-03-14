@@ -263,7 +263,7 @@ bool APCManager::testCameraPositions()
       return true;
 
     // Skip first row
-    if (bin_skipper < 3 && false)
+    if (bin_skipper < 3)
     {
       bin_skipper++;
       continue;
@@ -277,6 +277,7 @@ bool APCManager::testCameraPositions()
       return false;
     }
     const ProductObjectPtr product = bin->getProducts()[0]; // Choose first object
+    WorkOrder order(bin, product);
 
     // DEBUG
     if (false)
@@ -295,27 +296,13 @@ bool APCManager::testCameraPositions()
       break;    
     }
 
-    // Move camera to the bin
-    ROS_INFO_STREAM_NAMED("apc_manager","Moving to bin " << bin_it->first);
-    if (!pipeline_->moveCameraToBin(bin))
-    {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
-      return false;
-    }
-
-    // Tell perception pipeline to detect
-    ROS_INFO_STREAM_NAMED("apc_manager","Getting object pose");
     Eigen::Affine3d object_pose;
     bool verbose = true;
-    WorkOrder order(bin, product);
     if (!pipeline_->getObjectPose(object_pose, order, verbose))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to get product");
       return false;
     }
-
-    std::cout << "DONE " << std::endl;
-
     return true;
   }
 

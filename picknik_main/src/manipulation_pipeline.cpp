@@ -71,6 +71,7 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   getDoubleParameter(nh_, "camera_y_rotation_from_standard_grasp", camera_y_rotation_from_standard_grasp_);
   getDoubleParameter(nh_, "camera_z_rotation_from_standard_grasp", camera_z_rotation_from_standard_grasp_);
   getDoubleParameter(nh_, "camera_lift_distance", camera_lift_distance_);
+  getDoubleParameter(nh_, "camera_left_distance", camera_left_distance_);
 
   // Load semantics
   getStringParameter(nh_, "start_pose", start_pose_);
@@ -340,6 +341,64 @@ bool ManipulationPipeline::calibrateCamera()
 
 bool ManipulationPipeline::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose)
 {
+
+  // Move camera to the bin
+  ROS_INFO_STREAM_NAMED("apc_manager","Moving to bin " << order.bin_->getName());
+  if (!moveCameraToBin(order.bin_))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << order.bin_->getName());
+    return false;
+  }
+
+  //Move camera left
+  ROS_INFO_STREAM_NAMED("pipeline","Moving camera left distance " << camera_left_distance_);
+  bool left = true;
+  if (!executeLeftPath(right_arm_, camera_left_distance_, left))
+  {
+    ROS_ERROR_STREAM_NAMED("pipeline","Unable to move left");
+  }
+
+  // Move camera right
+  ROS_INFO_STREAM_NAMED("pipeline","Moving camera right distance " << camera_left_distance_ * 2.0);
+  left = false;
+  if (!executeLeftPath(right_arm_, camera_left_distance_ * 2.0, left))
+  {
+    ROS_ERROR_STREAM_NAMED("pipeline","Unable to move right");
+  }
+
+  // Move back to center
+  if (!moveCameraToBin(order.bin_))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << order.bin_->getName());
+    return false;
+  }
+
+  // Move camera up
+  ROS_INFO_STREAM_NAMED("pipeline","Lifting camera distance " << camera_lift_distance_);
+  if (!executeLiftPath(right_arm_, camera_lift_distance_))
+  {
+    ROS_ERROR_STREAM_NAMED("pipeline","Unable to move up");
+  }
+
+  // Move camera down
+  ROS_INFO_STREAM_NAMED("pipeline","Lowering camera distance " << camera_lift_distance_ * 2.0);
+  bool up = false;
+  if (!executeLiftPath(right_arm_, camera_lift_distance_ * 2.0, up))
+  {
+    ROS_ERROR_STREAM_NAMED("pipeline","Unable to move down");
+  }
+
+  // Tell perception pipeline to detect
+  ROS_INFO_STREAM_NAMED("apc_manager","Getting object pose");
+
+
+  // if (!getObjectPose(object_pose, order, verbose))
+  // {
+  //   ROS_ERROR_STREAM_NAMED("apc_manager","Failed to get product");
+  //   return false;
+  // }
+
+  /*
   if (!fake_perception_)
   {
     // Communicate with perception pipeline
@@ -422,6 +481,7 @@ bool ManipulationPipeline::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder
       object_pose = world_obj->shape_poses_[0];
     }
   }
+  */
 
   return true;
 }
@@ -1175,6 +1235,48 @@ bool ManipulationPipeline::executeLiftPath(const moveit::core::JointModelGroup *
   // Compute straight line up above grasp
   Eigen::Vector3d approach_direction;
   approach_direction << 0, 0, (up ? 1 : -1); // 1 is up, -1 is down
+  std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
+  double path_length;
+  bool reverse_path = false;
+  if (!computeStraightLinePath( approach_direction, desired_lift_distance,
+                                robot_state_trajectory, current_state_, arm_jmg, reverse_path, path_length))
+  {
+    ROS_ERROR_STREAM_NAMED("pipeline","Error occured while computing straight line path");
+    return false;
+  }
+
+  // Get approach trajectory message
+  moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, lift_velocity_scaling_factor_))
+  {
+    ROS_ERROR_STREAM_NAMED("pipeline","Failed to convert to parameterized trajectory");
+    return false;
+  }
+
+  // Visualize trajectory in Rviz display
+  bool wait_for_trajetory = false;
+  visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, current_state_, wait_for_trajetory);
+
+  // Execute
+  if( !executeTrajectory(cartesian_trajectory_msg) )
+  {
+    ROS_ERROR_STREAM_NAMED("pipeline","Failed to execute trajectory");
+    return false;
+  }
+
+  return true;
+}
+
+bool ManipulationPipeline::executeLeftPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool left)
+{
+  getCurrentState();
+
+  // Clear all collision objects
+  visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
+
+  // Compute straight line left above grasp
+  Eigen::Vector3d approach_direction;
+  approach_direction << 0, (left ? 1 : -1), 0; // 1 is left, -1 is right
   std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
   double path_length;
   bool reverse_path = false;
