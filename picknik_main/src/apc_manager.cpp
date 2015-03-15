@@ -114,6 +114,7 @@ bool APCManager::runOrder(bool use_experience, bool show_database, std::size_t o
   }
 
   pipeline_->statusPublisher("Finished");
+  return true;
 }
 
 bool APCManager::trainExperienceDatabase()
@@ -166,6 +167,7 @@ bool APCManager::testEndEffectors()
   //pipeline_->statusPublisher("Testing EE min approach distance");
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done testing end effectors");
+  return true;
 }
 
 bool APCManager::testUpAndDown()
@@ -179,6 +181,7 @@ bool APCManager::testUpAndDown()
   pipeline_->testUpAndDown();
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done testing up and down");
+  return true;
 }
 
 bool APCManager::testShelfLocation()
@@ -190,12 +193,30 @@ bool APCManager::testShelfLocation()
                                            planning_scene_monitor_, plan_execution_,
                                            shelf_, use_experience, show_database));
 
-  // Configure
-  ROS_WARN_STREAM_NAMED("temp","TODO");
+  // Move to far left front corner of bottom left bin  
+  Eigen::Affine3d ee_pose = shelf_->getBottomRight() * shelf_->getBins()["bin_J"]->getBottomRight(); // convert to world frame
+  ee_pose.translation().y() += shelf_->getBins()["bin_J"]->getWidth();
 
-  // TODO
+  // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
+  ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
+  ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitZ());
+
+  // Translate to custom end effector geometry
+  ee_pose = ee_pose * pipeline_->getGraspDatas()[right_arm_].grasp_pose_to_eef_pose_;
+  
+  // Visual debug
+  visuals_->visual_tools_->publishSphere(ee_pose);
+  visuals_->visual_tools_->publishAxis(ee_pose);
+
+  double velocity_scaling_factor = 0.5;
+  if (!pipeline_->moveEEToPose(ee_pose, velocity_scaling_factor))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move arm to desired shelf location");
+    return false;
+  }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done testing shelf location");
+  return true;
 }
 
 bool APCManager::testGoalBinPose()
@@ -209,6 +230,7 @@ bool APCManager::testGoalBinPose()
   pipeline_->moveToDropOffPosition();
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done going to goal bin pose");  
+  return true;
 }
 
 bool APCManager::testInCollision()
@@ -227,6 +249,7 @@ bool APCManager::testInCollision()
   }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done checking if in collision");  
+  return true;
 }
 
 bool APCManager::testRandomValidMotions()
@@ -245,6 +268,7 @@ bool APCManager::testRandomValidMotions()
   }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done planning to random valid");  
+  return true;
 }
 
 bool APCManager::testCameraPositions()
@@ -307,6 +331,7 @@ bool APCManager::testCameraPositions()
   }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done planning to random valid");  
+  return true;
 }
 
 
@@ -322,6 +347,7 @@ bool APCManager::testCalibration()
   pipeline_->calibrateCamera();
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done calibrating camera");  
+  return true;
 }
 
 bool APCManager::testJointLimits()
@@ -336,6 +362,7 @@ bool APCManager::testJointLimits()
   pipeline_->testJointLimits();
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done testing joint limits");  
+  return true;
 }
 
 bool APCManager::getPose()

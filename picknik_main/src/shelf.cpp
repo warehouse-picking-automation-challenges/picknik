@@ -386,7 +386,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   // Base
   // Note: bottom right is at 0,0,0
   shelf_parts_.push_back(RectangleObject(visuals_, color_, "base"));
-  RectangleObject &base = shelf_parts_[shelf_parts_.size()-1];
+  RectangleObject &base = shelf_parts_.back();
   top_left = base.getTopLeft();
   top_left.translation().x() += shelf_depth_;
   top_left.translation().y() += shelf_width_;
@@ -401,13 +401,13 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     // Note: bottom right is at 0,0,0
     const std::string wall_name = "wall_" + boost::lexical_cast<std::string>(i);
     shelf_parts_.push_back(RectangleObject(visuals_, color_, wall_name));
-    RectangleObject &wall = shelf_parts_[shelf_parts_.size()-1];
+    RectangleObject &wall = shelf_parts_.back();
     // Geometry 
     bottom_right = wall.getBottomRight();
     bottom_right.translation().x() = 0;
     bottom_right.translation().y() = previous_y - shelf_wall_width_ * 0.5;
     bottom_right.translation().z() = first_bin_from_bottom_;
-    wall.setBottomRight(bottom_right_);
+    wall.setBottomRight(bottom_right);
 
     top_left = wall.getTopLeft();
     top_left.translation().x() = shelf_depth_;
@@ -431,7 +431,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   {
     const std::string shelf_name = "shelf_" + boost::lexical_cast<std::string>(i);
     shelf_parts_.push_back(RectangleObject(visuals_, color_, shelf_name));
-    RectangleObject &shelf = shelf_parts_[shelf_parts_.size()-1];
+    RectangleObject &shelf = shelf_parts_.back();
 
     // Geometry
     top_left = shelf.getTopLeft();

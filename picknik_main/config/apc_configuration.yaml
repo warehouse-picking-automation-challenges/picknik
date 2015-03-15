@@ -24,6 +24,9 @@ approach_velocity_scaling_factor: 0.25
 lift_velocity_scaling_factor: 0.5
 retreat_velocity_scaling_factor: 0.8
 
+# Movement config
+approach_distance_desired: 0.1; # amount beyond min distance
+
 # Sleep timers
 wait_before_grasp: 0.1
 wait_after_grasp: 0.1

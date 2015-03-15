@@ -62,6 +62,7 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   getDoubleParameter(nh_, "calibration_velocity_scaling_factor", calibration_velocity_scaling_factor_);
   getDoubleParameter(nh_, "wait_before_grasp", wait_before_grasp_);
   getDoubleParameter(nh_, "wait_after_grasp", wait_after_grasp_);
+  getDoubleParameter(nh_, "approach_distance_desired", approach_distance_desired_);
 
   // Load perception variables
   getDoubleParameter(nh_, "camera_x_translation_from_bin", camera_x_translation_from_bin_);
@@ -235,52 +236,57 @@ bool ManipulationPipeline::createCollisionWall()
 
 bool ManipulationPipeline::moveCameraToBin(BinObjectPtr bin)
 {
-  // Create start
-  getCurrentState();
-
-  // Create goal
-  moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_));
-
   // Create pose to find IK solver
-  Eigen::Affine3d grasp_pose = bin->getCentroid();
-  grasp_pose = transform(grasp_pose, shelf_->getBottomRight());
+  Eigen::Affine3d ee_pose = bin->getCentroid();
+  ee_pose = transform(ee_pose, shelf_->getBottomRight());
 
   // Move centroid backwards
-  grasp_pose.translation().x() += camera_x_translation_from_bin_;
-  grasp_pose.translation().y() += camera_y_translation_from_bin_;
-  grasp_pose.translation().z() += camera_z_translation_from_bin_;
+  ee_pose.translation().x() += camera_x_translation_from_bin_;
+  ee_pose.translation().y() += camera_y_translation_from_bin_;
+  ee_pose.translation().z() += camera_z_translation_from_bin_;
 
-  grasp_pose = grasp_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
-  grasp_pose = grasp_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitZ());
+  // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
+  ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
+  ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitZ());
 
   // Translate to custom end effector geometry
-  grasp_pose = grasp_pose * grasp_datas_[right_arm_].grasp_pose_to_eef_pose_;
+  ee_pose = ee_pose * grasp_datas_[right_arm_].grasp_pose_to_eef_pose_;
 
+  // Customize the direction it is pointing
   // Roll Angle
-  grasp_pose = grasp_pose * Eigen::AngleAxisd(camera_z_rotation_from_standard_grasp_, Eigen::Vector3d::UnitZ());
+  ee_pose = ee_pose * Eigen::AngleAxisd(camera_z_rotation_from_standard_grasp_, Eigen::Vector3d::UnitZ());
   // Pitch Angle
-  grasp_pose = grasp_pose * Eigen::AngleAxisd(camera_x_rotation_from_standard_grasp_, Eigen::Vector3d::UnitX());
+  ee_pose = ee_pose * Eigen::AngleAxisd(camera_x_rotation_from_standard_grasp_, Eigen::Vector3d::UnitX());
   // Yaw Angle
-  grasp_pose = grasp_pose * Eigen::AngleAxisd(camera_y_rotation_from_standard_grasp_, Eigen::Vector3d::UnitY());
+  ee_pose = ee_pose * Eigen::AngleAxisd(camera_y_rotation_from_standard_grasp_, Eigen::Vector3d::UnitY());
 
+  return moveEEToPose(ee_pose, main_velocity_scaling_factor_);
+}
+
+bool ManipulationPipeline::moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_scaling_factor)
+{
   // Debug
-  visuals_->visual_tools_->publishAxis(grasp_pose);
+  visuals_->visual_tools_->publishAxis(ee_pose);
+  
+  // Setup collision checking
+  bool collision_checking_verbose = false;
+  boost::scoped_ptr<planning_scene_monitor::LockedPlanningSceneRO> ls;
+  ls.reset(new planning_scene_monitor::LockedPlanningSceneRO(planning_scene_monitor_));
+  robot_state::GroupStateValidityCallbackFn constraint_fn
+    = boost::bind(&isStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
+                  collision_checking_verbose, visuals_, _1, _2, _3);
 
+  // Create start and goal
+  getCurrentState();
+  moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_));
+
+  // Solve IK problem for arm
+  std::size_t attempts = 3;
+  double timeout = 0.1; // TODO
+  if (!goal_state->setFromIK(right_arm_, ee_pose, attempts, timeout, constraint_fn))
   {
-    // Collision check
-    bool collision_checking_verbose = false;
-    boost::scoped_ptr<planning_scene_monitor::LockedPlanningSceneRO> ls;
-    ls.reset(new planning_scene_monitor::LockedPlanningSceneRO(planning_scene_monitor_));
-    robot_state::GroupStateValidityCallbackFn constraint_fn
-      = boost::bind(&isStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
-                    collision_checking_verbose, visuals_, _1, _2, _3);
-
-    std::size_t attempts = 3;
-    double timeout = 0.1; // TODO
-    if (!goal_state->setFromIK(right_arm_, grasp_pose, attempts, timeout, constraint_fn))
-    {
-      ROS_ERROR_STREAM_NAMED("pipeline","Unable to find arm pose for camera view");
-    }
+    ROS_ERROR_STREAM_NAMED("pipeline","Unable to find arm solution for desired pose");
+    return false;
   }
 
   // Debug
@@ -290,13 +296,13 @@ bool ManipulationPipeline::moveCameraToBin(BinObjectPtr bin)
   bool verbose = true;
   bool execute_trajectory = true;
   bool show_database = false;
-  if (!move(current_state_, goal_state, right_arm_, main_velocity_scaling_factor_, verbose, execute_trajectory, show_database))
+  if (!move(current_state_, goal_state, right_arm_, velocity_scaling_factor, verbose, execute_trajectory, show_database))
   {
-    ROS_ERROR_STREAM_NAMED("pipeline","Failed to move camera to bin");
+    ROS_ERROR_STREAM_NAMED("pipeline","Failed to move EE to desired pose");
     return false;
   }
 
-  ROS_INFO_STREAM_NAMED("pipeline","Moved camera to bin successfullly");
+  ROS_INFO_STREAM_NAMED("pipeline","Moved EE to desired pose successfullly");
 
   return true;
 }
@@ -1012,7 +1018,10 @@ bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const 
   req.planner_id = "RRTConnectkConfigDefault";
   //req.planner_id = "RRTstarkConfigDefault";
   req.group_name = arm_jmg->getName();
-  req.num_planning_attempts = 1; // this must be one else it threads and doesn't use lightning/thunder correctly
+  if (use_experience_)
+    req.num_planning_attempts = 1; // this must be one else it threads and doesn't use lightning/thunder correctly
+  else
+    req.num_planning_attempts = 4; // this is also the number of threads to use
   req.allowed_planning_time = 30; // seconds
   req.use_experience = use_experience_;
   req.experience_method = "lightning";
@@ -1218,7 +1227,7 @@ bool ManipulationPipeline::generateApproachPath(const moveit::core::JointModelGr
   // Configurations
   Eigen::Vector3d approach_direction;
   approach_direction << -1, 0, 0; // backwards towards robot body
-  double desired_approach_distance = grasp_datas_[arm_jmg].finger_to_palm_depth_ + APPROACH_DISTANCE_DESIRED;
+  double desired_approach_distance = grasp_datas_[arm_jmg].finger_to_palm_depth_ + approach_distance_desired_;
 
   // Show desired distance
   std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
@@ -1836,15 +1845,6 @@ bool ManipulationPipeline::saveTrajectory(const moveit_msgs::RobotTrajectory &tr
 bool ManipulationPipeline::allowFingerTouch(const std::string& object_name, const robot_model::JointModelGroup* arm_jmg)
 {
   // TODO does this reset properly i.e. clear the matrix?
-
-  // Error check
-  if (arm_jmg != right_arm_ && arm_jmg != left_arm_)
-  {
-    ROS_ERROR_STREAM_NAMED("pipeline","Unknown joint model group passed to allowFingerTouch");
-    if (arm_jmg)
-      ROS_ERROR_STREAM_NAMED("pipeline","Joint model group: " << arm_jmg->getName());
-    return false;
-  }
 
   // Lock planning scene
   {

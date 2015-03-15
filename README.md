@@ -182,7 +182,7 @@ Run APC Manager (main program) for JACOB on hardware
 		12. Test camera calibration
 		13. Test joint limits
 	jump_to - which step in the manipulation pipeline to start on
-	  Steps:
+	  Steps: NOT CORRECT ANYMORE
 	    0. Move to initial position
 		1. Open end effectors
 		2. Generate and choose grasp

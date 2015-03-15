@@ -49,7 +49,7 @@ namespace picknik_main
 
 MOVEIT_CLASS_FORWARD(ManipulationPipeline);
 
-const double APPROACH_DISTANCE_DESIRED = 0.1; // amount beyond min distance
+typedef std::map<const robot_model::JointModelGroup*,moveit_grasps::GraspData> GraspDatas;
 
 class ManipulationPipeline
 {
@@ -100,6 +100,13 @@ public:
    * \return true on success
    */
   bool moveCameraToBin(BinObjectPtr bin);
+
+  /**
+   * \brief Move EE to a particular pose by solving with IK
+   * \param input - description
+   * \return true on success
+   */
+  bool moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_scaling_factor);
 
   /**
    * \brief Run calibration routine
@@ -399,6 +406,23 @@ public:
    * \return true on success
    */
   bool testJointLimits();
+ 
+  /**
+   * \brief Getter for GraspDatas
+   */ 
+  const GraspDatas& getGraspDatas() const
+  {
+    return grasp_datas_;
+  }
+  
+  /**
+   * \brief Setter for GraspDatas
+   */
+  void setGraspDatas(const GraspDatas& grasp_datas)
+  {
+    grasp_datas_ = grasp_datas;
+  }
+  
 
 protected:
 
@@ -434,7 +458,7 @@ protected:
   moveit_grasps::GraspFilterPtr grasp_filter_;
 
   // robot-specific data for generating grasps
-  std::map<const robot_model::JointModelGroup*,moveit_grasps::GraspData> grasp_datas_;
+  GraspDatas grasp_datas_;
 
   // Properties
   ShelfObjectPtr shelf_;
@@ -457,6 +481,7 @@ protected:
   double calibration_velocity_scaling_factor_;
   double wait_before_grasp_;
   double wait_after_grasp_;
+  double approach_distance_desired_;
 
   // Robot-specific variables
   std::string start_pose_; // where to move robot to initially. should be for both arms if applicable
