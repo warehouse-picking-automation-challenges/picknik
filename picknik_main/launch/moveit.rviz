@@ -45,7 +45,7 @@ Visualization Manager:
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: true
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -129,13 +129,218 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        xtion:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
       Name: Robot State
       Robot Alpha: 1
       Robot Description: robot_description
       Robot State Topic: /picknik_main/robot_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
+      Visual Enabled: false
+    - Attached Body Color: 150; 50; 150
+      Class: moveit_rviz_plugin/RobotState
+      Collision Enabled: true
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gantry:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gantry_plate:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_api_origin:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        jaco2_end_effector:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        jaco2_link_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_hand:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        xtion:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+      Name: Planning Start State
+      Robot Alpha: 1
+      Robot Description: robot_description
+      Robot State Topic: /picknik_main/robot_start_state
+      Show All Links: true
+      Show Highlights: true
+      Value: true
+      Visual Enabled: false
+    - Attached Body Color: 150; 50; 150
+      Class: moveit_rviz_plugin/RobotState
+      Collision Enabled: true
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gantry:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gantry_plate:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_api_origin:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        jaco2_end_effector:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        jaco2_link_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_hand:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        xtion:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+      Name: Planning Goal State
+      Robot Alpha: 1
+      Robot Description: robot_description
+      Robot State Topic: /picknik_main/robot_goal_state
+      Show All Links: true
+      Show Highlights: true
+      Value: true
       Visual Enabled: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
@@ -224,192 +429,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-      Name: Planning Start State
-      Robot Alpha: 1
-      Robot Description: robot_description
-      Robot State Topic: /picknik_main/robot_start_state
-      Show All Links: true
-      Show Highlights: true
-      Value: false
-      Visual Enabled: true
-    - Attached Body Color: 150; 50; 150
-      Class: moveit_rviz_plugin/RobotState
-      Collision Enabled: false
-      Enabled: false
-      Links:
-        All Links Enabled: true
-        Expand Joint Details: false
-        Expand Link Details: false
-        Expand Tree: false
-        Link Tree Style: Links in Alphabetic Order
-        base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        gantry:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        gantry_plate:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_api_origin:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        jaco2_end_effector:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        jaco2_link_1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_4:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_5:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_finger_1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_finger_2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_finger_3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_hand:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-      Name: Planning Goal State
-      Robot Alpha: 1
-      Robot Description: robot_description
-      Robot State Topic: /picknik_main/robot_goal_state
-      Show All Links: true
-      Show Highlights: true
-      Value: false
-      Visual Enabled: true
-    - Attached Body Color: 150; 50; 150
-      Class: moveit_rviz_plugin/RobotState
-      Collision Enabled: false
-      Enabled: false
-      Links:
-        All Links Enabled: true
-        Expand Joint Details: false
-        Expand Link Details: false
-        Expand Tree: false
-        Link Tree Style: Links in Alphabetic Order
-        base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        gantry:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        gantry_plate:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_api_origin:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        jaco2_end_effector:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        jaco2_link_1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_4:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_5:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_finger_1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_finger_2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_finger_3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_hand:
+        xtion:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -427,6 +447,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Visual Tools
       Namespaces:
+        Collision: true
         Cylinder: true
         Text: true
       Queue Size: 100
@@ -440,13 +461,13 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /picknik_main/display_contacts
       Name: MoveIt Contacts
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /move_group/display_grasp_markers
@@ -540,6 +561,11 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        xtion:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
       Loop Animation: false
       Name: Trajectory
       Robot Alpha: 0.5
@@ -560,7 +586,7 @@ Visualization Manager:
         Scene Alpha: 0.9
         Scene Color: 50; 230; 50
         Scene Display Time: 0.2
-        Show Scene Geometry: true
+        Show Scene Geometry: false
         Voxel Coloring: Z-Axis
         Voxel Rendering: Occupied Voxels
       Scene Robot:
@@ -648,6 +674,11 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          xtion:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
         Robot Alpha: 0.5
         Show Robot Collision: true
         Show Robot Visual: false
@@ -688,22 +719,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 2.98639
+      Distance: 2.65921
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.186699
-        Y: -0.382648
+        X: 0.0239962
+        Y: 0.0208253
         Z: 1.19209e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.470398
+      Pitch: 0.934797
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 2.06039
+      Yaw: 1.25725
     Saved: ~
 Window Geometry:
   Displays:
@@ -719,5 +750,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1162
-  X: 1521
+  X: 1511
   Y: 14

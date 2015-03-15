@@ -66,7 +66,7 @@ ManipulationPipeline::ManipulationPipeline(bool verbose, VisualsPtr visuals,
   // Load perception variables
   getDoubleParameter(nh_, "camera_x_translation_from_bin", camera_x_translation_from_bin_);
   getDoubleParameter(nh_, "camera_y_translation_from_bin", camera_y_translation_from_bin_);
-  getDoubleParameter(nh_, "camera_z_translation_from_bin", camera_z_translation_from_bin_);  
+  getDoubleParameter(nh_, "camera_z_translation_from_bin", camera_z_translation_from_bin_);
   getDoubleParameter(nh_, "camera_x_rotation_from_standard_grasp", camera_x_rotation_from_standard_grasp_);
   getDoubleParameter(nh_, "camera_y_rotation_from_standard_grasp", camera_y_rotation_from_standard_grasp_);
   getDoubleParameter(nh_, "camera_z_rotation_from_standard_grasp", camera_z_rotation_from_standard_grasp_);
@@ -257,11 +257,11 @@ bool ManipulationPipeline::moveCameraToBin(BinObjectPtr bin)
   grasp_pose = grasp_pose * grasp_datas_[right_arm_].grasp_pose_to_eef_pose_;
 
   // Roll Angle
-  grasp_pose = grasp_pose * Eigen::AngleAxisd(camera_z_rotation_from_standard_grasp_, Eigen::Vector3d::UnitZ());  
+  grasp_pose = grasp_pose * Eigen::AngleAxisd(camera_z_rotation_from_standard_grasp_, Eigen::Vector3d::UnitZ());
   // Pitch Angle
-  grasp_pose = grasp_pose * Eigen::AngleAxisd(camera_x_rotation_from_standard_grasp_, Eigen::Vector3d::UnitX());  
+  grasp_pose = grasp_pose * Eigen::AngleAxisd(camera_x_rotation_from_standard_grasp_, Eigen::Vector3d::UnitX());
   // Yaw Angle
-  grasp_pose = grasp_pose * Eigen::AngleAxisd(camera_y_rotation_from_standard_grasp_, Eigen::Vector3d::UnitY());  
+  grasp_pose = grasp_pose * Eigen::AngleAxisd(camera_y_rotation_from_standard_grasp_, Eigen::Vector3d::UnitY());
 
   // Debug
   visuals_->visual_tools_->publishAxis(grasp_pose);
@@ -297,7 +297,7 @@ bool ManipulationPipeline::moveCameraToBin(BinObjectPtr bin)
   }
 
   ROS_INFO_STREAM_NAMED("pipeline","Moved camera to bin successfullly");
-  
+
   return true;
 }
 
@@ -399,8 +399,8 @@ bool ManipulationPipeline::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder
   // }
 
   /*
-  if (!fake_perception_)
-  {
+    if (!fake_perception_)
+    {
     // Communicate with perception pipeline
 
     // Setup goal
@@ -429,14 +429,14 @@ bool ManipulationPipeline::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder
     bool up = false;
     if (!executeLiftPath(right_arm_, camera_lift_distance_ * 2.0, up))
     {
-      ROS_ERROR_STREAM_NAMED("pipeline","Unable to move down");
+    ROS_ERROR_STREAM_NAMED("pipeline","Unable to move down");
     }
 
     //wait for the action to return
     if (!find_objects_action_.waitForResult(ros::Duration(30.0)))
     {
-      ROS_ERROR_STREAM_NAMED("pipeline","Percetion action did not finish before the time out.");
-      return false;
+    ROS_ERROR_STREAM_NAMED("pipeline","Percetion action did not finish before the time out.");
+    return false;
     }
 
     // Get goal state
@@ -449,38 +449,38 @@ bool ManipulationPipeline::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder
 
     // Set new pose
     order.product_->setBottomRight(visuals_->visual_tools_->convertPose(perception_result->desired_object_pose));
-    
+
     // Update location visually
     order.product_->visualize(shelf_->getBottomRight());
 
-  }
-  else // old method
-  {
+    }
+    else // old method
+    {
     ROS_WARN_STREAM_NAMED("pipeline","Using fake perception system");
 
     const std::string& coll_obj_name = order.product_->getCollisionName();
     {
-      planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
+    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
 
-      collision_detection::World::ObjectConstPtr world_obj;
-      world_obj = scene->getWorld()->getObject(coll_obj_name);
-      if (!world_obj)
-      {
-        ROS_ERROR_STREAM_NAMED("pipeline","Unable to find object " << coll_obj_name << " in planning scene world");
-        return false;
-      }
-      if (!world_obj->shape_poses_.size())
-      {
-        ROS_ERROR_STREAM_NAMED("pipeline","Object " << coll_obj_name << " has no shapes!");
-        return false;
-      }
-      if (!world_obj->shape_poses_.size() > 1)
-      {
-        ROS_WARN_STREAM_NAMED("pipeline","Unknown situation - object " << coll_obj_name << " has more than one shape");
-      }
-      object_pose = world_obj->shape_poses_[0];
+    collision_detection::World::ObjectConstPtr world_obj;
+    world_obj = scene->getWorld()->getObject(coll_obj_name);
+    if (!world_obj)
+    {
+    ROS_ERROR_STREAM_NAMED("pipeline","Unable to find object " << coll_obj_name << " in planning scene world");
+    return false;
     }
-  }
+    if (!world_obj->shape_poses_.size())
+    {
+    ROS_ERROR_STREAM_NAMED("pipeline","Object " << coll_obj_name << " has no shapes!");
+    return false;
+    }
+    if (!world_obj->shape_poses_.size() > 1)
+    {
+    ROS_WARN_STREAM_NAMED("pipeline","Unknown situation - object " << coll_obj_name << " has more than one shape");
+    }
+    object_pose = world_obj->shape_poses_[0];
+    }
+    }
   */
 
   return true;
@@ -575,7 +575,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
 
         // #################################################################################################################
       case 1: statusPublisher("Open end effectors");
-        
+
         if (!openEndEffectors(true))
         {
           ROS_ERROR_STREAM_NAMED("pipeline","Unable to open end effectors");
@@ -610,7 +610,7 @@ bool ManipulationPipeline::graspObjectPipeline(WorkOrder order, bool verbose, st
         break;
 
         // #################################################################################################################
-      case 3: statusPublisher("Get grasp for product " + order.product_->getName() + " from " + order.bin_->getName());                              
+      case 3: statusPublisher("Get grasp for product " + order.product_->getName() + " from " + order.bin_->getName());
 
         // Choose which arm to use
         arm_jmg = chooseArm(object_pose);
@@ -905,7 +905,7 @@ bool ManipulationPipeline::moveToDropOffPosition(const robot_model::JointModelGr
   return moveToPose(arm_jmg, dropoff_pose_, main_velocity_scaling_factor_);
 }
 
-bool ManipulationPipeline::moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name, 
+bool ManipulationPipeline::moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name,
                                       double velocity_scaling_factor)
 {
   // Get default arm(s) to move
@@ -973,9 +973,8 @@ bool ManipulationPipeline::getSRDFPose(const robot_model::JointModelGroup* jmg)
 bool ManipulationPipeline::move(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
                                 const robot_model::JointModelGroup* arm_jmg, double velocity_scaling_factor,
                                 bool verbose, bool execute_trajectory, bool show_database)
-                                
+
 {
-  ROS_ERROR_STREAM_NAMED("temp","velocity_scaling_factor " << velocity_scaling_factor);
   // Check validity of start and goal
   if (!checkCollisionAndBounds(start, goal))
   {
@@ -1164,22 +1163,50 @@ bool ManipulationPipeline::testUpAndDown()
   }
 }
 
-bool ManipulationPipeline::executeState(const moveit::core::RobotStatePtr robot_state, const moveit::core::JointModelGroup *arm_jmg)
+bool ManipulationPipeline::executeState(const moveit::core::RobotStatePtr goal_state, const moveit::core::JointModelGroup *jmg,
+                                        double velocity_scaling_factor)
 {
-  // Convert state to trajecotry
-  robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, arm_jmg));
-  double duration_from_previous = 1;
-  robot_trajectory->addSuffixWayPoint(robot_state, duration_from_previous);
+  // Get the start state
+  getCurrentState();
 
-  // Convert trajectory to a message
+  // Visualize start/goal
+  visuals_->start_state_->publishRobotState(current_state_, rvt::GREEN);
+  visuals_->goal_state_->publishRobotState(goal_state, rvt::ORANGE);
+
+  // Create trajectory
+  std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
+  robot_state_trajectory.push_back(current_state_);
+  
+  // Create an interpolated trajectory between states
+  double resolution = 0.1;
+  for (double t = 0; t < 1; t += resolution)
+  {
+    robot_state::RobotStatePtr interpolated_state = robot_state::RobotStatePtr(new robot_state::RobotState(*current_state_));
+    current_state_->interpolate(*goal_state, t, *interpolated_state);
+    robot_state_trajectory.push_back(interpolated_state);
+  }
+  // Add goal state
+  robot_state_trajectory.push_back(goal_state);
+
+  // Get trajectory message
   moveit_msgs::RobotTrajectory trajectory_msg;
-  robot_trajectory->getRobotTrajectoryMsg(trajectory_msg);
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, trajectory_msg, jmg, velocity_scaling_factor))
+  {
+    ROS_ERROR_STREAM_NAMED("pipeline","Failed to convert to parameterized trajectory");
+    return false;
+  }
+
+  // Visualize trajectory in Rviz display
+  bool wait_for_trajetory = false;
+  visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, current_state_, wait_for_trajetory);
 
   // Execute
   if( !executeTrajectory(trajectory_msg) )
   {
     ROS_ERROR_STREAM_NAMED("pipeline","Failed to execute trajectory");
+    return false;
   }
+  return true;
 }
 
 bool ManipulationPipeline::generateApproachPath(const moveit::core::JointModelGroup *arm_jmg,
@@ -1764,8 +1791,6 @@ bool ManipulationPipeline::saveTrajectory(const moveit_msgs::RobotTrajectory &tr
     return false;
   }
 
-  ROS_INFO_STREAM_NAMED("pipeline","Saving trajectory to file");
-
   std::string file_path;
   getFilePath(file_path, file_name);
   std::ofstream output_file;
@@ -1804,7 +1829,7 @@ bool ManipulationPipeline::saveTrajectory(const moveit_msgs::RobotTrajectory &tr
     output_file << std::endl;
   }
   output_file.close();
-  ROS_INFO_STREAM_NAMED("pipeline","Wrote to file " << file_path);
+  ROS_INFO_STREAM_NAMED("pipeline","Saved trajectory to file " << file_path);
   return true;
 }
 
@@ -2120,7 +2145,9 @@ bool ManipulationPipeline::planToRandomValid()
 {
   static const std::size_t MAX_ATTEMPTS = 200;
   for (std::size_t i = 0; i < MAX_ATTEMPTS; ++i)
-  {    
+  {
+    ROS_DEBUG_STREAM_NAMED("pipeline","Attempt " << i << " to plan to a random location");
+
     // Create start
     getCurrentState();
 
@@ -2129,7 +2156,7 @@ bool ManipulationPipeline::planToRandomValid()
     goal_state->setToRandomPositions(right_arm_);
 
     // Check if random goal state is valid
-    if (checkCollisionAndBounds(goal_state))
+    if (checkCollisionAndBounds(current_state_, goal_state))
     {
       // Plan to this position
       bool verbose = true;
@@ -2152,7 +2179,7 @@ bool ManipulationPipeline::planToRandomValid()
 }
 
 bool ManipulationPipeline::getFilePath(std::string &file_path, const std::string &file_name) const
-                                                      
+
 {
   namespace fs = boost::filesystem;
 
@@ -2184,7 +2211,6 @@ bool ManipulationPipeline::getFilePath(std::string &file_path, const std::string
   //directories successfully created, append the group name as the file name
   rootPath = rootPath / fs::path(file_name + ".csv");
   file_path = rootPath.string();
-  ROS_INFO_STREAM_NAMED("pipeline","Saving trajectories to file " << file_path);
 
   return true;
 }
@@ -2198,6 +2224,80 @@ bool ManipulationPipeline::setReadyForNextStep()
 bool ManipulationPipeline::setAutonomous()
 {
   autonomous_ = true;
+}
+
+bool ManipulationPipeline::testJointLimits()
+{
+  ROS_INFO_STREAM_NAMED("pipeline","Testing joint limits");
+  ROS_WARN_STREAM_NAMED("pipeline","DOES NOT CHECK FOR COLLISION");
+
+  getCurrentState();
+
+  // Create goal
+  moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_));
+
+  // Setup data
+  std::vector<double> joint_position;
+  joint_position.resize(1);
+  const std::vector<const moveit::core::JointModel*> &joints = right_arm_->getActiveJointModels();
+
+  // Decide if we are testing 1 joint or all
+  int test_joint_limit_joint;
+  int first_joint;
+  int last_joint;
+  getIntParameter(nh_, "test/test_joint_limit_joint", test_joint_limit_joint);
+  if (test_joint_limit_joint < 0)
+  {
+    first_joint = 0;
+    last_joint = joints.size();
+  }
+  else
+  {
+    first_joint = test_joint_limit_joint;
+    last_joint = test_joint_limit_joint + 1;
+  }
+
+  // Keep testing
+  while (true)
+  {
+    // Loop through each joint, assuming each joint has only 1 variable
+    for (std::size_t i = first_joint; i < last_joint; ++i)
+    {
+      if (!ros::ok())
+        return false;
+
+      const moveit::core::VariableBounds& bound = joints[i]->getVariableBounds()[0];
+      double reduce_bound = 0.5;
+
+      // Move to min bound
+      std::cout << std::endl;
+      std::cout << "-------------------------------------------------------" << std::endl;
+      joint_position[0] = bound.min_position_ + reduce_bound;
+      ROS_INFO_STREAM_NAMED("pipeline","Sending joint " << joints[i]->getName() << " to min position of " << joint_position[0]);
+      goal_state->setJointPositions(joints[i], joint_position);
+
+      if (!executeState(goal_state, right_arm_, main_velocity_scaling_factor_))
+      {
+        ROS_ERROR_STREAM_NAMED("pipeline","Unable to move to min bound of " << joint_position[0] << " on joint "
+                               << joints[i]->getName());
+      }
+      ros::Duration(1.0).sleep();
+
+      // Move to max bound
+      std::cout << std::endl;
+      std::cout << "-------------------------------------------------------" << std::endl;
+      joint_position[0] = bound.max_position_ - reduce_bound;
+      ROS_INFO_STREAM_NAMED("pipeline","Sending joint " << joints[i]->getName() << " to max position of " << joint_position[0]);
+      goal_state->setJointPositions(joints[i], joint_position);
+
+      if (!executeState(goal_state, right_arm_, main_velocity_scaling_factor_))
+      {
+        ROS_ERROR_STREAM_NAMED("pipeline","Unable to move to max bound of " << joint_position[0] << " on joint "
+                               << joints[i]->getName());
+      }
+      ros::Duration(1.0).sleep();
+    }
+  }
 }
 
 } // end namespace

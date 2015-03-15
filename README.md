@@ -180,6 +180,7 @@ Run APC Manager (main program) for JACOB on hardware
 		10. Plan to random valid locations
 		11. Move camera to each bin location
 		12. Test camera calibration
+		13. Test joint limits
 	jump_to - which step in the manipulation pipeline to start on
 	  Steps:
 	    0. Move to initial position

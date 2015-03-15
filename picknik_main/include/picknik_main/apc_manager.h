@@ -130,6 +130,12 @@ public:
   bool testCalibration();
 
   /**
+   * \brief Test moving joints to extreme limits
+   * \return true on success
+   */
+  bool testJointLimits();
+
+  /**
    * \brief Get the XML of a SDF pose of joints
    * \return true on success
    */

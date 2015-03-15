@@ -175,9 +175,10 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Test camera calibration");
       manager.testCalibration();
       break;
-    // case 12:
-    //   ROS_INFO_STREAM_NAMED("main","");
-    //   break;
+    case 13:
+      ROS_INFO_STREAM_NAMED("main","Test joint limits");
+      manager.testJointLimits();
+      break;
     // case 12:
     //   ROS_INFO_STREAM_NAMED("main","");
     //   break;

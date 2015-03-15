@@ -190,7 +190,8 @@ public:
    * \brief Send a single state to the controllers for execution
    * \return true on success
    */
-  bool executeState(const moveit::core::RobotStatePtr robot_state, const moveit::core::JointModelGroup *arm_jmg);
+  bool executeState(const moveit::core::RobotStatePtr goal_state, const moveit::core::JointModelGroup *jmg,
+                    double velocity_scaling_factor);
 
   /**
    * \brief Generate the straight line path from pregrasp to grasp
@@ -392,6 +393,12 @@ public:
    */
   bool setReadyForNextStep();
   bool setAutonomous();
+
+  /**
+   * \brief Test sending joints to their limits
+   * \return true on success
+   */
+  bool testJointLimits();
 
 protected:
 

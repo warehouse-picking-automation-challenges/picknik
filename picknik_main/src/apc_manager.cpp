@@ -309,6 +309,7 @@ bool APCManager::testCameraPositions()
   ROS_INFO_STREAM_NAMED("apc_manager","Done planning to random valid");  
 }
 
+
 bool APCManager::testCalibration()
 {
   // Create the pick place pipeline
@@ -321,6 +322,20 @@ bool APCManager::testCalibration()
   pipeline_->calibrateCamera();
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done calibrating camera");  
+}
+
+bool APCManager::testJointLimits()
+{
+  // Create the pick place pipeline
+  bool use_experience = false;
+  bool show_database = false;
+  pipeline_.reset(new ManipulationPipeline(verbose_, visuals_,
+                                           planning_scene_monitor_, plan_execution_,
+                                           shelf_, use_experience, show_database));
+
+  pipeline_->testJointLimits();
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Done testing joint limits");  
 }
 
 bool APCManager::getPose()
