@@ -824,12 +824,15 @@ bool APCManager::testUpAndDown()
 
 bool APCManager::testShelfLocation()
 {
-  double safety_padding = -0.25; // Amount to prevent collision with shelf edge
-  double velocity_scaling_factor = 0.5;
+  double safety_padding = -0.23; // Amount to prevent collision with shelf edge
+  double velocity_scaling_factor = 0.75;
   Eigen::Affine3d ee_pose;
 
   // Set EE as closed so that we can touch the tip easier
   manipulation_->openEndEffector(false, config_->right_arm_);
+
+  // Reduce collision world to simple
+  manipulation_->createCollisionWall();
 
   // Loop through each bin
   for (BinObjectMap::const_iterator bin_it = shelf_->getBins().begin(); bin_it != shelf_->getBins().end(); bin_it++)
@@ -843,11 +846,10 @@ bool APCManager::testShelfLocation()
     ee_pose = shelf_->getBottomRight() * bin_it->second->getBottomRight(); // convert to world frame
     ee_pose.translation().y() += bin_it->second->getWidth();
     ee_pose.translation().x() += safety_padding - grasp_datas_[config_->right_arm_].finger_to_palm_depth_;
-    std::cout << "Finger to palm depth: " << grasp_datas_[config_->right_arm_].finger_to_palm_depth_ << std::endl;
 
     // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
     ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
-    ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitZ());
+    ee_pose = ee_pose * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ());
 
     // Translate to custom end effector geometry
     ee_pose = ee_pose * grasp_datas_[config_->right_arm_].grasp_pose_to_eef_pose_;
@@ -858,9 +860,39 @@ bool APCManager::testShelfLocation()
     if (!manipulation_->moveEEToPose(ee_pose, velocity_scaling_factor, config_->right_arm_))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move arm to desired shelf location");
+      continue;
     }
 
-    ros::Duration(1.0).sleep();
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << "Waiting before moving forward" << std::endl;
+    waitForNextStep();
+
+
+    ROS_INFO_STREAM_NAMED("apc_manager","Moving forward");
+    bool retreat = false;
+    double desired_approach_distance = 0.02;
+    if (!manipulation_->executeRetreatPath(config_->right_arm_, desired_approach_distance, retreat))
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move forward " << desired_approach_distance);      
+    }
+
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << "Waiting before retreating" << std::endl;
+    waitForNextStep();
+
+
+    retreat = true;
+    if (!manipulation_->executeRetreatPath(config_->right_arm_, desired_approach_distance, retreat))
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move backwards " << desired_approach_distance);
+    }
+
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << "Waiting before going to next bin" << std::endl;
+    waitForNextStep();
   }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done testing shelf location");
@@ -1100,7 +1132,7 @@ bool APCManager::visualizeShelf()
   // Now show empty shelf to help in reversing robot arms to initial position
   visuals_->visual_tools_->removeAllCollisionObjects();
   bool just_frame = false;
-  bool show_all_products = true;
+  bool show_all_products = false;
   shelf_->createCollisionBodies("", just_frame, show_all_products); // only show the frame
   shelf_->visualizeAxis(visuals_);
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
@@ -1184,9 +1216,9 @@ bool APCManager::setReadyForNextStep()
     next_step_ready_ = true;
 }
 
-void APCManager::setAutonomous()
+void APCManager::setAutonomous(bool autonomous)
 {
-  autonomous_ = true;
+  autonomous_ = autonomous;
 }
 
 bool APCManager::getAutonomous()

@@ -372,6 +372,8 @@ private:
 
   RectangleObjectPtr goal_bin_;
 
+  Eigen::Affine3d high_res_mesh_offset_;
+
 }; // class
 
 // -------------------------------------------------------------------------------------------------

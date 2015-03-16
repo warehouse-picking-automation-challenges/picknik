@@ -440,7 +440,6 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   if (error)
     return false;
 
-  std::cout << "before execute " << std::endl;
   // Execute trajectory
   if (execute_trajectory)
   {
@@ -674,7 +673,7 @@ bool Manipulation::executeLeftPath(const moveit::core::JointModelGroup *arm_jmg,
   return true;
 }
 
-bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg)
+bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_approach_distance, bool retreat)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeRetreatPath()");
 
@@ -683,8 +682,7 @@ bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_j
 
   // Compute straight line in reverse from grasp
   Eigen::Vector3d approach_direction;
-  approach_direction << -1, 0, 0; // backwards towards robot body
-  double desired_approach_distance = 0.25; //0.15;
+  approach_direction << (retreat ? -1 : 1), 0, 0; // backwards towards robot body
   double path_length;
   std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
   bool reverse_path = false;
@@ -1097,16 +1095,22 @@ bool Manipulation::executeTrajectory(const moveit_msgs::RobotTrajectory &traject
       // wait for the trajectory to complete
       moveit_controller_manager::ExecutionStatus es = plan_execution_->getTrajectoryExecutionManager()->waitForExecution();
       if (es == moveit_controller_manager::ExecutionStatus::SUCCEEDED)
+      {
         ROS_DEBUG_STREAM_NAMED("manipulation","Trajectory execution succeeded");
-      else
+      }
+      else // Failed
       {
         if (es == moveit_controller_manager::ExecutionStatus::PREEMPTED)
           ROS_INFO_STREAM_NAMED("manipulation","Trajectory execution preempted");
         else
           if (es == moveit_controller_manager::ExecutionStatus::TIMED_OUT)
-            ROS_INFO_STREAM_NAMED("manipulation","Trajectory execution timed out");
+            ROS_ERROR_STREAM_NAMED("manipulation","Trajectory execution timed out");
           else
-            ROS_INFO_STREAM_NAMED("manipulation","Trajectory execution control failed");
+            ROS_ERROR_STREAM_NAMED("manipulation","Trajectory execution control failed");
+
+        // Disable autonomous mode because something went wrong
+        parent_->setAutonomous(false);
+
         return false;
       }
     }

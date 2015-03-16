@@ -143,7 +143,7 @@ public:
    * \brief After grasping an object, pull object out of shelf in reverse
    * \return true on success
    */
-  bool executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg);
+  bool executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_approach_distance = 0.25, bool retreat = true);
 
   /**
    * \brief Function for testing multiple directions

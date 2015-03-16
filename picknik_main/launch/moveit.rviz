@@ -145,7 +145,7 @@ Visualization Manager:
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: true
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -240,12 +240,12 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_start_state
       Show All Links: true
       Show Highlights: true
-      Value: true
+      Value: false
       Visual Enabled: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: true
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -340,7 +340,7 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_goal_state
       Show All Links: true
       Show Highlights: true
-      Value: true
+      Value: false
       Visual Enabled: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
@@ -445,9 +445,20 @@ Visualization Manager:
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /picknik_main/markers
-      Name: Amazon Visual Tools
+      Name: Amazon Markers
       Namespaces:
-        {}
+        Collision: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /amazon_shelf_markers_display
+      Name: Amazon Markers Detailed
+      Namespaces:
+        Cylinder: true
+        Rectangle: true
+        Shelf: true
+        mesh: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -569,7 +580,7 @@ Visualization Manager:
       Robot Alpha: 0.5
       Robot Description: robot_description
       Show Robot Collision: false
-      Show Robot Visual: false
+      Show Robot Visual: true
       Show Trail: false
       State Display Time: REALTIME
       Trajectory Topic: /picknik_main/display_trajectory
@@ -678,7 +689,7 @@ Visualization Manager:
             Show Trail: false
             Value: true
         Robot Alpha: 0.5
-        Show Robot Collision: false
+        Show Robot Collision: true
         Show Robot Visual: false
       Value: true
     - Class: rviz/TF
@@ -717,22 +728,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.20864
+      Distance: 3.46266
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.676797
-        Y: 0.24346
-        Z: 1.43051e-06
+        X: 1.50485
+        Y: -0.47559
+        Z: 2.14577e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.2854
+      Pitch: 0.415401
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 2.95041
+      Yaw: 2.78545
     Saved: ~
 Window Geometry:
   Displays:
@@ -748,5 +759,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1162
-  X: 1471
-  Y: 14
+  X: 1529
+  Y: 15

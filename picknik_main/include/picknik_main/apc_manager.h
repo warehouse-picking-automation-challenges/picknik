@@ -250,7 +250,7 @@ public:
   /**
    * \brief Enable autonomous mode
    */
-  void setAutonomous();
+  void setAutonomous(bool autonomous = true);
 
   /**
    * \brief Get the autonomous mode

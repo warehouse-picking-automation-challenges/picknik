@@ -33,12 +33,15 @@ RectangleObject::RectangleObject(VisualsPtr visuals,
     // Create dummy name for this rectangle
     static std::size_t rectangle_id = 0;
     rectangle_id++;
-    name_ = "rectangle_" + boost::lexical_cast<std::string>(rectangle_id);
+
+    // use this func so that a unique collision ID is also generated
+    setName("rectangle_" + boost::lexical_cast<std::string>(rectangle_id));
+
     ROS_WARN_STREAM_NAMED("shelf","Creating default rectangle named " << name_);
   }
   else
   {
-    name_ = name;
+    setName(name); // use this func so that a unique collision ID is also generated
   }
 }
 
@@ -61,7 +64,7 @@ bool RectangleObject::visualize(const Eigen::Affine3d& trans) const
 
 bool RectangleObject::createCollisionBodies(const Eigen::Affine3d &trans) const
 {
-  ROS_DEBUG_STREAM_NAMED("shelf","Creating collision rectangle with name " << name_);
+  ROS_DEBUG_STREAM_NAMED("shelf","Creating collision body with name " << collision_object_name_);
 
   // Check if mesh is provided
   if (!collision_mesh_path_.empty())
@@ -75,7 +78,7 @@ bool RectangleObject::createCollisionBodies(const Eigen::Affine3d &trans) const
   // Just use basic rectangle
   visuals_->visual_tools_->publishCollisionRectangle( transform(bottom_right_, trans).translation(),
                                                       transform(top_left_, trans).translation(),
-                                                      name_, color_ );
+                                                      collision_object_name_, color_ );
   return true;
 }
 
@@ -110,6 +113,11 @@ std::string RectangleObject::getName() const
 void RectangleObject::setName(std::string name)
 {
   name_ = name;
+
+  // Create unique collision name
+  static std::size_t collision_id = 0;
+  collision_id++;
+  collision_object_name_ = name + "_" + boost::lexical_cast<std::string>(collision_id);
 }
 
 const std::string& RectangleObject::getHighResMeshPath()
@@ -309,6 +317,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   if (!getDoubleParameter(nh,"goal_bin_z", goal_bin_z_))
     return false;
 
+
   // Calculate shelf corners
   bottom_right_.translation().x() = shelf_distance_from_robot_;
   bottom_right_.translation().y() = -shelf_width_/2.0;
@@ -339,7 +348,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
       std::string bin_name = "bin_" + boost::lexical_cast<std::string>((char)(65 + num_bins_ - bin_id - 1)); // reverse the lettering
       ROS_DEBUG_STREAM_NAMED("shelf","Creating bin '" << bin_name << "' with id " << bin_id);
 
-      insertBinHelper( rvt::YELLOW, bin_name );
+      insertBinHelper( rvt::GREEN, bin_name );
 
       // Choose what height the current bin is
       if (bin_id == 3 || bin_id == 4 || bin_id == 5 || bin_id == 6 || bin_id == 7 || bin_id == 8)
@@ -354,17 +363,18 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
       bottom_right.translation().z() = z;
       bins_[bin_name]->setBottomRight(bottom_right);
 
-      top_left = bins_[bin_name]->getBottomRight();
-      top_left.translation().x() += bin_depth_;
-      top_left.translation().y() += bin_width_;
-      top_left.translation().z() += this_bin_height;
-      bins_[bin_name]->setTopLeft(top_left);
-
       // Choose what width the current bin is
       if (bin_id == 1 || bin_id == 4 || bin_id == 7 || bin_id == 10)
         this_bin_width = bin_middle_width_;
       else
         this_bin_width = bin_width_;
+
+      // Calculate new bin top left
+      top_left = bins_[bin_name]->getBottomRight();
+      top_left.translation().x() += bin_depth_;
+      top_left.translation().y() += this_bin_width;
+      top_left.translation().z() += this_bin_height;
+      bins_[bin_name]->setTopLeft(top_left);
 
       // Increment
       y = y + this_bin_width + shelf_wall_width_;
@@ -429,7 +439,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   double previous_z = first_bin_from_bottom_;
   for (std::size_t i = 0; i < 5; ++i)
   {
-    const std::string shelf_name = "shelf_" + boost::lexical_cast<std::string>(i);
+    const std::string shelf_name = "surface_" + boost::lexical_cast<std::string>(i);
     shelf_parts_.push_back(RectangleObject(visuals_, color_, shelf_name));
     RectangleObject &shelf = shelf_parts_.back();
 
@@ -473,6 +483,25 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
 
   // Load mesh file name
   high_res_mesh_path_ = "file://" + package_path + "/meshes/kiva_pod/meshes/pod_lowres.stl";
+  collision_mesh_path_ = high_res_mesh_path_;
+
+  // Calculate offset for high-res mesh
+  high_res_mesh_offset_ = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitX())
+    * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
+    * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ());
+  high_res_mesh_offset_.translation().x() = bottom_right_.translation().x() + shelf_depth_ / 2.0;
+  high_res_mesh_offset_.translation().y() = 0;
+  //high_res_mesh_offset_.translation().z() = first_bin_from_bottom_ - 0.81; // TODO remove this height - only for temp table setup
+
+
+  // Calculate offset - FOR COLLISION
+  Eigen::Affine3d offset;
+  offset = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitX())
+    * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
+    * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ());
+  offset.translation().x() = bottom_right_.translation().x() + shelf_depth_ / 2.0;
+  offset.translation().y() = 0;
+
 
   return true;
 }
@@ -500,17 +529,8 @@ bool ShelfObject::visualizeAxis(VisualsPtr visuals) const
 
 bool ShelfObject::visualize() const
 {
-  // Calculate offset
-  Eigen::Affine3d offset;
-  offset = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitX())
-    * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
-    * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ());
-  offset.translation().x() = bottom_right_.translation().x() + shelf_depth_ / 2.0;
-  offset.translation().y() = 0;
-  offset.translation().z() = first_bin_from_bottom_ - 0.81; // TODO remove this height - only for temp table setup
-
   // Publish mesh
-  if (!visuals_->visual_tools_display_->publishMesh(offset, high_res_mesh_path_, rvt::BROWN, 1, "Shelf"))
+  if (!visuals_->visual_tools_display_->publishMesh(high_res_mesh_offset_, high_res_mesh_path_, rvt::BROWN, 1, "Shelf"))
     return false;
 
   // Show each bin
@@ -536,10 +556,16 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
   // Publish in batch
   visuals_->visual_tools_->enableBatchPublishing(true);
 
+  // Show full resolution shelf -----------------------------------------------------------------
+  //createCollisionShelfDetailed();
+
+  //return true;
+  // Show simple version of shelf -----------------------------------------------------------------
+
   // Create side walls of shelf
   for (std::size_t i = 0; i < shelf_parts_.size(); ++i)
   {
-    shelf_parts_[i].createCollisionBodies(bottom_right_);
+    //shelf_parts_[i].createCollisionBodies(bottom_right_);
   }
 
   // Show each bin except the focus on
@@ -561,7 +587,7 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
         bin_it->second->createCollisionBodies(bottom_right_);
       }
 
-      // Optionall add all products to shelves
+      // Optionally add all products to shelves
       if (show_all_products)
       {
         bin_it->second->createCollisionBodiesProducts(bottom_right_);
@@ -583,18 +609,10 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
 
 bool ShelfObject::createCollisionShelfDetailed() const
 {
-  // Get image path based on package name
-
-  // Calculate offset
-  Eigen::Affine3d offset;
-  offset = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitX())
-    * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
-    * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ());
-  offset.translation().x() = bottom_right_.translation().x() + shelf_depth_ / 2.0;
-  offset.translation().y() = 0;
+  ROS_DEBUG_STREAM_NAMED("shelf","Creating collision body with name " << collision_object_name_);
 
   // Publish mesh
-  if (!visuals_->visual_tools_->publishCollisionMesh(offset, name_, high_res_mesh_path_, color_))
+  if (!visuals_->visual_tools_->publishCollisionMesh(high_res_mesh_offset_, collision_object_name_, high_res_mesh_path_, color_))
     return false;
 
   // Add products to shelves
@@ -661,11 +679,6 @@ ProductObject::ProductObject(VisualsPtr visuals,
                              const std::string &package_path)
   : RectangleObject( visuals, color, name )
 {
-  // Ensure the name is unique
-  static std::size_t product_id = 0;
-  product_id++;
-  collision_object_name_ = name + "_" + boost::lexical_cast<std::string>(product_id);
-
   // Cache the object's mesh
   high_res_mesh_path_ = "file://" + package_path + "/meshes/products/" + name_ + "/recommended.dae";
   collision_mesh_path_ = "file://" + package_path + "/meshes/products/" + name_ + "/collision.stl";
