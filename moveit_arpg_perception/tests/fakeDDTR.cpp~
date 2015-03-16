@@ -1,7 +1,0 @@
-/* Fake DDTR Node client to test DDTR<->perception_server comms */
-#include <Node/Node.h>
-
-int main(int argc, char** argv)
-{
-  
-}
