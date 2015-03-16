@@ -551,7 +551,7 @@ bool ShelfObject::visualize() const
   visuals_->visual_tools_display_->publishRectangle(point1, point2, rvt::DARK_GREY);
 }
 
-bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool just_frame, bool show_all_products) const
+bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool only_show_shelf_frame, bool show_all_products) const
 {
   // Publish in batch
   visuals_->visual_tools_->enableBatchPublishing(true);
@@ -559,7 +559,6 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
   // Show full resolution shelf -----------------------------------------------------------------
   //createCollisionShelfDetailed();
 
-  //return true;
   // Show simple version of shelf -----------------------------------------------------------------
 
   // Create side walls of shelf
@@ -569,7 +568,7 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
   }
   
   // Show each bin except the focus on
-  if (!just_frame)
+  if (!only_show_shelf_frame)
   {
     // Send all the shapes for the shelf first, then secondly the products
     BinObjectPtr focus_bin;

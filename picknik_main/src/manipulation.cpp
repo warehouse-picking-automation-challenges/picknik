@@ -125,7 +125,7 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
   // Generate all possible grasps
   std::vector<moveit_msgs::Grasp> possible_grasps;
 
-  grasp_generator_->setVerbose(true);
+  grasp_generator_->setVerbose(true); // TODO make a rosparam
 
   bool use_new_method = true;
   if (use_new_method)
@@ -215,9 +215,8 @@ bool Manipulation::createCollisionWall()
   // Visualize
   shelf_->visualizeAxis(visuals_);
   static const double INTERNAL_WIDTH = 0.1;
-  double safety_margin = 0.01;
   double width = shelf_->shelf_width_ * 2.0;
-  double x = shelf_->shelf_distance_from_robot_ + INTERNAL_WIDTH / 2 - safety_margin;
+  double x = shelf_->shelf_distance_from_robot_ + INTERNAL_WIDTH / 2 - config_->collision_wall_safety_margin_;
   double y = 0;
   double angle = 0;
 
@@ -257,32 +256,6 @@ bool Manipulation::moveToPose(const robot_model::JointModelGroup* arm_jmg, const
   }
 
   return true;
-}
-
-bool Manipulation::getSRDFPose(const robot_model::JointModelGroup* jmg)
-{
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","getSRDFPose()");
-
-  const std::vector<const moveit::core::JointModel*> joints = jmg->getJointModels();
-
-  while(ros::ok())
-  {
-    ROS_INFO_STREAM("SDF Code for joint values pose:\n");
-
-    // Get current state after grasping
-    getCurrentState();
-
-    // Output XML
-    std::cout << "<group_state name=\"\" group=\"" << jmg->getName() << "\">\n";
-    for (std::size_t i = 0; i < joints.size(); ++i)
-    {
-      std::cout << "  <joint name=\"" << joints[i]->getName() <<"\" value=\""
-                << current_state_->getJointPositions(joints[i])[0] << "\" />\n";
-    }
-    std::cout << "</group_state>\n\n\n\n";
-
-    ros::Duration(4.0).sleep();
-  }
 }
 
 bool Manipulation::moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_scaling_factor,
@@ -379,7 +352,7 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   if (use_experience_)
     req.num_planning_attempts = 1; // this must be one else it threads and doesn't use lightning/thunder correctly
   else
-    req.num_planning_attempts = 1; // this is also the number of threads to use
+    req.num_planning_attempts = 3; // this is also the number of threads to use
   req.allowed_planning_time = 30; // seconds
   req.use_experience = use_experience_;
   req.experience_method = "lightning";
@@ -410,22 +383,18 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   } // end scoped pointer of locked planning scene
   planning_pipeline_->generatePlan(cloned_scene, req, res, dummy, planning_context_handle);
 
-  // Check that the planning was successful
-  bool error = false;
-  if(res.error_code_.val != res.error_code_.SUCCESS)
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Could not compute plan successfully");
-    error = true;
-    if (verbose)
-      ROS_INFO_STREAM_NAMED("manipulation","Attempting to visualize trajectory anyway...");
-    else
-      return false;
-  }
-
   // Get the trajectory
   moveit_msgs::MotionPlanResponse response;
   response.trajectory = moveit_msgs::RobotTrajectory();
   res.getMessage(response);
+
+  // Check that the planning was successful
+  bool error = (res.error_code_.val != res.error_code_.SUCCESS);
+  if (error)
+  {
+    std::string result = getActionResultString(res.error_code_, response.trajectory.joint_trajectory.points.empty());
+    ROS_ERROR_STREAM_NAMED("manipulation","Planning failed:: " << result);                           
+  }
 
   // Visualize trajectory in Rviz display
   bool wait_for_trajetory = false;
@@ -491,6 +460,55 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   return true;
 }
 
+std::string Manipulation::getActionResultString(const moveit_msgs::MoveItErrorCodes &error_code, bool planned_trajectory_empty)
+{
+  if (error_code.val == moveit_msgs::MoveItErrorCodes::SUCCESS)
+  {
+    if (planned_trajectory_empty)
+      return "Requested path and goal constraints are already met.";
+    else
+    {
+      return "Solution was found and executed.";
+    }
+  }
+  else
+    if (error_code.val == moveit_msgs::MoveItErrorCodes::INVALID_GROUP_NAME)
+      return "Must specify group in motion plan request";
+    else
+      if (error_code.val == moveit_msgs::MoveItErrorCodes::PLANNING_FAILED || error_code.val == moveit_msgs::MoveItErrorCodes::INVALID_MOTION_PLAN)
+      {
+        if (planned_trajectory_empty)
+          return "No motion plan found. No execution attempted.";
+        else
+          return "Motion plan was found but it seems to be invalid (possibly due to postprocessing). Not executing.";
+      }
+      else
+        if (error_code.val == moveit_msgs::MoveItErrorCodes::UNABLE_TO_AQUIRE_SENSOR_DATA)
+          return "Motion plan was found but it seems to be too costly and looking around did not help.";
+        else
+          if (error_code.val == moveit_msgs::MoveItErrorCodes::MOTION_PLAN_INVALIDATED_BY_ENVIRONMENT_CHANGE)
+            return "Solution found but the environment changed during execution and the path was aborted";
+          else
+            if (error_code.val == moveit_msgs::MoveItErrorCodes::CONTROL_FAILED)
+              return "Solution found but controller failed during execution";
+            else
+              if (error_code.val == moveit_msgs::MoveItErrorCodes::TIMED_OUT)
+                return "Timeout reached";
+              else
+                if (error_code.val == moveit_msgs::MoveItErrorCodes::PREEMPTED)
+                  return "Preempted";
+                else
+                  if (error_code.val == moveit_msgs::MoveItErrorCodes::INVALID_GOAL_CONSTRAINTS)
+                    return "Invalid goal constraints";
+                  else
+                    if (error_code.val == moveit_msgs::MoveItErrorCodes::INVALID_OBJECT_NAME)
+                      return "Invalid object name";
+                    else
+                      if (error_code.val == moveit_msgs::MoveItErrorCodes::FAILURE)
+                        return "Catastrophic failure";
+  return "Unknown event";
+}
+
 bool Manipulation::executeState(const moveit::core::RobotStatePtr goal_state, const moveit::core::JointModelGroup *jmg,
                                 double velocity_scaling_factor)
 {
@@ -550,6 +568,8 @@ bool Manipulation::generateApproachPath(const moveit::core::JointModelGroup *arm
   // Configurations
   Eigen::Vector3d approach_direction;
   approach_direction << -1, 0, 0; // backwards towards robot body
+  ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","finger_to_palm_depth: " << grasp_datas_[arm_jmg].finger_to_palm_depth_);
+  ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","approach_distance_desired: " << config_->approach_distance_desired_);
   double desired_approach_distance = grasp_datas_[arm_jmg].finger_to_palm_depth_ + config_->approach_distance_desired_;
 
   // Show desired distance
@@ -589,9 +609,6 @@ bool Manipulation::executeLiftPath(const moveit::core::JointModelGroup *arm_jmg,
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeLiftPath()");
 
   getCurrentState();
-
-  // Clear all collision objects
-  visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
 
   // Compute straight line up above grasp
   Eigen::Vector3d approach_direction;
@@ -633,9 +650,6 @@ bool Manipulation::executeLeftPath(const moveit::core::JointModelGroup *arm_jmg,
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeLeftPath()");
 
   getCurrentState();
-
-  // Clear all collision objects
-  visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
 
   // Compute straight line left above grasp
   Eigen::Vector3d approach_direction;
@@ -775,7 +789,7 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
   // Error check
   if (desired_approach_distance < max_step)
   {
-    ROS_ERROR_STREAM_NAMED("manipulation","desired_approach_distance (" << desired_approach_distance << ")  < max_step (" << max_step << ")");
+    ROS_ERROR_STREAM_NAMED("manipulation","Not enough: desired_approach_distance (" << desired_approach_distance << ")  < max_step (" << max_step << ")");
     return false;
   }
 

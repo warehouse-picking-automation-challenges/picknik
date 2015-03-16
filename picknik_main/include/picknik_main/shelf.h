@@ -21,6 +21,7 @@
 // MoveIt
 #include <picknik_main/namespaces.h>
 #include <picknik_main/visuals.h>
+#include <picknik_main/manipulation_data.h>
 
 namespace picknik_main
 {
@@ -286,8 +287,10 @@ public:
   /**
    * \brief Create collision bodies of shelf
    * \param focus_bin_id - which bin to enable e.g. allow manipulation in
+   * \param only_show_shelf_frame - when false, show the contents of the shelf too
+   * \param show_all_products - when false, only show the products of the focus bin
    */
-  bool createCollisionBodies(const std::string& focus_bin_name = "", bool just_frame = false, bool show_all_products = false) const;
+  bool createCollisionBodies(const std::string& focus_bin_name = "", bool only_show_shelf_frame = false, bool show_all_products = false) const;
 
   /**
    * \brief Represent shelf in MoveIt! planning scene
@@ -423,13 +426,6 @@ struct WorkOrder
 };
 
 typedef std::vector<WorkOrder> WorkOrders;
-
-// -------------------------------------------------------------------------------------------------
-// Helper Functions
-// -------------------------------------------------------------------------------------------------
-bool getDoubleParameter(ros::NodeHandle &nh, const std::string &param_name, double &value);
-bool getIntParameter(ros::NodeHandle &nh, const std::string &param_name, int &value);
-bool getStringParameter(ros::NodeHandle &nh, const std::string &param_name, std::string &value);
 
 } // namespace
 

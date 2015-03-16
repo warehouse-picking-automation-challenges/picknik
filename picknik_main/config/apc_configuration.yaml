@@ -18,14 +18,12 @@ bin_top_margin: 0.01
 bin_left_margin: 0.01
 num_bins: 12.0
 
-# Execution Speed
-main_velocity_scaling_factor: 0.5 # during planning
-approach_velocity_scaling_factor: 0.25
-lift_velocity_scaling_factor: 0.5
-retreat_velocity_scaling_factor: 0.8
-
 # Movement config
-approach_distance_desired: 0.1; # amount beyond min distance
+approach_distance_desired: 0.1 # amount beyond min distance
+lift_distance_desired: 0.2 # amount beyond min distance
+
+# Safety
+collision_wall_safety_margin: 0.02;
 
 # Sleep timers
 wait_before_grasp: 0.1
@@ -34,11 +32,13 @@ wait_after_grasp: 0.1
 # Goal bin
 goal_bin_x: -0.64
 goal_bin_y: 0.65
-goal_bin_z: 0.28
+#goal_bin_z: 0.28 # actual
+goal_bin_z: 0.35
 
 # Perception Data
 camera:
-  x_translation_from_bin: -0.9 # meters
+  #x_translation_from_bin: -0.9 # meters
+  x_translation_from_bin: -0.6 # meters
   y_translation_from_bin: 0.0 # negative is right looking at shelf
   z_translation_from_bin: -0.1 # negative is down
   x_rotation_from_standard_grasp: 0 #-0.2  # radians

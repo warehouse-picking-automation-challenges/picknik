@@ -35,7 +35,7 @@ Visuals::Visuals(robot_model::RobotModelPtr robot_model, planning_scene_monitor:
   // Load the COLLISION Robot Viz Tools for publishing to Rviz
   visual_tools_display_.reset(new mvt::MoveItVisualTools(robot_model->getModelFrame(), "/amazon_shelf_markers_display",
                                                          planning_scene_monitor));
-  visual_tools_display_->deleteAllMarkers(); // clear all old markers
+  //visual_tools_display_->deleteAllMarkers(); // clear all old markers
 
   // ------------------------------------------------------------------------------------------------------
   // Load RobotState VisualTools for Start State

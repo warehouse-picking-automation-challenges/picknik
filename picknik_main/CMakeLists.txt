@@ -61,6 +61,15 @@ target_link_libraries(visuals
   ${Boost_LIBRARIES}
 )
 
+# Manipulation Data Library
+add_library(manipulation_data
+  src/manipulation_data.cpp
+)
+target_link_libraries(manipulation_data
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
 # JSON Parser Library
 add_library(jsoncpp
   src/json/jsoncpp.cpp
@@ -87,6 +96,7 @@ add_library(shelf
 )
 target_link_libraries(shelf
   visuals
+  manipulation_data
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
@@ -98,6 +108,7 @@ add_library(manipulation
 add_dependencies(manipulation picknik_main_generate_messages_cpp)
 target_link_libraries(manipulation
   visuals
+  manipulation_data
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
@@ -118,6 +129,7 @@ add_library(apc_manager
 )
 target_link_libraries(apc_manager
   visuals
+  manipulation_data
   shelf
   amazon_json_parser
   manipulation

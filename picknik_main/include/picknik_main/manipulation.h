@@ -90,12 +90,6 @@ public:
   bool moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name, double velocity_scaling_factor);
 
   /**
-   * \brief Get the XML of a SDF pose of joints
-   * \return true on success
-   */
-  bool getSRDFPose(const robot_model::JointModelGroup* jmg);
-
-  /**
    * \brief Move EE to a particular pose by solving with IK
    * \param input - description
    * \return true on success
@@ -109,6 +103,12 @@ public:
   bool move(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
             const robot_model::JointModelGroup* arm_jmg, double velocity_scaling_factor,
             bool verbose, bool execute_trajectory = true);
+
+  /**
+   * \brief Get planning debug info
+   * \return string describing result
+   */
+  std::string getActionResultString(const moveit_msgs::MoveItErrorCodes &error_code, bool planned_trajectory_empty);
 
   /**
    * \brief Send a single state to the controllers for execution

@@ -178,7 +178,7 @@ Run APC Manager (main program) for JACOB on hardware
 		8. Go to goal bin pose
 		9. Check if current state is in collision
 		10. Plan to random valid locations
-		11. Move camera to each bin location
+		11. Move camera to each bin location and request ObjectRecognitionServer
 		12. Test camera calibration
 		13. Test joint limits
 	jump_to - which step in the manipulation pipeline to start on

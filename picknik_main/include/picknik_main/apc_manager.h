@@ -77,7 +77,7 @@ public:
    * \param shelf to focus on. rest of shelves will be disabled
    * \return true on success
    */
-  bool setupPlanningScene( const std::string& bin_name );
+  bool focusSceneOnBin( const std::string& bin_name );
 
   /**
    * \brief Remote control from Rviz
@@ -225,7 +225,7 @@ public:
    * \brief Get the XML of a SDF pose of joints
    * \return true on success
    */
-  bool getPose();
+  bool getSRDFPose();
 
   /**
    * \brief Load shelf contents

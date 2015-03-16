@@ -151,7 +151,7 @@ int main(int argc, char** argv)
       break;
     case 7:
       ROS_INFO_STREAM_NAMED("main","Get SRDF pose");
-      manager.getPose();
+      manager.getSRDFPose();
       break;
     case 8:
       ROS_INFO_STREAM_NAMED("main","Going to goal_bin place pose");
