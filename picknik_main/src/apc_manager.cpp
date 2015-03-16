@@ -490,8 +490,6 @@ bool APCManager::moveCameraToBin(BinObjectPtr bin)
   ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
   ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitZ());
 
-  visuals_->visual_tools_->publishZArrow(ee_pose, rvt::LIME_GREEN);
-
   // Translate to custom end effector geometry
   ee_pose = ee_pose * grasp_datas_[config_->right_arm_].grasp_pose_to_eef_pose_;
 
@@ -562,6 +560,7 @@ bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bo
   // Communicate with perception pipeline
 
   // Setup goal
+  ROS_INFO_STREAM_NAMED("apc_manager","Communicating with perception pipeline");
   picknik_msgs::FindObjectsGoal find_object_goal;
   find_object_goal.desired_object_name = order.product_->getName();
 
@@ -579,10 +578,11 @@ bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bo
 
   // -----------------------------------------------------------------------------------------------
   // Perturb camera
-  if (!perturbCamera(order.bin_))
-  {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
-  }
+  if (false)
+    if (!perturbCamera(order.bin_))
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
+    }
 
   // -----------------------------------------------------------------------------------------------
   // Wait for the action to return with product pose
@@ -601,11 +601,20 @@ bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bo
   picknik_msgs::FindObjectsResultConstPtr perception_result = find_objects_action_.getResult();
   std::cout << "Perception_Result:\n " << *perception_result << std::endl;
 
-  // Set new pose
-  order.product_->setBottomRight(visuals_->visual_tools_->convertPose(perception_result->desired_object_pose));
+  // -----------------------------------------------------------------------------------------------
+  // Update product with new pose
+  
+  order.product_->setCentroid(visuals_->visual_tools_->convertPose(perception_result->desired_object_pose));
 
   // Update location visually
-  order.product_->visualize(shelf_->getBottomRight());
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Visualizing shelf");
+  visualizeShelf();
+
+  object_pose = transform(order.product_->getCentroid(), transform(order.bin_->getBottomRight(), shelf_->getBottomRight()));
+
+  printTransform(object_pose);
+
+  //visuals_->visual_tools_->publishArrow(object_pose, rvt::LIME_GREEN, rvt::LARGE);
 
   return true;
 }
@@ -660,6 +669,8 @@ bool APCManager::getObjectPoseFake(Eigen::Affine3d& object_pose, WorkOrder order
 
 bool APCManager::perturbCamera(BinObjectPtr bin)
 {
+  ROS_INFO_STREAM_NAMED("apc_manager","Perturbing camera for perception");
+
   //Move camera left
   ROS_INFO_STREAM_NAMED("apc_manager","Moving camera left distance " << config_->camera_left_distance_);
   bool left = true;

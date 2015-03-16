@@ -565,9 +565,9 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
   // Create side walls of shelf
   for (std::size_t i = 0; i < shelf_parts_.size(); ++i)
   {
-    //shelf_parts_[i].createCollisionBodies(bottom_right_);
+    shelf_parts_[i].createCollisionBodies(bottom_right_);
   }
-
+  
   // Show each bin except the focus on
   if (!just_frame)
   {

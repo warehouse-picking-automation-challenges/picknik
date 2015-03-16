@@ -125,7 +125,7 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
   // Generate all possible grasps
   std::vector<moveit_msgs::Grasp> possible_grasps;
 
-  grasp_generator_->setVerbose(false);
+  grasp_generator_->setVerbose(true);
 
   bool use_new_method = true;
   if (use_new_method)
@@ -1065,7 +1065,7 @@ bool Manipulation::executeTrajectory(const moveit_msgs::RobotTrajectory &traject
   }
 
   // Confirm trajectory before continuing
-  if (!parent_->getAutonomous())
+  if (!parent_->getAutonomous() && false)
   {
     // Set robot state
     //moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_));
