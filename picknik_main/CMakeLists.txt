@@ -33,6 +33,7 @@ catkin_package(
     shelf
     manipulation
     #learning_pipeline
+    visuals
     ${OMPL_LIBRARIES}
 )
 
@@ -51,6 +52,15 @@ include_directories(SYSTEM
 )
 link_directories(${OMPL_LIBRARY_DIRS})
 
+# Visuals Library
+add_library(visuals
+  src/visuals.cpp
+)
+target_link_libraries(visuals
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
 # JSON Parser Library
 add_library(jsoncpp
   src/json/jsoncpp.cpp
@@ -65,16 +75,18 @@ add_library(amazon_json_parser
   src/amazon_json_parser.cpp
 )
 target_link_libraries(amazon_json_parser
+  jsoncpp
+  visuals
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
-  jsoncpp
 )
 
-# Visualization Tools Library
+# Shelf library
 add_library(shelf
   src/shelf.cpp
 )
 target_link_libraries(shelf
+  visuals
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
@@ -85,6 +97,7 @@ add_library(manipulation
 )
 add_dependencies(manipulation picknik_main_generate_messages_cpp)
 target_link_libraries(manipulation
+  visuals
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
@@ -104,21 +117,23 @@ add_library(apc_manager
   src/apc_manager.cpp
 )
 target_link_libraries(apc_manager
-  ${catkin_LIBRARIES} 
-  ${Boost_LIBRARIES}
+  visuals
   shelf
   amazon_json_parser
   manipulation
   # learning_pipeline
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
 )
 
 # Main Executable
 add_executable(main src/main.cpp)
 target_link_libraries(main 
-  ${catkin_LIBRARIES} 
-  ${Boost_LIBRARIES}
   amazon_json_parser
   apc_manager
+  visuals
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
 )
 
 # TESTS

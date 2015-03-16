@@ -55,6 +55,7 @@ public:
    * \brief Constructor
    */
   ManipulationData(robot_model::RobotModelPtr robot_model)
+    : nh_("~")
   {
     // Load performance variables
     getDoubleParameter(nh_, "main_velocity_scaling_factor", main_velocity_scaling_factor_);

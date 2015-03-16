@@ -170,7 +170,7 @@ Run APC Manager (main program) for JACOB on hardware
 	  Available Modes:
 	    1. Actual APC contest mode
 		2. Train experience database mode / workspace analysis
-		3. Test end effectors mode
+		3. Test open close end effectors
 		4. Only load JSON and visualize shelf
 		5. Raise the roof (go up and down)
 		6. Verify shelf location

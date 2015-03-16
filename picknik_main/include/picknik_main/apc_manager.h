@@ -24,6 +24,9 @@
 #include <picknik_main/visuals.h>
 #include <picknik_main/manipulation_data.h>
 
+// Picknik Msgs
+#include <picknik_msgs/FindObjectsAction.h>
+
 // ROS
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
@@ -31,12 +34,16 @@
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 
+// MoveIt!
+#include <moveit_msgs/GetPlanningScene.h>
+
 namespace picknik_main
 {
 
 static const std::string ROBOT_DESCRIPTION = "robot_description";
 static const std::string JOINT_STATE_TOPIC = "/robot/joint_states";
 static const std::string PACKAGE_NAME = "picknik_main";
+static const std::string GET_PLANNING_SCENE_SERVICE_NAME = "get_planning_scene"; // name of the service that can be used to query the planning scene
 
 //MOVEIT_CLASS_FORWARD(APCManager);
 
@@ -251,10 +258,17 @@ public:
    */
   bool getAutonomous();
 
+  /**
+   * \brief Allow other nodes such as rviz to request the entire planning scene
+   */
+  bool getPlanningSceneService(moveit_msgs::GetPlanningScene::Request &req, moveit_msgs::GetPlanningScene::Response &res);
+
+
 private:
 
   // A shared node handle
-  ros::NodeHandle nh_;
+  ros::NodeHandle nh_private_;
+  ros::NodeHandle nh_root_;
   boost::shared_ptr<tf::TransformListener> tf_;
 
   // Show more visual and console output, with general slower run time.
@@ -285,7 +299,7 @@ private:
   ros::Subscriber remote_run_control_;
 
   // Robot-sepcific data for the APC
-  ManipulationDataPtr manip_data_;
+  ManipulationDataPtr config_;
 
   // Robot-specific data for generating grasps
   GraspDatas grasp_datas_;
@@ -295,12 +309,14 @@ private:
   bool next_step_ready_;
   bool is_waiting_;
 
-
   // Perception pipeline communication
   actionlib::SimpleActionClient<picknik_msgs::FindObjectsAction> find_objects_action_;
 
   // Perception
   bool fake_perception_;
+
+  // Allow Rviz to request the entire scene at startup
+  ros::ServiceServer get_scene_service_;
 
 }; // end class
 

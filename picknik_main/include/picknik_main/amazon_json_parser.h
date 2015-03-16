@@ -66,7 +66,6 @@ public:
 
 // Create boost pointers for this class
 typedef boost::shared_ptr<AmazonJSONParser> AmazonJSONParserPtr;
-typedef boost::shared_ptr<const AmazonJSONParser> AmazonJSONParserConstPtr;
 
 } // end namespace
 

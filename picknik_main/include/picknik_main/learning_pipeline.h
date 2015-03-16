@@ -127,7 +127,6 @@ private:
 
 // Create boost pointers for this class
 typedef boost::shared_ptr<LearningPipeline> LearningPipelinePtr;
-typedef boost::shared_ptr<const LearningPipeline> LearningPipelineConstPtr;
 
 } // end namespace
 

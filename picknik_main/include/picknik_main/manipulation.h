@@ -19,20 +19,14 @@
 #include <picknik_main/shelf.h>
 #include <picknik_main/namespaces.h>
 #include <picknik_main/visuals.h>
-#include <picknik_msgs/FindObjectsAction.h>
 #include <picknik_main/manipulation_data.h>
-//#include <picknik_main/apc_manager.h>
 
 // ROS
 #include <ros/ros.h>
-#include <tf/transform_listener.h>
 
 // MoveIt
-#include <moveit/collision_detection/world.h>
 #include <ompl_visual_tools/ompl_visual_tools.h>
-#include <moveit/planning_pipeline/planning_pipeline.h>
 #include <moveit/kinematic_constraints/utils.h>
-#include <moveit/robot_state/conversions.h>
 #include <moveit/plan_execution/plan_execution.h>
 
 // OMPL
@@ -42,6 +36,11 @@
 #include <moveit_grasps/grasps.h>
 #include <moveit_grasps/grasp_data.h>
 #include <moveit_grasps/grasp_filter.h>
+
+namespace planning_pipeline
+{
+MOVEIT_CLASS_FORWARD(PlanningPipeline);
+}
 
 namespace picknik_main
 {
@@ -324,7 +323,7 @@ protected:
   ShelfObjectPtr shelf_;
 
   // Robot-sepcific data for the APC
-  ManipulationDataPtr manip_data_;
+  ManipulationDataPtr config_;
 
   // Robot-specific data for generating grasps
   GraspDatas grasp_datas_;

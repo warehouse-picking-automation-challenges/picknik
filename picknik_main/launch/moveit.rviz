@@ -10,7 +10,7 @@ Panels:
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
         - /TF1/Frames1
-      Splitter Ratio: 0.683582
+      Splitter Ratio: 0.833992
     Tree Height: 826
   - Class: rviz/Help
     Name: Help
@@ -45,7 +45,7 @@ Visualization Manager:
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: true
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -71,10 +71,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        jaco2_api_origin:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         jaco2_end_effector:
           Alpha: 1
           Show Axes: false
@@ -129,6 +125,10 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_wrist:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         xtion:
           Alpha: 1
           Show Axes: false
@@ -140,12 +140,12 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
       Visual Enabled: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: true
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -171,10 +171,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        jaco2_api_origin:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         jaco2_end_effector:
           Alpha: 1
           Show Axes: false
@@ -229,6 +225,10 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_wrist:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         xtion:
           Alpha: 1
           Show Axes: false
@@ -240,12 +240,12 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_start_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
       Visual Enabled: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: true
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -271,10 +271,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        jaco2_api_origin:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         jaco2_end_effector:
           Alpha: 1
           Show Axes: false
@@ -329,6 +325,10 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_wrist:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         xtion:
           Alpha: 1
           Show Axes: false
@@ -340,7 +340,7 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_goal_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
       Visual Enabled: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
@@ -371,10 +371,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        jaco2_api_origin:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         jaco2_end_effector:
           Alpha: 1
           Show Axes: false
@@ -429,6 +425,10 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_wrist:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         xtion:
           Alpha: 1
           Show Axes: false
@@ -501,10 +501,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        jaco2_api_origin:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         jaco2_end_effector:
           Alpha: 1
           Show Axes: false
@@ -559,6 +555,10 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_wrist:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
         xtion:
           Alpha: 1
           Show Axes: false
@@ -614,10 +614,6 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          jaco2_api_origin:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
           jaco2_end_effector:
             Alpha: 1
             Show Axes: false
@@ -672,6 +668,10 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          jaco2_wrist:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
           xtion:
             Alpha: 1
             Show Axes: false
@@ -717,22 +717,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.2193
+      Distance: 3.20864
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.559528
-        Y: -0.0408824
-        Z: -3.57628e-07
+        X: 0.676797
+        Y: 0.24346
+        Z: 1.43051e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.444796
+      Pitch: 1.2854
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 2.47907
+      Yaw: 2.95041
     Saved: ~
 Window Geometry:
   Displays:
@@ -744,9 +744,9 @@ Window Geometry:
   Hide Right Dock: false
   PickNik:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd00000001000000000000010f000003e6fc020000000cfb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c00610079007301000000000000037b000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000145000000cb000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000230000001b60000000000000000fb0000000c00540065006c0065006f00700000000331000000b50000000000000000fb0000000e005000690063006b004e0069006b0100000381000000650000004300fffffffb0000000c00430061006d00650072006100000003d000000016000000000000000000000375000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000010000000000000178000003e6fc020000000cfb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c00610079007301000000000000037b000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000145000000cb000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000230000001b60000000000000000fb0000000c00540065006c0065006f00700000000331000000b50000000000000000fb0000000e005000690063006b004e0069006b0100000381000000650000004300fffffffb0000000c00430061006d00650072006100000003d00000001600000000000000000000030c000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
   Views:
     collapsed: false
   Width: 1162
-  X: 1511
+  X: 1471
   Y: 14

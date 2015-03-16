@@ -19,6 +19,9 @@
 // MoveIt
 #include <moveit/trajectory_processing/iterative_time_parameterization.h>
 #include <moveit/ompl/model_based_planning_context.h>
+#include <moveit/collision_detection/world.h>
+#include <moveit/planning_pipeline/planning_pipeline.h>
+#include <moveit/robot_state/conversions.h>
 
 // OMPL
 #include <ompl/tools/lightning/Lightning.h>
@@ -45,7 +48,7 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   , verbose_(verbose)
   , visuals_(visuals)
   , planning_scene_monitor_(planning_scene_monitor)
-  , manip_data_(manip_data)
+  , config_(manip_data)
   , grasp_datas_(grasp_datas)
   , parent_(parent)
   , shelf_(shelf)
@@ -58,7 +61,7 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   {
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
     current_state_.reset(new moveit::core::RobotState(scene->getCurrentState()));
-  }
+  } // end scoped pointer of locked planning scene
 
   visuals_->visual_tools_->getSharedRobotState() = current_state_; // allow visual_tools to have the correct virtual joint
   robot_model_ = current_state_->getRobotModel();
@@ -108,12 +111,13 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
 
 
   // Done
-  ROS_INFO_STREAM_NAMED("manipulation","Pipeline Ready.");
+  ROS_INFO_STREAM_NAMED("manipulation","Manipulation Ready.");
 }
 
 bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_model::JointModelGroup* arm_jmg,
                                moveit_grasps::GraspSolution& chosen, bool verbose)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","chooseGrasp()");
   const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[arm_jmg].ee_group_name_);
 
   visuals_->visual_tools_->publishAxis(object_pose);
@@ -168,7 +172,7 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
   ROS_DEBUG_STREAM_NAMED("manipulation.ik_filtered_grasps",
                          (visualizeGrasps(filtered_grasps, arm_jmg, show_cartesian_path) ? "Done" : "Failed"));
 
-  ROS_INFO_STREAM_NAMED("apc_manager","Filtering grasps by collision");
+  ROS_INFO_STREAM_NAMED("manipulation","Filtering grasps by collision");
 
   // Filter grasps based on collision
   getCurrentState();
@@ -194,7 +198,7 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
   // Choose grasp
   if (!grasp_filter_->chooseBestGrasp(filtered_grasps, chosen))
   {
-    ROS_ERROR_STREAM_NAMED("apc_manager","No best grasp found");
+    ROS_ERROR_STREAM_NAMED("manipulation","No best grasp found");
     return false;
   }
 
@@ -203,6 +207,8 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
 
 bool Manipulation::createCollisionWall()
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","createCollisionWall()");
+
   // Disable all bins except desired one
   visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
 
@@ -226,6 +232,8 @@ bool Manipulation::createCollisionWall()
 bool Manipulation::moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name,
                               double velocity_scaling_factor)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","moveToPose()");
+
   // Set new state to current state
   getCurrentState();
 
@@ -251,6 +259,8 @@ bool Manipulation::moveToPose(const robot_model::JointModelGroup* arm_jmg, const
 
 bool Manipulation::getSRDFPose(const robot_model::JointModelGroup* jmg)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","getSRDFPose()");
+
   const std::vector<const moveit::core::JointModel*> joints = jmg->getJointModels();
 
   while(ros::ok())
@@ -276,29 +286,35 @@ bool Manipulation::getSRDFPose(const robot_model::JointModelGroup* jmg)
 bool Manipulation::moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_scaling_factor,
                                 const robot_model::JointModelGroup* arm_jmg)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","moveEEToPose()");
+
   // Debug
   visuals_->visual_tools_->publishAxis(ee_pose);
-
-  // Setup collision checking
-  bool collision_checking_verbose = false;
-  boost::scoped_ptr<planning_scene_monitor::LockedPlanningSceneRO> ls;
-  ls.reset(new planning_scene_monitor::LockedPlanningSceneRO(planning_scene_monitor_));
-  robot_state::GroupStateValidityCallbackFn constraint_fn
-    = boost::bind(&isStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
-                  collision_checking_verbose, visuals_, _1, _2, _3);
 
   // Create start and goal
   getCurrentState();
   moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_));
 
-  // Solve IK problem for arm
-  std::size_t attempts = 3;
-  double timeout = 0.1; // TODO
-  if (!goal_state->setFromIK(arm_jmg, ee_pose, attempts, timeout, constraint_fn))
+  // Setup collision checking with a locked planning scene
   {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to find arm solution for desired pose");
-    return false;
-  }
+    bool collision_checking_verbose = true;
+    boost::scoped_ptr<planning_scene_monitor::LockedPlanningSceneRO> ls;
+    ls.reset(new planning_scene_monitor::LockedPlanningSceneRO(planning_scene_monitor_));
+    robot_state::GroupStateValidityCallbackFn constraint_fn
+      = boost::bind(&isStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
+                    collision_checking_verbose, visuals_, _1, _2, _3);
+
+    // Solve IK problem for arm
+    std::size_t attempts = 3;
+    double timeout = 0.1; // TODO
+    if (!goal_state->setFromIK(arm_jmg, ee_pose, attempts, timeout, constraint_fn))
+    {
+      ROS_ERROR_STREAM_NAMED("manipulation","Unable to find arm solution for desired pose");
+      return false;
+    }
+  } // end scoped pointer of locked planning scene
+
+  ROS_INFO_STREAM_NAMED("manipulation","Found solution to pose request");
 
   // Debug
   visuals_->visual_tools_->publishRobotState( goal_state, rvt::PURPLE );
@@ -308,11 +324,11 @@ bool Manipulation::moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_
   bool execute_trajectory = true;
   if (!move(current_state_, goal_state, arm_jmg, velocity_scaling_factor, verbose, execute_trajectory))
   {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move EE to desired pose");
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to move EE to desired pose");
     return false;
   }
 
-  ROS_INFO_STREAM_NAMED("apc_manager","Moved EE to desired pose successfullly");
+  ROS_INFO_STREAM_NAMED("manipulation","Moved EE to desired pose successfullly");
 
   return true;
 }
@@ -322,6 +338,8 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
                         bool verbose, bool execute_trajectory)
 
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","move()");
+
   // Check validity of start and goal
   if (!checkCollisionAndBounds(start, goal))
   {
@@ -362,7 +380,7 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   if (use_experience_)
     req.num_planning_attempts = 1; // this must be one else it threads and doesn't use lightning/thunder correctly
   else
-    req.num_planning_attempts = 4; // this is also the number of threads to use
+    req.num_planning_attempts = 1; // this is also the number of threads to use
   req.allowed_planning_time = 30; // seconds
   req.use_experience = use_experience_;
   req.experience_method = "lightning";
@@ -390,7 +408,7 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   {
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
     cloned_scene = planning_scene::PlanningScene::clone(scene);
-  }
+  } // end scoped pointer of locked planning scene
   planning_pipeline_->generatePlan(cloned_scene, req, res, dummy, planning_context_handle);
 
   // Check that the planning was successful
@@ -422,6 +440,7 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   if (error)
     return false;
 
+  std::cout << "before execute " << std::endl;
   // Execute trajectory
   if (execute_trajectory)
   {
@@ -477,6 +496,8 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
 bool Manipulation::executeState(const moveit::core::RobotStatePtr goal_state, const moveit::core::JointModelGroup *jmg,
                                 double velocity_scaling_factor)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeState()");
+
   // Get the start state
   getCurrentState();
 
@@ -526,10 +547,12 @@ bool Manipulation::generateApproachPath(const moveit::core::JointModelGroup *arm
                                         moveit::core::RobotStatePtr the_grasp_state,
                                         bool verbose)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","generateApproachPath()");
+
   // Configurations
   Eigen::Vector3d approach_direction;
   approach_direction << -1, 0, 0; // backwards towards robot body
-  double desired_approach_distance = grasp_datas_[arm_jmg].finger_to_palm_depth_ + manip_data_->approach_distance_desired_;
+  double desired_approach_distance = grasp_datas_[arm_jmg].finger_to_palm_depth_ + config_->approach_distance_desired_;
 
   // Show desired distance
   std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
@@ -543,7 +566,7 @@ bool Manipulation::generateApproachPath(const moveit::core::JointModelGroup *arm
   }
 
   // Get approach trajectory message
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, approach_trajectory_msg, arm_jmg, manip_data_->approach_velocity_scaling_factor_))
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, approach_trajectory_msg, arm_jmg, config_->approach_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
     return false;
@@ -565,6 +588,8 @@ bool Manipulation::generateApproachPath(const moveit::core::JointModelGroup *arm
 
 bool Manipulation::executeLiftPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeLiftPath()");
+
   getCurrentState();
 
   // Clear all collision objects
@@ -585,7 +610,7 @@ bool Manipulation::executeLiftPath(const moveit::core::JointModelGroup *arm_jmg,
 
   // Get approach trajectory message
   moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, manip_data_->lift_velocity_scaling_factor_))
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, config_->lift_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
     return false;
@@ -607,6 +632,8 @@ bool Manipulation::executeLiftPath(const moveit::core::JointModelGroup *arm_jmg,
 
 bool Manipulation::executeLeftPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool left)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeLeftPath()");
+
   getCurrentState();
 
   // Clear all collision objects
@@ -627,7 +654,7 @@ bool Manipulation::executeLeftPath(const moveit::core::JointModelGroup *arm_jmg,
 
   // Get approach trajectory message
   moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, manip_data_->lift_velocity_scaling_factor_))
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, config_->lift_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
     return false;
@@ -649,6 +676,8 @@ bool Manipulation::executeLeftPath(const moveit::core::JointModelGroup *arm_jmg,
 
 bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeRetreatPath()");
+
   // Get current state after grasping
   getCurrentState();
 
@@ -668,7 +697,7 @@ bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_j
 
   // Get approach trajectory message
   moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, manip_data_->retreat_velocity_scaling_factor_))
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, config_->retreat_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
     return false;
@@ -696,7 +725,7 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
                                             bool reverse_trajectory,
                                             double& path_length)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation","Computing cartesian path");
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","computeStraightLinePath()");
 
   // End effector parent link (arm tip for ik solving)
   const moveit::core::LinkModel *ik_tip_link_model = grasp_datas_[arm_jmg].parent_link_;
@@ -869,6 +898,8 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
 bool Manipulation::straightProjectPose( const Eigen::Affine3d& original_pose, Eigen::Affine3d& new_pose,
                                         const Eigen::Vector3d direction, double distance)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","straightProjectPose()");
+
   // Assume everything is in world coordinates
 
   new_pose = original_pose;
@@ -885,7 +916,7 @@ bool Manipulation::convertRobotStatesToTrajectory(const std::vector<robot_state:
                                                   const robot_model::JointModelGroup* jmg,
                                                   const double &velocity_scaling_factor)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation","Converting robot states to trajectory using scaling factor " << velocity_scaling_factor);
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","convertRobotStatesToTrajectory()");
 
   // Copy the vector of RobotStates to a RobotTrajectory
   robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, jmg));
@@ -912,14 +943,18 @@ bool Manipulation::convertRobotStatesToTrajectory(const std::vector<robot_state:
 
 bool Manipulation::openEndEffectors(bool open)
 {
-  openEndEffector(true, manip_data_->right_arm_);
-  if (manip_data_->dual_arm_)
-    openEndEffector(true, manip_data_->left_arm_);
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","openEndEffectors()");
+
+  openEndEffector(true, config_->right_arm_);
+  if (config_->dual_arm_)
+    openEndEffector(true, config_->left_arm_);
   return true;
 }
 
 bool Manipulation::openEndEffector(bool open, const robot_model::JointModelGroup* arm_jmg)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","openEndEffector()");
+
   getCurrentState();
   const robot_model::JointModelGroup* ee_jmg = grasp_datas_[arm_jmg].ee_jmg_;
 
@@ -971,23 +1006,25 @@ bool Manipulation::openEndEffector(bool open, const robot_model::JointModelGroup
 
 bool Manipulation::setStateWithOpenEE(bool open, moveit::core::RobotStatePtr robot_state)
 {
-  if (!manip_data_->dual_arm_) // jacob mode
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","setStateWithOpenEE()");
+
+  if (!config_->dual_arm_) // jacob mode
   {
     if (open)
-      grasp_datas_[manip_data_->right_arm_].setRobotStatePreGrasp( robot_state );
+      grasp_datas_[config_->right_arm_].setRobotStatePreGrasp( robot_state );
     else
-      grasp_datas_[manip_data_->right_arm_].setRobotStateGrasp( robot_state );
+      grasp_datas_[config_->right_arm_].setRobotStateGrasp( robot_state );
   }
   else // Baxter mode
   {
     // TODO replace with method that moveit_grasps uses
 
-    const double& right_open_position  = grasp_datas_[manip_data_->right_arm_].pre_grasp_posture_.points[0].positions[0];
-    const double& right_close_position = grasp_datas_[manip_data_->right_arm_].grasp_posture_.points[0].positions[0];
+    const double& right_open_position  = grasp_datas_[config_->right_arm_].pre_grasp_posture_.points[0].positions[0];
+    const double& right_close_position = grasp_datas_[config_->right_arm_].grasp_posture_.points[0].positions[0];
     double left_open_position;
     double left_close_position;
-    left_open_position  = grasp_datas_[manip_data_->left_arm_].pre_grasp_posture_.points[0].positions[0];
-    left_close_position = grasp_datas_[manip_data_->left_arm_].grasp_posture_.points[0].positions[0];
+    left_open_position  = grasp_datas_[config_->left_arm_].pre_grasp_posture_.points[0].positions[0];
+    left_close_position = grasp_datas_[config_->left_arm_].grasp_posture_.points[0].positions[0];
 
     if (open)
     {
@@ -1011,10 +1048,11 @@ bool Manipulation::setStateWithOpenEE(bool open, moveit::core::RobotStatePtr rob
 
 bool Manipulation::executeTrajectory(const moveit_msgs::RobotTrajectory &trajectory_msg)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeTrajectory()");
   ROS_INFO_STREAM_NAMED("manipulation","Executing trajectory");
 
   // Debug
-  ROS_DEBUG_STREAM_NAMED("pipeline.trajectory","Publishing:\n" << trajectory_msg);
+  ROS_DEBUG_STREAM_NAMED("manipulation.trajectory","Publishing:\n" << trajectory_msg);
 
   // Save to file
   if (true)
@@ -1034,7 +1072,7 @@ bool Manipulation::executeTrajectory(const moveit_msgs::RobotTrajectory &traject
   {
     // Set robot state
     //moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_));
-    //current_state_->setJointGroupPositions(manip_data_->right_arm_, trajectory_msg.joint_trajectory.points.back().positions);
+    //current_state_->setJointGroupPositions(config_->right_arm_, trajectory_msg.joint_trajectory.points.back().positions);
 
     // Check robot state
     //visuals_->goal_state_->publishRobotState(current_state_, rvt::ORANGE);
@@ -1084,11 +1122,21 @@ bool Manipulation::executeTrajectory(const moveit_msgs::RobotTrajectory &traject
 
 bool Manipulation::saveTrajectory(const moveit_msgs::RobotTrajectory &trajectory_msg, const std::string &file_name)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","saveTrajectory()");
+
   const trajectory_msgs::JointTrajectory &joint_trajectory = trajectory_msg.joint_trajectory;
+
+  // Error check
   if (!joint_trajectory.points.size() || !joint_trajectory.points[0].positions.size())
   {
     ROS_ERROR_STREAM_NAMED("manipulation","No trajectory points available to save");
     return false;
+  }
+  bool has_accelerations = true;
+  if (joint_trajectory.points[0].accelerations.size() == 0)
+  {
+    ROS_WARN_STREAM_NAMED("temp","no accelerations available");
+    has_accelerations = false;
   }
 
   std::string file_path;
@@ -1101,8 +1149,9 @@ bool Manipulation::saveTrajectory(const moveit_msgs::RobotTrajectory &trajectory
   for (std::size_t j = 0; j < joint_trajectory.joint_names.size(); ++j)
   {
     output_file << joint_trajectory.joint_names[j] << "_pos,"
-                << joint_trajectory.joint_names[j] << "_vel,"
-                << joint_trajectory.joint_names[j] << "_acc,";
+                << joint_trajectory.joint_names[j] << "_vel,";
+    if (has_accelerations)
+      output_file << joint_trajectory.joint_names[j] << "_acc,";
   }
   output_file << std::endl;
 
@@ -1121,8 +1170,9 @@ bool Manipulation::saveTrajectory(const moveit_msgs::RobotTrajectory &trajectory
     {
       // Output State
       output_file << joint_trajectory.points[i].positions[j] << ","
-                  << joint_trajectory.points[i].velocities[j] << ","
-                  << joint_trajectory.points[i].accelerations[j] << ",";
+                  << joint_trajectory.points[i].velocities[j] << ",";
+      if (has_accelerations)
+        output_file << joint_trajectory.points[i].accelerations[j] << ",";
 
     }
 
@@ -1135,6 +1185,8 @@ bool Manipulation::saveTrajectory(const moveit_msgs::RobotTrajectory &trajectory
 
 bool Manipulation::allowFingerTouch(const std::string& object_name, const robot_model::JointModelGroup* arm_jmg)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","allowFingerTouch()");
+
   // TODO does this reset properly i.e. clear the matrix?
 
   // Lock planning scene
@@ -1147,14 +1199,14 @@ bool Manipulation::allowFingerTouch(const std::string& object_name, const robot_
     // Prevent fingers from causing collision with object
     for (std::size_t i = 0; i < ee_link_names.size(); ++i)
     {
-      ROS_DEBUG_STREAM_NAMED("pipeline.collision_matrix","Prevent collision between " << object_name << " and " << ee_link_names[i]);
+      ROS_DEBUG_STREAM_NAMED("manipulation.collision_matrix","Prevent collision between " << object_name << " and " << ee_link_names[i]);
       scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, ee_link_names[i], true);
     }
 
     // Prevent object from causing collision with shelf
     for (std::size_t i = 0; i < shelf_->getShelfParts().size(); ++i)
     {
-      ROS_DEBUG_STREAM_NAMED("pipeline.collision_matrix","Prevent collision between " << object_name << " and " << shelf_->getShelfParts()[i].getName());
+      ROS_DEBUG_STREAM_NAMED("manipulation.collision_matrix","Prevent collision between " << object_name << " and " << shelf_->getShelfParts()[i].getName());
       scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, shelf_->getShelfParts()[i].getName(), true);
     }
   } // end lock planning scene
@@ -1172,6 +1224,8 @@ bool Manipulation::allowFingerTouch(const std::string& object_name, const robot_
 
 void Manipulation::loadPlanningPipeline()
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","loadPlanningPipeline()");
+
   if (!planning_pipeline_)
   {
     // Setup planning pipeline
@@ -1181,13 +1235,17 @@ void Manipulation::loadPlanningPipeline()
 
 bool Manipulation::statusPublisher(const std::string &status)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","statusPublisher()");
+
   std::cout << std::endl << std::endl;
-  ROS_INFO_STREAM_NAMED("pipeline.status", status << " -------------------------------------");
+  ROS_INFO_STREAM_NAMED("manipulation.status", status << " -------------------------------------");
   visuals_->visual_tools_->publishText(status_position_, status, rvt::WHITE, rvt::LARGE);
 }
 
 bool Manipulation::orderPublisher(WorkOrder& order)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","orderPublisher()");
+
   const std::string status = order.bin_->getName() + ": " + order.product_->getName();
   visuals_->visual_tools_->publishText(status_position_, status, rvt::WHITE, rvt::LARGE);
 }
@@ -1195,6 +1253,7 @@ bool Manipulation::orderPublisher(WorkOrder& order)
 bool Manipulation::statesEqual(const moveit::core::RobotState &s1, const moveit::core::RobotState &s2,
                                const robot_model::JointModelGroup* arm_jmg)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","statesEqual()");
   static const double STATES_EQUAL_THRESHOLD = 0.01;
 
   double s1_vars[arm_jmg->getActiveJointModels().size()];
@@ -1217,6 +1276,8 @@ bool Manipulation::statesEqual(const moveit::core::RobotState &s1, const moveit:
 void Manipulation::displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup,
                                          const robot_model::JointModelGroup* arm_jmg)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","displayLightningPlans()");
+
   // Create a state space describing our robot's planning group
   moveit_ompl::ModelBasedStateSpacePtr model_state_space
     = boost::dynamic_pointer_cast<moveit_ompl::ModelBasedStateSpace>(experience_setup->getStateSpace());
@@ -1262,6 +1323,7 @@ void Manipulation::displayLightningPlans(ompl::tools::ExperienceSetupPtr experie
 bool Manipulation::visualizeGrasps(std::vector<moveit_grasps::GraspSolution> filtered_grasps,
                                    const moveit::core::JointModelGroup *arm_jmg, bool show_cartesian_path)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","visualizeGrasps()");
   ROS_INFO_STREAM_NAMED("manipulation","Showing valid filtered grasp poses");
 
   // Publish in batch
@@ -1313,6 +1375,7 @@ bool Manipulation::visualizeGrasps(std::vector<moveit_grasps::GraspSolution> fil
 bool Manipulation::visualizeIKSolutions(std::vector<moveit_grasps::GraspSolution> filtered_grasps,
                                         const moveit::core::JointModelGroup* arm_jmg, double display_time)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","visualizingIKSolutions()");
   // Convert the filtered_grasps into a format moveit_visual_tools can use
   std::vector<trajectory_msgs::JointTrajectoryPoint> ik_solutions;
   ik_solutions.resize(filtered_grasps.size());
@@ -1326,6 +1389,7 @@ bool Manipulation::visualizeIKSolutions(std::vector<moveit_grasps::GraspSolution
 
 moveit::core::RobotStatePtr Manipulation::getCurrentState()
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","getCurrentState()");
   planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
   (*current_state_) = scene->getCurrentState();
   return current_state_;
@@ -1333,6 +1397,8 @@ moveit::core::RobotStatePtr Manipulation::getCurrentState()
 
 bool Manipulation::checkCurrentCollisionAndBounds(const robot_model::JointModelGroup* arm_jmg)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","checkCurrentCollisionAndBounds()");
+
   bool result = true;
 
   // Copy planning scene that is locked
@@ -1374,6 +1440,8 @@ bool Manipulation::checkCurrentCollisionAndBounds(const robot_model::JointModelG
 bool Manipulation::checkCollisionAndBounds(const robot_state::RobotStatePtr &start_state,
                                            const robot_state::RobotStatePtr &goal_state)
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","checkCollisionAndBounds()");
+
   bool result = true;
   bool verbose = true;
   double margin = 0.0001;
@@ -1404,9 +1472,8 @@ bool Manipulation::checkCollisionAndBounds(const robot_state::RobotStatePtr &sta
   // Get planning scene lock
   {
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_);
-
     // Start
-    if (scene->isStateColliding(*start_state, manip_data_->right_arm_->getName(), verbose))
+    if (scene->isStateColliding(*start_state, config_->right_arm_->getName(), verbose))
     {
       ROS_WARN_STREAM_NAMED("manipulation","Start state is colliding");
       // Show collisions
@@ -1420,7 +1487,7 @@ bool Manipulation::checkCollisionAndBounds(const robot_state::RobotStatePtr &sta
     {
       goal_state->update();
 
-      if (scene->isStateColliding(*goal_state, manip_data_->right_arm_->getName(), verbose))
+      if (scene->isStateColliding(*goal_state, config_->right_arm_->getName(), verbose))
       {
         ROS_WARN_STREAM_NAMED("manipulation","Goal state is colliding");
         // Show collisions
@@ -1437,6 +1504,7 @@ bool Manipulation::checkCollisionAndBounds(const robot_state::RobotStatePtr &sta
 bool Manipulation::getFilePath(std::string &file_path, const std::string &file_name) const
 
 {
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","getFilePath()");
   namespace fs = boost::filesystem;
 
   // Check that the directory exists, if not, create it
