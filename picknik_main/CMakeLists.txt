@@ -31,8 +31,9 @@ catkin_package(
     jsoncpp
     amazon_json_parser
     shelf
-    manipulation_pipeline
-    learning_pipeline
+    manipulation
+    #learning_pipeline
+    visuals
     ${OMPL_LIBRARIES}
 )
 
@@ -51,6 +52,15 @@ include_directories(SYSTEM
 )
 link_directories(${OMPL_LIBRARY_DIRS})
 
+# Visuals Library
+add_library(visuals
+  src/visuals.cpp
+)
+target_link_libraries(visuals
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
 # JSON Parser Library
 add_library(jsoncpp
   src/json/jsoncpp.cpp
@@ -65,60 +75,65 @@ add_library(amazon_json_parser
   src/amazon_json_parser.cpp
 )
 target_link_libraries(amazon_json_parser
+  jsoncpp
+  visuals
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
-  jsoncpp
 )
 
-# Visualization Tools Library
+# Shelf library
 add_library(shelf
   src/shelf.cpp
 )
 target_link_libraries(shelf
+  visuals
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
 
 # Manipulation pipeline library
-add_library(manipulation_pipeline
-  src/manipulation_pipeline.cpp
+add_library(manipulation
+  src/manipulation.cpp
 )
-add_dependencies(manipulation_pipeline picknik_main_generate_messages_cpp)
-target_link_libraries(manipulation_pipeline
+add_dependencies(manipulation picknik_main_generate_messages_cpp)
+target_link_libraries(manipulation
+  visuals
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
 
 # Experience trainer library
-add_library(learning_pipeline
-  src/learning_pipeline.cpp
-)
-target_link_libraries(learning_pipeline
-  ${catkin_LIBRARIES} 
-  ${Boost_LIBRARIES}
-  manipulation_pipeline
-)
+# add_library(learning_pipeline
+#   src/learning_pipeline.cpp
+# )
+# target_link_libraries(learning_pipeline
+#   ${catkin_LIBRARIES} 
+#   ${Boost_LIBRARIES}
+#   manipulation
+# )
 
 # Main logic of APC
 add_library(apc_manager
   src/apc_manager.cpp
 )
 target_link_libraries(apc_manager
-  ${catkin_LIBRARIES} 
-  ${Boost_LIBRARIES}
+  visuals
   shelf
   amazon_json_parser
-  manipulation_pipeline
-  learning_pipeline
+  manipulation
+  # learning_pipeline
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
 )
 
 # Main Executable
 add_executable(main src/main.cpp)
 target_link_libraries(main 
-  ${catkin_LIBRARIES} 
-  ${Boost_LIBRARIES}
   amazon_json_parser
   apc_manager
+  visuals
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
 )
 
 # TESTS

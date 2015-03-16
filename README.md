@@ -170,15 +170,19 @@ Run APC Manager (main program) for JACOB on hardware
 	  Available Modes:
 	    1. Actual APC contest mode
 		2. Train experience database mode / workspace analysis
-		3. Test end effectors mode
+		3. Test open close end effectors
 		4. Only load JSON and visualize shelf
 		5. Raise the roof (go up and down)
 		6. Verify shelf location
 		7. Get the current pose of the robot for the SRDF
 		8. Go to goal bin pose
 		9. Check if current state is in collision
+		10. Plan to random valid locations
+		11. Move camera to each bin location
+		12. Test camera calibration
+		13. Test joint limits
 	jump_to - which step in the manipulation pipeline to start on
-	  Steps:
+	  Steps: NOT CORRECT ANYMORE
 	    0. Move to initial position
 		1. Open end effectors
 		2. Generate and choose grasp

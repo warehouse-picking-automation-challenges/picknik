@@ -1,10 +1,11 @@
 # Note: Name of file should match name of robot in URDF
 
 # Robot Execution Speed
-main_velocity_scaling_factor: 0.5 # during planning
+main_velocity_scaling_factor: 0.75 # during planning
 approach_velocity_scaling_factor: 0.5
 lift_velocity_scaling_factor: 0.5
 retreat_velocity_scaling_factor: 0.5
+calibration_velocity_scaling_factor: 0.05
 
 # Sleep timers
 wait_before_grasp: 0.1
@@ -20,7 +21,7 @@ left_arm_name: manipulator_DISABLED
 both_arms_name: manipulator_DISABLED
 
 # Calibration
-shelf_distance_from_robot: 0.55
+shelf_distance_from_robot: 0.52
 
 # Topics
 joint_state_topic: /jacob/joint_states

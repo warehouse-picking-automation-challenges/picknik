@@ -12,46 +12,45 @@
    Desc:   Manage the manipulation of MoveIt
 */
 
-#ifndef PICKNIK_MAIN__MANIPULATION_PIPELINE
-#define PICKNIK_MAIN__MANIPULATION_PIPELINE
+#ifndef PICKNIK_MAIN__MANIPULATION
+#define PICKNIK_MAIN__MANIPULATION
 
 // Picknik
 #include <picknik_main/shelf.h>
 #include <picknik_main/namespaces.h>
 #include <picknik_main/visuals.h>
-#include <picknik_msgs/FindObjectsAction.h>
+#include <picknik_main/manipulation_data.h>
 
 // ROS
 #include <ros/ros.h>
-#include <tf/transform_listener.h>
-#include <std_msgs/Bool.h>
-#include <actionlib/client/simple_action_client.h>
-#include <actionlib/client/terminal_state.h>
 
 // MoveIt
-#include <moveit/collision_detection/world.h>
 #include <ompl_visual_tools/ompl_visual_tools.h>
-#include <moveit/planning_pipeline/planning_pipeline.h>
 #include <moveit/kinematic_constraints/utils.h>
-#include <moveit/robot_state/conversions.h>
 #include <moveit/plan_execution/plan_execution.h>
+
+// OMPL
+#include <ompl/tools/experience/ExperienceSetup.h>
 
 // Grasp generation
 #include <moveit_grasps/grasps.h>
 #include <moveit_grasps/grasp_data.h>
 #include <moveit_grasps/grasp_filter.h>
 
-// OMPL
-#include <ompl/tools/experience/ExperienceSetup.h>
+namespace planning_pipeline
+{
+MOVEIT_CLASS_FORWARD(PlanningPipeline);
+}
 
 namespace picknik_main
 {
 
-MOVEIT_CLASS_FORWARD(ManipulationPipeline);
+typedef std::map<const robot_model::JointModelGroup*,moveit_grasps::GraspData> GraspDatas;
 
-const double APPROACH_DISTANCE_DESIRED = 0.1; // amount beyond min distance
+MOVEIT_CLASS_FORWARD(APCManager);
+MOVEIT_CLASS_FORWARD(Manipulation);
 
-class ManipulationPipeline
+class Manipulation
 {
 public:
 
@@ -59,61 +58,17 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  ManipulationPipeline(bool verbose,
-                       VisualsPtr visuals,
-                       planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                       boost::shared_ptr<plan_execution::PlanExecution> plan_execution,
-                       ShelfObjectPtr shelf, bool use_experience, bool show_database);
+  Manipulation(bool verbose, VisualsPtr visuals,
+               planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
+               ManipulationDataPtr manip_data, GraspDatas grasp_datas,
+               APCManager* parent,
+               ShelfObjectPtr shelf, bool use_experience, bool show_database);
 
   /**
    * \brief Destructor
    */
-  ~ManipulationPipeline()
+  ~Manipulation()
   {}
-
-  /**
-   * \brief Check if all communication is properly active
-   * \return true on success
-   */
-  bool checkSystemReady();
-
-  /**
-   * \brief Helper for initilizing the robot states
-   */
-  bool loadRobotStates();
-
-  /**
-   * \brief Load the shelf and products
-   * \param shelf to focus on. rest of shelves will be disabled
-   * \return true on success
-   */
-  bool setupPlanningScene( const std::string& bin_name );
-
-  /**
-   * \brief Show simple collision wall that protects shelf
-   * \return true on success
-   */
-  bool createCollisionWall();
-
-  /**
-   * \brief Get the pose of a requested object
-   * \param object_pose
-   * \param order - desired object
-   * \return true on success
-   */
-  bool getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose);
-
-  /**
-   * \brief Wait until user presses a button
-   * \return true on success
-   */
-  bool waitForNextStep();  
-
-  /**
-   * \brief Grasp object once we know the pose
-   * \return true on success
-   */
-  bool graspObjectPipeline(WorkOrder order, bool verbose, std::size_t jump_to = 0);
 
   /**
    * \brief Choose the grasp for the object
@@ -123,62 +78,44 @@ public:
                    moveit_grasps::GraspSolution& chosen, bool verbose);
 
   /**
-   * \brief Choose which arm to use for a particular task
-   * \return joint model group of arm to use in manip
-   */
-  const robot_model::JointModelGroup* chooseArm(const Eigen::Affine3d& object_pose);
-
-  /**
-   * \brief Move both arms to their start location
-   * \param optionally specify which arm to use
+   * \brief Show simple collision wall that protects shelf
    * \return true on success
    */
-  bool moveToStartPosition(const robot_model::JointModelGroup* arm_jmg = NULL);
-
-  /**
-   * \brief Move to location to get rid of product
-   * \param optionally specify which arm to use
-   * \return true on success
-   */
-  bool moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg = NULL);
+  bool createCollisionWall();
 
   /**
    * \brief Move to any pose as defined in the SRDF
    * \return true on success
    */
-  bool moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name);
+  bool moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name, double velocity_scaling_factor);
 
   /**
    * \brief Get the XML of a SDF pose of joints
    * \return true on success
    */
-  bool getSRDFPose(const robot_model::JointModelGroup* jmg = NULL);
+  bool getSRDFPose(const robot_model::JointModelGroup* jmg);
+
+  /**
+   * \brief Move EE to a particular pose by solving with IK
+   * \param input - description
+   * \return true on success
+   */
+  bool moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_scaling_factor, const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Send a planning request to moveit and execute
    * \return true on success
    */
   bool move(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
-            const robot_model::JointModelGroup* arm_jmg, bool verbose, bool execute_trajectory = true,
-            bool show_database = true);
-
-  /**
-   * \brief Simple testing script to open close EEs
-   * \return true on success
-   */
-  bool testEndEffectors(bool open);
-
-  /**
-   * \brief Simple testing script to raise and lower arm
-   * \return true on success
-   */
-  bool testUpAndDown();
+            const robot_model::JointModelGroup* arm_jmg, double velocity_scaling_factor,
+            bool verbose, bool execute_trajectory = true);
 
   /**
    * \brief Send a single state to the controllers for execution
    * \return true on success
    */
-  bool executeState(const moveit::core::RobotStatePtr robot_state, const moveit::core::JointModelGroup *arm_jmg);
+  bool executeState(const moveit::core::RobotStatePtr goal_state, const moveit::core::JointModelGroup *jmg,
+                    double velocity_scaling_factor);
 
   /**
    * \brief Generate the straight line path from pregrasp to grasp
@@ -197,10 +134,16 @@ public:
   bool executeLiftPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true);
 
   /**
+   * \brief Translate arm left and right
+   * \return true on success
+   */
+  bool executeLeftPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_left_distance, bool left = true);
+
+  /**
    * \brief After grasping an object, pull object out of shelf in reverse
    * \return true on success
    */
-  bool executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg);
+  bool executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_approach_distance = 0.25, bool retreat = true);
 
   /**
    * \brief Function for testing multiple directions
@@ -237,6 +180,7 @@ public:
                                       const robot_model::JointModelGroup* arm_jmg,
                                       const double &velocity_scaling_factor);
 
+
   /**
    * \brief Open both end effectors in hardware
    * \return true on success
@@ -260,7 +204,13 @@ public:
    * \brief Send trajectory message to robot controllers
    * \return true on success
    */
-  bool executeTrajectory(moveit_msgs::RobotTrajectory trajectory_msg);
+  bool executeTrajectory(const moveit_msgs::RobotTrajectory &trajectory_msg);
+
+  /**
+   * \brief Save a trajectory as CSV to file
+   * \return true on success
+   */
+  bool saveTrajectory(const moveit_msgs::RobotTrajectory &trajectory_msg, const std::string &file_name);
 
   /**
    * \brief Prevent a product from colliding with the fingers
@@ -302,22 +252,6 @@ public:
   void displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup, const robot_model::JointModelGroup* arm_jmg);
 
   /**
-   * \brief Getter for RobotState
-   */
-  moveit::core::RobotStatePtr getRobotState()
-  {
-    return current_state_;
-  }
-
-  /**
-   * \brief Setter for RobotState
-   */
-  void setRobotState(moveit::core::RobotStatePtr robot_state)
-  {
-    current_state_ = robot_state;
-  }
-
-  /**
    * \brief Visulization function
    * \param input - description
    * \return true on success
@@ -336,13 +270,13 @@ public:
   /**
    * \brief Update the current_state_ RobotState with latest from planning scene
    */
-  void getCurrentState();
+  moveit::core::RobotStatePtr getCurrentState();
 
   /**
    * \brief Check if current state is in collision or out of bounds
    * \return true if not in collision and not out of bounds
    */
-  bool checkCurrentCollisionAndBounds();
+  bool checkCurrentCollisionAndBounds(const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Check if states are in collision or out of bounds
@@ -350,13 +284,16 @@ public:
    * \param goal_state OPTIONAL to check
    * \return true if not in collision and not out of bounds
    */
-  bool checkCollisionAndBounds(const robot_state::RobotStatePtr &start_state, 
+  bool checkCollisionAndBounds(const robot_state::RobotStatePtr &start_state,
                                const robot_state::RobotStatePtr &goal_state = robot_state::RobotStatePtr());
-public:
 
-  // Remote control
-  bool autonomous_;
-  bool next_step_ready_;
+  /**
+   * \brief Get location to save a CSV file
+   * \param file_path - the variable to populate with a path
+   * \param file_name - the desired name of the file
+   * \return true on success
+   */
+  bool getFilePath(std::string &file_path, const std::string &file_name = "moveit_export.csv") const;
 
 protected:
 
@@ -365,7 +302,11 @@ protected:
 
   // Show more visual and console output, with general slower run time.
   bool verbose_;
-  
+
+  // Trajectory execution
+  trajectory_execution_manager::TrajectoryExecutionManagerPtr trajectory_execution_manager_;
+  boost::shared_ptr<plan_execution::PlanExecution> plan_execution_;
+
   // For visualizing things in rviz
   VisualsPtr visuals_;
   ovt::OmplVisualToolsPtr ompl_visual_tools_;
@@ -374,32 +315,21 @@ protected:
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
   robot_model::RobotModelConstPtr robot_model_;
   planning_pipeline::PlanningPipelinePtr planning_pipeline_;
-  boost::shared_ptr<plan_execution::PlanExecution> plan_execution_;
 
   // Allocated memory for robot state
   moveit::core::RobotStatePtr current_state_;
 
-  // Logic on type of robot
-  bool dual_arm_;
-
-  // Group for each arm
-  const robot_model::JointModelGroup* left_arm_;
-  const robot_model::JointModelGroup* right_arm_;
-  const robot_model::JointModelGroup* both_arms_;
-
-  // Grasp generator
-  moveit_grasps::GraspsPtr grasps_;
-  moveit_grasps::GraspFilterPtr grasp_filter_;
-
-  // robot-specific data for generating grasps
-  std::map<const robot_model::JointModelGroup*,moveit_grasps::GraspData> grasp_datas_;
-
   // Properties
   ShelfObjectPtr shelf_;
 
-  // User feedback
-  Eigen::Affine3d status_position_; // where to display messages
-  Eigen::Affine3d order_position_; // where to display messages
+  // Robot-sepcific data for the APC
+  ManipulationDataPtr config_;
+
+  // Robot-specific data for generating grasps
+  GraspDatas grasp_datas_;
+
+  // The parent manager
+  APCManager* parent_;
 
   // Experience-based planning
   bool use_experience_;
@@ -407,26 +337,13 @@ protected:
   bool use_logging_;
   std::ofstream logging_file_;
 
-  // Performance variables
-  double main_velocity_scaling_factor_;
-  double approach_velocity_scaling_factor_;
-  double lift_velocity_scaling_factor_;
-  double retreat_velocity_scaling_factor_;
-  double wait_before_grasp_;
-  double wait_after_grasp_;
+  // User feedback
+  Eigen::Affine3d status_position_; // where to display messages
+  Eigen::Affine3d order_position_; // where to display messages
 
-  // Robot-specific variables
-  std::string start_pose_; // where to move robot to initially. should be for both arms if applicable
-  std::string dropoff_pose_; // where to discard picked items
-  std::string right_hand_name_;
-  std::string left_hand_name_;
-  std::string right_arm_name_;
-  std::string left_arm_name_;
-  std::string both_arms_name_;
-  
-  // Perception pipeline communication
-  actionlib::SimpleActionClient<picknik_msgs::FindObjectsAction> find_objects_action_;
-
+  // Grasp generator
+  moveit_grasps::GraspsPtr grasp_generator_;
+  moveit_grasps::GraspFilterPtr grasp_filter_;
 
 }; // end class
 

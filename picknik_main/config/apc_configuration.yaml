@@ -2,7 +2,7 @@
 shelf_width: 0.873
 shelf_height: 2.37
 shelf_depth: 0.875
-shelf_wall_width: 0.02
+shelf_wall_width: 0.01
 
 # Bin parameters
 first_bin_from_bottom: 0.81 # If at correct competition height
@@ -24,6 +24,9 @@ approach_velocity_scaling_factor: 0.25
 lift_velocity_scaling_factor: 0.5
 retreat_velocity_scaling_factor: 0.8
 
+# Movement config
+approach_distance_desired: 0.1; # amount beyond min distance
+
 # Sleep timers
 wait_before_grasp: 0.1
 wait_after_grasp: 0.1
@@ -32,3 +35,18 @@ wait_after_grasp: 0.1
 goal_bin_x: -0.64
 goal_bin_y: 0.65
 goal_bin_z: 0.28
+
+# Perception Data
+camera:
+  x_translation_from_bin: -0.9 # meters
+  y_translation_from_bin: 0.0 # negative is right looking at shelf
+  z_translation_from_bin: -0.1 # negative is down
+  x_rotation_from_standard_grasp: 0 #-0.2  # radians
+  y_rotation_from_standard_grasp: 0  # negative is torwards right of shelf
+  z_rotation_from_standard_grasp: 0  # radians
+  lift_distance: 0.05
+  left_distance: 0.05
+
+# Test data
+test:
+  test_joint_limit_joint: 5  # starts at 0, negative number means test all

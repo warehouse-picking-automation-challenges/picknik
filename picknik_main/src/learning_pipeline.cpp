@@ -67,7 +67,7 @@ bool LearningPipeline::generateTrainingGoals(ShelfObjectPtr shelf)
     bin_experience_data_[bin->getName()] = BinExperienceData();
 
     // Populate poses
-    generateTrainingGoalsBin( shelf->bottom_right_ * bin->bottom_right_, bin_experience_data_[bin->getName()].poses);
+    generateTrainingGoalsBin( shelf->getBottomRight() * bin->getBottomRight(), bin_experience_data_[bin->getName()].poses);
   }
 
   // Display grasps
@@ -188,13 +188,13 @@ bool LearningPipeline::analyzeGrasps(const moveit::core::JointModelGroup* arm_jm
       // Create re-usable approach motion
       moveit_msgs::GripperTranslation pre_grasp_approach;
       pre_grasp_approach.direction.header.stamp = ros::Time::now();
-      pre_grasp_approach.desired_distance = grasp_datas_[arm_jmg].finger_to_palm_depth_ + APPROACH_DISTANCE_DESIRED; // The distance the origin of a robot link needs to travel
+      pre_grasp_approach.desired_distance = grasp_datas_[arm_jmg].finger_to_palm_depth_ + approach_distance_desired_; // The distance the origin of a robot link needs to travel
       pre_grasp_approach.min_distance = grasp_datas_[arm_jmg].finger_to_palm_depth_; // half of the desired? Untested.
 
       // Create re-usable retreat motion
       moveit_msgs::GripperTranslation post_grasp_retreat;
       post_grasp_retreat.direction.header.stamp = ros::Time::now();
-      post_grasp_retreat.desired_distance = grasp_datas_[arm_jmg].finger_to_palm_depth_ + APPROACH_DISTANCE_DESIRED; // The distance the origin of a robot link needs to travel
+      post_grasp_retreat.desired_distance = grasp_datas_[arm_jmg].finger_to_palm_depth_ + approach_distance_desired_; // The distance the origin of a robot link needs to travel
       post_grasp_retreat.min_distance = grasp_datas_[arm_jmg].finger_to_palm_depth_; // half of the desired? Untested.
 
       // Angled with pose -------------------------------------------------------------------------------------

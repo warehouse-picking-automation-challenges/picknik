@@ -3,7 +3,7 @@
   {
     "bin_A":
     [
-      "elmers_washable_no_run_school_glue"
+      "expo_dry_erase_board_eraser"
     ],
     "bin_B":
     [
@@ -15,11 +15,11 @@
     ],
     "bin_D":
     [
-      "crayola_64_ct"
+      "oreo_mega_stuff"
     ],
     "bin_E":
     [
-      "expo_dry_erase_board_eraser","oreo_mega_stuff"
+      "expo_dry_erase_board_eraser","expo_dry_erase_board_eraser"
     ],
     "bin_F":
     [
@@ -53,13 +53,9 @@
 
   "work_order":
   [
-    // {
-    //   "bin": "bin_A",
-    //   "item": "elmers_washable_no_run_school_glue"
-    // },
     {
       "bin": "bin_D",
-      "item": "crayola_64_ct"
+      "item": "oreo_mega_stuff"
     },
     {
       "bin": "bin_G",

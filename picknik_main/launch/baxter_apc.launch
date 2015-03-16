@@ -57,7 +57,7 @@
     <rosparam command="load" file="$(find moveit_grasps)/config/baxter_grasp_data.yaml"/>
 
     <!-- Settings of Amazon competition -->
-    <rosparam command="load" file="$(find picknik_main)/config/amazon_shelf.yaml"/>
+    <rosparam command="load" file="$(find picknik_main)/config/apc_configuration.yaml"/>
 
     <!-- Robot-specific settings -->
     <rosparam command="load" file="$(find picknik_main)/config/baxter_apc.yaml"/>

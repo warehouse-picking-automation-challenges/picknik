@@ -115,19 +115,19 @@ int main(int argc, char** argv)
     }
   }
 
-  if (order_fp.empty()) 
+  if (order_fp.empty())
   {
     ROS_ERROR_STREAM_NAMED("main","No order json file passed in as argument, aborting.");
     return 1; // error
   }
 
-  picknik_main::APCManager manager(verbose, order_fp);
+  picknik_main::APCManager manager(verbose, order_fp, use_experience, show_database);
 
   switch (mode)
   {
     case 1:
       ROS_INFO_STREAM_NAMED("main","Run actual Amazon Picking Challenge mode");
-      manager.runOrder(use_experience, show_database, order_start, jump_to, num_orders, autonomous);
+      manager.runOrder(order_start, jump_to, num_orders, autonomous);
       break;
     case 2:
       ROS_INFO_STREAM_NAMED("main","Train experience database mode");
@@ -139,6 +139,7 @@ int main(int argc, char** argv)
       break;
     case 4:
       ROS_INFO_STREAM_NAMED("main","Only visualizing shelf... ready to shutdown.");
+      ros::spin();
       break;
     case 5:
        ROS_INFO_STREAM_NAMED("main","Raise the roof (go up and down)");
@@ -161,14 +162,33 @@ int main(int argc, char** argv)
       manager.testInCollision();
       ros::Duration(5.0).sleep();
       break;
-    // case 10:
-    //   ROS_INFO_STREAM_NAMED("main"," mode");
-    //   break;
-    // case 11:
-    //   ROS_INFO_STREAM_NAMED("main"," mode");
+    case 10:
+      ROS_INFO_STREAM_NAMED("main","Plan to random valid locations");
+      manager.testRandomValidMotions();
+      break;
+    case 11:
+      ROS_INFO_STREAM_NAMED("main","Moving to camera positions");
+      manager.testCameraPositions();
+      break;
+    case 12:
+      ROS_INFO_STREAM_NAMED("main","Test camera calibration");
+      manager.testCalibration();
+      break;
+    case 13:
+      ROS_INFO_STREAM_NAMED("main","Test joint limits");
+      manager.testJointLimits();
+      break;
+    // case 12:
+    //   ROS_INFO_STREAM_NAMED("main","");
     //   break;
     // case 12:
-    //   ROS_INFO_STREAM_NAMED("main"," mode");
+    //   ROS_INFO_STREAM_NAMED("main","");
+    //   break;
+    // case 12:
+    //   ROS_INFO_STREAM_NAMED("main","");
+    //   break;
+    // case 12:
+    //   ROS_INFO_STREAM_NAMED("main","");
     //   break;
     default:
       ROS_WARN_STREAM_NAMED("main","Unkown mode: " << mode);

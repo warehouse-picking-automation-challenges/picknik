@@ -43,6 +43,13 @@ int iRand(int min, int max)
   return min + x % n;
 }
 
+void printTransform(const Eigen::Affine3d &transform)
+{
+  Eigen::Quaterniond q(transform.rotation());
+  std::cout << "T.xyz = [" << transform.translation().x() << ", " << transform.translation().y() << ", " << transform.translation().z() << "], Q.xyzw = ["
+            << q.x() << ", " << q.y() << ", " << q.z() << ", " << q.w() << "]" << std::endl;
+}
+
 /**
  * \brief Helper for converting frame of references
  */
@@ -79,7 +86,7 @@ public:
   /**
    * \brief Get centroid of bounding box
    */
-  void getCentroid(Eigen::Affine3d &pose) const;
+  void calcCentroid();
 
   /**
    * \brief Get height of rectangle
@@ -109,38 +116,52 @@ public:
   /**
    * \brief Getter for HighResMeshPath
    */ 
-  const std::string& getHighResMeshPath()
-  {
-    return high_res_mesh_path_;
-  }
+  const std::string& getHighResMeshPath();
   
   /**
    * \brief Setter for HighResMeshPath
    */
-  void setHighResMeshPath(const std::string &high_res_mesh_path)
-  {
-    high_res_mesh_path_ = high_res_mesh_path;
-  }
+  void setHighResMeshPath(const std::string &high_res_mesh_path);
 
   /**
    * \brief Getter for CollisionMeshPath
    */ 
-  const std::string& getCollisionMeshPath()
-  {
-    return collision_mesh_path_;
-  }
-  
+  const std::string& getCollisionMeshPath();
+
   /**
    * \brief Setter for CollisionMeshPath
    */
-  void setCollisionMeshPath(const std::string &collision_mesh_path)
-  {
-    collision_mesh_path_ = collision_mesh_path;
-  }
+  void setCollisionMeshPath(const std::string &collision_mesh_path);
 
-  // Poses relative to center bottom of robot
-  Eigen::Affine3d bottom_right_;
-  Eigen::Affine3d top_left_;
+  /**
+   * \brief Getter for Centroid
+   */ 
+  const Eigen::Affine3d& getCentroid() const;
+  
+  /**
+   * \brief Setter for Centroid
+   */
+  void setCentroid(const Eigen::Affine3d& centroid);
+
+  /**
+   * \brief Getter for BottomRight
+   */ 
+  const Eigen::Affine3d& getBottomRight() const;
+  
+  /**
+   * \brief Setter for BottomRight
+   */
+  void setBottomRight(const Eigen::Affine3d& bottom_right);
+
+  /**
+   * \brief Getter for TopLeft
+   */ 
+  const Eigen::Affine3d& getTopLeft() const;
+
+  /**
+   * \brief Setter for TopLeft
+   */
+  void setTopLeft(const Eigen::Affine3d& top_left);
 
   // Color of object
   rvt::colors color_;
@@ -159,6 +180,14 @@ protected:
 
   // A unique name to the world, whereas name_ can be duplicate e.g. oreo and oreo 
   std::string collision_object_name_;
+
+  // NEW: sometimes we use the centroid instead
+  Eigen::Affine3d centroid_;
+
+  // Poses relative to center bottom of robot
+  Eigen::Affine3d bottom_right_;
+  Eigen::Affine3d top_left_;
+
 };
 
 // -------------------------------------------------------------------------------------------------
@@ -343,6 +372,8 @@ private:
 
   RectangleObjectPtr goal_bin_;
 
+  Eigen::Affine3d high_res_mesh_offset_;
+
 }; // class
 
 // -------------------------------------------------------------------------------------------------
@@ -397,6 +428,7 @@ typedef std::vector<WorkOrder> WorkOrders;
 // Helper Functions
 // -------------------------------------------------------------------------------------------------
 bool getDoubleParameter(ros::NodeHandle &nh, const std::string &param_name, double &value);
+bool getIntParameter(ros::NodeHandle &nh, const std::string &param_name, int &value);
 bool getStringParameter(ros::NodeHandle &nh, const std::string &param_name, std::string &value);
 
 } // namespace
