@@ -31,8 +31,8 @@ catkin_package(
     jsoncpp
     amazon_json_parser
     shelf
-    manipulation_pipeline
-    learning_pipeline
+    manipulation
+    #learning_pipeline
     ${OMPL_LIBRARIES}
 )
 
@@ -80,24 +80,24 @@ target_link_libraries(shelf
 )
 
 # Manipulation pipeline library
-add_library(manipulation_pipeline
-  src/manipulation_pipeline.cpp
+add_library(manipulation
+  src/manipulation.cpp
 )
-add_dependencies(manipulation_pipeline picknik_main_generate_messages_cpp)
-target_link_libraries(manipulation_pipeline
+add_dependencies(manipulation picknik_main_generate_messages_cpp)
+target_link_libraries(manipulation
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
 
 # Experience trainer library
-add_library(learning_pipeline
-  src/learning_pipeline.cpp
-)
-target_link_libraries(learning_pipeline
-  ${catkin_LIBRARIES} 
-  ${Boost_LIBRARIES}
-  manipulation_pipeline
-)
+# add_library(learning_pipeline
+#   src/learning_pipeline.cpp
+# )
+# target_link_libraries(learning_pipeline
+#   ${catkin_LIBRARIES} 
+#   ${Boost_LIBRARIES}
+#   manipulation
+# )
 
 # Main logic of APC
 add_library(apc_manager
@@ -108,8 +108,8 @@ target_link_libraries(apc_manager
   ${Boost_LIBRARIES}
   shelf
   amazon_json_parser
-  manipulation_pipeline
-  learning_pipeline
+  manipulation
+  # learning_pipeline
 )
 
 # Main Executable

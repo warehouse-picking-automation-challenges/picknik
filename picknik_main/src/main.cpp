@@ -121,13 +121,13 @@ int main(int argc, char** argv)
     return 1; // error
   }
 
-  picknik_main::APCManager manager(verbose, order_fp);
+  picknik_main::APCManager manager(verbose, order_fp, use_experience, show_database);
 
   switch (mode)
   {
     case 1:
       ROS_INFO_STREAM_NAMED("main","Run actual Amazon Picking Challenge mode");
-      manager.runOrder(use_experience, show_database, order_start, jump_to, num_orders, autonomous);
+      manager.runOrder(order_start, jump_to, num_orders, autonomous);
       break;
     case 2:
       ROS_INFO_STREAM_NAMED("main","Train experience database mode");
