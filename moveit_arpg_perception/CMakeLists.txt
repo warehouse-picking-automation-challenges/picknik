@@ -22,9 +22,9 @@ find_package(Boost REQUIRED COMPONENTS system)
 
 find_package(Node  REQUIRED)
 find_package(Protobuf REQUIRED)
-find_package(HAL)
-find_package(PbMsgs 0.1 REQUIRED)
-find_package(MINIGLOG QUIET)
+#find_package(HAL)
+#find_package(PbMsgs 0.1 REQUIRED)
+#find_package(MINIGLOG QUIET)
 
 
 #Generate Protobuf messages
