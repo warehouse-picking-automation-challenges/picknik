@@ -488,13 +488,13 @@ bool APCManager::moveCameraToBin(BinObjectPtr bin)
 
   // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
   ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
-  ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitZ());
-
-  // Translate to custom end effector geometry
-  ee_pose = ee_pose * grasp_datas_[config_->right_arm_].grasp_pose_to_eef_pose_;
+  ee_pose = ee_pose * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ());
 
   // Debug
   visuals_->visual_tools_->publishAxis(ee_pose);
+
+  // Translate to custom end effector geometry
+  ee_pose = ee_pose * grasp_datas_[config_->right_arm_].grasp_pose_to_eef_pose_;
 
   // Customize the direction it is pointing
   // Roll Angle
