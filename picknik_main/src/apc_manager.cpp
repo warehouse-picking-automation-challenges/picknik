@@ -24,7 +24,8 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   , autonomous_(false)
   , next_step_ready_(false)
   , is_waiting_(false)
-  , fake_perception_(true)
+  , fake_perception_(false)
+  , skip_homing_step_(true)
   , find_objects_action_("perception/recognize_objects")
 {
   // Load the loader
@@ -82,7 +83,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   if (config_->dual_arm_ && !grasp_datas_[config_->left_arm_].loadRobotGraspData(nh_private_, config_->left_hand_name_, robot_model_))
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to load left arm grasp data in namespace " << config_->left_hand_name_);
 
-  // Create the pick place pipeline
+  // Create manipulation manager
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
                                        this, shelf_, use_experience, show_database));
 
@@ -250,17 +251,20 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
       // #################################################################################################################
       case 0: manipulation_->statusPublisher("Moving to initial position");
 
-        manipulation_->createCollisionWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
-
         // Clear the temporary purple robot state image
         visuals_->visual_tools_->hideRobot();
+        manipulation_->createCollisionWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
 
-        // Move
-        if (!moveToStartPosition())
+        if (!skip_homing_step_)
         {
-          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to initial position");
-          return false;
+          // Move
+          if (!moveToStartPosition())
+          {
+            ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to initial position");
+            return false;
+          }
         }
+
         //break;
         step++;
 
@@ -284,14 +288,7 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
           return false;
         }
 
-        // Move camera to correct shelf
-        if (!moveCameraToBin( order.bin_ ))
-        {
-          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to position camera in front of bin");
-          return false;
-        }
-
-        // Get object pose
+        // Get pose of product
         if (!getObjectPose(object_pose, order, verbose))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
@@ -482,7 +479,7 @@ bool APCManager::moveCameraToBin(BinObjectPtr bin)
 {
   // Create pose to find IK solver
   Eigen::Affine3d ee_pose = bin->getCentroid();
-  ee_pose = transform(ee_pose, shelf_->getBottomRight());
+  ee_pose = transform(ee_pose, shelf_->getBottomRight()); // convert to world coordinates
 
   // Move centroid backwards
   ee_pose.translation().x() += config_->camera_x_translation_from_bin_;
@@ -493,8 +490,13 @@ bool APCManager::moveCameraToBin(BinObjectPtr bin)
   ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
   ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitZ());
 
+  visuals_->visual_tools_->publishZArrow(ee_pose, rvt::LIME_GREEN);
+
   // Translate to custom end effector geometry
   ee_pose = ee_pose * grasp_datas_[config_->right_arm_].grasp_pose_to_eef_pose_;
+
+  // Debug
+  visuals_->visual_tools_->publishAxis(ee_pose);
 
   // Customize the direction it is pointing
   // Roll Angle
@@ -547,7 +549,7 @@ bool APCManager::calibrateCamera()
 
 bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose)
 {
-
+  // -----------------------------------------------------------------------------------------------
   // Move camera to the bin
   ROS_INFO_STREAM_NAMED("apc_manager","Moving to bin " << order.bin_->getName());
   if (!moveCameraToBin(order.bin_))
@@ -556,6 +558,108 @@ bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bo
     return false;
   }
 
+  // -----------------------------------------------------------------------------------------------
+  // Communicate with perception pipeline
+
+  // Setup goal
+  picknik_msgs::FindObjectsGoal find_object_goal;
+  find_object_goal.desired_object_name = order.product_->getName();
+
+  // Get all of the products in the bin
+  order.bin_->getProducts(find_object_goal.expected_objects_names);
+
+  // Get the camera pose
+  moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
+
+  /// TODO - add a better link
+  find_object_goal.camera_pose = visuals_->visual_tools_->convertPose(current_state->getGlobalLinkTransform("jaco2_end_effector"));
+
+  find_objects_action_.sendGoal(find_object_goal);
+
+
+  // -----------------------------------------------------------------------------------------------
+  // Perturb camera
+  if (!perturbCamera(order.bin_))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
+  }
+
+  // -----------------------------------------------------------------------------------------------
+  // Wait for the action to return with product pose
+
+  if (!find_objects_action_.waitForResult(ros::Duration(30.0)))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Percetion action did not finish before the time out.");
+    return false;
+  }
+
+  // Get goal state
+  actionlib::SimpleClientGoalState goal_state = find_objects_action_.getState();
+  ROS_INFO_STREAM_NAMED("apc_manager","Percetion action finished: " << goal_state.toString());
+
+  // Get result
+  picknik_msgs::FindObjectsResultConstPtr perception_result = find_objects_action_.getResult();
+  std::cout << "Perception_Result:\n " << *perception_result << std::endl;
+
+  // Set new pose
+  order.product_->setBottomRight(visuals_->visual_tools_->convertPose(perception_result->desired_object_pose));
+
+  // Update location visually
+  order.product_->visualize(shelf_->getBottomRight());
+
+  return true;
+}
+
+bool APCManager::getObjectPoseFake(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose)
+{
+  // -----------------------------------------------------------------------------------------------
+  // Move camera to the bin
+  ROS_INFO_STREAM_NAMED("apc_manager","Moving to bin " << order.bin_->getName());
+  if (!moveCameraToBin(order.bin_))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << order.bin_->getName());
+    return false;
+  }
+
+  // -----------------------------------------------------------------------------------------------
+  // Perturb camera
+  if (!perturbCamera(order.bin_))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
+  }
+
+  // -----------------------------------------------------------------------------------------------
+  // Get fake location
+  ROS_WARN_STREAM_NAMED("apc_manager","Using fake perception system");
+
+  const std::string& coll_obj_name = order.product_->getCollisionName();
+  {
+    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
+
+    collision_detection::World::ObjectConstPtr world_obj;
+    world_obj = scene->getWorld()->getObject(coll_obj_name);
+    if (!world_obj)
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Unable to find object " << coll_obj_name << " in planning scene world");
+      return false;
+    }
+    if (!world_obj->shape_poses_.size())
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Object " << coll_obj_name << " has no shapes!");
+      return false;
+    }
+    if (!world_obj->shape_poses_.size() > 1)
+    {
+      ROS_WARN_STREAM_NAMED("apc_manager","Unknown situation - object " << coll_obj_name << " has more than one shape");
+    }
+    object_pose = world_obj->shape_poses_[0];
+  }
+
+  return true;
+}
+
+bool APCManager::perturbCamera(BinObjectPtr bin)
+{
   //Move camera left
   ROS_INFO_STREAM_NAMED("apc_manager","Moving camera left distance " << config_->camera_left_distance_);
   bool left = true;
@@ -573,9 +677,9 @@ bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bo
   }
 
   // Move back to center
-  if (!moveCameraToBin(order.bin_))
+  if (!moveCameraToBin(bin))
   {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << order.bin_->getName());
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
     return false;
   }
 
@@ -593,101 +697,6 @@ bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bo
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move down");
   }
-
-  // Tell perception pipeline to detect
-  ROS_INFO_STREAM_NAMED("apc_manager","Getting object pose");
-
-
-  // if (!getObjectPose(object_pose, order, verbose))
-  // {
-  //   ROS_ERROR_STREAM_NAMED("apc_manager","Failed to get product");
-  //   return false;
-  // }
-
-  /*
-    if (!fake_perception_)
-    {
-    // Communicate with perception pipeline
-
-    // Setup goal
-    picknik_msgs::FindObjectsGoal find_object_goal;
-    find_object_goal.desired_object_name = order.product_->getName();
-
-    // Get all of the products in the bin
-    order.bin_->getProducts(find_object_goal.expected_objects_names);
-
-    // Get the camera pose
-    manipulation_->getCurrentState();
-    /// TODO - add a better link
-    find_object_goal.camera_pose = visuals_->visual_tools_->convertPose(current_state->getGlobalLinkTransform("jaco2_end_effector"));
-
-    find_objects_action_.sendGoal(find_object_goal);
-
-    // Move camera up
-    // ROS_INFO_STREAM_NAMED("apc_manager","Lifting camera distance " << config_->camera_lift_distance_);
-    // if (!manipulation_->executeLiftPath(config_->right_arm_, config_->camera_lift_distance_))
-    // {
-    //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move up");
-    // }
-
-    // Move camera down
-    ROS_INFO_STREAM_NAMED("apc_manager","Lowering camera distance " << config_->camera_lift_distance_ * 2.0);
-    bool up = false;
-    if (!manipulation_->executeLiftPath(config_->right_arm_, config_->camera_lift_distance_ * 2.0, up))
-    {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move down");
-    }
-
-    //wait for the action to return
-    if (!find_objects_action_.waitForResult(ros::Duration(30.0)))
-    {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Percetion action did not finish before the time out.");
-    return false;
-    }
-
-    // Get goal state
-    actionlib::SimpleClientGoalState goal_state = find_objects_action_.getState();
-    ROS_INFO_STREAM_NAMED("apc_manager","Percetion action finished: " << goal_state.toString());
-
-    // Get result
-    picknik_msgs::FindObjectsResultConstPtr perception_result = find_objects_action_.getResult();
-    std::cout << "Perception_Result:\n " << *perception_result << std::endl;
-
-    // Set new pose
-    order.product_->setBottomRight(visuals_->visual_tools_->convertPose(perception_result->desired_object_pose));
-
-    // Update location visually
-    order.product_->visualize(shelf_->getBottomRight());
-
-    }
-    else // old method
-    {
-    ROS_WARN_STREAM_NAMED("apc_manager","Using fake perception system");
-
-    const std::string& coll_obj_name = order.product_->getCollisionName();
-    {
-    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
-
-    collision_detection::World::ObjectConstPtr world_obj;
-    world_obj = scene->getWorld()->getObject(coll_obj_name);
-    if (!world_obj)
-    {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to find object " << coll_obj_name << " in planning scene world");
-    return false;
-    }
-    if (!world_obj->shape_poses_.size())
-    {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Object " << coll_obj_name << " has no shapes!");
-    return false;
-    }
-    if (!world_obj->shape_poses_.size() > 1)
-    {
-    ROS_WARN_STREAM_NAMED("apc_manager","Unknown situation - object " << coll_obj_name << " has more than one shape");
-    }
-    object_pose = world_obj->shape_poses_[0];
-    }
-    }
-  */
 
   return true;
 }
@@ -728,11 +737,15 @@ const robot_model::JointModelGroup* APCManager::chooseArm(const Eigen::Affine3d&
 
 bool APCManager::moveToStartPosition(const robot_model::JointModelGroup* arm_jmg)
 {
+  if (arm_jmg == NULL)
+    arm_jmg = config_->right_arm_;
   return manipulation_->moveToPose(arm_jmg, config_->start_pose_, config_->main_velocity_scaling_factor_);
 }
 
 bool APCManager::moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg)
 {
+  if (arm_jmg == NULL)
+    arm_jmg = config_->right_arm_;
   return manipulation_->moveToPose(arm_jmg, config_->dropoff_pose_, config_->main_velocity_scaling_factor_);
 }
 
@@ -874,7 +887,7 @@ bool APCManager::testShelfLocation()
     double desired_approach_distance = 0.02;
     if (!manipulation_->executeRetreatPath(config_->right_arm_, desired_approach_distance, retreat))
     {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move forward " << desired_approach_distance);      
+      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move forward " << desired_approach_distance);
     }
 
     std::cout << std::endl;

@@ -126,6 +126,13 @@ public:
    * \return true on success
    */
   bool getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose);
+  bool getObjectPoseFake(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose);
+
+  /**
+   * \brief Move camera around to get good view of bin
+   * \return true on success
+   */
+  bool perturbCamera(BinObjectPtr bin);
 
   /**
    * \brief Wait until user presses a button
@@ -314,6 +321,7 @@ private:
 
   // Perception
   bool fake_perception_;
+  bool skip_homing_step_;
 
   // Allow Rviz to request the entire scene at startup
   ros::ServiceServer get_scene_service_;

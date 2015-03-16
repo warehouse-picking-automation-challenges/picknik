@@ -214,8 +214,10 @@ bool Manipulation::createCollisionWall()
 
   // Visualize
   shelf_->visualizeAxis(visuals_);
+  static const double INTERNAL_WIDTH = 0.1;
+  double safety_margin = 0.01;
   double width = shelf_->shelf_width_ * 2.0;
-  double x = shelf_->shelf_distance_from_robot_ + 0.1 / 2;
+  double x = shelf_->shelf_distance_from_robot_ + INTERNAL_WIDTH / 2 - safety_margin;
   double y = 0;
   double angle = 0;
 
@@ -287,9 +289,6 @@ bool Manipulation::moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_
                                 const robot_model::JointModelGroup* arm_jmg)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","moveEEToPose()");
-
-  // Debug
-  visuals_->visual_tools_->publishAxis(ee_pose);
 
   // Create start and goal
   getCurrentState();

@@ -68,14 +68,14 @@ public:
     getDoubleParameter(nh_, "approach_distance_desired", approach_distance_desired_);
 
     // Load perception variables
-    getDoubleParameter(nh_, "camera_x_translation_from_bin", camera_x_translation_from_bin_);
-    getDoubleParameter(nh_, "camera_y_translation_from_bin", camera_y_translation_from_bin_);
-    getDoubleParameter(nh_, "camera_z_translation_from_bin", camera_z_translation_from_bin_);
-    getDoubleParameter(nh_, "camera_x_rotation_from_standard_grasp", camera_x_rotation_from_standard_grasp_);
-    getDoubleParameter(nh_, "camera_y_rotation_from_standard_grasp", camera_y_rotation_from_standard_grasp_);
-    getDoubleParameter(nh_, "camera_z_rotation_from_standard_grasp", camera_z_rotation_from_standard_grasp_);
-    getDoubleParameter(nh_, "camera_lift_distance", camera_lift_distance_);
-    getDoubleParameter(nh_, "camera_left_distance", camera_left_distance_);
+    getDoubleParameter(nh_, "camera/x_translation_from_bin", camera_x_translation_from_bin_);
+    getDoubleParameter(nh_, "camera/y_translation_from_bin", camera_y_translation_from_bin_);
+    getDoubleParameter(nh_, "camera/z_translation_from_bin", camera_z_translation_from_bin_);
+    getDoubleParameter(nh_, "camera/x_rotation_from_standard_grasp", camera_x_rotation_from_standard_grasp_);
+    getDoubleParameter(nh_, "camera/y_rotation_from_standard_grasp", camera_y_rotation_from_standard_grasp_);
+    getDoubleParameter(nh_, "camera/z_rotation_from_standard_grasp", camera_z_rotation_from_standard_grasp_);
+    getDoubleParameter(nh_, "camera/lift_distance", camera_lift_distance_);
+    getDoubleParameter(nh_, "camera/left_distance", camera_left_distance_);
 
     // Load robot semantics
     getStringParameter(nh_, "start_pose", start_pose_);

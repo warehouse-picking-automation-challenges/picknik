@@ -15,7 +15,7 @@
     ],
     "bin_D":
     [
-      "crayola_64_ct"
+      "oreo_mega_stuff"
     ],
     "bin_E":
     [
@@ -54,12 +54,8 @@
   "work_order":
   [
     {
-      "bin": "bin_A",
-      "item": "oreo_mega_stuff"
-    },
-    {
       "bin": "bin_D",
-      "item": "crayola_64_ct"
+      "item": "oreo_mega_stuff"
     },
     {
       "bin": "bin_G",
