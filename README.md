@@ -109,7 +109,7 @@ Run either the real or a fake object recognition server
 	
 Run APC Manager (main program) for BAXTER
 
-    roslaunch picknik_main baxter_apc.launch mode:=1
+    roslaunch picknik_main baxter_apc.launch mode:=1 fake_execution:=true
 	
 ### Setup Hardware of BAXTER
 

@@ -55,8 +55,6 @@
 	      --order_start $(arg order_start) --jump_to $(arg jump_to) --num_orders $(arg num_orders) 
 	      --show_database $(arg show_database) --use_experience $(arg use_experience)">
 
-    <!--remap to="/jaco2/joint_states" from="/jacob/joint_states" unless="$(arg fake_execution)"/-->
-
     <!-- Settings of robot -->
     <rosparam command="load" file="$(find jacob_moveit_config)/config/kinematics.yaml"/>
     <rosparam command="load" file="$(find moveit_grasps)/config/jacob_grasp_data.yaml"/>

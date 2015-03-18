@@ -99,15 +99,17 @@ bool APCManager::checkSystemReady()
   ROS_INFO_STREAM_NAMED("apc_manager","Starting system ready check:");
 
   // Check joint model groups, assuming we are the jaco arm
-  if (config_.right_arm_->getVariableCount() != 6)
+  if (config_.right_arm_->getVariableCount() < 6 || config_.right_arm_->getVariableCount() > 7)
   {
-    ROS_FATAL_STREAM_NAMED("apc_manager","Incorrect number of joints for group " << config_.right_arm_->getName());
+    ROS_FATAL_STREAM_NAMED("apc_manager","Incorrect number of joints for group " << config_.right_arm_->getName()
+                           << ", joints: " << config_.right_arm_->getVariableCount());
     exit(-1);
   }
   const robot_model::JointModelGroup* ee_jmg = grasp_datas_[config_.right_arm_].ee_jmg_;
-  if (ee_jmg->getVariableCount() != 3)
+  if (ee_jmg->getVariableCount() > 3)
   {
-    ROS_FATAL_STREAM_NAMED("apc_manager","Incorrect number of joints for group " << ee_jmg->getName());
+    ROS_FATAL_STREAM_NAMED("apc_manager","Incorrect number of joints for group " << ee_jmg->getName() << ", joints: " 
+                           << ee_jmg->getVariableCount());
     exit(-1);
   }
 
