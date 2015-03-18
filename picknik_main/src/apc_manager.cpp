@@ -865,6 +865,8 @@ bool APCManager::testUpAndDown()
   // Configure
   const robot_model::JointModelGroup* arm_jmg = config_.right_arm_; // TODO single/dual logic
 
+  double lift_distance_desired = 0.5;
+
   // Test
   manipulation_->statusPublisher("Testing up and down calculations");
   std::size_t i = 0;
@@ -874,13 +876,13 @@ bool APCManager::testUpAndDown()
     if (i % 2 == 0)
     {
       std::cout << "Moving up --------------------------------------" << std::endl;
-      manipulation_->executeLiftPath(arm_jmg, config_.lift_distance_desired_, true);
+      manipulation_->executeLiftPath(arm_jmg, lift_distance_desired, true);
       ros::Duration(5.0).sleep();
     }
     else
     {
       std::cout << "Moving down ------------------------------------" << std::endl;
-      manipulation_->executeLiftPath(arm_jmg, config_.lift_distance_desired_, false);
+      manipulation_->executeLiftPath(arm_jmg, lift_distance_desired, false);
       ros::Duration(5.0).sleep();
     }
     ++i;

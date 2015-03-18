@@ -169,11 +169,6 @@ Rviz Visualizers of robot states and debug markers in differnet windows (differe
     roslaunch picknik_main moveit_display_rviz.launch
     roslaunch picknik_main moveit_rviz.launch
 	
-Note: to switch between control methods you must edit several files:
-
-    rosed jacob_moveit_config moveit_controllers.yaml
-	rosed picknik_main jacob_apc.yaml
-
 Run either the real or a fake object recognition server
 
     roslaunch moveit_arpg_perception object_recognition.launch

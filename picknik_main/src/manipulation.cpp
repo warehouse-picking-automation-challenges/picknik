@@ -313,7 +313,7 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","move()");
 
   // Check validity of start and goal
-  if (false)
+  if (true)
   {
     if (!checkCollisionAndBounds(start, goal))
     {
