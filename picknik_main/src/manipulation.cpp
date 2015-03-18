@@ -41,14 +41,14 @@ namespace picknik_main
 
 Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
                            planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                           ManipulationDataPtr manip_data, GraspDatas grasp_datas,
+                           ManipulationData config, GraspDatas grasp_datas,
                            APCManager* parent,
                            ShelfObjectPtr shelf, bool use_experience, bool show_database)
   : nh_("~")
   , verbose_(verbose)
   , visuals_(visuals)
   , planning_scene_monitor_(planning_scene_monitor)
-  , config_(manip_data)
+  , config_(config)
   , grasp_datas_(grasp_datas)
   , parent_(parent)
   , shelf_(shelf)
@@ -216,7 +216,7 @@ bool Manipulation::createCollisionWall()
   shelf_->visualizeAxis(visuals_);
   static const double INTERNAL_WIDTH = 0.1;
   double width = shelf_->shelf_width_ * 2.0;
-  double x = shelf_->shelf_distance_from_robot_ + INTERNAL_WIDTH / 2 - config_->collision_wall_safety_margin_;
+  double x = shelf_->shelf_distance_from_robot_ + INTERNAL_WIDTH / 2 - config_.collision_wall_safety_margin_;
   double y = 0;
   double angle = 0;
 
@@ -574,8 +574,8 @@ bool Manipulation::generateApproachPath(const moveit::core::JointModelGroup *arm
   Eigen::Vector3d approach_direction;
   approach_direction << -1, 0, 0; // backwards towards robot body
   ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","finger_to_palm_depth: " << grasp_datas_[arm_jmg].finger_to_palm_depth_);
-  ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","approach_distance_desired: " << config_->approach_distance_desired_);
-  double desired_approach_distance = grasp_datas_[arm_jmg].finger_to_palm_depth_ + config_->approach_distance_desired_;
+  ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","approach_distance_desired: " << config_.approach_distance_desired_);
+  double desired_approach_distance = grasp_datas_[arm_jmg].finger_to_palm_depth_ + config_.approach_distance_desired_;
 
   // Show desired distance
   std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
@@ -589,7 +589,7 @@ bool Manipulation::generateApproachPath(const moveit::core::JointModelGroup *arm
   }
 
   // Get approach trajectory message
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, approach_trajectory_msg, arm_jmg, config_->approach_velocity_scaling_factor_))
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, approach_trajectory_msg, arm_jmg, config_.approach_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
     return false;
@@ -630,7 +630,7 @@ bool Manipulation::executeLiftPath(const moveit::core::JointModelGroup *arm_jmg,
 
   // Get approach trajectory message
   moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, config_->lift_velocity_scaling_factor_))
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, config_.lift_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
     return false;
@@ -671,7 +671,7 @@ bool Manipulation::executeLeftPath(const moveit::core::JointModelGroup *arm_jmg,
 
   // Get approach trajectory message
   moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, config_->lift_velocity_scaling_factor_))
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, config_.lift_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
     return false;
@@ -713,7 +713,7 @@ bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_j
 
   // Get approach trajectory message
   moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, config_->retreat_velocity_scaling_factor_))
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, config_.retreat_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
     return false;
@@ -961,9 +961,9 @@ bool Manipulation::openEndEffectors(bool open)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","openEndEffectors()");
 
-  openEndEffector(true, config_->right_arm_);
-  if (config_->dual_arm_)
-    openEndEffector(true, config_->left_arm_);
+  openEndEffector(true, config_.right_arm_);
+  if (config_.dual_arm_)
+    openEndEffector(true, config_.left_arm_);
   return true;
 }
 
@@ -1024,23 +1024,23 @@ bool Manipulation::setStateWithOpenEE(bool open, moveit::core::RobotStatePtr rob
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","setStateWithOpenEE()");
 
-  if (!config_->dual_arm_) // jacob mode
+  if (!config_.dual_arm_) // jacob mode
   {
     if (open)
-      grasp_datas_[config_->right_arm_].setRobotStatePreGrasp( robot_state );
+      grasp_datas_[config_.right_arm_].setRobotStatePreGrasp( robot_state );
     else
-      grasp_datas_[config_->right_arm_].setRobotStateGrasp( robot_state );
+      grasp_datas_[config_.right_arm_].setRobotStateGrasp( robot_state );
   }
   else // Baxter mode
   {
     // TODO replace with method that moveit_grasps uses
 
-    const double& right_open_position  = grasp_datas_[config_->right_arm_].pre_grasp_posture_.points[0].positions[0];
-    const double& right_close_position = grasp_datas_[config_->right_arm_].grasp_posture_.points[0].positions[0];
+    const double& right_open_position  = grasp_datas_[config_.right_arm_].pre_grasp_posture_.points[0].positions[0];
+    const double& right_close_position = grasp_datas_[config_.right_arm_].grasp_posture_.points[0].positions[0];
     double left_open_position;
     double left_close_position;
-    left_open_position  = grasp_datas_[config_->left_arm_].pre_grasp_posture_.points[0].positions[0];
-    left_close_position = grasp_datas_[config_->left_arm_].grasp_posture_.points[0].positions[0];
+    left_open_position  = grasp_datas_[config_.left_arm_].pre_grasp_posture_.points[0].positions[0];
+    left_close_position = grasp_datas_[config_.left_arm_].grasp_posture_.points[0].positions[0];
 
     if (open)
     {
@@ -1088,7 +1088,7 @@ bool Manipulation::executeTrajectory(const moveit_msgs::RobotTrajectory &traject
   {
     // Set robot state
     //moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_));
-    //current_state_->setJointGroupPositions(config_->right_arm_, trajectory_msg.joint_trajectory.points.back().positions);
+    //current_state_->setJointGroupPositions(config_.right_arm_, trajectory_msg.joint_trajectory.points.back().positions);
 
     // Check robot state
     //visuals_->goal_state_->publishRobotState(current_state_, rvt::ORANGE);
@@ -1509,7 +1509,7 @@ bool Manipulation::checkCollisionAndBounds(const robot_state::RobotStatePtr &sta
   {
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_);
     // Start
-    if (scene->isStateColliding(*start_state, config_->right_arm_->getName(), verbose))
+    if (scene->isStateColliding(*start_state, config_.right_arm_->getName(), verbose))
     {
       ROS_WARN_STREAM_NAMED("manipulation","Start state is colliding");
       // Show collisions
@@ -1523,7 +1523,7 @@ bool Manipulation::checkCollisionAndBounds(const robot_state::RobotStatePtr &sta
     {
       goal_state->update();
 
-      if (scene->isStateColliding(*goal_state, config_->right_arm_->getName(), verbose))
+      if (scene->isStateColliding(*goal_state, config_.right_arm_->getName(), verbose))
       {
         ROS_WARN_STREAM_NAMED("manipulation","Goal state is colliding");
         // Show collisions

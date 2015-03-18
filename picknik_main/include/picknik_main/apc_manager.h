@@ -306,7 +306,7 @@ private:
   ros::Subscriber remote_run_control_;
 
   // Robot-sepcific data for the APC
-  ManipulationDataPtr config_;
+  ManipulationData config_;
 
   // Robot-specific data for generating grasps
   GraspDatas grasp_datas_;

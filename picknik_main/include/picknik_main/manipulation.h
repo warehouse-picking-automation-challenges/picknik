@@ -60,7 +60,7 @@ public:
    */
   Manipulation(bool verbose, VisualsPtr visuals,
                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-               ManipulationDataPtr manip_data, GraspDatas grasp_datas,
+               ManipulationData config, GraspDatas grasp_datas,
                APCManager* parent,
                ShelfObjectPtr shelf, bool use_experience, bool show_database);
 
@@ -323,7 +323,7 @@ protected:
   ShelfObjectPtr shelf_;
 
   // Robot-sepcific data for the APC
-  ManipulationDataPtr config_;
+  ManipulationData config_;
 
   // Robot-specific data for generating grasps
   GraspDatas grasp_datas_;

@@ -11,9 +11,12 @@ calibration_velocity_scaling_factor: 0.05
 wait_before_grasp: 0.1
 wait_after_grasp: 0.1
 
-# Semantics
+# Poses
 start_pose: manipulator_home
 dropoff_pose: goal_bin_pose
+
+# Semantics
+dual_arm: 0
 right_hand_name: gripper
 left_hand_name: gripper_DISABLED
 right_arm_name: manipulator

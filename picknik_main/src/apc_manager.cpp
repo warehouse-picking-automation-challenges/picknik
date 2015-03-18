@@ -74,14 +74,15 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   ROS_DEBUG_STREAM_NAMED("apc_manager","Visualizing shelf");
   visualizeShelf();
 
-  config_.reset(new ManipulationData(robot_model_));
+  // Load manipulation data for our robot
+  config_.load(robot_model_);
 
   // Load grasp data specific to our robot
-  if (!grasp_datas_[config_->right_arm_].loadRobotGraspData(nh_private_, config_->right_hand_name_, robot_model_))
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to load right arm grasp data in namespace " << config_->right_hand_name_);
+  if (!grasp_datas_[config_.right_arm_].loadRobotGraspData(nh_private_, config_.right_hand_name_, robot_model_))
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to load right arm grasp data in namespace " << config_.right_hand_name_);
 
-  if (config_->dual_arm_ && !grasp_datas_[config_->left_arm_].loadRobotGraspData(nh_private_, config_->left_hand_name_, robot_model_))
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to load left arm grasp data in namespace " << config_->left_hand_name_);
+  if (config_.dual_arm_ && !grasp_datas_[config_.left_arm_].loadRobotGraspData(nh_private_, config_.left_hand_name_, robot_model_))
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to load left arm grasp data in namespace " << config_.left_hand_name_);
 
   // Create manipulation manager
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
@@ -98,12 +99,12 @@ bool APCManager::checkSystemReady()
   ROS_INFO_STREAM_NAMED("apc_manager","Starting system ready check:");
 
   // Check joint model groups, assuming we are the jaco arm
-  if (config_->right_arm_->getVariableCount() != 6)
+  if (config_.right_arm_->getVariableCount() != 6)
   {
-    ROS_FATAL_STREAM_NAMED("apc_manager","Incorrect number of joints for group " << config_->right_arm_->getName());
+    ROS_FATAL_STREAM_NAMED("apc_manager","Incorrect number of joints for group " << config_.right_arm_->getName());
     exit(-1);
   }
-  const robot_model::JointModelGroup* ee_jmg = grasp_datas_[config_->right_arm_].ee_jmg_;
+  const robot_model::JointModelGroup* ee_jmg = grasp_datas_[config_.right_arm_].ee_jmg_;
   if (ee_jmg->getVariableCount() != 3)
   {
     ROS_FATAL_STREAM_NAMED("apc_manager","Incorrect number of joints for group " << ee_jmg->getName());
@@ -118,7 +119,7 @@ bool APCManager::checkSystemReady()
   }
 
   // Check robot state valid
-  while (ros::ok() && !manipulation_->checkCurrentCollisionAndBounds(config_->right_arm_))
+  while (ros::ok() && !manipulation_->checkCurrentCollisionAndBounds(config_.right_arm_))
   {
     ros::Duration(1.0).sleep();
   }
@@ -355,7 +356,7 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
 
         manipulation_->createCollisionWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
 
-        if (!manipulation_->move(current_state, pre_grasp_state, arm_jmg, config_->main_velocity_scaling_factor_, verbose, execute_trajectory))
+        if (!manipulation_->move(current_state, pre_grasp_state, arm_jmg, config_.main_velocity_scaling_factor_, verbose, execute_trajectory))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to plan");
           return false;
@@ -385,8 +386,8 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
           return false;
         }
 
-        ROS_INFO_STREAM_NAMED("apc_manager","Waiting " << config_->wait_before_grasp_ << " seconds before grasping");
-        ros::Duration(config_->wait_after_grasp_).sleep();
+        ROS_INFO_STREAM_NAMED("apc_manager","Waiting " << config_.wait_before_grasp_ << " seconds before grasping");
+        ros::Duration(config_.wait_after_grasp_).sleep();
         break;
 
         // #################################################################################################################
@@ -401,8 +402,8 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
         // Attach collision object
         visuals_->visual_tools_->attachCO(order.product_->getCollisionName(), grasp_datas_[arm_jmg].parent_link_name_);
 
-        ROS_INFO_STREAM_NAMED("apc_manager","Waiting " << config_->wait_after_grasp_ << " seconds after grasping");
-        ros::Duration(config_->wait_after_grasp_).sleep();
+        ROS_INFO_STREAM_NAMED("apc_manager","Waiting " << config_.wait_after_grasp_ << " seconds after grasping");
+        ros::Duration(config_.wait_after_grasp_).sleep();
         break;
 
         // #################################################################################################################
@@ -411,7 +412,7 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
         // Clear all collision objects
         visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
 
-        if (!manipulation_->executeLiftPath(arm_jmg, config_->lift_distance_desired_))
+        if (!manipulation_->executeLiftPath(arm_jmg, config_.lift_distance_desired_))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute retrieval path after grasping");
           return false;
@@ -485,9 +486,9 @@ bool APCManager::moveCameraToBin(BinObjectPtr bin)
   ee_pose = transform(ee_pose, shelf_->getBottomRight()); // convert to world coordinates
 
   // Move centroid backwards
-  ee_pose.translation().x() += config_->camera_x_translation_from_bin_;
-  ee_pose.translation().y() += config_->camera_y_translation_from_bin_;
-  ee_pose.translation().z() += config_->camera_z_translation_from_bin_;
+  ee_pose.translation().x() += config_.camera_x_translation_from_bin_;
+  ee_pose.translation().y() += config_.camera_y_translation_from_bin_;
+  ee_pose.translation().z() += config_.camera_z_translation_from_bin_;
 
   // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
   ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
@@ -498,17 +499,17 @@ bool APCManager::moveCameraToBin(BinObjectPtr bin)
   visuals_->visual_tools_->publishText(ee_pose, "camera_pose", rvt::BLACK, rvt::SMALL, false);
 
   // Translate to custom end effector geometry
-  ee_pose = ee_pose * grasp_datas_[config_->right_arm_].grasp_pose_to_eef_pose_;
+  ee_pose = ee_pose * grasp_datas_[config_.right_arm_].grasp_pose_to_eef_pose_;
 
   // Customize the direction it is pointing
   // Roll Angle
-  ee_pose = ee_pose * Eigen::AngleAxisd(config_->camera_z_rotation_from_standard_grasp_, Eigen::Vector3d::UnitZ());
+  ee_pose = ee_pose * Eigen::AngleAxisd(config_.camera_z_rotation_from_standard_grasp_, Eigen::Vector3d::UnitZ());
   // Pitch Angle
-  ee_pose = ee_pose * Eigen::AngleAxisd(config_->camera_x_rotation_from_standard_grasp_, Eigen::Vector3d::UnitX());
+  ee_pose = ee_pose * Eigen::AngleAxisd(config_.camera_x_rotation_from_standard_grasp_, Eigen::Vector3d::UnitX());
   // Yaw Angle
-  ee_pose = ee_pose * Eigen::AngleAxisd(config_->camera_y_rotation_from_standard_grasp_, Eigen::Vector3d::UnitY());
+  ee_pose = ee_pose * Eigen::AngleAxisd(config_.camera_y_rotation_from_standard_grasp_, Eigen::Vector3d::UnitY());
 
-  return manipulation_->moveEEToPose(ee_pose, config_->main_velocity_scaling_factor_, config_->right_arm_);
+  return manipulation_->moveEEToPose(ee_pose, config_.main_velocity_scaling_factor_, config_.right_arm_);
 }
 
 bool APCManager::calibrateCamera()
@@ -526,16 +527,16 @@ bool APCManager::calibrateCamera()
   poses.push_back("shelf_calibration6");
 
   // Move to each pose. The first move is full speed, the others are slow
-  double velcity_scaling_factor = config_->main_velocity_scaling_factor_;
+  double velcity_scaling_factor = config_.main_velocity_scaling_factor_;
   for (std::size_t i = 0; i < poses.size(); ++i)
   {
-    ROS_INFO_STREAM_NAMED("apc_manager","Moving to camera pose " << poses[i] << " with scaling factor " << config_->calibration_velocity_scaling_factor_);
+    ROS_INFO_STREAM_NAMED("apc_manager","Moving to camera pose " << poses[i] << " with scaling factor " << config_.calibration_velocity_scaling_factor_);
 
     // First one goes fast
     if (i > 0)
-      velcity_scaling_factor = config_->calibration_velocity_scaling_factor_;
+      velcity_scaling_factor = config_.calibration_velocity_scaling_factor_;
 
-    if (!manipulation_->moveToPose(config_->right_arm_, poses[i], velcity_scaling_factor))
+    if (!manipulation_->moveToPose(config_.right_arm_, poses[i], velcity_scaling_factor))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to pose " << poses[i]);
       return false;
@@ -716,17 +717,17 @@ bool APCManager::perturbCamera(BinObjectPtr bin)
   ROS_INFO_STREAM_NAMED("apc_manager","Perturbing camera for perception");
 
   //Move camera left
-  ROS_INFO_STREAM_NAMED("apc_manager","Moving camera left distance " << config_->camera_left_distance_);
+  ROS_INFO_STREAM_NAMED("apc_manager","Moving camera left distance " << config_.camera_left_distance_);
   bool left = true;
-  if (!manipulation_->executeLeftPath(config_->right_arm_, config_->camera_left_distance_, left))
+  if (!manipulation_->executeLeftPath(config_.right_arm_, config_.camera_left_distance_, left))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move left");
   }
 
   // Move camera right
-  ROS_INFO_STREAM_NAMED("apc_manager","Moving camera right distance " << config_->camera_left_distance_ * 2.0);
+  ROS_INFO_STREAM_NAMED("apc_manager","Moving camera right distance " << config_.camera_left_distance_ * 2.0);
   left = false;
-  if (!manipulation_->executeLeftPath(config_->right_arm_, config_->camera_left_distance_ * 2.0, left))
+  if (!manipulation_->executeLeftPath(config_.right_arm_, config_.camera_left_distance_ * 2.0, left))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move right");
   }
@@ -739,16 +740,16 @@ bool APCManager::perturbCamera(BinObjectPtr bin)
   }
 
   // Move camera up
-  ROS_INFO_STREAM_NAMED("apc_manager","Lifting camera distance " << config_->camera_lift_distance_);
-  if (!manipulation_->executeLiftPath(config_->right_arm_, config_->camera_lift_distance_))
+  ROS_INFO_STREAM_NAMED("apc_manager","Lifting camera distance " << config_.camera_lift_distance_);
+  if (!manipulation_->executeLiftPath(config_.right_arm_, config_.camera_lift_distance_))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move up");
   }
 
   // Move camera down
-  ROS_INFO_STREAM_NAMED("apc_manager","Lowering camera distance " << config_->camera_lift_distance_ * 2.0);
+  ROS_INFO_STREAM_NAMED("apc_manager","Lowering camera distance " << config_.camera_lift_distance_ * 2.0);
   bool up = false;
-  if (!manipulation_->executeLiftPath(config_->right_arm_, config_->camera_lift_distance_ * 2.0, up))
+  if (!manipulation_->executeLiftPath(config_.right_arm_, config_.camera_lift_distance_ * 2.0, up))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move down");
   }
@@ -773,35 +774,35 @@ bool APCManager::waitForNextStep()
 
 const robot_model::JointModelGroup* APCManager::chooseArm(const Eigen::Affine3d& object_pose)
 {
-  if (!config_->dual_arm_) // jacob
+  if (!config_.dual_arm_) // jacob
   {
-    return config_->right_arm_;
+    return config_.right_arm_;
   }
   // Baxter: choose which arm
   else if (object_pose.translation().y() <= 0)
   {
     ROS_INFO_STREAM_NAMED("apc_manager","Using right arm to grasp product");
-    return config_->right_arm_;
+    return config_.right_arm_;
   }
   else
   {
     ROS_INFO_STREAM_NAMED("apc_manager","Using left arm to grasp product");
-    return config_->left_arm_;
+    return config_.left_arm_;
   }
 }
 
 bool APCManager::moveToStartPosition(const robot_model::JointModelGroup* arm_jmg)
 {
   if (arm_jmg == NULL)
-    arm_jmg = config_->right_arm_;
-  return manipulation_->moveToPose(arm_jmg, config_->start_pose_, config_->main_velocity_scaling_factor_);
+    arm_jmg = config_.right_arm_;
+  return manipulation_->moveToPose(arm_jmg, config_.start_pose_, config_.main_velocity_scaling_factor_);
 }
 
 bool APCManager::moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg)
 {
   if (arm_jmg == NULL)
-    arm_jmg = config_->right_arm_;
-  return manipulation_->moveToPose(arm_jmg, config_->dropoff_pose_, config_->main_velocity_scaling_factor_);
+    arm_jmg = config_.right_arm_;
+  return manipulation_->moveToPose(arm_jmg, config_.dropoff_pose_, config_.main_velocity_scaling_factor_);
 }
 
 bool APCManager::trainExperienceDatabase()
@@ -837,7 +838,7 @@ bool APCManager::testEndEffectors()
       open = false;
       manipulation_->setStateWithOpenEE(open, current_state);
       visuals_->visual_tools_->publishRobotState(current_state);
-      manipulation_->openEndEffector(open, config_->right_arm_);
+      manipulation_->openEndEffector(open, config_.right_arm_);
       ros::Duration(4.0).sleep();
     }
     else
@@ -846,7 +847,7 @@ bool APCManager::testEndEffectors()
       open = true;
       manipulation_->setStateWithOpenEE(open, current_state);
       visuals_->visual_tools_->publishRobotState(current_state);
-      manipulation_->openEndEffector(open, config_->right_arm_);
+      manipulation_->openEndEffector(open, config_.right_arm_);
       ros::Duration(4.0).sleep();
     }
     ++i;
@@ -862,7 +863,7 @@ bool APCManager::testEndEffectors()
 bool APCManager::testUpAndDown()
 {
   // Configure
-  const robot_model::JointModelGroup* arm_jmg = config_->right_arm_; // TODO single/dual logic
+  const robot_model::JointModelGroup* arm_jmg = config_.right_arm_; // TODO single/dual logic
 
   // Test
   manipulation_->statusPublisher("Testing up and down calculations");
@@ -873,13 +874,13 @@ bool APCManager::testUpAndDown()
     if (i % 2 == 0)
     {
       std::cout << "Moving up --------------------------------------" << std::endl;
-      manipulation_->executeLiftPath(arm_jmg, config_->lift_distance_desired_, true);
+      manipulation_->executeLiftPath(arm_jmg, config_.lift_distance_desired_, true);
       ros::Duration(5.0).sleep();
     }
     else
     {
       std::cout << "Moving down ------------------------------------" << std::endl;
-      manipulation_->executeLiftPath(arm_jmg, config_->lift_distance_desired_, false);
+      manipulation_->executeLiftPath(arm_jmg, config_.lift_distance_desired_, false);
       ros::Duration(5.0).sleep();
     }
     ++i;
@@ -896,7 +897,7 @@ bool APCManager::testShelfLocation()
   Eigen::Affine3d ee_pose;
 
   // Set EE as closed so that we can touch the tip easier
-  manipulation_->openEndEffector(false, config_->right_arm_);
+  manipulation_->openEndEffector(false, config_.right_arm_);
 
   // Reduce collision world to simple
   manipulation_->createCollisionWall();
@@ -912,19 +913,19 @@ bool APCManager::testShelfLocation()
     // Move to far left front corner of bin
     ee_pose = shelf_->getBottomRight() * bin_it->second->getBottomRight(); // convert to world frame
     ee_pose.translation().y() += bin_it->second->getWidth();
-    ee_pose.translation().x() += safety_padding - grasp_datas_[config_->right_arm_].finger_to_palm_depth_;
+    ee_pose.translation().x() += safety_padding - grasp_datas_[config_.right_arm_].finger_to_palm_depth_;
 
     // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
     ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
     ee_pose = ee_pose * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ());
 
     // Translate to custom end effector geometry
-    ee_pose = ee_pose * grasp_datas_[config_->right_arm_].grasp_pose_to_eef_pose_;
+    ee_pose = ee_pose * grasp_datas_[config_.right_arm_].grasp_pose_to_eef_pose_;
 
     // Visual debug
     visuals_->visual_tools_->publishSphere(ee_pose);
 
-    if (!manipulation_->moveEEToPose(ee_pose, velocity_scaling_factor, config_->right_arm_))
+    if (!manipulation_->moveEEToPose(ee_pose, velocity_scaling_factor, config_.right_arm_))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move arm to desired shelf location");
       continue;
@@ -939,7 +940,7 @@ bool APCManager::testShelfLocation()
     ROS_INFO_STREAM_NAMED("apc_manager","Moving forward");
     bool retreat = false;
     double desired_approach_distance = 0.02;
-    if (!manipulation_->executeRetreatPath(config_->right_arm_, desired_approach_distance, retreat))
+    if (!manipulation_->executeRetreatPath(config_.right_arm_, desired_approach_distance, retreat))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move forward " << desired_approach_distance);
     }
@@ -951,7 +952,7 @@ bool APCManager::testShelfLocation()
 
 
     retreat = true;
-    if (!manipulation_->executeRetreatPath(config_->right_arm_, desired_approach_distance, retreat))
+    if (!manipulation_->executeRetreatPath(config_.right_arm_, desired_approach_distance, retreat))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move backwards " << desired_approach_distance);
     }
@@ -979,7 +980,7 @@ bool APCManager::testInCollision()
 {
   while (ros::ok())
   {
-    manipulation_->checkCurrentCollisionAndBounds(config_->right_arm_);
+    manipulation_->checkCurrentCollisionAndBounds(config_.right_arm_);
     ros::Duration(1).sleep();
   }
 
@@ -1002,7 +1003,7 @@ bool APCManager::testRandomValidMotions()
 
       // Create goal
       moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state));
-      goal_state->setToRandomPositions(config_->right_arm_);
+      goal_state->setToRandomPositions(config_.right_arm_);
 
       // Check if random goal state is valid
       if (manipulation_->checkCollisionAndBounds(current_state, goal_state))
@@ -1010,7 +1011,7 @@ bool APCManager::testRandomValidMotions()
         // Plan to this position
         bool verbose = true;
         bool execute_trajectory = true;
-        if (manipulation_->move(current_state, goal_state, config_->right_arm_, config_->main_velocity_scaling_factor_, verbose, execute_trajectory))
+        if (manipulation_->move(current_state, goal_state, config_.right_arm_, config_.main_velocity_scaling_factor_, verbose, execute_trajectory))
         {
           ROS_INFO_STREAM_NAMED("apc_manager","Planned to random valid state successfullly");
           return true;
@@ -1111,7 +1112,7 @@ bool APCManager::testJointLimits()
   // Setup data
   std::vector<double> joint_position;
   joint_position.resize(1);
-  const std::vector<const moveit::core::JointModel*> &joints = config_->right_arm_->getActiveJointModels();
+  const std::vector<const moveit::core::JointModel*> &joints = config_.right_arm_->getActiveJointModels();
 
   // Decide if we are testing 1 joint or all
   int test_joint_limit_joint;
@@ -1148,7 +1149,7 @@ bool APCManager::testJointLimits()
       ROS_INFO_STREAM_NAMED("apc_manager","Sending joint " << joints[i]->getName() << " to min position of " << joint_position[0]);
       goal_state->setJointPositions(joints[i], joint_position);
 
-      if (!manipulation_->executeState(goal_state, config_->right_arm_, config_->main_velocity_scaling_factor_))
+      if (!manipulation_->executeState(goal_state, config_.right_arm_, config_.main_velocity_scaling_factor_))
       {
         ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to min bound of " << joint_position[0] << " on joint "
                                << joints[i]->getName());
@@ -1162,7 +1163,7 @@ bool APCManager::testJointLimits()
       ROS_INFO_STREAM_NAMED("apc_manager","Sending joint " << joints[i]->getName() << " to max position of " << joint_position[0]);
       goal_state->setJointPositions(joints[i], joint_position);
 
-      if (!manipulation_->executeState(goal_state, config_->right_arm_, config_->main_velocity_scaling_factor_))
+      if (!manipulation_->executeState(goal_state, config_.right_arm_, config_.main_velocity_scaling_factor_))
       {
         ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to max bound of " << joint_position[0] << " on joint "
                                << joints[i]->getName());
@@ -1179,7 +1180,7 @@ bool APCManager::getSRDFPose()
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","getSRDFPose()");
 
-  const std::vector<const moveit::core::JointModel*> joints = config_->right_arm_->getJointModels();
+  const std::vector<const moveit::core::JointModel*> joints = config_.right_arm_->getJointModels();
 
   while(ros::ok())
   {
@@ -1189,10 +1190,10 @@ bool APCManager::getSRDFPose()
     moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
 
     // Check if current state is valid
-    manipulation_->checkCurrentCollisionAndBounds(config_->right_arm_);
+    manipulation_->checkCurrentCollisionAndBounds(config_.right_arm_);
 
     // Output XML
-    std::cout << "<group_state name=\"\" group=\"" << config_->right_arm_->getName() << "\">\n";
+    std::cout << "<group_state name=\"\" group=\"" << config_.right_arm_->getName() << "\">\n";
     for (std::size_t i = 0; i < joints.size(); ++i)
     {
       std::cout << "  <joint name=\"" << joints[i]->getName() <<"\" value=\""

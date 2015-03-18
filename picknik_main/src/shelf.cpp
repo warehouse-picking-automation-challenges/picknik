@@ -57,7 +57,7 @@ bool RectangleObject::visualize(const Eigen::Affine3d& trans) const
   }
 
   // Show simple geometric shape
-  return visuals_->visual_tools_display_->publishRectangle( transform(bottom_right_, trans).translation(),
+  return visuals_->visual_tools_display_->publishCuboid( transform(bottom_right_, trans).translation(),
                                                             transform(top_left_, trans).translation(),
                                                             color_);
 }
@@ -186,7 +186,7 @@ BinObject::BinObject(VisualsPtr visuals,
 bool BinObject::visualize(const Eigen::Affine3d& trans) const
 {
   // Show bin
-  //visuals_->visual_tools_display_->publishRectangle( transform(bottom_right_, trans).translation(),
+  //visuals_->visual_tools_display_->publishCuboid( transform(bottom_right_, trans).translation(),
   //                                 transform(top_left_, trans).translation(),
   //                                 color_);
 
@@ -548,7 +548,7 @@ bool ShelfObject::visualize() const
   const double x2 = shelf_distance_from_robot_ - GAP_TO_SHELF - 2;
   const Eigen::Vector3d point1(x1, 1, 0);
   const Eigen::Vector3d point2(x2, -1, 0.001);
-  visuals_->visual_tools_display_->publishRectangle(point1, point2, rvt::DARK_GREY);
+  visuals_->visual_tools_display_->publishCuboid(point1, point2, rvt::DARK_GREY);
 }
 
 bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool only_show_shelf_frame, bool show_all_products) const

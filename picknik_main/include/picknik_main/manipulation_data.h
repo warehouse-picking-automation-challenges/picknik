@@ -55,7 +55,13 @@ public:
   /**
    * \brief Constructor
    */
-  ManipulationData(robot_model::RobotModelPtr robot_model);
+  ManipulationData();
+
+  /**
+   * \brief Load the configuration from rosparam
+   * \return true on success
+   */
+  bool load(robot_model::RobotModelPtr robot_model);
 
   // A shared node handle
   ros::NodeHandle nh_;

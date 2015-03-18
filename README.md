@@ -78,6 +78,8 @@ Its help documentation:
 
 ### Turn on Yale Controller
 
+If needed.
+
     roslaunch open_hand_controller controller_manager.launch
 
 Check for correct USB
