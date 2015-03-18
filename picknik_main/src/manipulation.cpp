@@ -125,7 +125,7 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
   // Generate all possible grasps
   std::vector<moveit_msgs::Grasp> possible_grasps;
 
-  grasp_generator_->setVerbose(true); // TODO make a rosparam
+  grasp_generator_->setVerbose(false); // TODO make a rosparam
 
   bool use_new_method = true;
   if (use_new_method)

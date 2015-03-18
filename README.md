@@ -103,6 +103,10 @@ Rviz Visualizers of robot states and debug markers in differnet windows
     roslaunch picknik_main moveit_display_rviz.launch jacob:=false
     roslaunch picknik_main moveit_rviz.launch jacob:=false
 
+Run either the real or a fake object recognition server
+
+    roslaunch moveit_arpg_perception object_recognition.launch
+	
 Run APC Manager (main program) for BAXTER
 
     roslaunch picknik_main baxter_apc.launch mode:=1
@@ -118,6 +122,10 @@ Rviz Visualizers of robot states and debug markers in differnet windows
     roslaunch picknik_main moveit_display_rviz.launch jacob:=false
     roslaunch picknik_main moveit_rviz.launch jacob:=false
 
+Run either the real or a fake object recognition server
+
+    roslaunch moveit_arpg_perception object_recognition.launch
+	
 Run APC Manager (main program) for BAXTER
 
     roslaunch picknik_main baxter_apc.launch mode:=1
@@ -137,30 +145,38 @@ Rviz Visualizers of robot states and debug markers in differnet windows
     roslaunch picknik_main moveit_display_rviz.launch 
     roslaunch picknik_main moveit_rviz.launch
 
+Run either the real or a fake object recognition server
+
+    roslaunch moveit_arpg_perception object_recognition.launch
+	
 Run APC Manager (main program) for JACOB in simulation
 
 	roslaunch picknik_main jacob_apc.launch fake_execution:=true
 
-### Setup Hardware of JACOB
+### Setup HARDWARE of Jacob
 
 Start roscore:
 
     roscore &
-	
-Rviz Visualizers of robot states and debug markers in differnet windows (different windows)
 
-    roslaunch picknik_main moveit_display_rviz.launch
-    roslaunch picknik_main moveit_rviz.launch
-	
 Plugin in robot then choose one of the 2 control methods:
 
 	roslaunch jacob_control jacob_control_old.launch  # uses velocity+position trajectory controller
 	roslaunch jacob_control jacob_control.launch      # experimental ros_control method
 
+Rviz Visualizers of robot states and debug markers in differnet windows (different windows)
+
+    roslaunch picknik_main moveit_display_rviz.launch
+    roslaunch picknik_main moveit_rviz.launch
+	
 Note: to switch between control methods you must edit several files:
 
     rosed jacob_moveit_config moveit_controllers.yaml
 	rosed picknik_main jacob_apc.yaml
+
+Run either the real or a fake object recognition server
+
+    roslaunch moveit_arpg_perception object_recognition.launch
 
 Run APC Manager (main program) for JACOB on hardware
 
