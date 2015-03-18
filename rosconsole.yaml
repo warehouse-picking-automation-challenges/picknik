@@ -1,1 +1,131 @@
-/home/dave/unix_settings/config/rosconsole.yaml
+# ROS ALL
+log4j.logger.ros=DEBUG
+
+# ROS
+log4j.logger.ros.rviz=INFO
+log4j.logger.ros.roscpp=INFO
+log4j.logger.ros.actionlib=INFO
+log4j.logger.ros.interactive_markers=INFO
+log4j.logger.ros.kdl_parser=INFO
+log4j.logger.ros.urdf=INFO
+log4j.logger.ros.robot_state_publisher=INFO
+log4j.logger.ros.rqt_gui_cpp.pluginlib.ClassLoader=INFO
+
+# CONSOLE BRIDGE
+#log4j.logger.ros.rosconsole_bridge=INFO
+log4j.logger.ros.rosconsole_bridge.console_bridge=INFO
+log4j.logger.ros.rosconsole_bridge.moveit_ompl=INFO
+log4j.logger.ros.rosconsole_bridge.class_loader.class_loader_private=INFO
+log4j.logger.ros.rosconsole_bridge.urdfdom=INFO
+
+# MoveIt Planners
+log4j.logger.ros.moveit_ompl.parameters=INFO
+log4j.logger.ros.moveit_ompl=INFO
+
+# MoveIt Core
+log4j.logger.ros.moveit_core.pr2_arm_kinematics_plugin=INFO
+
+# MoveIt ROS
+log4j.logger.ros.moveit_simple_controller_manager=INFO
+log4j.logger.ros.moveit_ros_planning.kinematics_plugin_loader=INFO
+log4j.logger.ros.moveit_ros_planning.planning_scene=INFO
+log4j.logger.ros.moveit_ros_perception.message_filter=INFO
+log4j.logger.ros.moveit_ros_move_group.actionlib=INFO
+#log4j.logger.ros.moveit_ros_perception=INFO
+log4j.logger.ros.moveit_ros_benchmarks.pluginlib=INFO
+log4j.logger.ros.moveit_ros_planning.collision=INFO
+log4j.logger.ros.moveit_ros_planning.rdf=INFO
+log4j.logger.ros.moveit_ros_planning.robot_model_loader=INFO
+log4j.logger.ros.moveit_ros_planning.kinematics_loader=INFO
+log4j.logger.ros.moveit_ros_planning.robot_model_loader=INFO
+log4j.logger.ros.moveit_ros_planning.kdl=INFO
+log4j.logger.ros.moveit_ros_planning.planning_scene_monitor=INFO
+log4j.logger.ros.moveit_ros_planning.message_filter=INFO
+log4j.logger.ros.moveit_ros_planning.traj_execution=INFO
+
+# MoveIt Actionlib
+log4j.logger.ros.moveit_ros_visualization.actionlib=INFO
+log4j.logger.ros.moveit_ros_planning_interface.actionlib=INFO
+log4j.logger.ros.moveit_ros_manipulation.actionlib=INFO
+log4j.logger.ros.moveit_simple_controller_manager.actionlib=INFO
+log4j.logger.ros.hrp2jsknt_moveit_demos.actionlib=INFO
+
+# MoveIt ClassLoader
+log4j.logger.ros.moveit_ros_move_group.pluginlib.ClassLoader=INFO
+log4j.logger.ros.moveit_ros_planning.pluginlib.ClassLoader=INFO
+log4j.logger.ros.moveit_setup_assistant.pluginlib.ClassLoader=INFO
+log4j.logger.ros.hrp2jsknt_moveit_demos.pluginlib.ClassLoader=INFO
+
+# Baxter
+log4j.logger.ros.baxter_state_publisher=INFO
+log4j.logger.ros.baxter_ikfast_left_arm_plugin.ikfast=INFO
+log4j.logger.ros.baxter_ikfast_right_arm_plugin.ikfast=INFO
+log4j.logger.ros.baxter_moveit_plugins.actionlib=INFO
+log4j.logger.ros.baxter_controller.actionlib=INFO
+log4j.logger.ros.baxter_block_manipulation.actionlib=INFO
+log4j.logger.ros.baxter_pick_place.actionlib=INFO
+log4j.logger.ros.baxter_gripper_server.actionlib=INFO
+log4j.logger.ros.baxter_control.actionlib=INFO
+log4j.logger.ros.baxter_experimental.actionlib=INFO
+log4j.logger.ros.baxter_moveit_scripts.actionlib=INFO
+
+# Gazebo
+log4j.logger.ros.gazebo_ros_control.pluginlib.ClassLoader=INFO
+
+# Controllers
+#log4j.logger.ros.controller_manager=INFO
+log4j.logger.ros.controller_manager.pluginlib=INFO
+#log4j.logger.ros.joint_trajectory_controller.actionlib=INFO
+#log4j.logger.ros.control_toolbox.pid=INFO
+
+# KDL
+log4j.logger.ros.hrl_kinematics=INFO
+
+# Visuals Tools Code
+log4j.logger.ros.moveit_visual_tools.visual_tools=INFO
+log4j.logger.ros.rviz_visual_tools.visual_tools=INFO
+
+# Humanoid
+log4j.logger.ros.moveit_humanoid_stability.bounding_box=INFO
+#log4j.logger.ros.moveit_humanoid_stability.stability=INFO
+
+# PickNik Amazon Challenge -------------------------------------------------------------
+log4j.logger.ros.picknik_main.parser=INFO
+log4j.logger.ros.picknik_main.shelf=INFO
+
+# Learning Pipeline
+log4j.logger.ros.picknik_main.learning.ik_filtered_grasps=INFO
+log4j.logger.ros.picknik_main.learning.ik_animated_grasps=INFO
+log4j.logger.ros.picknik_main.learning.ik_filtered_solutions=INFO
+log4j.logger.ros.picknik_main.learning.collision_filtered_grasps=INFO
+log4j.logger.ros.picknik_main.learning.collision_filtered_solutions=INFO
+
+# Manipulation - Choosing a grasp
+log4j.logger.ros.picknik_main.manipulation.animated_grasps=INFO
+log4j.logger.ros.picknik_main.manipulation.ik_filtered_grasps=INFO
+#log4j.logger.ros.picknik_main.manipulation.collision_filtered_solutions=INFO
+log4j.logger.ros.picknik_main.manipulation.collision_filtered_grasps=INFO
+
+# Manipulation - Execution
+log4j.logger.ros.picknik_main.manipulation.trajectory=INFO
+log4j.logger.ros.picknik_main.manipulation.collision_matrix=INFO
+log4j.logger.ros.picknik_main.actionlib=INFO
+
+# Manipulation - General
+log4j.logger.ros.picknik_main.manipulation.superdebug=INFO
+
+# JACO
+log4j.logger.ros.kinova_driver.actionlib=INFO
+log4j.logger.ros.kinova_driver.raw_position=INFO
+log4j.logger.ros.kinova_driver.raw_velocity=INFO
+log4j.logger.ros.kinova_driver.raw_effort=INFO
+log4j.logger.ros.ros_control_boilerplate.joint_positions=INFO
+
+# JACO ros_control
+log4j.logger.ros.kinova_ros_control.raw_positions=INFO
+log4j.logger.ros.kinova_ros_control.raw_velocities=INFO
+log4j.logger.ros.kinova_ros_control.raw_torques=INFO
+log4j.logger.ros.kinova_ros_control.commanded_position=INFO
+log4j.logger.ros.kinova_ros_control.commanded_velocity=INFO
+log4j.logger.ros.moveit_grasps.cuboid_grasp_points=INFO
+log4j.logger.ros.moveit_grasps.cuboid_axis_grasps=INFO

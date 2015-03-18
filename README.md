@@ -174,7 +174,7 @@ Run APC Manager (main program) for JACOB on hardware
 		4. Only load JSON and visualize shelf
 		5. Raise the roof (go up and down)
 		6. Verify shelf location
-		7. Get the current pose of the robot for the SRDF
+		7. SRDF: Get the current pose of the robot for the SRDF
 		8. Go to goal bin pose
 		9. Check if current state is in collision
 		10. Plan to random valid locations

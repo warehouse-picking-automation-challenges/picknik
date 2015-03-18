@@ -313,11 +313,16 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","move()");
 
   // Check validity of start and goal
-  if (!checkCollisionAndBounds(start, goal))
+  if (false)
   {
-    ROS_ERROR_STREAM_NAMED("manipulation","Potential issue with start and goal state, but perhaps this should not fail in the future");
-    return false;
+    if (!checkCollisionAndBounds(start, goal))
+    {
+      ROS_ERROR_STREAM_NAMED("manipulation","Potential issue with start and goal state, but perhaps this should not fail in the future");
+      return false;
+    }
   }
+  else
+    ROS_WARN_STREAM_NAMED("manipulation","Start/goal state collision checking for move() is disabled");
 
   // Visualize start and goal
   if (verbose)
@@ -1356,6 +1361,10 @@ bool Manipulation::visualizeGrasps(std::vector<moveit_grasps::GraspSolution> fil
   double path_length;
   double max_path_length = 0; // statistics
   bool reverse_path = false;
+
+  ROS_WARN_STREAM_NAMED("temp","remove this deleteer");
+  visuals_->visual_tools_->deleteAllMarkers(); // clear all old markers
+
   for (std::size_t i = 0; i < filtered_grasps.size(); ++i)
   {
     if (!ros::ok())
@@ -1379,8 +1388,18 @@ bool Manipulation::visualizeGrasps(std::vector<moveit_grasps::GraspSolution> fil
       double speed = 0.01;
       visuals_->visual_tools_->publishTrajectoryPath(robot_state_trajectory, arm_jmg, speed, blocking);
     }
-    grasp_generator_->publishGraspArrow(filtered_grasps[i].grasp_.grasp_pose.pose, grasp_datas_[arm_jmg],
-                                                  rvt::BLUE, path_length);
+    //grasp_generator_->publishGraspArrow(filtered_grasps[i].grasp_.grasp_pose.pose, grasp_datas_[arm_jmg],
+    //                                              rvt::BLUE, path_length);
+    
+
+    const geometry_msgs::Pose& pose = filtered_grasps[i].grasp_.grasp_pose.pose;
+    double roll = atan2(2*(pose.orientation.x*pose.orientation.y + pose.orientation.w*pose.orientation.z), pose.orientation.w*pose.orientation.w + pose.orientation.x*pose.orientation.x - pose.orientation.y*pose.orientation.y - pose.orientation.z*pose.orientation.z);
+    double yall = asin(-2*(pose.orientation.x*pose.orientation.z - pose.orientation.w*pose.orientation.y));
+    double pitch = atan2(2*(pose.orientation.y*pose.orientation.z + pose.orientation.w*pose.orientation.x), pose.orientation.w*pose.orientation.w - pose.orientation.x*pose.orientation.x - pose.orientation.y*pose.orientation.y + pose.orientation.z*pose.orientation.z);
+    std::cout << "ROLL: " << roll << " YALL: " << yall << " PITCH: " << pitch << std::endl;
+
+    visuals_->visual_tools_->publishText(pose, boost::lexical_cast<std::string>(yall), rvt::BLACK, rvt::SMALL, false);  
+    //visuals_->visual_tools_->publishAxis(pose);
   }
   //visuals_->visual_tools_->triggerBatchPublishAndDisable();
 

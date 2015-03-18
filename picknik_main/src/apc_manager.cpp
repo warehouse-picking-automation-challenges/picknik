@@ -212,7 +212,6 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
   moveit::core::RobotStatePtr the_grasp_state(new moveit::core::RobotState(*current_state)); // Allocate robot states
   moveit_msgs::RobotTrajectory approach_trajectory_msg;
   bool wait_for_trajetory = false;
-  double desired_lift_distance = 0.05;
   Eigen::Affine3d object_pose;
 
   // Prevent jump-to errors
@@ -412,7 +411,7 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
         // Clear all collision objects
         visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
 
-        if (!manipulation_->executeLiftPath(arm_jmg, desired_lift_distance))
+        if (!manipulation_->executeLiftPath(arm_jmg, config_->lift_distance_desired_))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute retrieval path after grasping");
           return false;

@@ -19,11 +19,11 @@ bin_left_margin: 0.01
 num_bins: 12.0
 
 # Movement config
-approach_distance_desired: 0.1 # amount beyond min distance
-lift_distance_desired: 0.2 # amount beyond min distance
+approach_distance_desired: 0.2
+lift_distance_desired: 0.02
 
 # Safety
-collision_wall_safety_margin: 0.02;
+collision_wall_safety_margin: 0.01 # 0.02
 
 # Sleep timers
 wait_before_grasp: 0.1
