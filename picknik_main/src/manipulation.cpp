@@ -1638,9 +1638,9 @@ bool Manipulation::generateRandomProductPoses()
 
           // Add product mesh to new planning scene
           Eigen::Affine3d product_in_world = transform(product->getCentroid(), world_to_bin_transform);            
-          product->getCollisionObjectName();
-          product->getCollisionMeshPath();
-                                                  collision_mesh_path_, color_);
+          //product->getCollisionObjectName();
+          //product->getCollisionMeshPath();
+          //product->getColor();
 
           // Create request
           collision_detection::CollisionRequest req;

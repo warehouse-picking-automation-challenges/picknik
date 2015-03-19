@@ -86,12 +86,12 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
                                        this, shelf_, use_experience, show_database));
 
   // Generate random product poses
-  manipulation_->generateRandomProductPoses();
+  //manipulation_->generateRandomProductPoses();
 
   // Visualize
   ROS_DEBUG_STREAM_NAMED("apc_manager","Visualizing shelf");
   ROS_WARN_STREAM_NAMED("temp","disabled visualize shelf");
-  //visualizeShelf();
+  visualizeShelf();
 
   // Do system checks
   checkSystemReady();

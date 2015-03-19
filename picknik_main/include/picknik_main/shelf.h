@@ -174,9 +174,16 @@ public:
    */
   void setTopLeft(const Eigen::Affine3d& top_left);
 
-  // Color of object
-  rvt::colors color_;
-  
+  /**
+   * \brief Getter for Color
+   */ 
+  const rvt::colors& getColor() const;
+
+  /**
+   * \brief Setter for Color
+   */
+  void setColor(const rvt::colors& color);
+
 protected:
 
   // Name of object
@@ -199,6 +206,9 @@ protected:
   Eigen::Affine3d bottom_right_;
   Eigen::Affine3d top_left_;
 
+  // Color of object
+  rvt::colors color_;
+  
 };
 
 // -------------------------------------------------------------------------------------------------

@@ -182,17 +182,11 @@ void RectangleObject::setTopLeft(const Eigen::Affine3d& top_left)
   calcCentroid();
 }
 
-/**
- * \brief Getter for Color
- */ 
 const rvt::colors& RectangleObject::getColor() const
 {
   return color_;
 }
 
-/**
- * \brief Setter for Color
- */
 void RectangleObject::setColor(const rvt::colors& color)
 {
   color_ = color;
