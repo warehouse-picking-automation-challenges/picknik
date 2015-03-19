@@ -120,6 +120,16 @@ void RectangleObject::setName(std::string name)
   collision_object_name_ = name + "_" + boost::lexical_cast<std::string>(collision_id);
 }
 
+const std::string& RectangleObject::getCollisionName() const
+{
+  return collision_object_name_;
+}
+
+void RectangleObject::setCollisionName(std::string name)
+{
+  collision_object_name_ = name;
+}
+
 const std::string& RectangleObject::getHighResMeshPath()
 {
   return high_res_mesh_path_;
@@ -171,6 +181,23 @@ void RectangleObject::setTopLeft(const Eigen::Affine3d& top_left)
   top_left_ = top_left;
   calcCentroid();
 }
+
+/**
+ * \brief Getter for Color
+ */ 
+const rvt::colors& RectangleObject::getColor() const
+{
+  return color_;
+}
+
+/**
+ * \brief Setter for Color
+ */
+void RectangleObject::setColor(const rvt::colors& color)
+{
+  color_ = color;
+}
+
 
 // -------------------------------------------------------------------------------------------------
 // Bin Object
@@ -317,6 +344,11 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   if (!getDoubleParameter(nh,"goal_bin_z", goal_bin_z_))
     return false;
 
+  // Side limits (walls)
+  if (!getDoubleParameter(nh,"left_wall_y", left_wall_y_))
+    return false;
+  if (!getDoubleParameter(nh,"right_wall_y", right_wall_y_))
+    return false;
 
   // Calculate shelf corners
   bottom_right_.translation().x() = shelf_distance_from_robot_;
@@ -481,6 +513,26 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   goal_bin_->setHighResMeshPath("file://" + package_path + "/meshes/goal_bin/goal_bin.stl");
   goal_bin_->setCollisionMeshPath("file://" + package_path + "/meshes/goal_bin/goal_bin.stl");
 
+
+  // Side walls
+  static const double WALL_WIDTH = 0.05;
+  if (left_wall_y_ > 0.001 || left_wall_y_ < 0.001)
+  {
+    left_wall_.reset(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "left_wall"));
+    bottom_right = left_wall_->getBottomRight();
+    bottom_right.translation().x() = 1;
+    bottom_right.translation().y() = left_wall_y_;
+    bottom_right.translation().z() = 0;
+    left_wall_->setBottomRight(bottom_right);
+    top_left = left_wall_->getBottomRight();
+    top_left.translation().x() = -1;
+    top_left.translation().y() = left_wall_y_ + WALL_WIDTH;
+    top_left.translation().z() = shelf_height_;
+    left_wall_->setTopLeft(top_left);
+  }
+  
+  // TODO right wall
+
   // Load mesh file name
   high_res_mesh_path_ = "file://" + package_path + "/meshes/kiva_pod/meshes/pod_lowres.stl";
   collision_mesh_path_ = high_res_mesh_path_;
@@ -542,6 +594,12 @@ bool ShelfObject::visualize() const
   // Show goal bin
   goal_bin_->visualize(bottom_right_);
 
+  // Show wall limits
+  if (left_wall_)
+    left_wall_->visualize(bottom_right_);
+  if (right_wall_)
+    right_wall_->visualize(bottom_right_);
+
   // Show workspace
   static const double GAP_TO_SHELF = 0.1;
   const double x1 = shelf_distance_from_robot_ - GAP_TO_SHELF;
@@ -602,6 +660,12 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
 
   // Show goal bin
   goal_bin_->createCollisionBodies(bottom_right_);
+
+  // Show wall limits
+  if (left_wall_)
+    left_wall_->createCollisionBodies(bottom_right_);
+  if (right_wall_)
+    right_wall_->createCollisionBodies(bottom_right_);
 
   return visuals_->visual_tools_->triggerBatchPublishAndDisable();
 }
@@ -687,16 +751,9 @@ ProductObject::ProductObject(VisualsPtr visuals,
                          << high_res_mesh_path_ << " and collision mesh " << collision_mesh_path_);
 }
 
-std::string ProductObject::getCollisionName() const
-{
-  return collision_object_name_;
-}
-
-void ProductObject::setCollisionName(std::string name)
-{
-  collision_object_name_ = name;
-}
-
+// ------------------------------------------------------------------------------------------------------
+// Helper functions
+// ------------------------------------------------------------------------------------------------------
 bool getDoubleParameter(ros::NodeHandle &nh, const std::string &param_name, double &value)
 {
   // Load a param

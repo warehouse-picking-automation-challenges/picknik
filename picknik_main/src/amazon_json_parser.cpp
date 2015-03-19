@@ -24,7 +24,6 @@ AmazonJSONParser::AmazonJSONParser(bool verbose, VisualsPtr visuals)
   : verbose_(verbose)
   , visuals_(visuals)
 {
-  ROS_INFO_STREAM_NAMED("parser","AmazonJSONParser Ready.");
 }
 
 AmazonJSONParser::~AmazonJSONParser()

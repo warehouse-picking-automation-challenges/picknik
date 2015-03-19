@@ -398,7 +398,7 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   if (error)
   {
     std::string result = getActionResultString(res.error_code_, response.trajectory.joint_trajectory.points.empty());
-    ROS_ERROR_STREAM_NAMED("manipulation","Planning failed:: " << result);                           
+    ROS_ERROR_STREAM_NAMED("manipulation","Planning failed:: " << result);
   }
 
   // Visualize trajectory in Rviz display
@@ -1390,7 +1390,7 @@ bool Manipulation::visualizeGrasps(std::vector<moveit_grasps::GraspSolution> fil
     }
     //grasp_generator_->publishGraspArrow(filtered_grasps[i].grasp_.grasp_pose.pose, grasp_datas_[arm_jmg],
     //                                              rvt::BLUE, path_length);
-    
+
 
     const geometry_msgs::Pose& pose = filtered_grasps[i].grasp_.grasp_pose.pose;
     double roll = atan2(2*(pose.orientation.x*pose.orientation.y + pose.orientation.w*pose.orientation.z), pose.orientation.w*pose.orientation.w + pose.orientation.x*pose.orientation.x - pose.orientation.y*pose.orientation.y - pose.orientation.z*pose.orientation.z);
@@ -1398,7 +1398,7 @@ bool Manipulation::visualizeGrasps(std::vector<moveit_grasps::GraspSolution> fil
     double pitch = atan2(2*(pose.orientation.y*pose.orientation.z + pose.orientation.w*pose.orientation.x), pose.orientation.w*pose.orientation.w - pose.orientation.x*pose.orientation.x - pose.orientation.y*pose.orientation.y + pose.orientation.z*pose.orientation.z);
     std::cout << "ROLL: " << roll << " YALL: " << yall << " PITCH: " << pitch << std::endl;
 
-    visuals_->visual_tools_->publishText(pose, boost::lexical_cast<std::string>(yall), rvt::BLACK, rvt::SMALL, false);  
+    visuals_->visual_tools_->publishText(pose, boost::lexical_cast<std::string>(yall), rvt::BLACK, rvt::SMALL, false);
     //visuals_->visual_tools_->publishAxis(pose);
   }
   //visuals_->visual_tools_->triggerBatchPublishAndDisable();
@@ -1573,6 +1573,102 @@ bool Manipulation::getFilePath(std::string &file_path, const std::string &file_n
   file_path = rootPath.string();
 
   return true;
+}
+
+bool Manipulation::generateRandomProductPoses()
+{
+  ROS_INFO_STREAM_NAMED("manipulation","Generating random product poses");
+
+  const static double RAND_PADDING = 0.05;
+  const static std::size_t MAX_ATTEMPTS = 400;
+
+  // Setup random pose generator
+  Eigen::Affine3d pose;
+  Eigen::Affine3d world_to_bin_transform;
+  rviz_visual_tools::RandomPoseBounds pose_bounds;
+  pose_bounds.x_min_ = RAND_PADDING;
+  pose_bounds.y_min_ = RAND_PADDING;
+  pose_bounds.z_min_ = RAND_PADDING;
+  pose_bounds.x_max_ = 0.3 - RAND_PADDING;
+  pose_bounds.y_max_ = 0.25 - RAND_PADDING;
+  pose_bounds.z_max_ = 0.22 - RAND_PADDING;
+
+  // Show empty shelf
+  visuals_->visual_tools_->removeAllCollisionObjects();
+  bool just_frame = true;
+  bool show_all_products = false;
+  shelf_->createCollisionBodies("", just_frame, show_all_products); // only show the frame
+  visuals_->visual_tools_->triggerPlanningSceneUpdate();
+
+  // Loop through each bin
+  for (BinObjectMap::const_iterator bin_it = shelf_->getBins().begin(); bin_it != shelf_->getBins().end(); bin_it++)
+  {
+    if (!ros::ok())
+      return false;
+
+    BinObjectPtr bin = bin_it->second;
+    ROS_DEBUG_STREAM_NAMED("manipulation","Updating products in " << bin->getName());
+
+    // Loop through each product
+    for (std::size_t product_id = 0; product_id < bin->getProducts().size(); ++product_id)
+    {
+      ProductObjectPtr product = bin->getProducts()[product_id];
+      ROS_DEBUG_STREAM_NAMED("manipulation","Updating product " << product->getName());
+
+      // Loop until non-collision pose found
+      for (std::size_t i = 0; i < MAX_ATTEMPTS; ++i)
+      {
+        // Get random pose
+        visuals_->visual_tools_->generateRandomPose(pose, pose_bounds);
+
+        // Set pose of product
+        product->setCentroid(pose);
+
+        // Visualize and show in collision shelf
+        world_to_bin_transform = transform(bin->getBottomRight(), shelf_->getBottomRight());
+        product->visualize(world_to_bin_transform);
+        product->createCollisionBodies(world_to_bin_transform);
+       
+        // Check if in collision - Get planning scene lock
+        {
+          planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_);
+
+          // Create new planning scene
+          planning_scene::PlanningScene new_scene(robot_model_);
+
+          // Add product mesh to new planning scene
+          Eigen::Affine3d product_in_world = transform(product->getCentroid(), world_to_bin_transform);            
+          product->getCollisionObjectName();
+          product->getCollisionMeshPath();
+                                                  collision_mesh_path_, color_);
+
+          // Create request
+          collision_detection::CollisionRequest req;
+          req.verbose = true;
+          req.group_name = config_.right_arm_->getName();
+          collision_detection::CollisionResult  res;    
+
+          scene->getCollisionWorld()->checkWorldCollision(req, res, *new_scene.getCollisionWorld());
+
+          if (res.collision)
+          {
+            ROS_ERROR_STREAM_NAMED("temp","in collision");
+          }
+          else
+          {
+            ROS_INFO_STREAM_NAMED("temp","not in collision");
+          }
+          
+        }
+
+        ros::Duration(5.0).sleep();
+        break;
+      }
+      break;
+    }
+
+
+  }
 }
 
 } // end namespace

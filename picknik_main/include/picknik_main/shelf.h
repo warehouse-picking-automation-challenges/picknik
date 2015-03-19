@@ -115,6 +115,16 @@ public:
   void setName(std::string name);
 
   /**
+   * \brief Getter for collision name - unique in case there are more than 1 product with the same name
+   */
+  const std::string& getCollisionName() const;
+  
+  /**
+   * \brief Setter for collision name - unique in case there are more than 1 product with the same name
+   */
+  void setCollisionName(std::string name);
+
+  /**
    * \brief Getter for HighResMeshPath
    */ 
   const std::string& getHighResMeshPath();
@@ -366,6 +376,10 @@ public:
   double goal_bin_y_;
   double goal_bin_z_;
 
+  // Side limits (walls)
+  double left_wall_y_;
+  double right_wall_y_;
+
 private:
   // Walls of shelf
   std::vector<RectangleObject> shelf_parts_;
@@ -374,6 +388,8 @@ private:
   BinObjectMap bins_;
 
   RectangleObjectPtr goal_bin_;
+  RectangleObjectPtr left_wall_;
+  RectangleObjectPtr right_wall_;
 
   Eigen::Affine3d high_res_mesh_offset_;
 
@@ -389,16 +405,6 @@ public:
    * \brief Constructor
    */
   ProductObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name, const std::string &package_path);
-
-  /**
-   * \brief Getter for collision name - unique incase there are more than 1 product with the same name
-   */
-  std::string getCollisionName() const;
-  
-  /**
-   * \brief Setter for collision name - unique incase there are more than 1 product with the same name
-   */
-  void setCollisionName(std::string name);
 
 private:
 

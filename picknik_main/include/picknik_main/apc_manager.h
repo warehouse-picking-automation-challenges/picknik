@@ -31,6 +31,7 @@
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
 #include <std_msgs/Bool.h>
+#include <sensor_msgs/Joy.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 
@@ -87,7 +88,14 @@ public:
   /**
    * \brief Remote control from Rviz
    */
-  void remoteRunCallback(const std_msgs::Bool::ConstPtr& msg);
+  void remoteAutoCallback(const std_msgs::Bool::ConstPtr& msg);
+
+  /**
+   * \brief Recieves inputs from joystick
+   * \param input - description
+   * \return true on success
+   */
+  void joyCallback(const sensor_msgs::Joy::ConstPtr& msg);
 
   /**
    * \brief Main program runner
@@ -222,6 +230,12 @@ public:
   bool testJointLimits();
 
   /**
+   * \brief Send arm(s) to home position
+   * \return true on success
+   */
+  bool goHome();
+
+  /**
    * \brief Get the XML of a SDF pose of joints
    * \return true on success
    */
@@ -304,6 +318,7 @@ private:
   // Remote control
   ros::Subscriber remote_next_control_;
   ros::Subscriber remote_run_control_;
+  ros::Subscriber remote_joy_;
 
   // Robot-sepcific data for the APC
   ManipulationData config_;

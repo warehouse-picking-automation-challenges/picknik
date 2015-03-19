@@ -29,12 +29,6 @@ collision_wall_safety_margin: 0.01 # 0.02
 wait_before_grasp: 0.1
 wait_after_grasp: 0.1
 
-# Goal bin
-goal_bin_x: -0.64
-goal_bin_y: 0.65
-#goal_bin_z: 0.28 # actual
-goal_bin_z: 0.35
-
 # Perception Data
 camera:
   #x_translation_from_bin: -0.9 # meters

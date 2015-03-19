@@ -68,11 +68,8 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   ROS_DEBUG_STREAM_NAMED("apc_manager","Subscribing to button topics");
   std::size_t queue_size = 10;
   remote_next_control_ = nh_private_.subscribe("/picknik_main/next", queue_size, &APCManager::remoteNextCallback, this);
-  remote_run_control_ = nh_private_.subscribe("/picknik_main/run", queue_size, &APCManager::remoteRunCallback, this);
-
-  // Visualize
-  ROS_DEBUG_STREAM_NAMED("apc_manager","Visualizing shelf");
-  visualizeShelf();
+  remote_run_control_ = nh_private_.subscribe("/picknik_main/run", queue_size, &APCManager::remoteAutoCallback, this);
+  remote_joy_ = nh_private_.subscribe("/joy", queue_size, &APCManager::joyCallback, this);
 
   // Load manipulation data for our robot
   config_.load(robot_model_);
@@ -87,6 +84,14 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   // Create manipulation manager
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
                                        this, shelf_, use_experience, show_database));
+
+  // Generate random product poses
+  manipulation_->generateRandomProductPoses();
+
+  // Visualize
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Visualizing shelf");
+  ROS_WARN_STREAM_NAMED("temp","disabled visualize shelf");
+  //visualizeShelf();
 
   // Do system checks
   checkSystemReady();
@@ -108,7 +113,7 @@ bool APCManager::checkSystemReady()
   const robot_model::JointModelGroup* ee_jmg = grasp_datas_[config_.right_arm_].ee_jmg_;
   if (ee_jmg->getVariableCount() > 3)
   {
-    ROS_FATAL_STREAM_NAMED("apc_manager","Incorrect number of joints for group " << ee_jmg->getName() << ", joints: " 
+    ROS_FATAL_STREAM_NAMED("apc_manager","Incorrect number of joints for group " << ee_jmg->getName() << ", joints: "
                            << ee_jmg->getVariableCount());
     exit(-1);
   }
@@ -161,9 +166,53 @@ void APCManager::remoteNextCallback(const std_msgs::Bool::ConstPtr& msg)
   setReadyForNextStep();
 }
 
-void APCManager::remoteRunCallback(const std_msgs::Bool::ConstPtr& msg)
+void APCManager::remoteAutoCallback(const std_msgs::Bool::ConstPtr& msg)
 {
   setAutonomous();
+}
+
+void APCManager::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
+{
+  // Table of index number of /joy.buttons: ------------------------------------
+
+  // 0 - A
+  if (msg->buttons[0])
+    setReadyForNextStep();
+  // 1 - B
+  if (msg->buttons[1])
+    goHome();
+  // 2 - X
+  // 3 - Y
+  // 4 - LB
+  // 5 - RB
+  // 6 - back
+  // 7 - start
+  // 8 - power
+  if (msg->buttons[8])
+    setAutonomous();
+  // 9 - Button stick left
+  // 10 - Button stick right
+
+  // Table of index number of /joy.axis: ------------------------------------
+
+  // 0
+  // Left/Right Axis stick left
+  // 1
+  // Up/Down Axis stick left
+  // 2
+  // Left/Right Axis stick right
+  // 3
+  // Up/Down Axis stick right
+  // 4
+  // RT
+  // 4
+  // LT
+  // 6
+  // cross key left/right
+  // 7
+  // cross key up/down
+
+
 }
 
 bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to,
@@ -556,12 +605,14 @@ bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bo
 {
   // -----------------------------------------------------------------------------------------------
   // Move camera to the bin
+  std::cout << std::endl << std::endl << std::endl;
   ROS_INFO_STREAM_NAMED("apc_manager","Moving to bin " << order.bin_->getName());
-  if (!moveCameraToBin(order.bin_))
-  {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << order.bin_->getName());
-    return false;
-  }
+  ROS_WARN_STREAM_NAMED("temp","disabled");
+  // if (!moveCameraToBin(order.bin_))
+  // {
+  //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << order.bin_->getName());
+  //   return false;
+  // }
 
   // -----------------------------------------------------------------------------------------------
   // Communicate with perception pipeline
@@ -578,14 +629,15 @@ bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bo
   moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
 
   /// TODO - add a better link
-  find_object_goal.camera_pose = visuals_->visual_tools_->convertPose(current_state->getGlobalLinkTransform("jaco2_end_effector"));
+  //find_object_goal.camera_pose = visuals_->visual_tools_->convertPose(current_state->getGlobalLinkTransform("jaco2_end_effector"));
 
   find_objects_action_.sendGoal(find_object_goal);
 
 
   // -----------------------------------------------------------------------------------------------
   // Perturb camera
-  if (true)
+  ROS_WARN_STREAM_NAMED("temp","disabled");
+  if (false)
     if (!perturbCamera(order.bin_))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
@@ -612,7 +664,7 @@ bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bo
   // Update product with new pose
 
   Eigen::Affine3d object_pose_in_bin;
-  if (true)
+  if (false) // TODO remove
   {
     object_pose_in_bin = Eigen::Affine3d::Identity();
     object_pose_in_bin.translation().x() = 0.01;
@@ -642,7 +694,7 @@ bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bo
     object_pose = Eigen::Affine3d::Identity();
     visuals_->visual_tools_->publishCollisionBlock(visuals_->visual_tools_->convertPose(object_pose), "test_block",
                                                    0.2, rvt::GREEN);
- 
+
   }
   else
   {
@@ -840,7 +892,12 @@ bool APCManager::testEndEffectors()
       open = false;
       manipulation_->setStateWithOpenEE(open, current_state);
       visuals_->visual_tools_->publishRobotState(current_state);
+
+      // Close right and optionally right EE
       manipulation_->openEndEffector(open, config_.right_arm_);
+      if (config_.dual_arm_)
+        manipulation_->openEndEffector(open, config_.left_arm_);
+
       ros::Duration(4.0).sleep();
     }
     else
@@ -849,7 +906,11 @@ bool APCManager::testEndEffectors()
       open = true;
       manipulation_->setStateWithOpenEE(open, current_state);
       visuals_->visual_tools_->publishRobotState(current_state);
+
+      // Open right and optionally right EE
       manipulation_->openEndEffector(open, config_.right_arm_);
+      if (config_.dual_arm_)
+        manipulation_->openEndEffector(open, config_.left_arm_);
       ros::Duration(4.0).sleep();
     }
     ++i;
@@ -864,9 +925,6 @@ bool APCManager::testEndEffectors()
 
 bool APCManager::testUpAndDown()
 {
-  // Configure
-  const robot_model::JointModelGroup* arm_jmg = config_.right_arm_; // TODO single/dual logic
-
   double lift_distance_desired = 0.5;
 
   // Test
@@ -878,13 +936,17 @@ bool APCManager::testUpAndDown()
     if (i % 2 == 0)
     {
       std::cout << "Moving up --------------------------------------" << std::endl;
-      manipulation_->executeLiftPath(arm_jmg, lift_distance_desired, true);
+      manipulation_->executeLiftPath(config_.right_arm_, lift_distance_desired, true);
+      if (config_.dual_arm_)
+        manipulation_->executeLiftPath(config_.left_arm_, lift_distance_desired, true);
       ros::Duration(5.0).sleep();
     }
     else
     {
       std::cout << "Moving down ------------------------------------" << std::endl;
-      manipulation_->executeLiftPath(arm_jmg, lift_distance_desired, false);
+      manipulation_->executeLiftPath(config_.right_arm_, lift_distance_desired, false);
+      if (config_.dual_arm_)
+        manipulation_->executeLiftPath(config_.left_arm_, lift_distance_desired, false);
       ros::Duration(5.0).sleep();
     }
     ++i;
@@ -896,7 +958,7 @@ bool APCManager::testUpAndDown()
 
 bool APCManager::testShelfLocation()
 {
-  double safety_padding = -0.23; // Amount to prevent collision with shelf edge
+  static const double SAFETY_PADDING = -0.23; // Amount to prevent collision with shelf edge
   double velocity_scaling_factor = 0.75;
   Eigen::Affine3d ee_pose;
 
@@ -917,7 +979,7 @@ bool APCManager::testShelfLocation()
     // Move to far left front corner of bin
     ee_pose = shelf_->getBottomRight() * bin_it->second->getBottomRight(); // convert to world frame
     ee_pose.translation().y() += bin_it->second->getWidth();
-    ee_pose.translation().x() += safety_padding - grasp_datas_[config_.right_arm_].finger_to_palm_depth_;
+    ee_pose.translation().x() += SAFETY_PADDING - grasp_datas_[config_.right_arm_].finger_to_palm_depth_;
 
     // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
     ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
@@ -965,7 +1027,7 @@ bool APCManager::testShelfLocation()
     std::cout << std::endl;
     std::cout << "Waiting before going to next bin" << std::endl;
     waitForNextStep();
-  }
+  } // end for
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done testing shelf location");
   return true;
@@ -1063,23 +1125,7 @@ bool APCManager::testCameraPositions()
     const ProductObjectPtr product = bin->getProducts()[0]; // Choose first object
     WorkOrder order(bin, product);
 
-    // DEBUG
-    if (false)
-    {
-      Eigen::Affine3d rand_pose;
-      geometry_msgs::Pose temp = visuals_->visual_tools_->convertPose(rand_pose);
-      visuals_->visual_tools_->generateRandomPose(temp);
-      product->setCentroid(rand_pose);
-      // Set new pose
-      //order.product_->getBottomRight() = visuals_->visual_tools_->convertPose(perception_result->desired_object_pose);
-
-      printTransform(bin->getBottomRight());
-
-      // Update location visually
-      product->visualize(bin->getBottomRight());
-      break;
-    }
-
+    // Get pose
     Eigen::Affine3d object_pose;
     bool verbose = true;
     if (!getObjectPose(object_pose, order, verbose))
@@ -1180,9 +1226,22 @@ bool APCManager::testJointLimits()
   return true;
 }
 
+bool APCManager::goHome()
+{
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Going home");
+  if (config_.dual_arm_)
+  {
+    moveToStartPosition(config_.both_arms_);
+  }
+  else
+  {
+    moveToStartPosition(config_.right_arm_);
+  }
+}
+
 bool APCManager::getSRDFPose()
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","getSRDFPose()");
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Get SRDF pose");
 
   const std::vector<const moveit::core::JointModel*> joints = config_.right_arm_->getJointModels();
 
@@ -1227,7 +1286,7 @@ bool APCManager::visualizeShelf()
   shelf_->visualizeAxis(visuals_);
   visuals_->visual_tools_display_->triggerBatchPublishAndDisable();
 
-  // Now show empty shelf to help in reversing robot arms to initial position
+  // Show empty shelf to help in reversing robot arms to initial position
   visuals_->visual_tools_->removeAllCollisionObjects();
   bool just_frame = false;
   bool show_all_products = false;

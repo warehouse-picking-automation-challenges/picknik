@@ -17,7 +17,7 @@ Dave occasionally releases a new zip file with a lot of custom ROS code, that ca
 
 Unzip the file and put into a catkin workspace. Build using catkin_tools.
 
-![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/baxter_apc_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
+![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/picknik_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
 
 Also, to reduce debug output add the following to your bashrc:
 
@@ -59,7 +59,7 @@ order.
 
 The expected score for each object is the product of the probability
 of grasping it correctly (tweak them in
-`baxter_apc_main/orders/items_data.csv`) times the score for doing it
+`picknik_main/orders/items_data.csv`) times the score for doing it
 right (depends on the number of objects in the bin). Then, if there're
 multiple objects in the bin, we remove the product of the number of
 objects in the bin times the probablity of removing an object we
@@ -177,6 +177,19 @@ Run APC Manager (main program) for JACOB on hardware
 
 	roslaunch picknik_main jacob_apc.launch mode:=1
 
+### Joystick Control
+
+Control extra stuff:
+
+    rosrun joy joy_node
+
+Button Mapings
+
+    A - Next Step
+	B - Go Home
+	Xbox Button - AUTO
+
+
 ### PickNik Main Optional Arguments:
 
     mode - what program to run inside the apc_manager, defaults to 1
@@ -184,7 +197,7 @@ Run APC Manager (main program) for JACOB on hardware
 	    1. Actual APC contest mode
 		2. Train experience database mode / workspace analysis
 		3. Test open close end effectors
-		4. Only load JSON and visualize shelf
+		4. Visualize shelf
 		5. Raise the roof (go up and down)
 		6. Verify shelf location
 		7. SRDF: Get the current pose of the robot for the SRDF
@@ -194,6 +207,7 @@ Run APC Manager (main program) for JACOB on hardware
 		11. Move camera to each bin location and request ObjectRecognitionServer
 		12. Test camera calibration
 		13. Test joint limits
+		14. Go home
 	jump_to - which step in the manipulation pipeline to start on
 	  Steps: NOT CORRECT ANYMORE
 	    0. Move to initial position

@@ -295,6 +295,12 @@ public:
    */
   bool getFilePath(std::string &file_path, const std::string &file_name = "moveit_export.csv") const;
 
+  /**
+   * \brief Setup products randomly
+   * \return true on success
+   */
+  bool generateRandomProductPoses();
+
 protected:
 
   // A shared node handle

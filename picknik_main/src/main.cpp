@@ -178,9 +178,10 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Test joint limits");
       manager.testJointLimits();
       break;
-    // case 12:
-    //   ROS_INFO_STREAM_NAMED("main","");
-    //   break;
+    case 14:
+      ROS_INFO_STREAM_NAMED("main","Go to home position");
+      manager.goHome();
+      break;
     // case 12:
     //   ROS_INFO_STREAM_NAMED("main","");
     //   break;
