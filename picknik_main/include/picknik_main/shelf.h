@@ -367,12 +367,14 @@ public:
   double shelf_height_;
   double shelf_depth_;
   double shelf_wall_width_;
+  double shelf_inner_wall_width_;
   double first_bin_from_bottom_;
   double first_bin_from_right_;
 
   // Loaded bin parameter values
-  double bin_width_;
+  double bin_right_width_;
   double bin_middle_width_;
+  double bin_left_width_;
   double bin_short_height_;
   double bin_tall_height_;
   double bin_depth_;
