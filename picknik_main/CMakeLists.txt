@@ -101,6 +101,17 @@ target_link_libraries(shelf
   ${Boost_LIBRARIES}
 )
 
+# Product_simulator library
+add_library(product_simulator
+  src/product_simulator.cpp
+)
+target_link_libraries(product_simulator
+  visuals
+  shelf
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
 # Manipulation pipeline library
 add_library(manipulation
   src/manipulation.cpp
@@ -109,6 +120,7 @@ add_dependencies(manipulation picknik_main_generate_messages_cpp)
 target_link_libraries(manipulation
   visuals
   manipulation_data
+  product_simulator
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )

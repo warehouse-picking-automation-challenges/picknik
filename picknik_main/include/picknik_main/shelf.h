@@ -301,8 +301,7 @@ public:
   /**
    * \brief Show shelf in Rviz (not collision bodies)
    */
-  //bool visualize() const;
-  bool visualize() const;
+  bool visualize(bool show_products = true) const;
 
   /**
    * \brief Create collision bodies of shelf

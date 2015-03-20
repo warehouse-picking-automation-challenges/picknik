@@ -14,6 +14,7 @@
 
 // Amazon Pick Place Challenge
 #include <picknik_main/apc_manager.h>
+#include <picknik_main/product_simulator.h>
 
 namespace picknik_main
 {
@@ -85,16 +86,10 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
                                        this, shelf_, use_experience, show_database));
 
-  // Generate random product poses
-  manipulation_->generateRandomProductPoses();
-
-  // Visualize
-  ROS_DEBUG_STREAM_NAMED("apc_manager","Visualizing shelf");
-  ROS_WARN_STREAM_NAMED("temp","disabled visualize shelf");
-  visualizeShelf();
-
-  // Do system checks
-  checkSystemReady();
+  // Generate random product poses and visualize the shelf
+  bool product_simulator_verbose = false;
+  ProductSimulator product_simulator(product_simulator_verbose, visuals_, planning_scene_monitor_);
+  product_simulator.generateRandomProductPoses(shelf_);
 
   ROS_INFO_STREAM_NAMED("apc_manager","APC Manager Ready.");
 }
@@ -115,6 +110,13 @@ bool APCManager::checkSystemReady()
   {
     ROS_FATAL_STREAM_NAMED("apc_manager","Incorrect number of joints for group " << ee_jmg->getName() << ", joints: "
                            << ee_jmg->getVariableCount());
+    exit(-1);
+  }
+
+  // Check trajectory execution manager
+  if( !manipulation_->checkExecutionManager() )
+  {
+    ROS_FATAL_STREAM_NAMED("apc_manager","Trajectory controllers unable to connect");
     exit(-1);
   }
 

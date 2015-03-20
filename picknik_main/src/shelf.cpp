@@ -573,16 +573,19 @@ bool ShelfObject::visualizeAxis(VisualsPtr visuals) const
   }
 }
 
-bool ShelfObject::visualize() const
+bool ShelfObject::visualize(bool show_products) const
 {
   // Publish mesh
   if (!visuals_->visual_tools_display_->publishMesh(high_res_mesh_offset_, high_res_mesh_path_, rvt::BROWN, 1, "Shelf"))
     return false;
 
-  // Show each bin
-  for (BinObjectMap::const_iterator bin_it = bins_.begin(); bin_it != bins_.end(); bin_it++)
+  // Show each bin's products
+  if (show_products)
   {
-    bin_it->second->visualize(bottom_right_);
+    for (BinObjectMap::const_iterator bin_it = bins_.begin(); bin_it != bins_.end(); bin_it++)
+    {
+      bin_it->second->visualize(bottom_right_);
+    }
   }
 
   // Show goal bin

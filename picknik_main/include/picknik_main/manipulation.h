@@ -201,6 +201,12 @@ public:
   bool setStateWithOpenEE(bool open, moveit::core::RobotStatePtr robot_state);
 
   /**
+   * \brief Check that the controllers are connected and ready
+   * \return true on success
+   */
+  bool checkExecutionManager();
+
+  /**
    * \brief Send trajectory message to robot controllers
    * \return true on success
    */
