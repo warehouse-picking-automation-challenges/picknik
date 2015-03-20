@@ -76,7 +76,7 @@ bool RectangleObject::createCollisionBodies(const Eigen::Affine3d &trans) const
   }
 
   // Just use basic rectangle
-  visuals_->visual_tools_->publishCollisionRectangle( transform(bottom_right_, trans).translation(),
+  visuals_->visual_tools_->publishCollisionCuboid( transform(bottom_right_, trans).translation(),
                                                       transform(top_left_, trans).translation(),
                                                       collision_object_name_, color_ );
   return true;
@@ -238,7 +238,7 @@ bool BinObject::createCollisionBodies(const Eigen::Affine3d &trans) const
 {
   ROS_DEBUG_STREAM_NAMED("shelf","Creating collision bin " << name_);
 
-  visuals_->visual_tools_->publishCollisionRectangle( transform(bottom_right_, trans).translation(),
+  visuals_->visual_tools_->publishCollisionCuboid( transform(bottom_right_, trans).translation(),
                                                       transform(top_left_, trans).translation(),
                                                       name_, color_ );
 

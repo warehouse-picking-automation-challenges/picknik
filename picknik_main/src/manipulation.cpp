@@ -1077,8 +1077,8 @@ bool Manipulation::executeTrajectory(const moveit_msgs::RobotTrajectory &traject
     if (trajectory_msg.joint_trajectory.joint_names.size() > 3)
     {
       static std::size_t trajectory_count = 0;
-      //saveTrajectory(trajectory_msg, "trajectory_"+ boost::lexical_cast<std::string>(trajectory_count));
-      saveTrajectory(trajectory_msg, "trajectory");
+      saveTrajectory(trajectory_msg, "trajectory_"+ boost::lexical_cast<std::string>(trajectory_count));
+      //saveTrajectory(trajectory_msg, "trajectory");
       trajectory_count++;
     }
   }
@@ -1661,7 +1661,7 @@ bool Manipulation::generateRandomProductPoses()
           
         }
 
-        ros::Duration(5.0).sleep();
+        ros::Duration(1.0).sleep();
         break;
       }
       break;

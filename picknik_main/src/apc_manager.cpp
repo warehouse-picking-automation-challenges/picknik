@@ -86,7 +86,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
                                        this, shelf_, use_experience, show_database));
 
   // Generate random product poses
-  //manipulation_->generateRandomProductPoses();
+  manipulation_->generateRandomProductPoses();
 
   // Visualize
   ROS_DEBUG_STREAM_NAMED("apc_manager","Visualizing shelf");
@@ -939,7 +939,7 @@ bool APCManager::testUpAndDown()
       manipulation_->executeLiftPath(config_.right_arm_, lift_distance_desired, true);
       if (config_.dual_arm_)
         manipulation_->executeLiftPath(config_.left_arm_, lift_distance_desired, true);
-      ros::Duration(5.0).sleep();
+      ros::Duration(1.0).sleep();
     }
     else
     {
@@ -947,7 +947,7 @@ bool APCManager::testUpAndDown()
       manipulation_->executeLiftPath(config_.right_arm_, lift_distance_desired, false);
       if (config_.dual_arm_)
         manipulation_->executeLiftPath(config_.left_arm_, lift_distance_desired, false);
-      ros::Duration(5.0).sleep();
+      ros::Duration(1.0).sleep();
     }
     ++i;
   }
