@@ -52,8 +52,9 @@ bool RectangleObject::visualize(const Eigen::Affine3d& trans) const
     // Show axis
     visuals_->visual_tools_display_->publishAxis(transform(centroid_, trans), 0.1/2, 0.01/2);
 
-    // Show full resolution mesh
-    return visuals_->visual_tools_display_->publishMesh(transform(centroid_, trans), high_res_mesh_path_);
+    // Show full resolution mesh - scale = 1, id = 1, namespace = collision object name
+    return visuals_->visual_tools_display_->publishMesh(transform(centroid_, trans), high_res_mesh_path_, rvt::CLEAR, 1,
+                                                        collision_object_name_, 1);
   }
 
   // Show simple geometric shape
@@ -62,24 +63,51 @@ bool RectangleObject::visualize(const Eigen::Affine3d& trans) const
                                                             color_);
 }
 
-bool RectangleObject::createCollisionBodies(const Eigen::Affine3d &trans) const
+bool RectangleObject::loadCollisionBodies(const std::string& mesh_path)
+{
+  shapes::Shape *mesh = shapes::createMeshFromResource(mesh_path); // make sure its prepended by file://
+  shapes::ShapeMsg shape_msg; // this is a boost::variant type from shape_messages.h
+  if (!mesh || !shapes::constructMsgFromShape(mesh, shape_msg))
+  {
+    ROS_ERROR_STREAM_NAMED("shelf","Unable to create mesh shape message from resource " << mesh_path);
+    return false;
+  }      
+
+  mesh_msg_ = boost::get<shape_msgs::Mesh>(shape_msg);
+
+  return true;
+}
+
+const shape_msgs::Mesh& RectangleObject::getCollisionMesh() const
+{
+  return mesh_msg_;
+}
+  
+void RectangleObject::setCollisionMesh(const shape_msgs::Mesh& mesh)
+{
+  mesh_msg_ = mesh;
+}
+
+bool RectangleObject::createCollisionBodies(const Eigen::Affine3d &trans)
 {
   ROS_DEBUG_STREAM_NAMED("shelf","Creating collision body with name " << collision_object_name_);
 
   // Check if mesh is provided
   if (!collision_mesh_path_.empty())
   {
-    // Show mesh
-    visuals_->visual_tools_->publishCollisionMesh(transform(centroid_, trans), collision_object_name_, 
-                                                  collision_mesh_path_, color_);
-    return true;
+    // Check if mesh needs to be loaded
+    if (mesh_msg_.triangles.empty()) // load mesh from file      
+    {
+      if (!loadCollisionBodies(collision_mesh_path_))
+        return false;
+    }
+    return visuals_->visual_tools_->publishCollisionMesh(transform(centroid_, trans), collision_object_name_, mesh_msg_, color_);
   }
 
   // Just use basic rectangle
-  visuals_->visual_tools_->publishCollisionCuboid( transform(bottom_right_, trans).translation(),
-                                                      transform(top_left_, trans).translation(),
-                                                      collision_object_name_, color_ );
-  return true;
+  return visuals_->visual_tools_->publishCollisionCuboid( transform(bottom_right_, trans).translation(),
+                                                          transform(top_left_, trans).translation(),
+                                                          collision_object_name_, color_ );
 }
 
 void RectangleObject::calcCentroid()
@@ -234,16 +262,16 @@ bool BinObject::visualizeAxis(const Eigen::Affine3d& trans, VisualsPtr visuals) 
 
 }
 
-bool BinObject::createCollisionBodies(const Eigen::Affine3d &trans) const
-{
-  ROS_DEBUG_STREAM_NAMED("shelf","Creating collision bin " << name_);
+// bool BinObject::createCollisionBodies(const Eigen::Affine3d &trans) const
+// {
+//   ROS_DEBUG_STREAM_NAMED("shelf","Creating collision bin " << name_);
 
-  visuals_->visual_tools_->publishCollisionCuboid( transform(bottom_right_, trans).translation(),
-                                                      transform(top_left_, trans).translation(),
-                                                      name_, color_ );
+//   visuals_->visual_tools_->publishCollisionCuboid( transform(bottom_right_, trans).translation(),
+//                                                       transform(top_left_, trans).translation(),
+//                                                       name_, color_ );
 
-  return true;
-}
+//   return true;
+// }
 
 bool BinObject::createCollisionBodiesProducts(const Eigen::Affine3d &trans) const
 {
@@ -621,7 +649,7 @@ bool ShelfObject::visualize(bool show_products) const
   visuals_->visual_tools_display_->publishCuboid(point1, point2, rvt::DARK_GREY);
 }
 
-bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool only_show_shelf_frame, bool show_all_products) const
+bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool only_show_shelf_frame, bool show_all_products)
 {
   // Publish in batch
   visuals_->visual_tools_->enableBatchPublishing(true);
@@ -682,7 +710,7 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
   return visuals_->visual_tools_->triggerBatchPublishAndDisable();
 }
 
-bool ShelfObject::createCollisionShelfDetailed() const
+bool ShelfObject::createCollisionShelfDetailed()
 {
   ROS_DEBUG_STREAM_NAMED("shelf","Creating collision body with name " << collision_object_name_);
 

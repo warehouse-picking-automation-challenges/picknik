@@ -605,14 +605,16 @@ bool APCManager::calibrateCamera()
 
 bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose)
 {
+  BinObjectPtr& bin = order.bin_;
+  ProductObjectPtr& product = order.product_;
   // -----------------------------------------------------------------------------------------------
   // Move camera to the bin
   std::cout << std::endl << std::endl << std::endl;
-  ROS_INFO_STREAM_NAMED("apc_manager","Moving to bin " << order.bin_->getName());
+  ROS_INFO_STREAM_NAMED("apc_manager","Moving to bin " << bin->getName());
   ROS_WARN_STREAM_NAMED("temp","disabled");
-  // if (!moveCameraToBin(order.bin_))
+  // if (!moveCameraToBin(bin))
   // {
-  //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << order.bin_->getName());
+  //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
   //   return false;
   // }
 
@@ -622,10 +624,10 @@ bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bo
   // Setup goal
   ROS_INFO_STREAM_NAMED("apc_manager","Communicating with perception pipeline");
   picknik_msgs::FindObjectsGoal find_object_goal;
-  find_object_goal.desired_object_name = order.product_->getName();
+  find_object_goal.desired_object_name = product->getName();
 
   // Get all of the products in the bin
-  order.bin_->getProducts(find_object_goal.expected_objects_names);
+  bin->getProducts(find_object_goal.expected_objects_names);
 
   // Get the camera pose
   moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
@@ -640,7 +642,7 @@ bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bo
   // Perturb camera
   ROS_WARN_STREAM_NAMED("temp","disabled");
   if (false)
-    if (!perturbCamera(order.bin_))
+    if (!perturbCamera(bin))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
     }
@@ -656,7 +658,7 @@ bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bo
 
   // Get goal state
   actionlib::SimpleClientGoalState goal_state = find_objects_action_.getState();
-  ROS_INFO_STREAM_NAMED("apc_manager","Percetion action finished: " << goal_state.toString());
+  ROS_INFO_STREAM_NAMED("apc_manager","Perception action finished: " << goal_state.toString());
 
   // Get result
   picknik_msgs::FindObjectsResultConstPtr perception_result = find_objects_action_.getResult();
@@ -678,39 +680,35 @@ bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bo
     object_pose_in_bin = visuals_->visual_tools_->convertPose(perception_result->desired_object_pose);
   }
 
-  order.product_->setCentroid(object_pose_in_bin);
+  product->setCentroid(object_pose_in_bin);
 
   // Update location visually
   ROS_DEBUG_STREAM_NAMED("apc_manager","Visualizing shelf");
-  visualizeShelf();
 
   // Get new transform from shelf to bin to product
-  object_pose = transform(order.product_->getCentroid(), transform(order.bin_->getBottomRight(), shelf_->getBottomRight()));
-  printTransform(object_pose);
+  Eigen::Affine3d world_to_bin_transform = transform(bin->getBottomRight(), shelf_->getBottomRight());
+  object_pose = transform(product->getCentroid(), world_to_bin_transform);
 
-  // Show mesh if possible
+
+  // Show new mesh if possible
   if (perception_result->bounding_mesh.triangles.empty() || perception_result->bounding_mesh.vertices.empty())
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","No bounding mesh returned");
 
-    object_pose = Eigen::Affine3d::Identity();
-    visuals_->visual_tools_->publishCollisionBlock(visuals_->visual_tools_->convertPose(object_pose), "test_block",
-                                                   0.2, rvt::GREEN);
-
+    // Show in collision and display Rvizs
+    product->visualize(world_to_bin_transform);
+    product->createCollisionBodies(world_to_bin_transform);
   }
-  else
+  else 
   {
-    shape_msgs::Mesh bounding_mesh = perception_result->bounding_mesh;
-    visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
-    ros::Duration(1).sleep();
-    ros::spinOnce();
-    visuals_->visual_tools_->publishCollisionBlock(visuals_->visual_tools_->convertPose(object_pose), "test_block",
-                                                   0.1, rvt::GREEN);
-    visuals_->visual_tools_->publishCollisionMesh(visuals_->visual_tools_->convertPose(object_pose), "test_bounding_mesh",
-                                                  bounding_mesh, rvt::PURPLE);
+    product->setCollisionMesh(perception_result->bounding_mesh);
+
+    // Show in collision and display Rvizs
+    product->visualize(world_to_bin_transform);
+    product->createCollisionBodies(world_to_bin_transform);
   }
 
-  //visuals_->visual_tools_->publishArrow(object_pose, rvt::LIME_GREEN, rvt::LARGE);
+  visuals_->visual_tools_->triggerPlanningSceneUpdate();
 
   return true;
 }
@@ -1102,6 +1100,7 @@ bool APCManager::testRandomValidMotions()
   return true;
 }
 
+// Mode 11
 bool APCManager::testCameraPositions()
 {
   std::size_t bin_skipper = 0;

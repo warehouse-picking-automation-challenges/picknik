@@ -77,11 +77,10 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
   
   // Show empty shelf in Rviz DISPLAY
   visuals_->visual_tools_display_->deleteAllMarkers(); // clear all old markers
-  visuals_->visual_tools_display_->enableBatchPublishing(true);
+  visuals_->visual_tools_display_->enableBatchPublishing(true); // don't show markers yet
   bool show_products = false;
   shelf->visualize(show_products);
   shelf->visualizeAxis(visuals_);
-  visuals_->visual_tools_display_->triggerBatchPublishAndDisable();
 
   // Loop through each bin
   for (BinObjectMap::const_iterator bin_it = shelf->getBins().begin(); bin_it != shelf->getBins().end(); bin_it++)
@@ -142,6 +141,9 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
         ROS_ERROR_STREAM_NAMED("product_simulator","A product never had a random pose found and was not added to the planning scene");
     } // for each product
   } // for each bin
+
+  // Show all display markers at once
+  visuals_->visual_tools_display_->triggerBatchPublishAndDisable();
 }
 
 bool ProductSimulator::addCollisionMesh(ProductObjectPtr& product, const Eigen::Affine3d& trans)

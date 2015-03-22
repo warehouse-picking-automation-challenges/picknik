@@ -68,7 +68,6 @@ class RectangleObject
 public:
   /**
    * \brief Constructor
-   * \return
    */
   RectangleObject(VisualsPtr visuals, const rvt::colors &color = rvt::RAND, const std::string &name = "");
   
@@ -79,10 +78,27 @@ public:
   bool visualize(const Eigen::Affine3d& trans) const;
 
   /**
+   * \brief Load from file a collision mesh
+   * \param mesh_path - where to find the mesh resource
+   * \return true on success
+   */
+  bool loadCollisionBodies(const std::string& mesh_path);
+
+  /**
+   * \brief Getter for CollisionMesh
+   */ 
+  const shape_msgs::Mesh& getCollisionMesh() const;
+
+  /**
+   * \brief Setter for CollisionMesh
+   */
+  void setCollisionMesh(const shape_msgs::Mesh& mesh);
+
+  /**
    * \brief Create collision bodies of rectangle
    * \param trans - transform from parent container to current container
    */
-  bool createCollisionBodies(const Eigen::Affine3d &trans) const;
+  bool createCollisionBodies(const Eigen::Affine3d &trans);
 
   /**
    * \brief Get centroid of bounding box
@@ -196,6 +212,9 @@ protected:
   std::string high_res_mesh_path_;
   std::string collision_mesh_path_;
 
+  // Loaded mesh
+  shape_msgs::Mesh mesh_msg_;
+
   // A unique name to the world, whereas name_ can be duplicate e.g. oreo and oreo 
   std::string collision_object_name_;
 
@@ -208,7 +227,6 @@ protected:
 
   // Color of object
   rvt::colors color_;
-  
 };
 
 // -------------------------------------------------------------------------------------------------
@@ -242,7 +260,7 @@ public:
    * \brief Create collision bodies of bin
    * \param trans - transform from parent container to current container
    */
-  bool createCollisionBodies(const Eigen::Affine3d &trans) const;
+  //bool createCollisionBodies(const Eigen::Affine3d &trans) const;
 
   /**
    * \brief Add the products to be picked as collision objects
@@ -309,12 +327,12 @@ public:
    * \param only_show_shelf_frame - when false, show the contents of the shelf too
    * \param show_all_products - when false, only show the products of the focus bin
    */
-  bool createCollisionBodies(const std::string& focus_bin_name = "", bool only_show_shelf_frame = false, bool show_all_products = false) const;
+  bool createCollisionBodies(const std::string& focus_bin_name = "", bool only_show_shelf_frame = false, bool show_all_products = false);
 
   /**
    * \brief Represent shelf in MoveIt! planning scene
    */
-  bool createCollisionShelfDetailed() const;
+  bool createCollisionShelfDetailed();
 
   /**
    * \brief Getter for Bins
