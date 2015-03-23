@@ -9,20 +9,46 @@
 
 ## Install
 
-Dave occasionally releases a new zip file with a lot of custom ROS code, that can be built into one workspace. Download the latest zip (~700MB) from here:
+### Perception Pipeline
+
+Install ARPG's communication layer 'Node'. First, install ZeroMQ:
+
+	#sudo apt-get install libzmq3-dev
+	wget http://download.zeromq.org/zeromq-3.2.5.tar.gz
+	untargz zeromq-3.2.5
+	cd zeromq-3.2.5
+	./configure
+	sudo make install
+
+Then install Node:
+	
+    git clone git@github.com:arpg/Node.git
+	mkdir -p Node/build
+	cd Node/build
+	cmake ../	
+
+### PCL Dependenies
+
+TODO
+
+### Manipulation Pipeline
+
+Dave occasionally releases a new zip file with a lot of custom ROS code, that can be built into one workspace. Download the latest zip (~710MB) from here:
 
     Directory: http://picknik.io/secure
     User: picknik
     Password: sfd798asfiahfl89o7df980791324jhkls
 
-Unzip the file and put into a catkin workspace. Build using catkin_tools.
-
-![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/picknik_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
+Unzip the file and put into a catkin workspace and run ``catkin build``
 
 Also, to reduce debug output add the following to your bashrc:
 
     export ROSCONSOLE_CONFIG_FILE=~/ws_picknik/src/picknik/rosconsole.yaml
     export ROSCONSOLE_FORMAT='${severity} ${logger}: ${message}'
+
+## Architecture
+
+![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/picknik_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
 
 ## Run
 
