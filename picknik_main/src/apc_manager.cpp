@@ -86,9 +86,6 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
                                        this, shelf_, use_experience, show_database));
 
-  visualizeShelf();
-  return;
-
   // Generate random product poses and visualize the shelf
   bool product_simulator_verbose = false;
   ProductSimulator product_simulator(product_simulator_verbose, visuals_, planning_scene_monitor_);

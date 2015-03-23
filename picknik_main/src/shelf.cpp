@@ -336,6 +336,8 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     return false;
   if (!getDoubleParameter(nh,"shelf_inner_wall_width", shelf_inner_wall_width_))
     return false;
+  if (!getDoubleParameter(nh,"shelf_surface_thickness", shelf_surface_thickness_))
+    return false;
   if (!getDoubleParameter(nh,"first_bin_from_bottom", first_bin_from_bottom_))
     return false;
   if (!getDoubleParameter(nh,"first_bin_from_right", first_bin_from_right_))
@@ -377,7 +379,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   if (!getDoubleParameter(nh, "collision_wall_safety_margin", collision_wall_safety_margin_))
     return false;
 
-  // Calculate shelf corners
+  // Calculate shelf corners for *this ShelfObject
   bottom_right_.translation().x() = shelf_distance_from_robot_;
   bottom_right_.translation().y() = -shelf_width_/2.0;
   bottom_right_.translation().z() = 0;
@@ -385,75 +387,15 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   top_left_.translation().y() = shelf_width_/2.0;
   top_left_.translation().z() = shelf_height_;
 
-  // Calculate first bin location
-  Eigen::Affine3d bin1_bottom_right = Eigen::Affine3d::Identity();
-  bin1_bottom_right.translation().y() = first_bin_from_right_;
-  bin1_bottom_right.translation().z() = first_bin_from_bottom_;
-
-  // Create each bin
-  std::size_t bin_id = 0;
-  double this_bin_width;
-  double this_bin_height;
-  Eigen::Affine3d bottom_right;
-  Eigen::Affine3d top_left;
-  for (double z = bin1_bottom_right.translation().z();
-       z < shelf_height_; /* Increment */)
-  {
-
-    for (double y = bin1_bottom_right.translation().y();
-         y < shelf_width_ - bin_right_width_ * 0.9; /* Increment */)
-    {
-      // Create new bin
-      std::string bin_name = "bin_" + boost::lexical_cast<std::string>((char)(65 + num_bins_ - bin_id - 1)); // reverse the lettering
-      ROS_DEBUG_STREAM_NAMED("shelf","Creating bin '" << bin_name << "' with id " << bin_id);
-
-      insertBinHelper( rvt::GREEN, bin_name );
-
-      // Choose what height the current bin is
-      if (bin_id == 3 || bin_id == 4 || bin_id == 5 || bin_id == 6 || bin_id == 7 || bin_id == 8)
-        this_bin_height = bin_short_height_;
-      else
-        this_bin_height = bin_tall_height_;
-
-      // Calculate new bin location
-      bottom_right = bins_[bin_name]->getBottomRight();
-      bottom_right.translation().x() = bin1_bottom_right.translation().x();
-      bottom_right.translation().y() = y;
-      bottom_right.translation().z() = z;
-      bins_[bin_name]->setBottomRight(bottom_right);
-
-      // Choose what width the current bin is
-      if (bin_id == 1 || bin_id == 4 || bin_id == 7 || bin_id == 10)
-        this_bin_width = bin_middle_width_;
-      else
-        this_bin_width = bin_right_width_;
-
-      // Calculate new bin top left
-      top_left = bins_[bin_name]->getBottomRight();
-      top_left.translation().x() += bin_depth_;
-      top_left.translation().y() += this_bin_width;
-      top_left.translation().z() += this_bin_height;
-      bins_[bin_name]->setTopLeft(top_left);
-
-      // Increment
-      y = y + this_bin_width + shelf_inner_wall_width_;
-
-      bin_id ++;
-      if (bin_id >= num_bins_)
-        break;
-    }
-
-    // Increment
-    z = z + this_bin_height;
-
-    if (bin_id >= num_bins_)
-      break;
-  }
 
   // Create shelf parts -----------------------------
+  // Note: bottom right is at 0,0,0
+
+  Eigen::Affine3d bottom_right;
+  Eigen::Affine3d top_left;
+  // TODO delete first_bin_from_right_
 
   // Base
-  // Note: bottom right is at 0,0,0
   shelf_parts_.push_back(RectangleObject(visuals_, color_, "base"));
   RectangleObject &base = shelf_parts_.back();
   top_left = base.getTopLeft();
@@ -461,14 +403,15 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   top_left.translation().y() += shelf_width_;
   top_left.translation().z() += first_bin_from_bottom_;
   base.setTopLeft(top_left);
-  //base.bottom_right_.translation().x() -= 1;
 
   // Shelf Walls
   double previous_y = shelf_wall_width_ * 0.5;
   double this_shelf_wall_width;
+  double this_bin_width;
+  double bin_z;
+  std::size_t bin_id = 0;
   for (std::size_t wall_id = 0; wall_id < 4; ++wall_id)
   {
-    // Note: bottom right is at 0,0,0
     const std::string wall_name = "wall_" + boost::lexical_cast<std::string>(wall_id);
     shelf_parts_.push_back(RectangleObject(visuals_, color_, wall_name));
     RectangleObject &wall = shelf_parts_.back();
@@ -479,7 +422,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     else
       this_shelf_wall_width = shelf_wall_width_;
 
-    // Geometry 
+    // Shelf Wall Geometry 
     bottom_right = wall.getBottomRight();
     bottom_right.translation().x() = 0;
     bottom_right.translation().y() = previous_y - this_shelf_wall_width * 0.5;
@@ -504,10 +447,25 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
 
     // Increment the y location
     previous_y += this_bin_width + this_shelf_wall_width;
+
+
+    // Create a column of shelf bins from top to bottom
+    if (wall_id < 3)
+    {
+      bin_z = first_bin_from_bottom_;      
+      insertBinHelper(wall_id + 0, bin_tall_height_, this_bin_width, top_left.translation().y(), bin_z); // bottom rop
+      bin_z += bin_tall_height_;
+      insertBinHelper(wall_id + 3, bin_short_height_, this_bin_width, top_left.translation().y(), bin_z); // middle bottom row
+      bin_z += bin_short_height_;
+      insertBinHelper(wall_id + 6, bin_short_height_, this_bin_width, top_left.translation().y(), bin_z); // middle top row
+      bin_z += bin_short_height_;
+      insertBinHelper(wall_id + 9, bin_tall_height_, this_bin_width, top_left.translation().y(), bin_z); // top row
+    }
   }
 
   // Shelves
   double previous_z = first_bin_from_bottom_;
+  double this_bin_height;
   for (std::size_t i = 0; i < 5; ++i)
   {
     const std::string shelf_name = "surface_" + boost::lexical_cast<std::string>(i);
@@ -522,7 +480,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     shelf.setTopLeft(top_left);
 
     bottom_right = shelf.getBottomRight();
-    bottom_right.translation().z() = shelf.getTopLeft().translation().z() - shelf_wall_width_; // add thickenss
+    bottom_right.translation().z() = shelf.getTopLeft().translation().z() - shelf_surface_thickness_; // add thickenss
     shelf.setBottomRight(bottom_right);
 
     // Choose what height the current bin is
@@ -556,7 +514,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   // Side limit walls
   if (left_wall_y_ > 0.001 || left_wall_y_ < -0.001)
   {
-    left_wall_.reset(new RectangleObject(visuals_, rvt::TRANSLUCENT_DARK, "left_wall"));
+    left_wall_.reset(new RectangleObject(visuals_, rvt::YELLOW, "left_wall"));
     bottom_right = left_wall_->getBottomRight();
     bottom_right.translation().x() = 1;
     bottom_right.translation().y() = left_wall_y_;
@@ -570,7 +528,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   }
   if (right_wall_y_ > 0.001 || right_wall_y_ < -0.001)
   {
-    right_wall_.reset(new RectangleObject(visuals_, rvt::TRANSLUCENT_DARK, "right_wall"));
+    right_wall_.reset(new RectangleObject(visuals_, rvt::YELLOW, "right_wall"));
     bottom_right = right_wall_->getBottomRight();
     bottom_right.translation().x() = 1;
     bottom_right.translation().y() = right_wall_y_;
@@ -584,7 +542,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   }
   // Front wall limit
   static const double INTERNAL_WIDTH = 0.1;
-  front_wall_.reset(new RectangleObject(visuals_, rvt::TRANSLUCENT_DARK, "front_wall"));
+  front_wall_.reset(new RectangleObject(visuals_, rvt::YELLOW, "front_wall"));
   bottom_right = front_wall_->getBottomRight();
   bottom_right.translation().x() = -collision_wall_safety_margin_;
   bottom_right.translation().y() = - shelf_width_ / 2.0;
@@ -621,11 +579,30 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   return true;
 }
 
-bool ShelfObject::insertBinHelper(rvt::colors color, const std::string& name)
+bool ShelfObject::insertBinHelper(int bin_id, double height, double width, double wall_y, double bin_z)
 {
-  BinObjectPtr new_bin(new BinObject(visuals_, color, name));
+  std::string bin_name = "bin_" + boost::lexical_cast<std::string>((char)(65 + num_bins_ - bin_id - 1)); // reverse the lettering
+  //std::string bin_name = "bin_" + boost::lexical_cast<std::string>(bin_id);
+  ROS_DEBUG_STREAM_NAMED("shelf","Creating bin '" << bin_name << "' with id " << bin_id);
 
-  bins_.insert( std::pair<std::string, BinObjectPtr>(name, new_bin));
+  BinObjectPtr new_bin(new BinObject(visuals_, rvt::MAGENTA, bin_name));
+  bins_.insert( std::pair<std::string, BinObjectPtr>(bin_name, new_bin));
+
+
+  // Calculate bottom right
+  Eigen::Affine3d bottom_right = Eigen::Affine3d::Identity();
+  bottom_right.translation().x() = 0;
+  bottom_right.translation().y() = wall_y;
+  bottom_right.translation().z() = bin_z;
+  new_bin->setBottomRight(bottom_right);
+
+  // Calculate top left
+  Eigen::Affine3d top_left = Eigen::Affine3d::Identity();
+  top_left.translation().x() += bin_depth_;
+  top_left.translation().y() += wall_y + width;
+  top_left.translation().z() += bin_z + height - shelf_surface_thickness_;
+  new_bin->setTopLeft(top_left);
+
 
   return true;
 }

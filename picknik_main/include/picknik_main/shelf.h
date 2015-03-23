@@ -309,7 +309,7 @@ public:
   /**
    * \brief Helper for creating a bin
    */
-  bool insertBinHelper(rvt::colors color, const std::string& name);
+  bool insertBinHelper(int bin_id, double height, double width, double wall_y, double bin_z);
 
   /**
    * \brief Show coordinate system
@@ -433,6 +433,7 @@ public:
   double shelf_height_;
   double shelf_depth_;
   double shelf_wall_width_;
+  double shelf_surface_thickness_;
   double shelf_inner_wall_width_;
   double first_bin_from_bottom_;
   double first_bin_from_right_;
