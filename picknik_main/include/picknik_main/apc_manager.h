@@ -45,6 +45,7 @@ static const std::string ROBOT_DESCRIPTION = "robot_description";
 static const std::string JOINT_STATE_TOPIC = "/robot/joint_states";
 static const std::string PACKAGE_NAME = "picknik_main";
 static const std::string GET_PLANNING_SCENE_SERVICE_NAME = "get_planning_scene"; // name of the service that can be used to query the planning scene
+static const double PRODUCT_POSE_WITHIN_BIN_TOLERANCE = 0.2; // throw an error if pose is beyond this amount
 
 //MOVEIT_CLASS_FORWARD(APCManager);
 
@@ -133,8 +134,15 @@ public:
    * \param order - desired object
    * \return true on success
    */
-  bool getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose);
-  bool getObjectPoseFake(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose);
+  bool perceiveObject(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose);
+  bool perceiveObjectFake(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose);
+
+  /**
+   * \brief Update the pose, and optionally the mesh, of a particular product
+   * \return false if outside the error tolerance bounds of a pose within a bin
+   */
+  bool processNewObjectPose(Eigen::Affine3d& input_pose, const shape_msgs::Mesh& mesh,
+                            ProductObjectPtr& product, BinObjectPtr& bin);
 
   /**
    * \brief Move camera around to get good view of bin

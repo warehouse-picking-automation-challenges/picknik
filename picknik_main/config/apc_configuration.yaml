@@ -36,8 +36,7 @@ wait_after_grasp: 0.1
 
 # Perception Data
 camera:
-  #x_translation_from_bin: -0.9 # meters
-  x_translation_from_bin: -0.6 # meters
+  x_translation_from_bin: -0.5 # meters
   y_translation_from_bin: 0.0 # negative is right looking at shelf
   z_translation_from_bin: -0.1 # negative is down
   x_rotation_from_standard_grasp: 0 #-0.2  # radians

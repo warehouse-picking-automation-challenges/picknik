@@ -263,7 +263,9 @@ bool Manipulation::moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_
 
   // Setup collision checking with a locked planning scene
   {
-    bool collision_checking_verbose = true;
+    bool collision_checking_verbose = false;
+    if (collision_checking_verbose)
+      ROS_WARN_STREAM_NAMED("manipulation","moveEEToPose() has collision_checking_verbose turned on");
     boost::scoped_ptr<planning_scene_monitor::LockedPlanningSceneRO> ls;
     ls.reset(new planning_scene_monitor::LockedPlanningSceneRO(planning_scene_monitor_));
     robot_state::GroupStateValidityCallbackFn constraint_fn
@@ -283,7 +285,7 @@ bool Manipulation::moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_
   ROS_INFO_STREAM_NAMED("manipulation","Found solution to pose request");
 
   // Debug
-  visuals_->visual_tools_->publishRobotState( goal_state, rvt::PURPLE );
+  //visuals_->visual_tools_->publishRobotState( goal_state, rvt::PURPLE );
 
   // Plan to this position
   bool verbose = true;
@@ -1210,7 +1212,7 @@ bool Manipulation::saveTrajectory(const moveit_msgs::RobotTrajectory &trajectory
     output_file << std::endl;
   }
   output_file.close();
-  ROS_INFO_STREAM_NAMED("manipulation","Saved trajectory to file " << file_path);
+  ROS_DEBUG_STREAM_NAMED("manipulation","Saved trajectory to file " << file_path);
   return true;
 }
 

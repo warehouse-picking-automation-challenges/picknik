@@ -90,7 +90,7 @@ void RectangleObject::setCollisionMesh(const shape_msgs::Mesh& mesh)
 
 bool RectangleObject::createCollisionBodies(const Eigen::Affine3d &trans)
 {
-  ROS_DEBUG_STREAM_NAMED("shelf","Creating collision body with name " << collision_object_name_);
+  ROS_DEBUG_STREAM_NAMED("shelf","Adding/updating collision body '" << collision_object_name_ << "'");
 
   // Check if mesh is provided
   if (!collision_mesh_path_.empty())
@@ -304,7 +304,6 @@ ProductObjectPtr BinObject::getProduct(const std::string& name)
   {
     if (products_[prod_id]->getName() == name)
     {
-      ROS_DEBUG_STREAM_NAMED("shelf","Found product " << name);
       return products_[prod_id];
     }
   }
@@ -553,7 +552,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
 
 
   // Side limit walls
-  if (left_wall_y_ > 0.001 || left_wall_y_ < 0.001)
+  if (left_wall_y_ > 0.001 || left_wall_y_ < -0.001)
   {
     left_wall_.reset(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "left_wall"));
     bottom_right = left_wall_->getBottomRight();
@@ -566,6 +565,20 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     top_left.translation().y() = left_wall_y_ + shelf_wall_width_;
     top_left.translation().z() = shelf_height_;
     left_wall_->setTopLeft(top_left);
+  }
+  if (right_wall_y_ > 0.001 || right_wall_y_ < -0.001)
+  {
+    right_wall_.reset(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "right_wall"));
+    bottom_right = right_wall_->getBottomRight();
+    bottom_right.translation().x() = 1;
+    bottom_right.translation().y() = right_wall_y_;
+    bottom_right.translation().z() = 0;
+    right_wall_->setBottomRight(bottom_right);
+    top_left = right_wall_->getBottomRight();
+    top_left.translation().x() = -1;
+    top_left.translation().y() = right_wall_y_ + shelf_wall_width_;
+    top_left.translation().z() = shelf_height_;
+    right_wall_->setTopLeft(top_left);
   }
   
   // TODO right wall
@@ -763,7 +776,6 @@ bool ShelfObject::deleteProduct(const std::string &bin_name, const std::string &
   {
     if (products[prod_id]->getName() == product_name)
     {
-      ROS_DEBUG_STREAM_NAMED("shelf","Found product to delete: " << product_name);
       products.erase(products.begin() + prod_id);
       return true;
     }
@@ -787,8 +799,8 @@ ProductObject::ProductObject(VisualsPtr visuals,
   collision_mesh_path_ = "file://" + package_path + "/meshes/products/" + name_ + "/collision.stl";
 
   // Debug
-  ROS_DEBUG_STREAM_NAMED("shelf","Creating collision product with name " << collision_object_name_ << " from mesh " 
-                         << high_res_mesh_path_ << " and collision mesh " << collision_mesh_path_);
+  ROS_DEBUG_STREAM_NAMED("shelf","Creating collision product with name " << collision_object_name_ << " from mesh: " 
+                         << high_res_mesh_path_ << "\n Collision mesh: " << collision_mesh_path_);
 }
 
 // ------------------------------------------------------------------------------------------------------

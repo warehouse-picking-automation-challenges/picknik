@@ -123,6 +123,10 @@ int main(int argc, char** argv)
 
   picknik_main::APCManager manager(verbose, order_fp, use_experience, show_database);
 
+  std::cout << std::endl;
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+
   switch (mode)
   {
     case 1:
@@ -173,7 +177,7 @@ int main(int argc, char** argv)
       manager.testRandomValidMotions();
       break;
     case 11:
-      ROS_INFO_STREAM_NAMED("main","Moving to camera positions");
+      ROS_INFO_STREAM_NAMED("main","Moving camera to each bin location");
       manager.checkSystemReady();
       manager.testCameraPositions();
       break;

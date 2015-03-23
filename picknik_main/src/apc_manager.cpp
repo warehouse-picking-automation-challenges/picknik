@@ -128,7 +128,7 @@ bool APCManager::checkSystemReady()
   }
 
   // Check robot state valid
-  while (ros::ok() && !manipulation_->checkCurrentCollisionAndBounds(config_.right_arm_))
+  while (ros::ok() && !manipulation_->checkCurrentCollisionAndBounds(config_.both_arms_))
   {
     ros::Duration(1.0).sleep();
   }
@@ -343,7 +343,7 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
         }
 
         // Get pose of product
-        if (!getObjectPoseFake(object_pose, order, verbose))
+        if (!perceiveObject(object_pose, order, verbose))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
           return false;
@@ -551,8 +551,11 @@ bool APCManager::moveCameraToBin(BinObjectPtr bin)
   visuals_->visual_tools_->publishAxis(ee_pose);
   visuals_->visual_tools_->publishText(ee_pose, "camera_pose", rvt::BLACK, rvt::SMALL, false);
 
+  // Choose which arm to utilize for task
+  const robot_model::JointModelGroup* arm_jmg = chooseArm(ee_pose);
+
   // Translate to custom end effector geometry
-  ee_pose = ee_pose * grasp_datas_[config_.right_arm_].grasp_pose_to_eef_pose_;
+  ee_pose = ee_pose * grasp_datas_[arm_jmg].grasp_pose_to_eef_pose_;
 
   // Customize the direction it is pointing
   // Roll Angle
@@ -562,7 +565,7 @@ bool APCManager::moveCameraToBin(BinObjectPtr bin)
   // Yaw Angle
   ee_pose = ee_pose * Eigen::AngleAxisd(config_.camera_y_rotation_from_standard_grasp_, Eigen::Vector3d::UnitY());
 
-  return manipulation_->moveEEToPose(ee_pose, config_.main_velocity_scaling_factor_, config_.right_arm_);
+  return manipulation_->moveEEToPose(ee_pose, config_.main_velocity_scaling_factor_, arm_jmg);
 }
 
 bool APCManager::calibrateCamera()
@@ -589,7 +592,11 @@ bool APCManager::calibrateCamera()
     if (i > 0)
       velcity_scaling_factor = config_.calibration_velocity_scaling_factor_;
 
-    if (!manipulation_->moveToPose(config_.right_arm_, poses[i], velcity_scaling_factor))
+    // Choose which arm to utilize for task
+    ROS_WARN_STREAM_NAMED("temp","no logic for dual arm robot calibration");
+    const robot_model::JointModelGroup* arm_jmg = config_.right_arm_;
+
+    if (!manipulation_->moveToPose(arm_jmg, poses[i], velcity_scaling_factor))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to pose " << poses[i]);
       return false;
@@ -603,20 +610,19 @@ bool APCManager::calibrateCamera()
   return true;
 }
 
-bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose)
+bool APCManager::perceiveObject(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose)
 {
   BinObjectPtr& bin = order.bin_;
   ProductObjectPtr& product = order.product_;
+
   // -----------------------------------------------------------------------------------------------
   // Move camera to the bin
-  std::cout << std::endl << std::endl << std::endl;
-  ROS_INFO_STREAM_NAMED("apc_manager","Moving to bin " << bin->getName());
-  ROS_WARN_STREAM_NAMED("temp","disabled");
-  // if (!moveCameraToBin(bin))
-  // {
-  //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
-  //   return false;
-  // }
+  ROS_INFO_STREAM_NAMED("apc_manager","Moving to bin " << bin->getName() << "\n\n\n");
+  if (!moveCameraToBin(bin))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
+    return false;
+  }
 
   // -----------------------------------------------------------------------------------------------
   // Communicate with perception pipeline
@@ -630,26 +636,22 @@ bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bo
   bin->getProducts(find_object_goal.expected_objects_names);
 
   // Get the camera pose
-  moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
-
+  //moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
   /// TODO - add a better link
   //find_object_goal.camera_pose = visuals_->visual_tools_->convertPose(current_state->getGlobalLinkTransform("jaco2_end_effector"));
 
+  // Send request
   find_objects_action_.sendGoal(find_object_goal);
-
 
   // -----------------------------------------------------------------------------------------------
   // Perturb camera
-  ROS_WARN_STREAM_NAMED("temp","disabled");
-  if (false)
-    if (!perturbCamera(bin))
-    {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
-    }
+  if (!perturbCamera(bin))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
+  }
 
   // -----------------------------------------------------------------------------------------------
   // Wait for the action to return with product pose
-
   if (!find_objects_action_.waitForResult(ros::Duration(30.0)))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Percetion action did not finish before the time out.");
@@ -662,58 +664,20 @@ bool APCManager::getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bo
 
   // Get result
   picknik_msgs::FindObjectsResultConstPtr perception_result = find_objects_action_.getResult();
-  std::cout << "Perception_Result:\n " << *perception_result << std::endl;
+  ROS_DEBUG_STREAM_NAMED("apc_manager.perception","Perception result:\n" << *perception_result);
 
   // -----------------------------------------------------------------------------------------------
   // Update product with new pose
+  object_pose = visuals_->visual_tools_->convertPose(perception_result->desired_object_pose);
 
-  Eigen::Affine3d object_pose_in_bin;
-  if (false) // TODO remove
-  {
-    object_pose_in_bin = Eigen::Affine3d::Identity();
-    object_pose_in_bin.translation().x() = 0.01;
-    object_pose_in_bin.translation().y() = 0.01;
-    object_pose_in_bin.translation().z() = 0.01;
-  }
-  else
-  {
-    object_pose_in_bin = visuals_->visual_tools_->convertPose(perception_result->desired_object_pose);
-  }
-
-  product->setCentroid(object_pose_in_bin);
-
-  // Update location visually
-  ROS_DEBUG_STREAM_NAMED("apc_manager","Visualizing shelf");
-
-  // Get new transform from shelf to bin to product
-  Eigen::Affine3d world_to_bin_transform = transform(bin->getBottomRight(), shelf_->getBottomRight());
-  object_pose = transform(product->getCentroid(), world_to_bin_transform);
-
-
-  // Show new mesh if possible
-  if (perception_result->bounding_mesh.triangles.empty() || perception_result->bounding_mesh.vertices.empty())
-  {
-    ROS_ERROR_STREAM_NAMED("apc_manager","No bounding mesh returned");
-
-    // Show in collision and display Rvizs
-    product->visualize(world_to_bin_transform);
-    product->createCollisionBodies(world_to_bin_transform);
-  }
-  else 
-  {
-    product->setCollisionMesh(perception_result->bounding_mesh);
-
-    // Show in collision and display Rvizs
-    product->visualize(world_to_bin_transform);
-    product->createCollisionBodies(world_to_bin_transform);
-  }
-
-  visuals_->visual_tools_->triggerPlanningSceneUpdate();
+  // Check bounds
+  if (!processNewObjectPose(object_pose, perception_result->bounding_mesh, product, bin))
+    return false;
 
   return true;
 }
 
-bool APCManager::getObjectPoseFake(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose)
+bool APCManager::perceiveObjectFake(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose)
 {
   // -----------------------------------------------------------------------------------------------
   // Move camera to the bin
@@ -766,27 +730,101 @@ bool APCManager::getObjectPoseFake(Eigen::Affine3d& object_pose, WorkOrder order
   return true;
 }
 
+bool APCManager::processNewObjectPose(Eigen::Affine3d& object_pose, const shape_msgs::Mesh& mesh,
+                                      ProductObjectPtr& product, BinObjectPtr& bin)
+{
+  // Check bounds
+  if (
+      object_pose.translation().x() < 0 ||
+      object_pose.translation().x() > bin->getDepth() ||
+      object_pose.translation().y() < 0 ||
+      object_pose.translation().y() > bin->getWidth() ||
+      object_pose.translation().z() < 0 ||
+      object_pose.translation().z() > bin->getHeight()
+      )
+  {
+    if (
+        object_pose.translation().x() < -PRODUCT_POSE_WITHIN_BIN_TOLERANCE ||
+        object_pose.translation().x() > bin->getDepth() + PRODUCT_POSE_WITHIN_BIN_TOLERANCE ||
+        object_pose.translation().y() < -PRODUCT_POSE_WITHIN_BIN_TOLERANCE ||
+        object_pose.translation().y() > bin->getWidth() + PRODUCT_POSE_WITHIN_BIN_TOLERANCE||
+        object_pose.translation().z() < -PRODUCT_POSE_WITHIN_BIN_TOLERANCE ||
+        object_pose.translation().z() > bin->getHeight() + PRODUCT_POSE_WITHIN_BIN_TOLERANCE
+        )
+    {
+      // Do not continue because outside of tolerance
+      ROS_ERROR_STREAM_NAMED("apc_manager","Product " << product->getName() << " has a reported pose from the perception pipline that is outside the tolerance of " << PRODUCT_POSE_WITHIN_BIN_TOLERANCE);
+      ROS_ERROR_STREAM_NAMED("apc_manager","Pose:\n" << visuals_->visual_tools_->convertPose(object_pose));
+      return false;
+    }
+    else
+    {
+      // Its within error tolerance, just warn
+      ROS_WARN_STREAM_NAMED("apc_manager","Product " << product->getName() << " has a reported pose from the perception pipline that is outside the bounds of the bin shape");
+      ROS_WARN_STREAM_NAMED("apc_manager","Pose:\n" << visuals_->visual_tools_->convertPose(object_pose));
+    }
+  }
+
+  // Get new transform from shelf to bin to product
+  Eigen::Affine3d world_to_bin_transform = transform(bin->getBottomRight(), shelf_->getBottomRight());
+  object_pose = transform(product->getCentroid(), world_to_bin_transform);
+
+  // Show new mesh if possible
+  if (mesh.triangles.empty() || mesh.vertices.empty())
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","No bounding mesh returned");
+
+    // Show in collision and display Rvizs
+    product->visualize(world_to_bin_transform);
+    product->createCollisionBodies(world_to_bin_transform);
+  }
+  else
+  {
+    product->setCollisionMesh(mesh);
+
+    // Show in collision and display Rvizs
+    product->visualize(world_to_bin_transform);
+    product->createCollisionBodies(world_to_bin_transform);
+  }
+
+  visuals_->visual_tools_->triggerPlanningSceneUpdate();
+
+  // Save to the product's property
+  product->setCentroid(object_pose);
+
+  return true;
+}
+
 bool APCManager::perturbCamera(BinObjectPtr bin)
 {
+  // Note: assumes arm is already pointing at centroid of desired bin
   ROS_INFO_STREAM_NAMED("apc_manager","Perturbing camera for perception");
 
+  // Choose which arm to utilize for task
+  Eigen::Affine3d ee_pose = bin->getCentroid();
+  ee_pose = transform(ee_pose, shelf_->getBottomRight()); // convert to world coordinates
+  const robot_model::JointModelGroup* arm_jmg = chooseArm(ee_pose);
+
   //Move camera left
+  std::cout << std::endl << std::endl << std::endl;
   ROS_INFO_STREAM_NAMED("apc_manager","Moving camera left distance " << config_.camera_left_distance_);
   bool left = true;
-  if (!manipulation_->executeLeftPath(config_.right_arm_, config_.camera_left_distance_, left))
+  if (!manipulation_->executeLeftPath(arm_jmg, config_.camera_left_distance_, left))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move left");
   }
 
   // Move camera right
+  std::cout << std::endl << std::endl << std::endl;
   ROS_INFO_STREAM_NAMED("apc_manager","Moving camera right distance " << config_.camera_left_distance_ * 2.0);
   left = false;
-  if (!manipulation_->executeLeftPath(config_.right_arm_, config_.camera_left_distance_ * 2.0, left))
+  if (!manipulation_->executeLeftPath(arm_jmg, config_.camera_left_distance_ * 2.0, left))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move right");
   }
 
   // Move back to center
+  std::cout << std::endl << std::endl << std::endl;
   if (!moveCameraToBin(bin))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
@@ -794,16 +832,18 @@ bool APCManager::perturbCamera(BinObjectPtr bin)
   }
 
   // Move camera up
+  std::cout << std::endl << std::endl << std::endl;
   ROS_INFO_STREAM_NAMED("apc_manager","Lifting camera distance " << config_.camera_lift_distance_);
-  if (!manipulation_->executeLiftPath(config_.right_arm_, config_.camera_lift_distance_))
+  if (!manipulation_->executeLiftPath(arm_jmg, config_.camera_lift_distance_))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move up");
   }
 
   // Move camera down
+  std::cout << std::endl << std::endl << std::endl;
   ROS_INFO_STREAM_NAMED("apc_manager","Lowering camera distance " << config_.camera_lift_distance_ * 2.0);
   bool up = false;
-  if (!manipulation_->executeLiftPath(config_.right_arm_, config_.camera_lift_distance_ * 2.0, up))
+  if (!manipulation_->executeLiftPath(arm_jmg, config_.camera_lift_distance_ * 2.0, up))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move down");
   }
@@ -828,19 +868,20 @@ bool APCManager::waitForNextStep()
 
 const robot_model::JointModelGroup* APCManager::chooseArm(const Eigen::Affine3d& object_pose)
 {
-  if (!config_.dual_arm_) // jacob
+  // Single Arm
+  if (!config_.dual_arm_)
   {
-    return config_.right_arm_;
+    return config_.right_arm_; // right is always the default arm for single arm robots
   }
-  // Baxter: choose which arm
-  else if (object_pose.translation().y() <= 0)
+  // Dual Arm
+  else if (object_pose.translation().y() < 0)
   {
-    ROS_INFO_STREAM_NAMED("apc_manager","Using right arm to grasp product");
+    ROS_INFO_STREAM_NAMED("apc_manager","Using right arm for task");
     return config_.right_arm_;
   }
   else
   {
-    ROS_INFO_STREAM_NAMED("apc_manager","Using left arm to grasp product");
+    ROS_INFO_STREAM_NAMED("apc_manager","Using left arm for task");
     return config_.left_arm_;
   }
 }
@@ -964,6 +1005,8 @@ bool APCManager::testShelfLocation()
 
   // Set EE as closed so that we can touch the tip easier
   manipulation_->openEndEffector(false, config_.right_arm_);
+  if (config_.dual_arm_)
+    manipulation_->openEndEffector(false, config_.left_arm_);
 
   // Reduce collision world to simple
   manipulation_->createCollisionWall();
@@ -979,19 +1022,22 @@ bool APCManager::testShelfLocation()
     // Move to far left front corner of bin
     ee_pose = shelf_->getBottomRight() * bin_it->second->getBottomRight(); // convert to world frame
     ee_pose.translation().y() += bin_it->second->getWidth();
-    ee_pose.translation().x() += SAFETY_PADDING - grasp_datas_[config_.right_arm_].finger_to_palm_depth_;
+
+    const robot_model::JointModelGroup* arm_jmg = chooseArm(ee_pose);
+
+    ee_pose.translation().x() += SAFETY_PADDING - grasp_datas_[arm_jmg].finger_to_palm_depth_;
 
     // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
     ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
     ee_pose = ee_pose * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ());
 
     // Translate to custom end effector geometry
-    ee_pose = ee_pose * grasp_datas_[config_.right_arm_].grasp_pose_to_eef_pose_;
+    ee_pose = ee_pose * grasp_datas_[arm_jmg].grasp_pose_to_eef_pose_;
 
     // Visual debug
     visuals_->visual_tools_->publishSphere(ee_pose);
 
-    if (!manipulation_->moveEEToPose(ee_pose, velocity_scaling_factor, config_.right_arm_))
+    if (!manipulation_->moveEEToPose(ee_pose, velocity_scaling_factor, arm_jmg))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move arm to desired shelf location");
       continue;
@@ -1006,7 +1052,7 @@ bool APCManager::testShelfLocation()
     ROS_INFO_STREAM_NAMED("apc_manager","Moving forward");
     bool retreat = false;
     double desired_approach_distance = 0.02;
-    if (!manipulation_->executeRetreatPath(config_.right_arm_, desired_approach_distance, retreat))
+    if (!manipulation_->executeRetreatPath(arm_jmg, desired_approach_distance, retreat))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move forward " << desired_approach_distance);
     }
@@ -1018,7 +1064,7 @@ bool APCManager::testShelfLocation()
 
 
     retreat = true;
-    if (!manipulation_->executeRetreatPath(config_.right_arm_, desired_approach_distance, retreat))
+    if (!manipulation_->executeRetreatPath(arm_jmg, desired_approach_distance, retreat))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move backwards " << desired_approach_distance);
     }
@@ -1046,7 +1092,7 @@ bool APCManager::testInCollision()
 {
   while (ros::ok())
   {
-    manipulation_->checkCurrentCollisionAndBounds(config_.right_arm_);
+    manipulation_->checkCurrentCollisionAndBounds(config_.both_arms_);  
     ros::Duration(1).sleep();
   }
 
@@ -1069,7 +1115,14 @@ bool APCManager::testRandomValidMotions()
 
       // Create goal
       moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state));
-      goal_state->setToRandomPositions(config_.right_arm_);
+
+      // Choose arm
+      const robot_model::JointModelGroup* arm_jmg = config_.right_arm_;
+      if (config_.dual_arm_)
+        if (visuals_->visual_tools_->iRand(0,1) == 0)
+          arm_jmg == config_.left_arm_;
+
+      goal_state->setToRandomPositions(arm_jmg);
 
       // Check if random goal state is valid
       if (manipulation_->checkCollisionAndBounds(current_state, goal_state))
@@ -1077,7 +1130,7 @@ bool APCManager::testRandomValidMotions()
         // Plan to this position
         bool verbose = true;
         bool execute_trajectory = true;
-        if (manipulation_->move(current_state, goal_state, config_.right_arm_, config_.main_velocity_scaling_factor_, verbose, execute_trajectory))
+        if (manipulation_->move(current_state, goal_state, arm_jmg, config_.main_velocity_scaling_factor_, verbose, execute_trajectory))
         {
           ROS_INFO_STREAM_NAMED("apc_manager","Planned to random valid state successfullly");
           return true;
@@ -1109,13 +1162,6 @@ bool APCManager::testCameraPositions()
     if (!ros::ok())
       return true;
 
-    // Skip first row
-    if (bin_skipper < 3)
-    {
-      bin_skipper++;
-      continue;
-    }
-
     // Get bin and product
     const BinObjectPtr bin = bin_it->second;
     if (bin->getProducts().size() == 0) // Check if there are any objects to get
@@ -1129,13 +1175,19 @@ bool APCManager::testCameraPositions()
     // Get pose
     Eigen::Affine3d object_pose;
     bool verbose = true;
-    if (!getObjectPose(object_pose, order, verbose))
+    if (!perceiveObject(object_pose, order, verbose))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to get product");
       return false;
     }
-    return true;
+
+    // Wait before going to next bin
+    ros::Duration(1.0).sleep();
   }
+
+  // Allow test time to publish planning scene
+  ros::spinOnce();
+  ros::Duration(1.0).sleep();
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done planning to random valid");
   return true;
@@ -1244,7 +1296,7 @@ bool APCManager::getSRDFPose()
 {
   ROS_DEBUG_STREAM_NAMED("apc_manager","Get SRDF pose");
 
-  const std::vector<const moveit::core::JointModel*> joints = config_.right_arm_->getJointModels();
+  const std::vector<const moveit::core::JointModel*> joints = config_.both_arms_->getJointModels();
 
   while(ros::ok())
   {
@@ -1254,10 +1306,10 @@ bool APCManager::getSRDFPose()
     moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
 
     // Check if current state is valid
-    manipulation_->checkCurrentCollisionAndBounds(config_.right_arm_);
+    manipulation_->checkCurrentCollisionAndBounds(config_.both_arms_);
 
     // Output XML
-    std::cout << "<group_state name=\"\" group=\"" << config_.right_arm_->getName() << "\">\n";
+    std::cout << "<group_state name=\"\" group=\"" << config_.both_arms_->getName() << "\">\n";
     for (std::size_t i = 0; i < joints.size(); ++i)
     {
       std::cout << "  <joint name=\"" << joints[i]->getName() <<"\" value=\""
