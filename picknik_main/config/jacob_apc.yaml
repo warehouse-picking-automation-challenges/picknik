@@ -13,7 +13,8 @@ wait_after_grasp: 0.1
 
 # Poses
 start_pose: manipulator_home
-dropoff_pose: goal_bin_pose
+right_arm_dropoff_pose: right_goal_bin_pose
+left_arm_dropoff_pose: left_goal_bin_pose_DISABLED
 
 # Semantics
 dual_arm: 0

@@ -60,7 +60,7 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model)
   result = getDoubleParameter(nh_, "wait_after_grasp", wait_after_grasp_);
   result = getDoubleParameter(nh_, "approach_distance_desired", approach_distance_desired_);
   result = getDoubleParameter(nh_, "lift_distance_desired", lift_distance_desired_);
-  result = getDoubleParameter(nh_, "collision_wall_safety_margin", collision_wall_safety_margin_);
+  result = getDoubleParameter(nh_, "place_goal_down_distance_desired", place_goal_down_distance_desired_);
 
   // Load perception variables
   result = getDoubleParameter(nh_, "camera/x_translation_from_bin", camera_x_translation_from_bin_);
@@ -74,7 +74,8 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model)
 
   // Load robot semantics
   result = getStringParameter(nh_, "start_pose", start_pose_);
-  result = getStringParameter(nh_, "dropoff_pose", dropoff_pose_);
+  result = getStringParameter(nh_, "right_arm_dropoff_pose", right_arm_dropoff_pose_);
+  result = getStringParameter(nh_, "left_arm_dropoff_pose", left_arm_dropoff_pose_);
   result = getStringParameter(nh_, "right_hand_name", right_hand_name_);
   result = getStringParameter(nh_, "left_hand_name", left_hand_name_);
   result = getStringParameter(nh_, "right_arm_name", right_arm_name_);

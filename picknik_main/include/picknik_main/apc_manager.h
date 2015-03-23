@@ -130,18 +130,18 @@ public:
 
   /**
    * \brief Get the pose of a requested object
-   * \param object_pose
+   * \param global_object_pose
    * \param order - desired object
    * \return true on success
    */
-  bool perceiveObject(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose);
-  bool perceiveObjectFake(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose);
+  bool perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder order, bool verbose);
+  bool perceiveObjectFake(Eigen::Affine3d& global_object_pose, WorkOrder order, bool verbose);
 
   /**
    * \brief Update the pose, and optionally the mesh, of a particular product
    * \return false if outside the error tolerance bounds of a pose within a bin
    */
-  bool processNewObjectPose(Eigen::Affine3d& input_pose, const shape_msgs::Mesh& mesh,
+  bool processNewObjectPose(Eigen::Affine3d& global_object_pose, picknik_msgs::FindObjectsResultConstPtr result,
                             ProductObjectPtr& product, BinObjectPtr& bin);
 
   /**
@@ -160,7 +160,13 @@ public:
    * \brief Choose which arm to use for a particular task
    * \return joint model group of arm to use in manip
    */
-  const robot_model::JointModelGroup* chooseArm(const Eigen::Affine3d& object_pose);
+  const robot_model::JointModelGroup* chooseArm(const Eigen::Affine3d& ee_pose);
+
+  /**
+   * \brief Move object into the goal bin
+   * \return true on success
+   */
+  bool placeObjectInGoalBin(const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Move both arms to their start location
@@ -241,7 +247,7 @@ public:
    * \brief Send arm(s) to home position
    * \return true on success
    */
-  bool goHome();
+  bool testGoHome();
 
   /**
    * \brief Get the XML of a SDF pose of joints

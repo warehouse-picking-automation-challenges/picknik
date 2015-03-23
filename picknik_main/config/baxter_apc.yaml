@@ -18,7 +18,8 @@ wait_after_grasp: 0.1
 
 # Poses
 start_pose: both_neutral
-dropoff_pose: goal_bin_pose
+right_arm_dropoff_pose: right_goal_bin_pose
+left_arm_dropoff_pose: left_goal_bin_pose
 
 # Semantics
 dual_arm: 1
@@ -40,7 +41,7 @@ goal_bin_y: 0.20
 goal_bin_z: 0.35
 
 # Side limits (walls)
-#left_wall_y: 1.40 # 0 means disabled
-left_wall_y: 0.0 # 0 means disabled
+left_wall_y: 1.40 # 0 means disabled
+#left_wall_y: 0.0 # 0 means disabled
 right_wall_y: 0.0 # 0 means disabled
 

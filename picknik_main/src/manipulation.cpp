@@ -115,11 +115,15 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
   const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[arm_jmg].ee_group_name_);
 
   visuals_->visual_tools_->publishAxis(object_pose);
+  visuals_->visual_tools_->publishText(object_pose, "object_pose", rvt::BLACK, rvt::SMALL, false);
 
   // Generate all possible grasps
   std::vector<moveit_msgs::Grasp> possible_grasps;
 
-  grasp_generator_->setVerbose(false); // TODO make a rosparam
+  // This allows rosconsole logger to turn the grasp generator verbose mode on/off 
+  bool grasp_generator_verbose = false;
+  ROS_DEBUG_STREAM_NAMED("manipulation.grasp_generator","Verbose is enabled" << (grasp_generator_verbose = true));
+  grasp_generator_->setVerbose(grasp_generator_verbose);
 
   bool use_new_method = true;
   if (use_new_method)
@@ -139,22 +143,18 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
                                             grasp_datas_[arm_jmg], possible_grasps);
   }
 
-  // Visualize
-  if (verbose)
-  {
-    // Visualize animated grasps
-    double animation_speed = 0.005;
-    ROS_DEBUG_STREAM_NAMED("manipulation.animated_grasps","Showing animated grasps");
-    ROS_DEBUG_STREAM_NAMED("manipulation.animated_grasps",
-                           (visuals_->visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg, animation_speed) ? "Done" : "Failed"));
-  }
+  // Visualize animated grasps
+  double animation_speed = 0.005;
+  ROS_DEBUG_STREAM_NAMED("manipulation.animated_grasps","Showing animated grasps");
+  ROS_DEBUG_STREAM_NAMED("manipulation.animated_grasps",
+                         (visuals_->visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg, animation_speed) ? "Done" : "Failed"));
 
   // Filter grasps based on IK
 
   // Filter the grasp for only the ones that are reachable
   bool filter_pregrasps = true;
   std::vector<moveit_grasps::GraspSolution> filtered_grasps;
-  if (!grasp_filter_->filterGrasps(possible_grasps, filtered_grasps, filter_pregrasps, arm_jmg))
+  if (!grasp_filter_->filterGraspsKinematically(possible_grasps, filtered_grasps, filter_pregrasps, arm_jmg))
   {
     ROS_ERROR_STREAM_NAMED("temp","Unable to filter grasps by IK");
     return false;
@@ -203,23 +203,21 @@ bool Manipulation::createCollisionWall()
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","createCollisionWall()");
 
-  // Disable all bins except desired one
-  visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
+  // Clear all old collision objects
+  visuals_->visual_tools_->removeAllCollisionObjects();
 
   // Visualize
   shelf_->visualizeAxis(visuals_);
-  static const double INTERNAL_WIDTH = 0.1;
-  double width = shelf_->shelf_width_ * 2.0;
-  double x = shelf_->shelf_distance_from_robot_ + INTERNAL_WIDTH / 2 - config_.collision_wall_safety_margin_;
-  double y = 0;
-  double angle = 0;
-
-  visuals_->visual_tools_->publishCollisionWall( x, y, angle, width, "SimpleCollisionWall", rvt::BROWN );
-
+  if (shelf_->getLeftWall())
+    shelf_->getLeftWall()->createCollisionBodies(shelf_->getBottomRight());
+  if (shelf_->getRightWall())
+    shelf_->getRightWall()->createCollisionBodies(shelf_->getBottomRight());
+  shelf_->getFrontWall()->createCollisionBodies(shelf_->getBottomRight());
   shelf_->getGoalBin()->createCollisionBodies(shelf_->getBottomRight());
 
+  // Output planning scene
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
-  ros::Duration(0.25).sleep();
+  ros::Duration(0.25).sleep(); // TODO remove?
 
   return true;
 }
@@ -1058,10 +1056,16 @@ bool Manipulation::setStateWithOpenEE(bool open, moveit::core::RobotStatePtr rob
 
 bool Manipulation::checkExecutionManager()
 {
+  ROS_INFO_STREAM_NAMED("manipulation","Checking that execution manager is loaded.");
+
   trajectory_execution_manager_.reset(new trajectory_execution_manager::TrajectoryExecutionManager(robot_model_));
   plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
 
-  ROS_WARN_STREAM_NAMED("temp","no check implemented for controller");
+  if (!trajectory_execution_manager_->ensureActiveControllersForGroup(config_.both_arms_->getName()))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Group " << config_.both_arms_->getName() << " does not have active controllers loaded");
+    return false;
+  }
 
   return true;
 }
@@ -1372,9 +1376,6 @@ bool Manipulation::visualizeGrasps(std::vector<moveit_grasps::GraspSolution> fil
   double path_length;
   double max_path_length = 0; // statistics
   bool reverse_path = false;
-
-  ROS_WARN_STREAM_NAMED("temp","remove this deleteer");
-  visuals_->visual_tools_->deleteAllMarkers(); // clear all old markers
 
   for (std::size_t i = 0; i < filtered_grasps.size(); ++i)
   {

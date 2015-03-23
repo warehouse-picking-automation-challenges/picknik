@@ -374,6 +374,8 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     return false;
   if (!getDoubleParameter(nh,"right_wall_y", right_wall_y_))
     return false;
+  if (!getDoubleParameter(nh, "collision_wall_safety_margin", collision_wall_safety_margin_))
+    return false;
 
   // Calculate shelf corners
   bottom_right_.translation().x() = shelf_distance_from_robot_;
@@ -554,7 +556,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   // Side limit walls
   if (left_wall_y_ > 0.001 || left_wall_y_ < -0.001)
   {
-    left_wall_.reset(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "left_wall"));
+    left_wall_.reset(new RectangleObject(visuals_, rvt::TRANSLUCENT_DARK, "left_wall"));
     bottom_right = left_wall_->getBottomRight();
     bottom_right.translation().x() = 1;
     bottom_right.translation().y() = left_wall_y_;
@@ -568,7 +570,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   }
   if (right_wall_y_ > 0.001 || right_wall_y_ < -0.001)
   {
-    right_wall_.reset(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "right_wall"));
+    right_wall_.reset(new RectangleObject(visuals_, rvt::TRANSLUCENT_DARK, "right_wall"));
     bottom_right = right_wall_->getBottomRight();
     bottom_right.translation().x() = 1;
     bottom_right.translation().y() = right_wall_y_;
@@ -580,8 +582,19 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     top_left.translation().z() = shelf_height_;
     right_wall_->setTopLeft(top_left);
   }
-  
-  // TODO right wall
+  // Front wall limit
+  static const double INTERNAL_WIDTH = 0.1;
+  front_wall_.reset(new RectangleObject(visuals_, rvt::TRANSLUCENT_DARK, "front_wall"));
+  bottom_right = front_wall_->getBottomRight();
+  bottom_right.translation().x() = -collision_wall_safety_margin_;
+  bottom_right.translation().y() = - shelf_width_ / 2.0;
+  bottom_right.translation().z() = 0;
+  front_wall_->setBottomRight(bottom_right);
+  top_left = front_wall_->getBottomRight();
+  top_left.translation().x() = INTERNAL_WIDTH;
+  top_left.translation().y() = shelf_width_ * 1.5;
+  top_left.translation().z() = shelf_height_;
+  front_wall_->setTopLeft(top_left);  
 
   // Load mesh file name
   high_res_mesh_path_ = "file://" + package_path + "/meshes/kiva_pod/meshes/pod_lowres.stl";

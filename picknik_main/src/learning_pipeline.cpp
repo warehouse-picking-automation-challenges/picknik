@@ -241,7 +241,7 @@ bool LearningPipeline::analyzeGrasps(const moveit::core::JointModelGroup* arm_jm
   std::cout << std::endl;
   std::cout << std::endl;
   ROS_INFO_STREAM_NAMED("learning_pipeline","Filtering grasps using IK, may take a minute");
-  grasp_filter_->filterGrasps(possible_grasps, filtered_grasps_, filter_pregrasps, arm_jmg);                              
+  grasp_filter_->filterGraspsKinematically(possible_grasps, filtered_grasps_, filter_pregrasps, arm_jmg);                              
   total_valid_ik_grasps = filtered_grasps_.size();
 
   // Visulizations

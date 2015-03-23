@@ -100,8 +100,8 @@ Start fake controllers
 
 Rviz Visualizers of robot states and debug markers in differnet windows
 
-    roslaunch picknik_main moveit_display_rviz.launch jacob:=false
-    roslaunch picknik_main moveit_rviz.launch jacob:=false
+    roslaunch picknik_main rviz_display.launch jacob:=false
+    roslaunch picknik_main rviz.launch jacob:=false
 
 Run either the real or a fake object recognition server
 
@@ -119,8 +119,8 @@ Use Rethink's controllers
 
 Rviz Visualizers of robot states and debug markers in differnet windows
 
-    roslaunch picknik_main moveit_display_rviz.launch jacob:=false
-    roslaunch picknik_main moveit_rviz.launch jacob:=false
+    roslaunch picknik_main rviz_display.launch jacob:=false
+    roslaunch picknik_main rviz.launch jacob:=false
 
 Run either the real or a fake object recognition server
 
@@ -142,8 +142,8 @@ Start this separate to speed up launching:
 
 Rviz Visualizers of robot states and debug markers in differnet windows
 
-    roslaunch picknik_main moveit_display_rviz.launch 
-    roslaunch picknik_main moveit_rviz.launch
+    roslaunch picknik_main rviz_display.launch 
+    roslaunch picknik_main rviz.launch
 
 Run either the real or a fake object recognition server
 
@@ -166,8 +166,8 @@ Plugin in robot then choose one of the 2 control methods:
 
 Rviz Visualizers of robot states and debug markers in differnet windows (different windows)
 
-    roslaunch picknik_main moveit_display_rviz.launch
-    roslaunch picknik_main moveit_rviz.launch
+    roslaunch picknik_main rviz_display.launch
+    roslaunch picknik_main rviz.launch
 	
 Run either the real or a fake object recognition server
 
@@ -269,7 +269,7 @@ Start fake controllers
 
 Rviz Visualizer
 
-    roslaunch picknik_main moveit_rviz.launch
+    roslaunch picknik_main rviz.launch
 
 Planner
 
@@ -288,7 +288,7 @@ Start fake controllers
 
 Rviz Visualizer
 
-    roslaunch picknik_main moveit_rviz.launch
+    roslaunch picknik_main rviz.launch
 
 Load meshes
 

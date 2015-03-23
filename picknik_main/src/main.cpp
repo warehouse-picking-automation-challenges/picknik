@@ -131,7 +131,7 @@ int main(int argc, char** argv)
   {
     case 1:
       ROS_INFO_STREAM_NAMED("main","Run actual Amazon Picking Challenge mode");
-      manager.checkSystemReady();
+      if (!manager.checkSystemReady()) return 0;;
       manager.runOrder(order_start, jump_to, num_orders, autonomous);
       break;
     case 2:
@@ -140,7 +140,7 @@ int main(int argc, char** argv)
       break;
     case 3:
       ROS_INFO_STREAM_NAMED("main","Test end effectors mode");
-      manager.checkSystemReady();
+      if (!manager.checkSystemReady()) return 0;;
       manager.testEndEffectors();
       break;
     case 4:
@@ -149,12 +149,12 @@ int main(int argc, char** argv)
       break;
     case 5:
        ROS_INFO_STREAM_NAMED("main","Raise the roof (go up and down)");
-      manager.checkSystemReady();
+      if (!manager.checkSystemReady()) return 0;;
        manager.testUpAndDown();
        break;
     case 6:
       ROS_INFO_STREAM_NAMED("main","Verify shelf location");
-      manager.checkSystemReady();
+      if (!manager.checkSystemReady()) return 0;;
       manager.testShelfLocation();
       break;
     case 7:
@@ -163,7 +163,7 @@ int main(int argc, char** argv)
       break;
     case 8:
       ROS_INFO_STREAM_NAMED("main","Going to goal_bin place pose");
-      manager.checkSystemReady();
+      if (!manager.checkSystemReady()) return 0;;
       manager.testGoalBinPose();
       break;
     case 9:
@@ -173,28 +173,28 @@ int main(int argc, char** argv)
       break;
     case 10:
       ROS_INFO_STREAM_NAMED("main","Plan to random valid locations");
-      manager.checkSystemReady();
+      if (!manager.checkSystemReady()) return 0;;
       manager.testRandomValidMotions();
       break;
     case 11:
       ROS_INFO_STREAM_NAMED("main","Moving camera to each bin location");
-      manager.checkSystemReady();
+      if (!manager.checkSystemReady()) return 0;;
       manager.testCameraPositions();
       break;
     case 12:
       ROS_INFO_STREAM_NAMED("main","Test camera calibration");
-      manager.checkSystemReady();
+      if (!manager.checkSystemReady()) return 0;;
       manager.testCalibration();
       break;
     case 13:
       ROS_INFO_STREAM_NAMED("main","Test joint limits");
-      manager.checkSystemReady();
+      if (!manager.checkSystemReady()) return 0;;
       manager.testJointLimits();
       break;
     case 14:
       ROS_INFO_STREAM_NAMED("main","Go to home position");
-      manager.checkSystemReady();
-      manager.goHome();
+      if (!manager.checkSystemReady()) return 0;;
+      manager.testGoHome();
       break;
     // case 12:
     //   ROS_INFO_STREAM_NAMED("main","");

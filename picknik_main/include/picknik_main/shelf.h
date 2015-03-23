@@ -378,6 +378,54 @@ public:
   {
     goal_bin_ = goal_bin;
   }
+
+  /**
+   * \brief Getter for RightWall
+   */ 
+  const RectangleObjectPtr& getRightWall() const
+  {
+    return right_wall_;
+  }
+  
+  /**
+   * \brief Setter for RightWall
+   */
+  void setRightWall(const RectangleObjectPtr& right_wall)
+  {
+    right_wall_ = right_wall;
+  }
+
+  /**
+   * \brief Getter for LeftWall
+   */ 
+  const RectangleObjectPtr& getLeftWall() const
+  {
+    return left_wall_;
+  }
+  
+  /**
+   * \brief Setter for LeftWall
+   */
+  void setLeftWall(const RectangleObjectPtr& left_wall)
+  {
+    left_wall_ = left_wall;
+  }
+
+  /**
+   * \brief Getter for FrontWall
+   */ 
+  const RectangleObjectPtr& getFrontWall() const
+  {
+    return front_wall_;
+  }
+  
+  /**
+   * \brief Setter for FrontWall
+   */
+  void setFrontWall(const RectangleObjectPtr& front_wall)
+  {
+    front_wall_ = front_wall;
+  }
   
   // Loaded shelf parameter values
   double shelf_distance_from_robot_;
@@ -409,6 +457,9 @@ public:
   double left_wall_y_;
   double right_wall_y_;
 
+  // Safety
+  double collision_wall_safety_margin_;
+
 private:
   // Walls of shelf
   std::vector<RectangleObject> shelf_parts_;
@@ -419,6 +470,7 @@ private:
   RectangleObjectPtr goal_bin_;
   RectangleObjectPtr left_wall_;
   RectangleObjectPtr right_wall_;
+  RectangleObjectPtr front_wall_;
 
   Eigen::Affine3d high_res_mesh_offset_;
 
