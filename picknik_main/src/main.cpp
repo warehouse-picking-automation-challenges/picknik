@@ -45,8 +45,9 @@ int main(int argc, char** argv)
   {
     if (strcmp(argv[i], "--verbose") == 0)
     {
-      ROS_DEBUG_STREAM_NAMED("main","Running in VERBOSE mode (slower)");
-      verbose = true;
+      ++i;
+      verbose = atoi(argv[i]);
+      ROS_DEBUG_STREAM_NAMED("main","Running in verbose mode: " << verbose);
       continue;
     }
 
@@ -196,9 +197,10 @@ int main(int argc, char** argv)
       if (!manager.checkSystemReady()) return 0;;
       manager.testGoHome();
       break;
-    // case 12:
-    //   ROS_INFO_STREAM_NAMED("main","");
-    //   break;
+    case 15:
+      ROS_INFO_STREAM_NAMED("main","Testing grasp generator abilities and scoring results");
+      manager.testGraspGenerator();
+      break;
     // case 12:
     //   ROS_INFO_STREAM_NAMED("main","");
     //   break;

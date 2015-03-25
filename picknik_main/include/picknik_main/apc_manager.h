@@ -117,25 +117,13 @@ public:
   bool graspObjectPipeline(WorkOrder order, bool verbose, std::size_t jump_to = 0);
 
   /**
-   * \brief Move camera to in front of bin
-   * \return true on success
-   */
-  bool moveCameraToBin(BinObjectPtr bin);
-
-  /**
-   * \brief Run calibration routine
-   * \return true on success
-   */
-  bool calibrateCamera();
-
-  /**
    * \brief Get the pose of a requested object
    * \param global_object_pose
    * \param order - desired object
    * \return true on success
    */
   bool perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder order, bool verbose);
-  bool perceiveObjectFake(Eigen::Affine3d& global_object_pose, WorkOrder order, bool verbose);
+  bool perceiveObjectFake(Eigen::Affine3d& global_object_pose, ProductObjectPtr& product);
 
   /**
    * \brief Update the pose, and optionally the mesh, of a particular product
@@ -145,22 +133,10 @@ public:
                             ProductObjectPtr& product, BinObjectPtr& bin);
 
   /**
-   * \brief Move camera around to get good view of bin
-   * \return true on success
-   */
-  bool perturbCamera(BinObjectPtr bin);
-
-  /**
    * \brief Wait until user presses a button
    * \return true on success
    */
   bool waitForNextStep();
-
-  /**
-   * \brief Choose which arm to use for a particular task
-   * \return joint model group of arm to use in manip
-   */
-  const robot_model::JointModelGroup* chooseArm(const Eigen::Affine3d& ee_pose);
 
   /**
    * \brief Move object into the goal bin
@@ -254,6 +230,19 @@ public:
    * \return true on success
    */
   bool getSRDFPose();
+
+  /**
+   * \brief Test grasp generator abilities and score results
+   * \return true on success
+   */
+  bool testGraspGenerator();
+
+  /**
+   * \brief Load single product, one per shelf, for testing
+   * \param product_name
+   * \return true on success
+   */
+  bool loadShelfWithOnlyOneProduct(const std::string& product_name);
 
   /**
    * \brief Load shelf contents

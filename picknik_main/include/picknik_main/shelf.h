@@ -70,6 +70,7 @@ public:
    * \brief Constructor
    */
   RectangleObject(VisualsPtr visuals, const rvt::colors &color = rvt::RAND, const std::string &name = "");
+  RectangleObject(const RectangleObject& copy);
   
   /**
    * \brief Show bin in Rviz (not collision bodies)
@@ -79,10 +80,9 @@ public:
 
   /**
    * \brief Load from file a collision mesh
-   * \param mesh_path - where to find the mesh resource
    * \return true on success
    */
-  bool loadCollisionBodies(const std::string& mesh_path);
+  bool loadCollisionBodies();
 
   /**
    * \brief Getter for CollisionMesh
@@ -487,6 +487,7 @@ public:
    * \brief Constructor
    */
   ProductObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name, const std::string &package_path);
+  ProductObject(const ProductObject& copy);
 
 private:
 

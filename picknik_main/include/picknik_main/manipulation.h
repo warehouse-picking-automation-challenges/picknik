@@ -165,6 +165,30 @@ public:
                                 double& path_length);
 
   /**
+   * \brief Choose which arm to use for a particular task
+   * \return joint model group of arm to use in manip
+   */
+  const robot_model::JointModelGroup* chooseArm(const Eigen::Affine3d& ee_pose);
+
+  /**
+   * \brief Run calibration routine
+   * \return true on success
+   */
+  bool calibrateCamera();
+
+  /**
+   * \brief Move camera around to get good view of bin
+   * \return true on success
+   */
+  bool perturbCamera(BinObjectPtr bin);
+
+  /**
+   * \brief Move camera to in front of bin
+   * \return true on success
+   */
+  bool moveCameraToBin(BinObjectPtr bin);
+
+  /**
    * \brief Move a pose in a specified direction and specified length, where all poses are in the world frame
    * \return true on success
    */
@@ -210,7 +234,7 @@ public:
    * \brief Send trajectory message to robot controllers
    * \return true on success
    */
-  bool executeTrajectory(const moveit_msgs::RobotTrajectory &trajectory_msg);
+  bool executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg);
 
   /**
    * \brief Save a trajectory as CSV to file

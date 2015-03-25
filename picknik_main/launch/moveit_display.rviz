@@ -7,7 +7,7 @@ Panels:
         - /Grid1/Offset1
         - /Amazon Shelf Markers1/Namespaces1
       Splitter Ratio: 0.666041
-    Tree Height: 933
+    Tree Height: 437
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -51,22 +51,22 @@ Visualization Manager:
         Cuboid: true
         Cylinder: true
         Shelf: true
-        cheezit_big_original_26: true
-        crayola_64_ct_27: true
-        expo_dry_erase_board_eraser_25: true
-        expo_dry_erase_board_eraser_29: true
-        expo_dry_erase_board_eraser_30: true
+        cheezit_big_original_28: true
+        crayola_64_ct_29: true
+        expo_dry_erase_board_eraser_27: true
+        expo_dry_erase_board_eraser_31: true
         expo_dry_erase_board_eraser_32: true
-        feline_greenies_dental_treats_31: true
-        feline_greenies_dental_treats_37: true
-        first_years_take_and_toss_straw_cup_34: true
-        first_years_take_and_toss_straw_cup_39: true
+        expo_dry_erase_board_eraser_34: true
+        feline_greenies_dental_treats_33: true
+        feline_greenies_dental_treats_39: true
+        first_years_take_and_toss_straw_cup_36: true
+        first_years_take_and_toss_straw_cup_41: true
         goal_bin_24: true
-        highland_6539_self_stick_notes_33: true
-        mommys_helper_outlet_plugs_38: true
-        munchkin_white_hot_duck_bath_toy_35: true
-        oreo_mega_stuff_28: true
-        sharpie_accent_tank_style_highlighters_36: true
+        highland_6539_self_stick_notes_35: true
+        mommys_helper_outlet_plugs_40: true
+        munchkin_white_hot_duck_bath_toy_37: true
+        oreo_mega_stuff_30: true
+        sharpie_accent_tank_style_highlighters_38: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -352,22 +352,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.80125
+      Distance: 4.59681
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.5744
-        Y: -0.0442441
-        Z: -9.53671e-07
+        X: 2.17398
+        Y: 0.351936
+        Z: -1.19209e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.360399
+      Pitch: 0.615399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.03673
+      Yaw: 3.59674
     Saved: ~
 Window Geometry:
   Displays:

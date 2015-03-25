@@ -114,8 +114,11 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","chooseGrasp()");
   const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[arm_jmg].ee_group_name_);
 
-  visuals_->visual_tools_->publishAxis(object_pose);
-  visuals_->visual_tools_->publishText(object_pose, "object_pose", rvt::BLACK, rvt::SMALL, false);
+  if (verbose)
+  {
+    visuals_->visual_tools_->publishAxis(object_pose);
+    visuals_->visual_tools_->publishText(object_pose, "object_pose", rvt::BLACK, rvt::SMALL, false);
+  }
 
   // Generate all possible grasps
   std::vector<moveit_msgs::Grasp> possible_grasps;
@@ -125,26 +128,15 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
   ROS_DEBUG_STREAM_NAMED("manipulation.grasp_generator","Verbose is enabled" << (grasp_generator_verbose = true));
   grasp_generator_->setVerbose(grasp_generator_verbose);
 
-  bool use_new_method = true;
-  if (use_new_method)
-  {
-    double depth = 0.05;
-    double width = 0.05;
-    double height = 0.05;
-    double max_grasp_size = 0.10; // TODO: verify max object size Open Hand can grasp
-    grasp_generator_->generateCuboidGrasps( object_pose, depth, width, height, max_grasp_size,
-                                            grasp_datas_[arm_jmg], possible_grasps);
-  }
-  else
-  {
-    ROS_WARN_STREAM_NAMED("temp","USING OLD METHOD");
-    double hand_roll =
-      grasp_generator_->generateAxisGrasps( object_pose, moveit_grasps::Y_AXIS, moveit_grasps::DOWN, moveit_grasps::HALF, hand_roll,
-                                            grasp_datas_[arm_jmg], possible_grasps);
-  }
+  double depth = 0.05;
+  double width = 0.05;
+  double height = 0.05;
+  double max_grasp_size = 0.10; // TODO: verify max object size Open Hand can grasp
+  grasp_generator_->generateCuboidGrasps( object_pose, depth, width, height, max_grasp_size,
+                                          grasp_datas_[arm_jmg], possible_grasps);
 
   // Visualize animated grasps
-  double animation_speed = 0.005;
+  double animation_speed = 0.0025;
   ROS_DEBUG_STREAM_NAMED("manipulation.animated_grasps","Showing animated grasps");
   ROS_DEBUG_STREAM_NAMED("manipulation.animated_grasps",
                          (visuals_->visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg, animation_speed) ? "Done" : "Failed"));
@@ -153,10 +145,11 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
 
   // Filter the grasp for only the ones that are reachable
   bool filter_pregrasps = true;
+  bool verbose_if_failed = verbose;
   std::vector<moveit_grasps::GraspSolution> filtered_grasps;
-  if (!grasp_filter_->filterGraspsKinematically(possible_grasps, filtered_grasps, filter_pregrasps, arm_jmg))
+  if (!grasp_filter_->filterGraspsKinematically(possible_grasps, filtered_grasps, filter_pregrasps, arm_jmg, verbose_if_failed))
   {
-    ROS_ERROR_STREAM_NAMED("temp","Unable to filter grasps by IK");
+    ROS_ERROR_STREAM_NAMED("manipulation","Unable to filter grasps by IK");
     return false;
   }
 
@@ -171,9 +164,10 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
   // Filter grasps based on collision
   getCurrentState();
   setStateWithOpenEE(true, current_state_); // to be passed to the grasp filter
-  if (!grasp_filter_->filterGraspsInCollision(filtered_grasps, planning_scene_monitor_, arm_jmg, current_state_, verbose && false))
+  if (!grasp_filter_->filterGraspsInCollision(filtered_grasps, planning_scene_monitor_, arm_jmg, current_state_, 
+                                              verbose, verbose_if_failed))
   {
-    ROS_ERROR_STREAM_NAMED("temp","Unable to filter grasps by collision");
+    ROS_ERROR_STREAM_NAMED("manipulation","Unable to filter grasps by collision");
     return false;
   }
 
@@ -304,7 +298,7 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
                         bool verbose, bool execute_trajectory)
 
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","move()");
+  ROS_INFO_STREAM_NAMED("manipulation.move","Planning to new pose with velocity scale " << velocity_scaling_factor);
 
   // Check validity of start and goal
   if (true)
@@ -905,6 +899,160 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
   return true;
 }
 
+const robot_model::JointModelGroup* Manipulation::chooseArm(const Eigen::Affine3d& ee_pose)
+{
+  // Single Arm
+  if (!config_.dual_arm_)
+  {
+    return config_.right_arm_; // right is always the default arm for single arm robots
+  }
+  // Dual Arm
+  else if (ee_pose.translation().y() < 0)
+  {
+    ROS_INFO_STREAM_NAMED("manipulation","Using right arm for task");
+    return config_.right_arm_;
+  }
+  else
+  {
+    ROS_INFO_STREAM_NAMED("manipulation","Using left arm for task");
+    return config_.left_arm_;
+  }
+}
+
+bool Manipulation::calibrateCamera()
+{
+  ROS_INFO_STREAM_NAMED("manipulation","Calibrating camera");
+
+  bool result = false; // we want to achieve at least one camera pose
+
+  std::vector<std::string> poses;
+  poses.push_back("shelf_calibration1");
+  poses.push_back("shelf_calibration2");
+  poses.push_back("shelf_calibration3");
+  poses.push_back("shelf_calibration4");
+  poses.push_back("shelf_calibration5");
+  poses.push_back("shelf_calibration6");
+
+  // Move to each pose. The first move is full speed, the others are slow
+  double velcity_scaling_factor = config_.main_velocity_scaling_factor_;
+  for (std::size_t i = 0; i < poses.size(); ++i)
+  {
+    ROS_INFO_STREAM_NAMED("manipulation","Moving to camera pose " << poses[i] << " with scaling factor " << config_.calibration_velocity_scaling_factor_);
+
+    // First one goes fast
+    if (i > 0)
+      velcity_scaling_factor = config_.calibration_velocity_scaling_factor_;
+
+    // Choose which arm to utilize for task
+    ROS_WARN_STREAM_NAMED("manipulation","no logic for dual arm robot calibration");
+    const robot_model::JointModelGroup* arm_jmg = config_.right_arm_;
+
+    if (!moveToPose(arm_jmg, poses[i], velcity_scaling_factor))
+    {
+      ROS_ERROR_STREAM_NAMED("manipulation","Unable to move to pose " << poses[i]);
+      return false;
+    }
+    else
+    {
+      result = true;
+    }
+  }
+
+  return true;
+}
+
+bool Manipulation::perturbCamera(BinObjectPtr bin)
+{
+  // Note: assumes arm is already pointing at centroid of desired bin
+  ROS_INFO_STREAM_NAMED("manipulation","Perturbing camera for perception");
+
+  // Choose which arm to utilize for task
+  Eigen::Affine3d ee_pose = bin->getCentroid();
+  ee_pose = transform(ee_pose, shelf_->getBottomRight()); // convert to world coordinates
+  const robot_model::JointModelGroup* arm_jmg = chooseArm(ee_pose);
+
+  //Move camera left
+  std::cout << std::endl << std::endl << std::endl;
+  ROS_INFO_STREAM_NAMED("manipulation","Moving camera left distance " << config_.camera_left_distance_);
+  bool left = true;
+  if (!executeLeftPath(arm_jmg, config_.camera_left_distance_, left))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move left");
+  }
+
+  // Move camera right
+  std::cout << std::endl << std::endl << std::endl;
+  ROS_INFO_STREAM_NAMED("manipulation","Moving camera right distance " << config_.camera_left_distance_ * 2.0);
+  left = false;
+  if (!executeLeftPath(arm_jmg, config_.camera_left_distance_ * 2.0, left))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move right");
+  }
+
+  // Move back to center
+  std::cout << std::endl << std::endl << std::endl;
+  if (!moveCameraToBin(bin))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move camera to bin " << bin->getName());
+    return false;
+  }
+
+  // Move camera up
+  std::cout << std::endl << std::endl << std::endl;
+  ROS_INFO_STREAM_NAMED("manipulation","Lifting camera distance " << config_.camera_lift_distance_);
+  if (!executeLiftPath(arm_jmg, config_.camera_lift_distance_))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move up");
+  }
+
+  // Move camera down
+  std::cout << std::endl << std::endl << std::endl;
+  ROS_INFO_STREAM_NAMED("manipulation","Lowering camera distance " << config_.camera_lift_distance_ * 2.0);
+  bool up = false;
+  if (!executeLiftPath(arm_jmg, config_.camera_lift_distance_ * 2.0, up))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move down");
+  }
+
+  return true;
+}
+
+bool Manipulation::moveCameraToBin(BinObjectPtr bin)
+{
+  // Create pose to find IK solver
+  Eigen::Affine3d ee_pose = bin->getCentroid();
+  ee_pose = transform(ee_pose, shelf_->getBottomRight()); // convert to world coordinates
+
+  // Move centroid backwards
+  ee_pose.translation().x() += config_.camera_x_translation_from_bin_;
+  ee_pose.translation().y() += config_.camera_y_translation_from_bin_;
+  ee_pose.translation().z() += config_.camera_z_translation_from_bin_;
+
+  // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
+  ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
+  ee_pose = ee_pose * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ());
+
+  // Debug
+  visuals_->visual_tools_->publishAxis(ee_pose);
+  visuals_->visual_tools_->publishText(ee_pose, "camera_pose", rvt::BLACK, rvt::SMALL, false);
+
+  // Choose which arm to utilize for task
+  const robot_model::JointModelGroup* arm_jmg = chooseArm(ee_pose);
+
+  // Translate to custom end effector geometry
+  ee_pose = ee_pose * grasp_datas_[arm_jmg].grasp_pose_to_eef_pose_;
+
+  // Customize the direction it is pointing
+  // Roll Angle
+  ee_pose = ee_pose * Eigen::AngleAxisd(config_.camera_z_rotation_from_standard_grasp_, Eigen::Vector3d::UnitZ());
+  // Pitch Angle
+  ee_pose = ee_pose * Eigen::AngleAxisd(config_.camera_x_rotation_from_standard_grasp_, Eigen::Vector3d::UnitX());
+  // Yaw Angle
+  ee_pose = ee_pose * Eigen::AngleAxisd(config_.camera_y_rotation_from_standard_grasp_, Eigen::Vector3d::UnitY());
+
+  return moveEEToPose(ee_pose, config_.main_velocity_scaling_factor_, arm_jmg);
+}
+
 bool Manipulation::straightProjectPose( const Eigen::Affine3d& original_pose, Eigen::Affine3d& new_pose,
                                         const Eigen::Vector3d direction, double distance)
 {
@@ -1018,40 +1166,18 @@ bool Manipulation::setStateWithOpenEE(bool open, moveit::core::RobotStatePtr rob
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","setStateWithOpenEE()");
 
-  if (!config_.dual_arm_) // jacob mode
+  if (open)
   {
-    if (open)
-      grasp_datas_[config_.right_arm_].setRobotStatePreGrasp( robot_state );
-    else
-      grasp_datas_[config_.right_arm_].setRobotStateGrasp( robot_state );
+    grasp_datas_[config_.right_arm_].setRobotStatePreGrasp( robot_state );
+    if (config_.dual_arm_) 
+      grasp_datas_[config_.left_arm_].setRobotStatePreGrasp( robot_state );
   }
-  else // Baxter mode
+  else
   {
-    // TODO replace with method that moveit_grasps uses
-
-    const double& right_open_position  = grasp_datas_[config_.right_arm_].pre_grasp_posture_.points[0].positions[0];
-    const double& right_close_position = grasp_datas_[config_.right_arm_].grasp_posture_.points[0].positions[0];
-    double left_open_position;
-    double left_close_position;
-    left_open_position  = grasp_datas_[config_.left_arm_].pre_grasp_posture_.points[0].positions[0];
-    left_close_position = grasp_datas_[config_.left_arm_].grasp_posture_.points[0].positions[0];
-
-    if (open)
-    {
-      robot_state->setVariablePosition("left_gripper_r_finger_joint", left_open_position);
-      robot_state->setVariablePosition("left_gripper_l_finger_joint", -left_open_position);
-      robot_state->setVariablePosition("right_gripper_r_finger_joint", right_open_position);
-      robot_state->setVariablePosition("right_gripper_l_finger_joint", right_open_position);
-    }
-    else
-    {
-      robot_state->setVariablePosition("left_gripper_r_finger_joint", left_close_position);
-      robot_state->setVariablePosition("left_gripper_l_finger_joint", -left_close_position);
-
-      robot_state->setVariablePosition("right_gripper_r_finger_joint", right_close_position);
-      robot_state->setVariablePosition("right_gripper_l_finger_joint", right_close_position);
-    }
-  } // end baxter mode
+    grasp_datas_[config_.right_arm_].setRobotStateGrasp( robot_state );
+    if (config_.dual_arm_) 
+      grasp_datas_[config_.left_arm_].setRobotStateGrasp( robot_state );
+  }
 }
 
 bool Manipulation::checkExecutionManager()
@@ -1061,19 +1187,28 @@ bool Manipulation::checkExecutionManager()
   trajectory_execution_manager_.reset(new trajectory_execution_manager::TrajectoryExecutionManager(robot_model_));
   plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
 
-  if (!trajectory_execution_manager_->ensureActiveControllersForGroup(config_.both_arms_->getName()))
+  const robot_model::JointModelGroup* arm_jmg = config_.dual_arm_ ? config_.both_arms_ : config_.right_arm_;
+
+  if (!trajectory_execution_manager_->ensureActiveControllersForGroup(arm_jmg->getName()))
   {
-    ROS_ERROR_STREAM_NAMED("manipulation","Group " << config_.both_arms_->getName() << " does not have active controllers loaded");
+    ROS_ERROR_STREAM_NAMED("manipulation","Group " << arm_jmg->getName() << " does not have active controllers loaded");
     return false;
   }
 
   return true;
 }
 
-bool Manipulation::executeTrajectory(const moveit_msgs::RobotTrajectory &trajectory_msg)
+bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeTrajectory()");
   ROS_INFO_STREAM_NAMED("manipulation","Executing trajectory");
+
+  // Hack? Remove effort command
+  if (true)
+    for (std::size_t i = 0; i < trajectory_msg.joint_trajectory.points.size(); ++i)
+    {
+      trajectory_msg.joint_trajectory.points[i].accelerations.clear();
+    }
 
   // Debug
   ROS_DEBUG_STREAM_NAMED("manipulation.trajectory","Publishing:\n" << trajectory_msg);
@@ -1085,9 +1220,9 @@ bool Manipulation::executeTrajectory(const moveit_msgs::RobotTrajectory &traject
     if (trajectory_msg.joint_trajectory.joint_names.size() > 3)
     {
       static std::size_t trajectory_count = 0;
-      saveTrajectory(trajectory_msg, "trajectory_"+ boost::lexical_cast<std::string>(trajectory_count));
+      saveTrajectory(trajectory_msg, "trajectory_"+ boost::lexical_cast<std::string>(trajectory_count++));
       //saveTrajectory(trajectory_msg, "trajectory");
-      trajectory_count++;
+      //delete this trajectory_count++;
     }
   }
 
@@ -1172,7 +1307,6 @@ bool Manipulation::saveTrajectory(const moveit_msgs::RobotTrajectory &trajectory
   bool has_accelerations = true;
   if (joint_trajectory.points[0].accelerations.size() == 0)
   {
-    ROS_WARN_STREAM_NAMED("temp","no accelerations available");
     has_accelerations = false;
   }
 
@@ -1516,12 +1650,13 @@ bool Manipulation::checkCollisionAndBounds(const robot_state::RobotStatePtr &sta
   }
 
   // Check for collisions --------------------------------------------------------
+  const robot_model::JointModelGroup* arm_jmg = config_.dual_arm_ ? config_.both_arms_ : config_.right_arm_;
 
   // Get planning scene lock
   {
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_);
     // Start
-    if (scene->isStateColliding(*start_state, config_.right_arm_->getName(), verbose))
+    if (scene->isStateColliding(*start_state, arm_jmg->getName(), verbose))
     {
       ROS_WARN_STREAM_NAMED("manipulation","Start state is colliding");
       // Show collisions
@@ -1535,7 +1670,7 @@ bool Manipulation::checkCollisionAndBounds(const robot_state::RobotStatePtr &sta
     {
       goal_state->update();
 
-      if (scene->isStateColliding(*goal_state, config_.right_arm_->getName(), verbose))
+      if (scene->isStateColliding(*goal_state, arm_jmg->getName(), verbose))
       {
         ROS_WARN_STREAM_NAMED("manipulation","Goal state is colliding");
         // Show collisions

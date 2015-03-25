@@ -6,11 +6,11 @@
 # lift_velocity_scaling_factor: 0.4
 # retreat_velocity_scaling_factor: 0.8
 # calibration_velocity_scaling_factor: 0.05
-main_velocity_scaling_factor: 0.1
-approach_velocity_scaling_factor: 0.1
-lift_velocity_scaling_factor: 0.1
-retreat_velocity_scaling_factor: 0.1
-calibration_velocity_scaling_factor: 0.05
+main_velocity_scaling_factor: 1.0
+approach_velocity_scaling_factor: 1.0
+lift_velocity_scaling_factor: 1.0
+retreat_velocity_scaling_factor: 1.0
+calibration_velocity_scaling_factor: 1.0
 
 # Sleep timers
 wait_before_grasp: 0.1

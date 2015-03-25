@@ -64,7 +64,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
   pose_bounds.x_min_ = RAND_PADDING;
   pose_bounds.y_min_ = RAND_PADDING;
   pose_bounds.z_min_ = RAND_PADDING;
-  pose_bounds.x_max_ = shelf->bin_depth_ - RAND_PADDING;
+  pose_bounds.x_max_ = shelf->bin_depth_*0.5 - RAND_PADDING; // TODO - we are restraining bin depth of object
   pose_bounds.y_max_ = shelf->bin_middle_width_ - RAND_PADDING;
   pose_bounds.z_max_ = shelf->bin_tall_height_ - RAND_PADDING;
 
@@ -129,7 +129,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
             }
           } // for lower z height
 
-          // Use current locaiton, no matter where it ended up
+          // Use current location, no matter where it ended up
           product->createCollisionBodies(world_to_bin_transform);
           product->visualize(world_to_bin_transform);
           break;

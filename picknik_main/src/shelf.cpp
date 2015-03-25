@@ -45,6 +45,21 @@ RectangleObject::RectangleObject(VisualsPtr visuals,
   }
 }
 
+RectangleObject::RectangleObject(const RectangleObject& copy)
+{
+  visuals_= copy.visuals_;
+  high_res_mesh_path_= copy.high_res_mesh_path_;
+  collision_mesh_path_= copy.collision_mesh_path_;
+  mesh_msg_= copy.mesh_msg_;
+  centroid_= copy.centroid_;
+  bottom_right_= copy.bottom_right_;
+  top_left_= copy.top_left_;
+  color_= copy.color_;
+
+  // Must set collision_object_name_ and name_ manually via setName() function
+  setName(copy.name_);
+}
+
 bool RectangleObject::visualize(const Eigen::Affine3d& trans) const
 {
   if (!high_res_mesh_path_.empty())
@@ -63,13 +78,13 @@ bool RectangleObject::visualize(const Eigen::Affine3d& trans) const
                                                             color_);
 }
 
-bool RectangleObject::loadCollisionBodies(const std::string& mesh_path)
+bool RectangleObject::loadCollisionBodies()
 {
-  shapes::Shape *mesh = shapes::createMeshFromResource(mesh_path); // make sure its prepended by file://
+  shapes::Shape *mesh = shapes::createMeshFromResource(collision_mesh_path_); // make sure its prepended by file://
   shapes::ShapeMsg shape_msg; // this is a boost::variant type from shape_messages.h
   if (!mesh || !shapes::constructMsgFromShape(mesh, shape_msg))
   {
-    ROS_ERROR_STREAM_NAMED("shelf","Unable to create mesh shape message from resource " << mesh_path);
+    ROS_ERROR_STREAM_NAMED("shelf","Unable to create mesh shape message from resource " << collision_mesh_path_);
     return false;
   }      
 
@@ -98,7 +113,7 @@ bool RectangleObject::createCollisionBodies(const Eigen::Affine3d &trans)
     // Check if mesh needs to be loaded
     if (mesh_msg_.triangles.empty()) // load mesh from file      
     {
-      if (!loadCollisionBodies(collision_mesh_path_))
+      if (!loadCollisionBodies())
         return false;
     }
     return visuals_->visual_tools_->publishCollisionMesh(transform(centroid_, trans), collision_object_name_, mesh_msg_, color_);
@@ -403,6 +418,15 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   top_left.translation().y() += shelf_width_;
   top_left.translation().z() += first_bin_from_bottom_;
   base.setTopLeft(top_left);
+  
+  // Extend base to protect robot from table
+  bool immitation_table_mount = false;
+  if (immitation_table_mount)
+  {
+    bottom_right = Eigen::Affine3d::Identity();
+    bottom_right.translation().x() -= 1.0;
+    base.setBottomRight(bottom_right);
+  }
 
   // Shelf Walls
   double previous_y = shelf_wall_width_ * 0.5;
@@ -791,6 +815,11 @@ ProductObject::ProductObject(VisualsPtr visuals,
   // Debug
   ROS_DEBUG_STREAM_NAMED("shelf","Creating collision product with name " << collision_object_name_ << " from mesh: " 
                          << high_res_mesh_path_ << "\n Collision mesh: " << collision_mesh_path_);
+}
+
+ProductObject::ProductObject(const ProductObject& copy)
+  : RectangleObject( copy )
+{ 
 }
 
 // ------------------------------------------------------------------------------------------------------
