@@ -13,16 +13,29 @@
 
 Install ARPG's communication layer 'Node'. First, install ZeroMQ:
 
-	#sudo apt-get install libzmq3-dev
 	wget http://download.zeromq.org/zeromq-3.2.5.tar.gz
 	untargz zeromq-3.2.5
 	cd zeromq-3.2.5
 	./configure
 	sudo make install
+	
+
+Install ZeroMQ C++ Bindings
+
+	git clone git@github.com:zeromq/zmqpp.git 
+	cd zmqpp 
+	make 
+	make check 
+	sudo make install 
+	make installcheck
+
+Install avahi
+
+	sudo apt-get install libavahi-compat-libdnssd-dev
 
 Then install Node:
 	
-    git clone git@github.com:arpg/Node.git
+    	git clone git@github.com:arpg/Node.git
 	mkdir -p Node/build
 	cd Node/build
 	cmake ../	
