@@ -112,7 +112,6 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
                                moveit_grasps::GraspSolution& chosen, bool verbose)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","chooseGrasp()");
-  const moveit::core::JointModelGroup* ee_jmg = robot_model_->getJointModelGroup(grasp_datas_[arm_jmg].ee_group_name_);
 
   if (verbose)
   {
@@ -135,15 +134,7 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
   grasp_generator_->generateCuboidGrasps( object_pose, depth, width, height, max_grasp_size,
                                           grasp_datas_[arm_jmg], possible_grasps);
 
-  // Visualize animated grasps
-  double animation_speed = 0.0025;
-  ROS_DEBUG_STREAM_NAMED("manipulation.animated_grasps","Showing animated grasps");
-  ROS_DEBUG_STREAM_NAMED("manipulation.animated_grasps",
-                         (visuals_->visual_tools_->publishAnimatedGrasps(possible_grasps, ee_jmg, animation_speed) ? "Done" : "Failed"));
-
   // Filter grasps based on IK
-
-  // Filter the grasp for only the ones that are reachable
   bool filter_pregrasps = true;
   bool verbose_if_failed = verbose;
   std::vector<moveit_grasps::GraspSolution> filtered_grasps;
@@ -153,15 +144,8 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
     return false;
   }
 
-  // Visualize valid grasps as arrows with cartesian path as well
-  bool show_cartesian_path = false;
-  ROS_DEBUG_STREAM_NAMED("manipulation.ik_filtered_grasps", "Showing ik filtered grasps");
-  ROS_DEBUG_STREAM_NAMED("manipulation.ik_filtered_grasps",
-                         (visualizeGrasps(filtered_grasps, arm_jmg, show_cartesian_path) ? "Done" : "Failed"));
-
-  ROS_INFO_STREAM_NAMED("manipulation","Filtering grasps by collision");
-
   // Filter grasps based on collision
+  ROS_INFO_STREAM_NAMED("manipulation","Filtering grasps by collision");
   getCurrentState();
   setStateWithOpenEE(true, current_state_); // to be passed to the grasp filter
   if (!grasp_filter_->filterGraspsInCollision(filtered_grasps, planning_scene_monitor_, arm_jmg, current_state_, 
@@ -1495,7 +1479,7 @@ bool Manipulation::visualizeGrasps(std::vector<moveit_grasps::GraspSolution> fil
                                    const moveit::core::JointModelGroup *arm_jmg, bool show_cartesian_path)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","visualizeGrasps()");
-  ROS_INFO_STREAM_NAMED("manipulation","Showing valid filtered grasp poses");
+  ROS_INFO_STREAM_NAMED("manipulation","Showing " << filtered_grasps.size() << " valid filtered grasp poses");
 
   // Publish in batch
   //visuals_->visual_tools_->enableBatchPublishing(true);
@@ -1534,18 +1518,25 @@ bool Manipulation::visualizeGrasps(std::vector<moveit_grasps::GraspSolution> fil
       double speed = 0.01;
       visuals_->visual_tools_->publishTrajectoryPath(robot_state_trajectory, arm_jmg, speed, blocking);
     }
+    std::cout << "filtered_grasps[i].grasp_.grasp_pose: " << filtered_grasps[i].grasp_.grasp_pose << std::endl;
+    visuals_->visual_tools_->publishZArrow(filtered_grasps[i].grasp_.grasp_pose, rvt::RED);
     //grasp_generator_->publishGraspArrow(filtered_grasps[i].grasp_.grasp_pose.pose, grasp_datas_[arm_jmg],
     //                                              rvt::BLUE, path_length);
 
+    
+    bool show_score = false;
+    if (show_score)
+    {
+      const geometry_msgs::Pose& pose = filtered_grasps[i].grasp_.grasp_pose.pose;
+      double roll = atan2(2*(pose.orientation.x*pose.orientation.y + pose.orientation.w*pose.orientation.z), pose.orientation.w*pose.orientation.w + pose.orientation.x*pose.orientation.x - pose.orientation.y*pose.orientation.y - pose.orientation.z*pose.orientation.z);
+      double yall = asin(-2*(pose.orientation.x*pose.orientation.z - pose.orientation.w*pose.orientation.y));
+      double pitch = atan2(2*(pose.orientation.y*pose.orientation.z + pose.orientation.w*pose.orientation.x), pose.orientation.w*pose.orientation.w - pose.orientation.x*pose.orientation.x - pose.orientation.y*pose.orientation.y + pose.orientation.z*pose.orientation.z);
+      std::cout << "ROLL: " << roll << " YALL: " << yall << " PITCH: " << pitch << std::endl;
 
-    const geometry_msgs::Pose& pose = filtered_grasps[i].grasp_.grasp_pose.pose;
-    double roll = atan2(2*(pose.orientation.x*pose.orientation.y + pose.orientation.w*pose.orientation.z), pose.orientation.w*pose.orientation.w + pose.orientation.x*pose.orientation.x - pose.orientation.y*pose.orientation.y - pose.orientation.z*pose.orientation.z);
-    double yall = asin(-2*(pose.orientation.x*pose.orientation.z - pose.orientation.w*pose.orientation.y));
-    double pitch = atan2(2*(pose.orientation.y*pose.orientation.z + pose.orientation.w*pose.orientation.x), pose.orientation.w*pose.orientation.w - pose.orientation.x*pose.orientation.x - pose.orientation.y*pose.orientation.y + pose.orientation.z*pose.orientation.z);
-    std::cout << "ROLL: " << roll << " YALL: " << yall << " PITCH: " << pitch << std::endl;
+      visuals_->visual_tools_->publishText(pose, boost::lexical_cast<std::string>(yall), rvt::BLACK, rvt::SMALL, false);
+      //visuals_->visual_tools_->publishAxis(pose);
+    }
 
-    visuals_->visual_tools_->publishText(pose, boost::lexical_cast<std::string>(yall), rvt::BLACK, rvt::SMALL, false);
-    //visuals_->visual_tools_->publishAxis(pose);
   }
   //visuals_->visual_tools_->triggerBatchPublishAndDisable();
 
