@@ -16,6 +16,9 @@
 #include <picknik_main/apc_manager.h>
 #include <picknik_main/product_simulator.h>
 
+// Parameter loading
+#include <rviz_visual_tools/ros_param_utilities.h>
+
 // Boost
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
@@ -272,7 +275,7 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
   moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
 
   // Variables
-  moveit_grasps::GraspSolution chosen; // the grasp to use
+  moveit_grasps::GraspCandidatePtr chosen; // the grasp to use
   moveit::core::RobotStatePtr pre_grasp_state(new moveit::core::RobotState(*current_state)); // Allocate robot states
   moveit::core::RobotStatePtr the_grasp_state(new moveit::core::RobotState(*current_state)); // Allocate robot states
   moveit_msgs::RobotTrajectory approach_trajectory_msg;
@@ -377,7 +380,7 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
           return false;
         }
 
-        the_grasp_state->setJointGroupPositions(arm_jmg, chosen.grasp_ik_solution_);
+        the_grasp_state->setJointGroupPositions(arm_jmg, chosen->grasp_ik_solution_);
         manipulation_->setStateWithOpenEE(true, the_grasp_state);
 
         if (!autonomous_)
@@ -1105,7 +1108,7 @@ bool APCManager::testJointLimits()
   int test_joint_limit_joint;
   int first_joint;
   int last_joint;
-  getIntParameter(nh_private_, "test/test_joint_limit_joint", test_joint_limit_joint);
+  rvt::getIntParameter("apc_manager", nh_private_, "test/test_joint_limit_joint", test_joint_limit_joint);
   if (test_joint_limit_joint < 0)
   {
     first_joint = 0;
@@ -1217,7 +1220,7 @@ bool APCManager::testGraspGenerator()
   moveit::core::RobotStatePtr the_grasp_state(new moveit::core::RobotState(*current_state)); // Allocate robot states
   Eigen::Affine3d global_object_pose;
   const robot_model::JointModelGroup* arm_jmg;
-  moveit_grasps::GraspSolution chosen; // the grasp to use
+  moveit_grasps::GraspCandidatePtr chosen; // the grasp to use
 
   // Scoring
   std::size_t overall_attempts = 0;
@@ -1305,7 +1308,7 @@ bool APCManager::testGraspGenerator()
       {
         if (config_.dual_arm_)
           the_grasp_state->setToDefaultValues(config_.both_arms_, config_.start_pose_); // hide the other arm
-        the_grasp_state->setJointGroupPositions(arm_jmg, chosen.grasp_ik_solution_);
+        the_grasp_state->setJointGroupPositions(arm_jmg, chosen->grasp_ik_solution_);
         manipulation_->setStateWithOpenEE(true, the_grasp_state);
         visuals_->visual_tools_->publishRobotState(the_grasp_state, rvt::PURPLE);
         
@@ -1411,7 +1414,7 @@ bool APCManager::loadPlanningSceneMonitor()
 
   // Get the joint state topic
   std::string joint_state_topic;
-  getStringParameter(nh_private_, "joint_state_topic", joint_state_topic);
+  rvt::getStringParameter("apc_manager", nh_private_, "joint_state_topic", joint_state_topic);
 
   if (planning_scene_monitor_->getPlanningScene())
   {

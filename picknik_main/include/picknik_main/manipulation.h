@@ -75,7 +75,7 @@ public:
    * \return true on success
    */
   bool chooseGrasp(const Eigen::Affine3d& object_pose, const robot_model::JointModelGroup* arm_jmg,
-                   moveit_grasps::GraspSolution& chosen, bool verbose);
+                   moveit_grasps::GraspCandidatePtr& chosen, bool verbose);
 
   /**
    * \brief Show simple collision wall that protects shelf
@@ -286,7 +286,7 @@ public:
    * \param input - description
    * \return true on success
    */
-  bool visualizeGrasps(std::vector<moveit_grasps::GraspSolution> filtered_grasps, const moveit::core::JointModelGroup *arm_jmg,
+  bool visualizeGrasps(std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates, const moveit::core::JointModelGroup *arm_jmg,
                        bool show_cartesian_path = true);
 
   /**
@@ -294,7 +294,7 @@ public:
    * \param input - description
    * \return true on success
    */
-  bool visualizeIKSolutions(std::vector<moveit_grasps::GraspSolution> filtered_grasps, const moveit::core::JointModelGroup* arm_jmg,
+  bool visualizeIKSolutions(std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates, const moveit::core::JointModelGroup* arm_jmg,
                             double display_time = 2);
 
   /**

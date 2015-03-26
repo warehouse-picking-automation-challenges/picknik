@@ -112,13 +112,6 @@ public:
 
 }; // end class
 
-// -------------------------------------------------------------------------------------------------
-// Helper Functions
-// -------------------------------------------------------------------------------------------------
-bool getDoubleParameter(ros::NodeHandle &nh, const std::string &param_name, double &value);
-bool getIntParameter(ros::NodeHandle &nh, const std::string &param_name, int &value);
-bool getStringParameter(ros::NodeHandle &nh, const std::string &param_name, std::string &value);
-
 // Create boost pointers for this class
 typedef boost::shared_ptr<ManipulationData> ManipulationDataPtr;
 typedef boost::shared_ptr<const ManipulationData> ManipulationDataConstPtr;
