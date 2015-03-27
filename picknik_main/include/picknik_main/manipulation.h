@@ -33,7 +33,7 @@
 #include <ompl/tools/experience/ExperienceSetup.h>
 
 // Grasp generation
-#include <moveit_grasps/grasps.h>
+#include <moveit_grasps/grasp_generator.h>
 #include <moveit_grasps/grasp_data.h>
 #include <moveit_grasps/grasp_filter.h>
 
@@ -378,7 +378,7 @@ protected:
   Eigen::Affine3d order_position_; // where to display messages
 
   // Grasp generator
-  moveit_grasps::GraspsPtr grasp_generator_;
+  moveit_grasps::GraspGeneratorPtr grasp_generator_;
   moveit_grasps::GraspFilterPtr grasp_filter_;
 
 }; // end class

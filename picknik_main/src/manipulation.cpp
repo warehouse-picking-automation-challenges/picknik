@@ -98,7 +98,7 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   }
 
   // Load grasp generator
-  grasp_generator_.reset( new moveit_grasps::Grasps(visuals_->visual_tools_) );
+  grasp_generator_.reset( new moveit_grasps::GraspGenerator(visuals_->visual_tools_) );
   getCurrentState();
   setStateWithOpenEE(true, current_state_); // so that grasp filter is started up with EE open
   grasp_filter_.reset(new moveit_grasps::GraspFilter(current_state_, visuals_->visual_tools_) );
@@ -121,11 +121,6 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
 
   // Generate all possible grasps
   std::vector<moveit_msgs::Grasp> possible_grasps;
-
-  // This allows rosconsole logger to turn the grasp generator verbose mode on/off 
-  bool grasp_generator_verbose = false;
-  ROS_DEBUG_STREAM_NAMED("manipulation.grasp_generator","Verbose is enabled" << (grasp_generator_verbose = true));
-  grasp_generator_->setVerbose(grasp_generator_verbose);
 
   double depth = 0.05;
   double width = 0.05;
