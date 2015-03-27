@@ -63,6 +63,10 @@ Also, to reduce debug output add the following to your bashrc:
 
 ![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/picknik_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
 
+## Python deps
+
+    sudo apt-get install python-pandas
+
 ## Run
 
 ### Generate Mock Amazon order
