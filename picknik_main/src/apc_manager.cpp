@@ -83,11 +83,9 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   config_.load(robot_model_);
 
   // Load grasp data specific to our robot
-  if (!grasp_datas_[config_.right_arm_].loadRobotGraspData(nh_private_, config_.right_hand_name_, robot_model_))
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to load right arm grasp data in namespace " << config_.right_hand_name_);
-
-  if (config_.dual_arm_ && !grasp_datas_[config_.left_arm_].loadRobotGraspData(nh_private_, config_.left_hand_name_, robot_model_))
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to load left arm grasp data in namespace " << config_.left_hand_name_);
+  grasp_datas_[config_.right_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_.right_hand_name_, robot_model_));
+  if (config_.dual_arm_)
+      grasp_datas_[config_.left_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_.left_hand_name_, robot_model_));
 
   // Create manipulation manager
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
@@ -112,7 +110,7 @@ bool APCManager::checkSystemReady()
                            << ", joints: " << config_.right_arm_->getVariableCount());
     return false;
   }
-  const robot_model::JointModelGroup* ee_jmg = grasp_datas_[config_.right_arm_].ee_jmg_;
+  const robot_model::JointModelGroup* ee_jmg = grasp_datas_[config_.right_arm_]->ee_jmg_;
   if (ee_jmg->getVariableCount() > 3)
   {
     ROS_FATAL_STREAM_NAMED("apc_manager","Incorrect number of joints for group " << ee_jmg->getName() << ", joints: "
@@ -464,7 +462,7 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
         }
 
         // Attach collision object
-        visuals_->visual_tools_->attachCO(order.product_->getCollisionName(), grasp_datas_[arm_jmg].parent_link_name_);
+        visuals_->visual_tools_->attachCO(order.product_->getCollisionName(), grasp_datas_[arm_jmg]->parent_link_name_);
 
         ROS_INFO_STREAM_NAMED("apc_manager","Waiting " << config_.wait_after_grasp_ << " seconds after grasping");
         ros::Duration(config_.wait_after_grasp_).sleep();
@@ -894,14 +892,14 @@ bool APCManager::testShelfLocation()
 
     const robot_model::JointModelGroup* arm_jmg = manipulation_->chooseArm(ee_pose);
 
-    ee_pose.translation().x() += SAFETY_PADDING - grasp_datas_[arm_jmg].finger_to_palm_depth_;
+    ee_pose.translation().x() += SAFETY_PADDING - grasp_datas_[arm_jmg]->finger_to_palm_depth_;
 
     // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
     ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
     ee_pose = ee_pose * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ());
 
     // Translate to custom end effector geometry
-    ee_pose = ee_pose * grasp_datas_[arm_jmg].grasp_pose_to_eef_pose_;
+    ee_pose = ee_pose * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
 
     // Visual debug
     visuals_->visual_tools_->publishSphere(ee_pose);

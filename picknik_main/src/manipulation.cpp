@@ -131,7 +131,7 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
 
   // Convert to the correct type for filtering
   std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates;
-  grasp_candidates = grasp_filter_->convertToGraspCandidatePtrs(possible_grasps);
+  grasp_candidates = grasp_filter_->convertToGraspCandidatePtrs(possible_grasps,grasp_datas_[arm_jmg]);
 
   // Filter grasps based on IK
   bool filter_pregrasps = true;
@@ -520,9 +520,9 @@ bool Manipulation::generateApproachPath(const moveit::core::JointModelGroup *arm
   // Configurations
   Eigen::Vector3d approach_direction;
   approach_direction << -1, 0, 0; // backwards towards robot body
-  ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","finger_to_palm_depth: " << grasp_datas_[arm_jmg].finger_to_palm_depth_);
+  ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","finger_to_palm_depth: " << grasp_datas_[arm_jmg]->finger_to_palm_depth_);
   ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","approach_distance_desired: " << config_.approach_distance_desired_);
-  double desired_approach_distance = grasp_datas_[arm_jmg].finger_to_palm_depth_ + config_.approach_distance_desired_;
+  double desired_approach_distance = grasp_datas_[arm_jmg]->finger_to_palm_depth_ + config_.approach_distance_desired_;
 
   // Show desired distance
   std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
@@ -691,7 +691,7 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","computeStraightLinePath()");
 
   // End effector parent link (arm tip for ik solving)
-  const moveit::core::LinkModel *ik_tip_link_model = grasp_datas_[arm_jmg].parent_link_;
+  const moveit::core::LinkModel *ik_tip_link_model = grasp_datas_[arm_jmg]->parent_link_;
 
   // ---------------------------------------------------------------------------------------------
   // Show desired trajectory in BLACK
@@ -999,7 +999,7 @@ bool Manipulation::moveCameraToBin(BinObjectPtr bin)
   const robot_model::JointModelGroup* arm_jmg = chooseArm(ee_pose);
 
   // Translate to custom end effector geometry
-  ee_pose = ee_pose * grasp_datas_[arm_jmg].grasp_pose_to_eef_pose_;
+  ee_pose = ee_pose * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
 
   // Customize the direction it is pointing
   // Roll Angle
@@ -1073,19 +1073,19 @@ bool Manipulation::openEndEffector(bool open, const robot_model::JointModelGroup
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","openEndEffector()");
 
   getCurrentState();
-  const robot_model::JointModelGroup* ee_jmg = grasp_datas_[arm_jmg].ee_jmg_;
+  const robot_model::JointModelGroup* ee_jmg = grasp_datas_[arm_jmg]->ee_jmg_;
 
   robot_trajectory::RobotTrajectoryPtr ee_traj(new robot_trajectory::RobotTrajectory(robot_model_, ee_jmg));
 
   if (open)
   {
-    ROS_INFO_STREAM_NAMED("manipulation","Opening end effector for " << grasp_datas_[arm_jmg].ee_group_name_);
-    ee_traj->setRobotTrajectoryMsg(*current_state_, grasp_datas_[arm_jmg].pre_grasp_posture_); // open
+    ROS_INFO_STREAM_NAMED("manipulation","Opening end effector for " << grasp_datas_[arm_jmg]->ee_jmg_->getName());
+    ee_traj->setRobotTrajectoryMsg(*current_state_, grasp_datas_[arm_jmg]->pre_grasp_posture_); // open
   }
   else
   {
-    ROS_INFO_STREAM_NAMED("manipulation","Closing end effector for " << grasp_datas_[arm_jmg].ee_group_name_);
-    ee_traj->setRobotTrajectoryMsg(*current_state_, grasp_datas_[arm_jmg].grasp_posture_); // closed
+    ROS_INFO_STREAM_NAMED("manipulation","Closing end effector for " << grasp_datas_[arm_jmg]->ee_jmg_->getName());
+    ee_traj->setRobotTrajectoryMsg(*current_state_, grasp_datas_[arm_jmg]->grasp_posture_); // closed
   }
 
   // Show the change in end effector
@@ -1127,15 +1127,15 @@ bool Manipulation::setStateWithOpenEE(bool open, moveit::core::RobotStatePtr rob
 
   if (open)
   {
-    grasp_datas_[config_.right_arm_].setRobotStatePreGrasp( robot_state );
+    grasp_datas_[config_.right_arm_]->setRobotStatePreGrasp( robot_state );
     if (config_.dual_arm_) 
-      grasp_datas_[config_.left_arm_].setRobotStatePreGrasp( robot_state );
+      grasp_datas_[config_.left_arm_]->setRobotStatePreGrasp( robot_state );
   }
   else
   {
-    grasp_datas_[config_.right_arm_].setRobotStateGrasp( robot_state );
+    grasp_datas_[config_.right_arm_]->setRobotStateGrasp( robot_state );
     if (config_.dual_arm_) 
-      grasp_datas_[config_.left_arm_].setRobotStateGrasp( robot_state );
+      grasp_datas_[config_.left_arm_]->setRobotStateGrasp( robot_state );
   }
 }
 
@@ -1324,7 +1324,7 @@ bool Manipulation::allowFingerTouch(const std::string& object_name, const robot_
     planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning scene
 
     // Get links of end effector
-    const std::vector<std::string> &ee_link_names = grasp_datas_[arm_jmg].ee_jmg_->getLinkModelNames();
+    const std::vector<std::string> &ee_link_names = grasp_datas_[arm_jmg]->ee_jmg_->getLinkModelNames();
 
     // Prevent fingers from causing collision with object
     for (std::size_t i = 0; i < ee_link_names.size(); ++i)

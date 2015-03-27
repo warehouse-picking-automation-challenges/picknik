@@ -45,7 +45,7 @@ MOVEIT_CLASS_FORWARD(PlanningPipeline);
 namespace picknik_main
 {
 
-typedef std::map<const robot_model::JointModelGroup*,moveit_grasps::GraspData> GraspDatas;
+typedef std::map<const robot_model::JointModelGroup*,moveit_grasps::GraspDataPtr> GraspDatas;
 
 MOVEIT_CLASS_FORWARD(APCManager);
 MOVEIT_CLASS_FORWARD(Manipulation);
