@@ -126,7 +126,7 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
   double width = 0.05;
   double height = 0.05;
   double max_grasp_size = 0.10; // TODO: verify max object size Open Hand can grasp
-  grasp_generator_->generateCuboidGrasps( object_pose, depth, width, height, max_grasp_size,
+  grasp_generator_->generateGrasps( object_pose, depth, width, height, max_grasp_size,
                                           grasp_datas_[arm_jmg], possible_grasps);
 
   // Convert to the correct type for filtering
