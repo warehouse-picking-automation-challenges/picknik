@@ -252,6 +252,7 @@ Button Mapings
 		13. Test joint limits
 		14. Go home
 		15. Test grasp generator abilities and score results
+		16. Record a calibration trajectory
 	jump_to - which step in the manipulation pipeline to start on
 	  Steps: NOT CORRECT ANYMORE
 	    0. Move to initial position

@@ -238,6 +238,12 @@ public:
   bool testGraspGenerator();
 
   /**
+   * \brief Record a trajectory for calibration
+   * \return true on success
+   */
+  bool testRecordCalibrationTrajectory();
+
+  /**
    * \brief Load single product, one per shelf, for testing
    * \param product_name
    * \return true on success

@@ -19,6 +19,9 @@
 // Parameter loading
 #include <rviz_visual_tools/ros_param_utilities.h>
 
+// MoveIt
+#include <moveit/robot_state/conversions.h>
+
 // Boost
 #include <boost/filesystem.hpp>
 #include <boost/foreach.hpp>
@@ -577,11 +580,10 @@ bool APCManager::perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder o
 
   // -----------------------------------------------------------------------------------------------
   // Perturb camera
-  if (false)
-    if (!manipulation_->perturbCamera(bin))
-    {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
-    }
+  if (!manipulation_->perturbCamera(bin))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
+  }
 
   // -----------------------------------------------------------------------------------------------
   // Wait for the action to return with product pose
@@ -598,6 +600,12 @@ bool APCManager::perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder o
   // Get result
   picknik_msgs::FindObjectsResultConstPtr perception_result = find_objects_action_.getResult();
   ROS_DEBUG_STREAM_NAMED("apc_manager.perception","Perception result:\n" << *perception_result);
+
+  if (!perception_result->succeeded)
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Perception action server reported failure");
+    //return false;
+  }
 
   // -----------------------------------------------------------------------------------------------
   // Check bounds and update planning scene
@@ -1044,6 +1052,8 @@ bool APCManager::testCameraPositions()
   std::size_t bin_skipper = 0;
   for (BinObjectMap::const_iterator bin_it = shelf_->getBins().begin(); bin_it != shelf_->getBins().end(); bin_it++)
   {
+    waitForNextStep();    
+
     if (!ros::ok())
       return true;
 
@@ -1078,10 +1088,48 @@ bool APCManager::testCameraPositions()
   return true;
 }
 
-
+// Mode 12
 bool APCManager::testCalibration()
 {
-  manipulation_->calibrateCamera();
+  // First move to the same start position every time
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Going home");
+
+  // Choose which planning group to use
+  const robot_model::JointModelGroup* arm_jmg = config_.dual_arm_ ? config_.both_arms_ : config_.right_arm_;
+  moveToStartPosition(arm_jmg);
+
+  std::cout << std::endl << std::endl << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << "MOVING ARM FOR CALIBRATION" << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+
+  // Start playing back
+  std::string file_path;
+  const std::string file_name = "calibration_trajectory";
+  manipulation_->getFilePath(file_path, file_name);
+  std::ifstream input_file;
+  input_file.open (file_path.c_str());
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Loading calibration trajectory from file " << file_path);
+
+  std::string line;
+  moveit::core::RobotState new_state(*manipulation_->getCurrentState());
+
+  // Read each line
+  while(std::getline(input_file, line))
+  {
+    std::cout << "commanding... " << std::endl;
+    
+    // Convert line to a robot state
+    ROS_WARN_STREAM_NAMED("temp","enable this");
+    //moveit::core::streamToRobotState(new_state, line, ",");
+
+    // Debug
+    visuals_->visual_tools_->publishRobotState(new_state);
+    ros::Duration(1.0).sleep();
+  }
+
+  // Close file
+  input_file.close();
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done calibrating camera");
   return true;
@@ -1336,6 +1384,45 @@ bool APCManager::testGraspGenerator()
   logging_file.open(file_path.c_str(), std::ios::out | std::ios::app);
   logging_file << csv_log_stream.str();
   logging_file.flush(); // save
+}
+
+// Mode 16
+bool APCManager::testRecordCalibrationTrajectory()
+{
+  // First move to the same start position every time
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Going home");
+
+  // Choose which planning group to use
+  const robot_model::JointModelGroup* arm_jmg = config_.dual_arm_ ? config_.both_arms_ : config_.right_arm_;
+  moveToStartPosition(arm_jmg);
+
+  std::cout << std::endl << std::endl << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << "START MOVING ARM " << std::endl;
+  std::cout << "Press Auto button to stop recording " << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+
+  // Start recording
+  bool include_header = false;
+
+  std::string file_path;
+  const std::string file_name = "calibration_trajectory";
+  manipulation_->getFilePath(file_path, file_name);
+  std::ofstream output_file;
+  output_file.open (file_path.c_str());
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Saving calibration trajectory to file " << file_path);
+
+  while(!autonomous_ && ros::ok())
+  {
+    std::cout << "recording... " << std::endl;
+    
+    moveit::core::robotStateToStream(*manipulation_->getCurrentState(), output_file, include_header);
+
+    ros::Duration(0.25).sleep();
+  }
+
+  output_file.close();
+  return true;
 }
 
 bool APCManager::loadShelfWithOnlyOneProduct(const std::string& product_name)

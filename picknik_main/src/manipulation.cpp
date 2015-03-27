@@ -878,48 +878,6 @@ const robot_model::JointModelGroup* Manipulation::chooseArm(const Eigen::Affine3
   }
 }
 
-bool Manipulation::calibrateCamera()
-{
-  ROS_INFO_STREAM_NAMED("manipulation","Calibrating camera");
-
-  bool result = false; // we want to achieve at least one camera pose
-
-  std::vector<std::string> poses;
-  poses.push_back("shelf_calibration1");
-  poses.push_back("shelf_calibration2");
-  poses.push_back("shelf_calibration3");
-  poses.push_back("shelf_calibration4");
-  poses.push_back("shelf_calibration5");
-  poses.push_back("shelf_calibration6");
-
-  // Move to each pose. The first move is full speed, the others are slow
-  double velcity_scaling_factor = config_.main_velocity_scaling_factor_;
-  for (std::size_t i = 0; i < poses.size(); ++i)
-  {
-    ROS_INFO_STREAM_NAMED("manipulation","Moving to camera pose " << poses[i] << " with scaling factor " << config_.calibration_velocity_scaling_factor_);
-
-    // First one goes fast
-    if (i > 0)
-      velcity_scaling_factor = config_.calibration_velocity_scaling_factor_;
-
-    // Choose which arm to utilize for task
-    ROS_WARN_STREAM_NAMED("manipulation","no logic for dual arm robot calibration");
-    const robot_model::JointModelGroup* arm_jmg = config_.right_arm_;
-
-    if (!moveToPose(arm_jmg, poses[i], velcity_scaling_factor))
-    {
-      ROS_ERROR_STREAM_NAMED("manipulation","Unable to move to pose " << poses[i]);
-      return false;
-    }
-    else
-    {
-      result = true;
-    }
-  }
-
-  return true;
-}
-
 bool Manipulation::perturbCamera(BinObjectPtr bin)
 {
   // Note: assumes arm is already pointing at centroid of desired bin
@@ -1653,7 +1611,7 @@ bool Manipulation::getFilePath(std::string &file_path, const std::string &file_n
     rootPath = fs::path("");
   }
 
-  std::string directory = "ros/ws_robots/src/matlab_trajectory_analysis";
+  std::string directory = "ros/ws_robots/src/picknik_trajectories";
   rootPath = rootPath / fs::path(directory);
 
   boost::system::error_code returnedError;

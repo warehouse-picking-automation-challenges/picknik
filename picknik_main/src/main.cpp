@@ -201,9 +201,11 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Testing grasp generator abilities and scoring results");
       manager.testGraspGenerator();
       break;
-    // case 12:
-    //   ROS_INFO_STREAM_NAMED("main","");
-    //   break;
+    case 16:
+      ROS_INFO_STREAM_NAMED("main","Recording a trajectory for calibration");
+      if (!manager.checkSystemReady()) return 0;;
+      manager.testRecordCalibrationTrajectory();
+      break;
     // case 12:
     //   ROS_INFO_STREAM_NAMED("main","");
     //   break;

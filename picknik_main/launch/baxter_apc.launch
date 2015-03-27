@@ -59,6 +59,9 @@
     <rosparam command="load" file="$(find baxter_moveit_config)/config/kinematics.yaml"/>
     <rosparam command="load" file="$(find moveit_grasps)/config/baxter_grasp_data.yaml"/>
 
+    <!-- Grasp Debug settings -->
+    <rosparam command="load" file="$(find moveit_grasps)/config/grasp_debug_level.yaml"/>    
+
     <!-- Settings of Amazon competition -->
     <rosparam command="load" file="$(find picknik_main)/config/apc_configuration.yaml"/>
 
@@ -70,7 +73,6 @@
     <param name="use_scratch" unless="$(arg use_scratch)" value="false"/>
     <param name="saving_enabled"     if="$(arg saving_enabled)" value="true"/>
     <param name="saving_enabled" unless="$(arg saving_enabled)" value="false"/>
-
   </node>
 
 </launch>

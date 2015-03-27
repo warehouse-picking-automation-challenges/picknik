@@ -171,12 +171,6 @@ public:
   const robot_model::JointModelGroup* chooseArm(const Eigen::Affine3d& ee_pose);
 
   /**
-   * \brief Run calibration routine
-   * \return true on success
-   */
-  bool calibrateCamera();
-
-  /**
    * \brief Move camera around to get good view of bin
    * \return true on success
    */
