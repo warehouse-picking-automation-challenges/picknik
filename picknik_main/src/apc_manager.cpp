@@ -1089,14 +1089,18 @@ bool APCManager::testCameraPositions()
 }
 
 // Mode 12
-bool APCManager::testCalibration()
+bool APCManager::calibrateCamera()
 {
   // First move to the same start position every time
   ROS_DEBUG_STREAM_NAMED("apc_manager","Going home");
 
   // Choose which planning group to use
   const robot_model::JointModelGroup* arm_jmg = config_.dual_arm_ ? config_.both_arms_ : config_.right_arm_;
-  moveToStartPosition(arm_jmg);
+  if (!moveToStartPosition(arm_jmg))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move home, unable to calibrate");
+    return false;
+  }
 
   std::cout << std::endl << std::endl << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
@@ -1131,7 +1135,7 @@ bool APCManager::testCalibration()
   // Convert to a trajectory
   moveit_msgs::RobotTrajectory trajectory_msg;
   if (!manipulation_->convertRobotStatesToTrajectory(robot_state_trajectory, trajectory_msg, arm_jmg, 
-                                                     config_.main_velocity_scaling_factor_))
+                                                     config_.calibration_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
     return false;
@@ -1142,16 +1146,57 @@ bool APCManager::testCalibration()
   visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, current_state, wait_for_trajetory);
 
   // Execute
-  // if( !executeTrajectory(trajectory_msg) )
-  // {
-  //   ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
-  //   return false;
-  // }
+  if( !manipulation_->executeTrajectory(trajectory_msg) )
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
+    return false;
+  }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done calibrating camera");
   return true;  
 }
 
+// Mode 13
+bool APCManager::recordCalibrationTrajectory()
+{
+  // First move to the same start position every time
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Going home");
+
+  // Choose which planning group to use
+  const robot_model::JointModelGroup* arm_jmg = config_.dual_arm_ ? config_.both_arms_ : config_.right_arm_;
+  moveToStartPosition(arm_jmg);
+
+  std::cout << std::endl << std::endl << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << "START MOVING ARM " << std::endl;
+  std::cout << "Press Auto button to stop recording " << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+
+  // Start recording
+  bool include_header = false;
+
+  std::string file_path;
+  const std::string file_name = "calibration_trajectory";
+  manipulation_->getFilePath(file_path, file_name);
+  std::ofstream output_file;
+  output_file.open (file_path.c_str());
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Saving calibration trajectory to file " << file_path);
+
+  static std::size_t counter = 0;
+  while(!autonomous_ && ros::ok())
+  {
+    ROS_INFO_STREAM_THROTTLE_NAMED(1, "apc_manager","Recording waypoint #" << counter++ );
+    
+    moveit::core::robotStateToStream(*manipulation_->getCurrentState(), output_file, include_header);
+
+    ros::Duration(0.25).sleep();
+  }
+
+  output_file.close();
+  return true;
+}
+
+// Mode 16
 bool APCManager::testJointLimits()
 {
   ROS_INFO_STREAM_NAMED("apc_manager","Testing joint limits");
@@ -1401,45 +1446,6 @@ bool APCManager::testGraspGenerator()
   logging_file.open(file_path.c_str(), std::ios::out | std::ios::app);
   logging_file << csv_log_stream.str();
   logging_file.flush(); // save
-}
-
-// Mode 16
-bool APCManager::testRecordCalibrationTrajectory()
-{
-  // First move to the same start position every time
-  ROS_DEBUG_STREAM_NAMED("apc_manager","Going home");
-
-  // Choose which planning group to use
-  const robot_model::JointModelGroup* arm_jmg = config_.dual_arm_ ? config_.both_arms_ : config_.right_arm_;
-  moveToStartPosition(arm_jmg);
-
-  std::cout << std::endl << std::endl << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
-  std::cout << "START MOVING ARM " << std::endl;
-  std::cout << "Press Auto button to stop recording " << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
-
-  // Start recording
-  bool include_header = false;
-
-  std::string file_path;
-  const std::string file_name = "calibration_trajectory";
-  manipulation_->getFilePath(file_path, file_name);
-  std::ofstream output_file;
-  output_file.open (file_path.c_str());
-  ROS_DEBUG_STREAM_NAMED("apc_manager","Saving calibration trajectory to file " << file_path);
-
-  while(!autonomous_ && ros::ok())
-  {
-    std::cout << "recording... " << std::endl;
-    
-    moveit::core::robotStateToStream(*manipulation_->getCurrentState(), output_file, include_header);
-
-    ros::Duration(0.25).sleep();
-  }
-
-  output_file.close();
-  return true;
 }
 
 bool APCManager::loadShelfWithOnlyOneProduct(const std::string& product_name)

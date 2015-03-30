@@ -248,11 +248,11 @@ Button Mapings
 		9. Check if current state is in collision
 		10. Plan to random valid locations
 		11. Move camera to each bin location and request ObjectRecognitionServer
-		12. Test camera calibration
-		13. Test joint limits
+		12. Calibrate camera
+		13. Record a calibration trajectory
 		14. Go home
 		15. Test grasp generator abilities and score results
-		16. Record a calibration trajectory
+		16. Test joint limits
 	jump_to - which step in the manipulation pipeline to start on
 	  Steps: NOT CORRECT ANYMORE
 	    0. Move to initial position

@@ -211,7 +211,7 @@ public:
    * \brief Test moving the camera around for calibration
    * \return true on success
    */
-  bool testCalibration();
+  bool calibrateCamera();
 
   /**
    * \brief Test moving joints to extreme limits
@@ -241,7 +241,7 @@ public:
    * \brief Record a trajectory for calibration
    * \return true on success
    */
-  bool testRecordCalibrationTrajectory();
+  bool recordCalibrationTrajectory();
 
   /**
    * \brief Load single product, one per shelf, for testing

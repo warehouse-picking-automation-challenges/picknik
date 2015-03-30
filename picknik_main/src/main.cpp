@@ -185,12 +185,12 @@ int main(int argc, char** argv)
     case 12:
       ROS_INFO_STREAM_NAMED("main","Test camera calibration");
       if (!manager.checkSystemReady()) return 0;;
-      manager.testCalibration();
+      manager.calibrateCamera();
       break;
     case 13:
-      ROS_INFO_STREAM_NAMED("main","Test joint limits");
+      ROS_INFO_STREAM_NAMED("main","Recording a trajectory for calibration");
       if (!manager.checkSystemReady()) return 0;;
-      manager.testJointLimits();
+      manager.recordCalibrationTrajectory();
       break;
     case 14:
       ROS_INFO_STREAM_NAMED("main","Go to home position");
@@ -202,9 +202,9 @@ int main(int argc, char** argv)
       manager.testGraspGenerator();
       break;
     case 16:
-      ROS_INFO_STREAM_NAMED("main","Recording a trajectory for calibration");
+      ROS_INFO_STREAM_NAMED("main","Test joint limits");
       if (!manager.checkSystemReady()) return 0;;
-      manager.testRecordCalibrationTrajectory();
+      manager.testJointLimits();
       break;
     // case 12:
     //   ROS_INFO_STREAM_NAMED("main","");
