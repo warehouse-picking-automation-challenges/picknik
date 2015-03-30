@@ -1112,27 +1112,44 @@ bool APCManager::testCalibration()
   ROS_DEBUG_STREAM_NAMED("apc_manager","Loading calibration trajectory from file " << file_path);
 
   std::string line;
-  moveit::core::RobotState new_state(*manipulation_->getCurrentState());
+  moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
+
+  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
 
   // Read each line
   while(std::getline(input_file, line))
   {
-    std::cout << "commanding... " << std::endl;
-    
     // Convert line to a robot state
-    ROS_WARN_STREAM_NAMED("temp","enable this");
-    //moveit::core::streamToRobotState(new_state, line, ",");
-
-    // Debug
-    visuals_->visual_tools_->publishRobotState(new_state);
-    ros::Duration(1.0).sleep();
+    moveit::core::RobotStatePtr new_state(new moveit::core::RobotState(*current_state));
+    moveit::core::streamToRobotState(*new_state, line, ",");
+    robot_state_trajectory.push_back(new_state);
   }
 
   // Close file
   input_file.close();
 
+  // Convert to a trajectory
+  moveit_msgs::RobotTrajectory trajectory_msg;
+  if (!manipulation_->convertRobotStatesToTrajectory(robot_state_trajectory, trajectory_msg, arm_jmg, 
+                                                     config_.main_velocity_scaling_factor_))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
+    return false;
+  }
+
+  // Visualize trajectory in Rviz display
+  bool wait_for_trajetory = false;
+  visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, current_state, wait_for_trajetory);
+
+  // Execute
+  // if( !executeTrajectory(trajectory_msg) )
+  // {
+  //   ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
+  //   return false;
+  // }
+
   ROS_INFO_STREAM_NAMED("apc_manager","Done calibrating camera");
-  return true;
+  return true;  
 }
 
 bool APCManager::testJointLimits()

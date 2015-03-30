@@ -219,7 +219,7 @@ bool Manipulation::moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_
       ROS_WARN_STREAM_NAMED("manipulation","moveEEToPose() has collision_checking_verbose turned on");
     boost::scoped_ptr<planning_scene_monitor::LockedPlanningSceneRO> ls;
     ls.reset(new planning_scene_monitor::LockedPlanningSceneRO(planning_scene_monitor_));
-    robot_state::GroupStateValidityCallbackFn constraint_fn
+    moveit::core::GroupStateValidityCallbackFn constraint_fn
       = boost::bind(&isStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
                     collision_checking_verbose, visuals_, _1, _2, _3);
 
@@ -474,14 +474,14 @@ bool Manipulation::executeState(const moveit::core::RobotStatePtr goal_state, co
   visuals_->goal_state_->publishRobotState(goal_state, rvt::ORANGE);
 
   // Create trajectory
-  std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
+  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
   robot_state_trajectory.push_back(current_state_);
 
   // Create an interpolated trajectory between states
   double resolution = 0.1;
   for (double t = 0; t < 1; t += resolution)
   {
-    robot_state::RobotStatePtr interpolated_state = robot_state::RobotStatePtr(new robot_state::RobotState(*current_state_));
+    moveit::core::RobotStatePtr interpolated_state = moveit::core::RobotStatePtr(new moveit::core::RobotState(*current_state_));
     current_state_->interpolate(*goal_state, t, *interpolated_state);
     robot_state_trajectory.push_back(interpolated_state);
   }
@@ -525,7 +525,7 @@ bool Manipulation::generateApproachPath(const moveit::core::JointModelGroup *arm
   double desired_approach_distance = grasp_datas_[arm_jmg]->finger_to_palm_depth_ + config_.approach_distance_desired_;
 
   // Show desired distance
-  std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
+  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
   double path_length;
   bool reverse_path = true;
   if (!computeStraightLinePath( approach_direction, desired_approach_distance, robot_state_trajectory,
@@ -565,7 +565,7 @@ bool Manipulation::executeLiftPath(const moveit::core::JointModelGroup *arm_jmg,
   // Compute straight line up above grasp
   Eigen::Vector3d approach_direction;
   approach_direction << 0, 0, (up ? 1 : -1); // 1 is up, -1 is down
-  std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
+  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
   double path_length;
   bool reverse_path = false;
   if (!computeStraightLinePath( approach_direction, desired_lift_distance,
@@ -606,7 +606,7 @@ bool Manipulation::executeLeftPath(const moveit::core::JointModelGroup *arm_jmg,
   // Compute straight line left above grasp
   Eigen::Vector3d approach_direction;
   approach_direction << 0, (left ? 1 : -1), 0; // 1 is left, -1 is right
-  std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
+  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
   double path_length;
   bool reverse_path = false;
   if (!computeStraightLinePath( approach_direction, desired_lift_distance,
@@ -649,7 +649,7 @@ bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_j
   Eigen::Vector3d approach_direction;
   approach_direction << (retreat ? -1 : 1), 0, 0; // backwards towards robot body
   double path_length;
-  std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
+  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
   bool reverse_path = false;
   if (!computeStraightLinePath( approach_direction, desired_approach_distance,
                                 robot_state_trajectory, current_state_, arm_jmg, reverse_path, path_length))
@@ -682,8 +682,8 @@ bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_j
 
 bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
                                             double desired_approach_distance,
-                                            std::vector<robot_state::RobotStatePtr>& robot_state_trajectory,
-                                            robot_state::RobotStatePtr robot_state,
+                                            std::vector<moveit::core::RobotStatePtr>& robot_state_trajectory,
+                                            moveit::core::RobotStatePtr robot_state,
                                             const moveit::core::JointModelGroup *arm_jmg,
                                             bool reverse_trajectory,
                                             double& path_length)
@@ -758,7 +758,7 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
     // Collision check
     boost::scoped_ptr<planning_scene_monitor::LockedPlanningSceneRO> ls;
     ls.reset(new planning_scene_monitor::LockedPlanningSceneRO(planning_scene_monitor_));
-    robot_state::GroupStateValidityCallbackFn constraint_fn
+    moveit::core::GroupStateValidityCallbackFn constraint_fn
       = boost::bind(&isStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
                     collision_checking_verbose, visuals_, _1, _2, _3);
 
@@ -986,7 +986,7 @@ bool Manipulation::straightProjectPose( const Eigen::Affine3d& original_pose, Ei
   return true;
 }
 
-bool Manipulation::convertRobotStatesToTrajectory(const std::vector<robot_state::RobotStatePtr>& robot_state_trajectory,
+bool Manipulation::convertRobotStatesToTrajectory(const std::vector<moveit::core::RobotStatePtr>& robot_state_trajectory,
                                                   moveit_msgs::RobotTrajectory& trajectory_msg,
                                                   const robot_model::JointModelGroup* jmg,
                                                   const double &velocity_scaling_factor)
@@ -1423,7 +1423,7 @@ bool Manipulation::visualizeGrasps(std::vector<moveit_grasps::GraspCandidatePtr>
   Eigen::Vector3d approach_direction;
   approach_direction << -1, 0, 0; // backwards towards robot body
   double desired_approach_distance = 0.45; //0.12; //0.15;
-  std::vector<robot_state::RobotStatePtr> robot_state_trajectory;
+  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
   double path_length;
   double max_path_length = 0; // statistics
   bool reverse_path = false;
@@ -1528,8 +1528,8 @@ bool Manipulation::checkCurrentCollisionAndBounds(const robot_model::JointModelG
   return result;
 }
 
-bool Manipulation::checkCollisionAndBounds(const robot_state::RobotStatePtr &start_state,
-                                           const robot_state::RobotStatePtr &goal_state)
+bool Manipulation::checkCollisionAndBounds(const moveit::core::RobotStatePtr &start_state,
+                                           const moveit::core::RobotStatePtr &goal_state)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","checkCollisionAndBounds()");
 
@@ -1636,8 +1636,8 @@ bool Manipulation::getFilePath(std::string &file_path, const std::string &file_n
 namespace
 {
 bool isStateValid(const planning_scene::PlanningScene *planning_scene, bool verbose,
-                  picknik_main::VisualsPtr visuals, robot_state::RobotState *robot_state,
-                  const robot_state::JointModelGroup *group, const double *ik_solution)
+                  picknik_main::VisualsPtr visuals, moveit::core::RobotState *robot_state,
+                  const moveit::core::JointModelGroup *group, const double *ik_solution)
 {
   robot_state->setJointGroupPositions(group, ik_solution);
   robot_state->update();
