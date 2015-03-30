@@ -31,7 +31,8 @@ catkin_package(
     jsoncpp
     amazon_json_parser
     shelf
-    manipulation
+    fix_state_bounds
+    manipulation    
     #learning_pipeline
     visuals
     ${OMPL_LIBRARIES}
@@ -101,6 +102,15 @@ target_link_libraries(shelf
   ${Boost_LIBRARIES}
 )
 
+# Fix_state_bounds library
+add_library(fix_state_bounds
+  src/fix_state_bounds.cpp
+)
+target_link_libraries(fix_state_bounds
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
 # Product_simulator library
 add_library(product_simulator
   src/product_simulator.cpp
@@ -121,6 +131,8 @@ target_link_libraries(manipulation
   visuals
   manipulation_data
   product_simulator
+  shelf
+  fix_state_bounds
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
@@ -140,9 +152,8 @@ add_library(apc_manager
   src/apc_manager.cpp
 )
 target_link_libraries(apc_manager
-  visuals
-  manipulation_data
-  shelf
+  #visuals
+  #manipulation_data  
   amazon_json_parser
   manipulation
   # learning_pipeline

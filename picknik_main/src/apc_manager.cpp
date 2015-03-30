@@ -1096,11 +1096,11 @@ bool APCManager::calibrateCamera()
 
   // Choose which planning group to use
   const robot_model::JointModelGroup* arm_jmg = config_.dual_arm_ ? config_.both_arms_ : config_.right_arm_;
-  if (!moveToStartPosition(arm_jmg))
-  {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move home, unable to calibrate");
-    return false;
-  }
+  // if (!moveToStartPosition(arm_jmg))
+  // {
+  //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move home, unable to calibrate");
+  //   return false;
+  // }
 
   std::cout << std::endl << std::endl << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
@@ -1111,44 +1111,10 @@ bool APCManager::calibrateCamera()
   std::string file_path;
   const std::string file_name = "calibration_trajectory";
   manipulation_->getFilePath(file_path, file_name);
-  std::ifstream input_file;
-  input_file.open (file_path.c_str());
-  ROS_DEBUG_STREAM_NAMED("apc_manager","Loading calibration trajectory from file " << file_path);
 
-  std::string line;
-  moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
-
-  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
-
-  // Read each line
-  while(std::getline(input_file, line))
+  if (!manipulation_->playbackTrajectoryFromFile(file_path, arm_jmg, config_.calibration_velocity_scaling_factor_))
   {
-    // Convert line to a robot state
-    moveit::core::RobotStatePtr new_state(new moveit::core::RobotState(*current_state));
-    moveit::core::streamToRobotState(*new_state, line, ",");
-    robot_state_trajectory.push_back(new_state);
-  }
-
-  // Close file
-  input_file.close();
-
-  // Convert to a trajectory
-  moveit_msgs::RobotTrajectory trajectory_msg;
-  if (!manipulation_->convertRobotStatesToTrajectory(robot_state_trajectory, trajectory_msg, arm_jmg, 
-                                                     config_.calibration_velocity_scaling_factor_))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
-    return false;
-  }
-
-  // Visualize trajectory in Rviz display
-  bool wait_for_trajetory = false;
-  visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, current_state, wait_for_trajetory);
-
-  // Execute
-  if( !manipulation_->executeTrajectory(trajectory_msg) )
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to playback calibration trajectory");
     return false;
   }
 
@@ -1164,7 +1130,6 @@ bool APCManager::recordCalibrationTrajectory()
 
   // Choose which planning group to use
   const robot_model::JointModelGroup* arm_jmg = config_.dual_arm_ ? config_.both_arms_ : config_.right_arm_;
-  moveToStartPosition(arm_jmg);
 
   std::cout << std::endl << std::endl << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;

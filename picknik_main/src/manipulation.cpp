@@ -18,7 +18,6 @@
 #include <picknik_main/product_simulator.h>
 
 // MoveIt
-#include <moveit/trajectory_processing/iterative_time_parameterization.h>
 #include <moveit/ompl/model_based_planning_context.h>
 #include <moveit/collision_detection/world.h>
 #include <moveit/planning_pipeline/planning_pipeline.h>
@@ -127,7 +126,7 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
   double height = 0.05;
   double max_grasp_size = 0.10; // TODO: verify max object size Open Hand can grasp
   grasp_generator_->generateGrasps( object_pose, depth, width, height, max_grasp_size,
-                                          grasp_datas_[arm_jmg], possible_grasps);
+                                    grasp_datas_[arm_jmg], possible_grasps);
 
   // Convert to the correct type for filtering
   std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates;
@@ -171,6 +170,78 @@ bool Manipulation::createCollisionWall()
   // Output planning scene
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
   ros::Duration(0.25).sleep(); // TODO remove?
+
+  return true;
+}
+
+bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
+                                              double velocity_scaling_factor)
+{
+
+  std::ifstream input_file;
+  input_file.open (file_name.c_str());
+  ROS_DEBUG_STREAM_NAMED("manipultion","Loading trajectory from file " << file_name);
+
+  std::string line;
+  current_state_ = getCurrentState();
+
+  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
+
+  // Read each line
+  while(std::getline(input_file, line))
+  {
+    // Convert line to a robot state
+    moveit::core::RobotStatePtr new_state(new moveit::core::RobotState(*current_state_));
+    moveit::core::streamToRobotState(*new_state, line, ",");
+    robot_state_trajectory.push_back(new_state);
+  }
+
+  // Close file
+  input_file.close();
+
+  // // Error check
+  // if (robot_state_trajectory.size() == 0)
+  // {
+  //   ROS_ERROR_STREAM_NAMED("manipultion","No states loaded from CSV file " << file_name);
+  //   return false;
+  // }
+
+  // // Convert to a trajectory
+  // moveit_msgs::RobotTrajectory trajectory_msg;
+  // if (!convertRobotStatesToTrajectory(robot_state_trajectory, trajectory_msg, arm_jmg,
+  //                                     velocity_scaling_factor))
+  // {
+  //   ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
+  //   return false;
+  // }
+
+  // // Plan to start state of trajectory
+  // bool verbose = true;
+  // bool execute_trajectory = true;
+  // ROS_INFO_STREAM_NAMED("manipulation","Moving to start state of trajectory");
+  // if (!move(current_state_, robot_state_trajectory.front(), arm_jmg, config_.main_velocity_scaling_factor_, 
+  //           verbose, execute_trajectory))
+  // {
+  //   ROS_ERROR_STREAM_NAMED("manipultion","Unable to plan");
+  //   return false;
+  // }
+
+  // Visualize trajectory in Rviz display
+  bool wait_for_trajetory = false;
+  //visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, current_state_, wait_for_trajetory);
+
+  // Wait for user
+  std::cout << std::endl;
+  std::cout << std::endl;
+  std::cout << "Waiting before executing trajectory" << std::endl;
+  //parent_->waitForNextStep();
+
+  // Execute
+  // if( !executeTrajectory(trajectory_msg) )
+  // {
+  //   ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
+  //   return false;
+  // }
 
   return true;
 }
@@ -359,6 +430,26 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   // Do not execute a bad trajectory
   if (error)
     return false;
+
+  // Hack: do not allow a two point trajectory to be executed because there is no velcity?
+  if (response.trajectory.joint_trajectory.points.size() < 3)
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Trajectory only has " << response.trajectory.joint_trajectory.points.size() << " points");
+
+    // Add more waypoints
+    robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, arm_jmg));
+    robot_trajectory->setRobotTrajectoryMsg(*current_state_, response.trajectory);
+    
+    // Duplicate states
+    double dt = 1; // dummy time
+    robot_trajectory->addSuffixWayPoint(*robot_trajectory->getLastWayPointPtr(), dt);
+
+    // Perform iterative parabolic smoothing
+    iterative_smoother_.computeTimeStamps( *robot_trajectory, config_.main_velocity_scaling_factor_ );
+
+    // Convert trajectory back to a message
+    robot_trajectory->getRobotTrajectoryMsg(response.trajectory);
+  }
 
   // Execute trajectory
   if (execute_trajectory)
@@ -1002,13 +1093,12 @@ bool Manipulation::convertRobotStatesToTrajectory(const std::vector<moveit::core
 
   for (std::size_t k = 0 ; k < robot_state_trajectory.size() ; ++k)
   {
-    double duration_from_previous = 10; //TODO: is this overwritten?
+    double duration_from_previous = 1; // this is overwritten and unimportant
     robot_trajectory->addSuffixWayPoint(robot_state_trajectory[k], duration_from_previous);
   }
 
   // Perform iterative parabolic smoothing
-  trajectory_processing::IterativeParabolicTimeParameterization iterative_smoother;
-  iterative_smoother.computeTimeStamps( *robot_trajectory, velocity_scaling_factor );
+  iterative_smoother_.computeTimeStamps( *robot_trajectory, velocity_scaling_factor );
 
   // Convert trajectory to a message
   robot_trajectory->getRobotTrajectoryMsg(trajectory_msg);
@@ -1064,11 +1154,6 @@ bool Manipulation::openEndEffector(bool open, const robot_model::JointModelGroup
   moveit_msgs::RobotTrajectory trajectory_msg;
   ee_traj->getRobotTrajectoryMsg(trajectory_msg);
 
-  // Hack to speed up gripping
-  // TODO sleep less
-  //trajectory_msg.joint_trajectory.points.push_back(trajectory_msg.joint_trajectory.points[0]);
-  //trajectory_msg.joint_trajectory.points.back().time_from_start = ros::Duration(2);
-
   // Execute trajectory
   if( !executeTrajectory(trajectory_msg) )
   {
@@ -1086,13 +1171,13 @@ bool Manipulation::setStateWithOpenEE(bool open, moveit::core::RobotStatePtr rob
   if (open)
   {
     grasp_datas_[config_.right_arm_]->setRobotStatePreGrasp( robot_state );
-    if (config_.dual_arm_) 
+    if (config_.dual_arm_)
       grasp_datas_[config_.left_arm_]->setRobotStatePreGrasp( robot_state );
   }
   else
   {
     grasp_datas_[config_.right_arm_]->setRobotStateGrasp( robot_state );
-    if (config_.dual_arm_) 
+    if (config_.dual_arm_)
       grasp_datas_[config_.left_arm_]->setRobotStateGrasp( robot_state );
   }
 }
@@ -1120,8 +1205,8 @@ bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_ms
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeTrajectory()");
   ROS_INFO_STREAM_NAMED("manipulation","Executing trajectory");
 
-  // Hack? Remove effort command
-  if (true)
+  // Hack? Remove acceleration command
+  if (false)
     for (std::size_t i = 0; i < trajectory_msg.joint_trajectory.points.size(); ++i)
     {
       trajectory_msg.joint_trajectory.points[i].accelerations.clear();
@@ -1456,7 +1541,7 @@ bool Manipulation::visualizeGrasps(std::vector<moveit_grasps::GraspCandidatePtr>
     //grasp_generator_->publishGraspArrow(grasp_candidates[i]->grasp_.grasp_pose.pose, grasp_datas_[arm_jmg],
     //                                              rvt::BLUE, path_length);
 
-    
+
     bool show_score = false;
     if (show_score)
     {
@@ -1515,10 +1600,21 @@ bool Manipulation::checkCurrentCollisionAndBounds(const robot_model::JointModelG
   }
 
   // Check if satisfies bounds
-  double margin = 0.0001;
-  if (!current_state_->satisfiesBounds(margin))
+  if (!current_state_->satisfiesBounds(arm_jmg, fix_state_bounds_.getMaxBoundsError()))
   {
-    ROS_WARN_STREAM_NAMED("manipulation","State does not satisfy bounds");
+    ROS_WARN_STREAM_NAMED("manipulation","State does not satisfy bounds, attempting to fix...");
+
+    moveit::core::RobotStatePtr new_state(new moveit::core::RobotState(*current_state_));
+
+    if (!fix_state_bounds_.fixBounds(*new_state, arm_jmg))
+    {
+      ROS_WARN_STREAM_NAMED("manipulation","Unable to fix state bounds or change not required");
+    }
+    // State was modified, send to robot
+    else if (!executeState(new_state, arm_jmg, config_.main_velocity_scaling_factor_))
+    {
+      ROS_ERROR_STREAM_NAMED("manipulation","Unable to exceute state bounds fix");
+    }
     result = false;
   }
   else
@@ -1535,19 +1631,18 @@ bool Manipulation::checkCollisionAndBounds(const moveit::core::RobotStatePtr &st
 
   bool result = true;
   bool verbose = true;
-  double margin = 0.0001;
 
   // Check if satisfies bounds  --------------------------------------------------------
 
   // Start
-  if (!start_state->satisfiesBounds(margin))
+  if (!start_state->satisfiesBounds(fix_state_bounds_.getMaxBoundsError()))
   {
     ROS_WARN_STREAM_NAMED("manipulation","Start state does not satisfy bounds");
     result = false;
   }
 
   // Goal
-  if (goal_state && !goal_state->satisfiesBounds(margin))
+  if (goal_state && !goal_state->satisfiesBounds(fix_state_bounds_.getMaxBoundsError()))
   {
     ROS_WARN_STREAM_NAMED("manipulation","Goal state does not satisfy bounds");
 

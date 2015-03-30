@@ -5,15 +5,12 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Grid1/Offset1
-        - /Robot State1/Links1
-        - /Planning Start State1/Links1
         - /Amazon Markers1/Namespaces1
         - /Trajectory1
-        - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
         - /TF1/Frames1
-      Splitter Ratio: 0.833992
+      Splitter Ratio: 0.603704
     Tree Height: 826
   - Class: rviz/Help
     Name: Help
@@ -50,7 +47,7 @@ Visualization Manager:
       Collision Enabled: true
       Enabled: true
       Links:
-        All Links Enabled: false
+        All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
@@ -63,17 +60,17 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         collision_head_link_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         display:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         dummyhead1:
           Alpha: 1
           Show Axes: false
@@ -82,7 +79,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         head_camera:
           Alpha: 1
           Show Axes: false
@@ -191,7 +188,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         right_arm_itb:
           Alpha: 1
           Show Axes: false
@@ -296,17 +293,17 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         sonar_ring:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         torso:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
       Name: Robot State
       Robot Alpha: 1
       Robot Description: robot_description
@@ -320,7 +317,7 @@ Visualization Manager:
       Collision Enabled: true
       Enabled: true
       Links:
-        All Links Enabled: false
+        All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
@@ -333,17 +330,17 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         collision_head_link_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         display:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         dummyhead1:
           Alpha: 1
           Show Axes: false
@@ -352,7 +349,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         head_camera:
           Alpha: 1
           Show Axes: false
@@ -461,7 +458,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         right_arm_itb:
           Alpha: 1
           Show Axes: false
@@ -566,17 +563,17 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         sonar_ring:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         torso:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
       Name: Planning Start State
       Robot Alpha: 1
       Robot Description: robot_description
@@ -590,7 +587,7 @@ Visualization Manager:
       Collision Enabled: true
       Enabled: true
       Links:
-        All Links Enabled: false
+        All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
@@ -603,17 +600,17 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         collision_head_link_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         display:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         dummyhead1:
           Alpha: 1
           Show Axes: false
@@ -622,7 +619,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         head_camera:
           Alpha: 1
           Show Axes: false
@@ -731,7 +728,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         right_arm_itb:
           Alpha: 1
           Show Axes: false
@@ -836,17 +833,17 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         sonar_ring:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         torso:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
       Name: Planning Goal State
       Robot Alpha: 1
       Robot Description: robot_description
@@ -1130,7 +1127,9 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Markers
       Namespaces:
-        {}
+        Collision: true
+        Cylinder: true
+        Text: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -1429,8 +1428,8 @@ Visualization Manager:
       Name: Trajectory
       Robot Alpha: 0.5
       Robot Description: robot_description
-      Show Robot Collision: false
-      Show Robot Visual: true
+      Show Robot Collision: true
+      Show Robot Visual: false
       Show Trail: false
       State Display Time: REALTIME
       Trajectory Topic: /picknik_main/display_trajectory
@@ -1445,7 +1444,7 @@ Visualization Manager:
         Scene Alpha: 0.9
         Scene Color: 120; 120; 120
         Scene Display Time: 0.2
-        Show Scene Geometry: true
+        Show Scene Geometry: false
         Voxel Coloring: Z-Axis
         Voxel Rendering: Occupied Voxels
       Scene Robot:
@@ -1748,22 +1747,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 6.61757
+      Distance: 2.94164
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 5.34449
-        Y: 0.283316
-        Z: -9.53673e-07
+        X: -0.0541636
+        Y: 0.0508356
+        Z: 0
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.060399
+      Pitch: 0.660398
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.21539
+      Yaw: 1.39724
     Saved: ~
 Window Geometry:
   Displays:
@@ -1775,9 +1774,9 @@ Window Geometry:
   Hide Right Dock: false
   PickNik:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd000000010000000000000178000003e6fc020000000cfb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c00610079007301000000000000037b000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000145000000cb000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000230000001b60000000000000000fb0000000c00540065006c0065006f00700000000331000000b50000000000000000fb0000000e005000690063006b004e0069006b0100000381000000650000004300fffffffb0000000c00430061006d00650072006100000003d00000001600000000000000000000032c000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000001000000000000022e000003e6fc020000000cfb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c00610079007301000000000000037b000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000145000000cb000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000230000001b60000000000000000fb0000000c00540065006c0065006f00700000000331000000b50000000000000000fb0000000e005000690063006b004e0069006b0100000381000000650000004300fffffffb0000000c00430061006d00650072006100000003d000000016000000000000000000000276000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
   Views:
     collapsed: false
   Width: 1194
-  X: 1499
+  X: 1489
   Y: 14

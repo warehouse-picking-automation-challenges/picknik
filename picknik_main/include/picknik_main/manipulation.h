@@ -20,6 +20,7 @@
 #include <picknik_main/namespaces.h>
 #include <picknik_main/visuals.h>
 #include <picknik_main/manipulation_data.h>
+#include <picknik_main/fix_state_bounds.h>
 
 // ROS
 #include <ros/ros.h>
@@ -28,6 +29,7 @@
 #include <ompl_visual_tools/ompl_visual_tools.h>
 #include <moveit/kinematic_constraints/utils.h>
 #include <moveit/plan_execution/plan_execution.h>
+#include <moveit/trajectory_processing/iterative_time_parameterization.h>
 
 // OMPL
 #include <ompl/tools/experience/ExperienceSetup.h>
@@ -84,20 +86,32 @@ public:
   bool createCollisionWall();
 
   /**
+   * \brief Read a trajectory from CSV and execute on robot
+   * \param file_name - location of file
+   * \param arm_jmg - group the file saves (should be whole body)
+   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
+   * \return true on success
+   */
+  bool playbackTrajectoryFromFile(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
+                                  double velocity_scaling_factor);
+
+  /**
    * \brief Move to any pose as defined in the SRDF
+   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
    * \return true on success
    */
   bool moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name, double velocity_scaling_factor);
 
   /**
    * \brief Move EE to a particular pose by solving with IK
-   * \param input - description
+   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
    * \return true on success
    */
   bool moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_scaling_factor, const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Send a planning request to moveit and execute
+   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
    * \return true on success
    */
   bool move(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
@@ -112,6 +126,7 @@ public:
 
   /**
    * \brief Send a single state to the controllers for execution
+   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
    * \return true on success
    */
   bool executeState(const moveit::core::RobotStatePtr goal_state, const moveit::core::JointModelGroup *jmg,
@@ -191,6 +206,7 @@ public:
 
   /**
    * \brief Convert and parameterize a trajectory with velocity information
+   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
    * \return true on success
    */
   bool convertRobotStatesToTrajectory(const std::vector<robot_state::RobotStatePtr>& robot_state_trajectory,
@@ -374,6 +390,10 @@ protected:
   // Grasp generator
   moveit_grasps::GraspGeneratorPtr grasp_generator_;
   moveit_grasps::GraspFilterPtr grasp_filter_;
+
+  // State modification helper
+  FixStateBounds fix_state_bounds_;
+  trajectory_processing::IterativeParabolicTimeParameterization iterative_smoother_;
 
 }; // end class
 
