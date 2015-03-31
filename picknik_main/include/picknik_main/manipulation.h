@@ -146,19 +146,26 @@ public:
    * \brief After grasping an object, lift object up slightly
    * \return true on success
    */
-  bool executeLiftPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true);
+  bool executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true);
 
   /**
    * \brief Translate arm left and right
    * \return true on success
    */
-  bool executeLeftPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_left_distance, bool left = true);
+  bool executeHorizontalPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_left_distance, bool left = true);
 
   /**
    * \brief After grasping an object, pull object out of shelf in reverse
    * \return true on success
    */
   bool executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_approach_distance = 0.25, bool retreat = true);
+
+  /**
+   * \brief Generic execute straight line path function
+   * \return true on success
+   */
+  bool executeCartesianPath(const moveit::core::JointModelGroup *arm_jmg, const Eigen::Vector3d& direction, double desired_distance,
+                            double velocity_scaling_factor, bool reverse_path = false);
 
   /**
    * \brief Function for testing multiple directions
@@ -364,6 +371,7 @@ protected:
 
   // Allocated memory for robot state
   moveit::core::RobotStatePtr current_state_;
+  moveit::core::RobotStatePtr first_state_in_trajectory_; // for use with generateApproachPath()
 
   // Properties
   ShelfObjectPtr shelf_;

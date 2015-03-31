@@ -214,7 +214,10 @@ int main(int argc, char** argv)
   }
 
   // Shutdown
+  std::cout << std::endl << std::endl << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
   ROS_INFO_STREAM_NAMED("main", "Shutting down.");
+  std::cout << std::endl << std::endl << std::endl;
   ros::shutdown();
 
   return 0;

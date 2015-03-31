@@ -477,7 +477,7 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
         // Clear all collision objects
         visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
 
-        if (!manipulation_->executeLiftPath(arm_jmg, config_.lift_distance_desired_))
+        if (!manipulation_->executeVerticlePath(arm_jmg, config_.lift_distance_desired_))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute retrieval path after grasping");
           return false;
@@ -741,7 +741,7 @@ bool APCManager::placeObjectInGoalBin(const robot_model::JointModelGroup* arm_jm
   }
 
   bool lift = false;
-  if (!manipulation_->executeLiftPath(arm_jmg, config_.place_goal_down_distance_desired_, lift))
+  if (!manipulation_->executeVerticlePath(arm_jmg, config_.place_goal_down_distance_desired_, lift))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Failed to lower product into goal bin distance "
                            << config_.place_goal_down_distance_desired_);
@@ -852,17 +852,17 @@ bool APCManager::testUpAndDown()
     if (i % 2 == 0)
     {
       std::cout << "Moving up --------------------------------------" << std::endl;
-      manipulation_->executeLiftPath(config_.right_arm_, lift_distance_desired, true);
+      manipulation_->executeVerticlePath(config_.right_arm_, lift_distance_desired, true);
       if (config_.dual_arm_)
-        manipulation_->executeLiftPath(config_.left_arm_, lift_distance_desired, true);
+        manipulation_->executeVerticlePath(config_.left_arm_, lift_distance_desired, true);
       ros::Duration(1.0).sleep();
     }
     else
     {
       std::cout << "Moving down ------------------------------------" << std::endl;
-      manipulation_->executeLiftPath(config_.right_arm_, lift_distance_desired, false);
+      manipulation_->executeVerticlePath(config_.right_arm_, lift_distance_desired, false);
       if (config_.dual_arm_)
-        manipulation_->executeLiftPath(config_.left_arm_, lift_distance_desired, false);
+        manipulation_->executeVerticlePath(config_.left_arm_, lift_distance_desired, false);
       ros::Duration(1.0).sleep();
     }
     ++i;
@@ -1052,7 +1052,20 @@ bool APCManager::testCameraPositions()
   std::size_t bin_skipper = 0;
   for (BinObjectMap::const_iterator bin_it = shelf_->getBins().begin(); bin_it != shelf_->getBins().end(); bin_it++)
   {
-    waitForNextStep();    
+    bool process_all_bins = false;
+    if (process_all_bins)
+    {
+      std::cout << std::endl;
+      std::cout << std::endl;
+      std::cout << "Waiting before moving to next bin" << std::endl;
+      waitForNextStep();    
+    }
+    else
+    {
+      bin_skipper++;
+      if (bin_skipper != 4) // only do bin 4 (bin_D)
+        continue;
+    }
 
     if (!ros::ok())
       return true;
@@ -1080,11 +1093,7 @@ bool APCManager::testCameraPositions()
     ros::Duration(1.0).sleep();
   }
 
-  // Allow test time to publish planning scene
-  ros::spinOnce();
-  ros::Duration(1.0).sleep();
-
-  ROS_INFO_STREAM_NAMED("apc_manager","Done planning to random valid");
+  ROS_INFO_STREAM_NAMED("apc_manager","Done moving to each bin");
   return true;
 }
 

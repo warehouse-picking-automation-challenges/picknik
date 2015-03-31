@@ -177,7 +177,6 @@ bool Manipulation::createCollisionWall()
 bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
                                               double velocity_scaling_factor)
 {
-
   std::ifstream input_file;
   input_file.open (file_name.c_str());
   ROS_DEBUG_STREAM_NAMED("manipultion","Loading trajectory from file " << file_name);
@@ -199,49 +198,49 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
   // Close file
   input_file.close();
 
-  // // Error check
-  // if (robot_state_trajectory.size() == 0)
-  // {
-  //   ROS_ERROR_STREAM_NAMED("manipultion","No states loaded from CSV file " << file_name);
-  //   return false;
-  // }
+  // Error check
+  if (robot_state_trajectory.size() == 0)
+  {
+    ROS_ERROR_STREAM_NAMED("manipultion","No states loaded from CSV file " << file_name);
+    return false;
+  }
 
-  // // Convert to a trajectory
-  // moveit_msgs::RobotTrajectory trajectory_msg;
-  // if (!convertRobotStatesToTrajectory(robot_state_trajectory, trajectory_msg, arm_jmg,
-  //                                     velocity_scaling_factor))
-  // {
-  //   ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
-  //   return false;
-  // }
+  // Convert to a trajectory
+  moveit_msgs::RobotTrajectory trajectory_msg;
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, trajectory_msg, arm_jmg,
+                                      velocity_scaling_factor))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
+    return false;
+  }
 
-  // // Plan to start state of trajectory
-  // bool verbose = true;
-  // bool execute_trajectory = true;
-  // ROS_INFO_STREAM_NAMED("manipulation","Moving to start state of trajectory");
-  // if (!move(current_state_, robot_state_trajectory.front(), arm_jmg, config_.main_velocity_scaling_factor_, 
-  //           verbose, execute_trajectory))
-  // {
-  //   ROS_ERROR_STREAM_NAMED("manipultion","Unable to plan");
-  //   return false;
-  // }
+  // Plan to start state of trajectory
+  bool verbose = true;
+  bool execute_trajectory = true;
+  ROS_INFO_STREAM_NAMED("manipulation","Moving to start state of trajectory");
+  if (!move(current_state_, robot_state_trajectory.front(), arm_jmg, config_.main_velocity_scaling_factor_, 
+            verbose, execute_trajectory))
+  {
+    ROS_ERROR_STREAM_NAMED("manipultion","Unable to plan");
+    return false;
+  }
 
   // Visualize trajectory in Rviz display
   bool wait_for_trajetory = false;
-  //visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, current_state_, wait_for_trajetory);
+  visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, current_state_, wait_for_trajetory);
 
   // Wait for user
   std::cout << std::endl;
   std::cout << std::endl;
   std::cout << "Waiting before executing trajectory" << std::endl;
-  //parent_->waitForNextStep();
+  parent_->waitForNextStep();
 
   // Execute
-  // if( !executeTrajectory(trajectory_msg) )
-  // {
-  //   ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
-  //   return false;
-  // }
+  if( !executeTrajectory(trajectory_msg) )
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
+    return false;
+  }
 
   return true;
 }
@@ -436,19 +435,24 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Trajectory only has " << response.trajectory.joint_trajectory.points.size() << " points");
 
-    // Add more waypoints
-    robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, arm_jmg));
-    robot_trajectory->setRobotTrajectoryMsg(*current_state_, response.trajectory);
+    for (std::size_t i = 0; i < response.trajectory.joint_trajectory.points.size(); ++i)
+    {
+      response.trajectory.joint_trajectory.points[i].velocities.clear();
+      response.trajectory.joint_trajectory.points[i].accelerations.clear();
+    }
+    // // Add more waypoints
+    // robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, arm_jmg));
+    // robot_trajectory->setRobotTrajectoryMsg(*current_state_, response.trajectory);
     
-    // Duplicate states
-    double dt = 1; // dummy time
-    robot_trajectory->addSuffixWayPoint(*robot_trajectory->getLastWayPointPtr(), dt);
+    // // Duplicate states
+    // double dt = 1; // dummy time
+    // robot_trajectory->addSuffixWayPoint(*robot_trajectory->getLastWayPointPtr(), dt);
 
-    // Perform iterative parabolic smoothing
-    iterative_smoother_.computeTimeStamps( *robot_trajectory, config_.main_velocity_scaling_factor_ );
+    // // Perform iterative parabolic smoothing
+    // iterative_smoother_.computeTimeStamps( *robot_trajectory, config_.main_velocity_scaling_factor_ );
 
-    // Convert trajectory back to a message
-    robot_trajectory->getRobotTrajectoryMsg(response.trajectory);
+    // // Convert trajectory back to a message
+    // robot_trajectory->getRobotTrajectoryMsg(response.trajectory);
   }
 
   // Execute trajectory
@@ -608,124 +612,55 @@ bool Manipulation::generateApproachPath(const moveit::core::JointModelGroup *arm
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","generateApproachPath()");
 
-  // Configurations
-  Eigen::Vector3d approach_direction;
-  approach_direction << -1, 0, 0; // backwards towards robot body
   ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","finger_to_palm_depth: " << grasp_datas_[arm_jmg]->finger_to_palm_depth_);
   ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","approach_distance_desired: " << config_.approach_distance_desired_);
   double desired_approach_distance = grasp_datas_[arm_jmg]->finger_to_palm_depth_ + config_.approach_distance_desired_;
 
-  // Show desired distance
-  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
-  double path_length;
+  Eigen::Vector3d approach_direction;
+  approach_direction << -1, 0, 0; // backwards towards robot body
   bool reverse_path = true;
-  if (!computeStraightLinePath( approach_direction, desired_approach_distance, robot_state_trajectory,
-                                the_grasp_state, arm_jmg, reverse_path, path_length))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Error occured while computing straight line path");
-    return false;
-  }
 
-  // Get approach trajectory message
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, approach_trajectory_msg, arm_jmg, config_.approach_velocity_scaling_factor_))
+  if (!executeCartesianPath(arm_jmg, approach_direction, desired_approach_distance, config_.approach_velocity_scaling_factor_, 
+                            reverse_path))
   {
-    ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute horizontal path");
     return false;
   }
 
   // Set the pregrasp to be the first state in the trajectory. Copy value, not pointer
-  *pre_grasp_state = *robot_state_trajectory.front();
+  *pre_grasp_state = *first_state_in_trajectory_;
 
-  /*
-    if (verbose)
-    {
-    ROS_INFO_STREAM_NAMED("manipulation","Visualizing pre-grasp");
-    visuals_->visual_tools_->publishRobotState(pre_grasp_state, rvt::YELLOW);
-    ros::Duration(0.1).sleep();
-    }*/
 
   return true;
 }
 
-bool Manipulation::executeLiftPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up)
+bool Manipulation::executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeLiftPath()");
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeVerticlePath()");
 
-  getCurrentState();
-
-  // Compute straight line up above grasp
   Eigen::Vector3d approach_direction;
   approach_direction << 0, 0, (up ? 1 : -1); // 1 is up, -1 is down
-  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
-  double path_length;
-  bool reverse_path = false;
-  if (!computeStraightLinePath( approach_direction, desired_lift_distance,
-                                robot_state_trajectory, current_state_, arm_jmg, reverse_path, path_length))
+
+  if (!executeCartesianPath(arm_jmg, approach_direction, desired_lift_distance, config_.lift_velocity_scaling_factor_))
   {
-    ROS_ERROR_STREAM_NAMED("manipulation","Error occured while computing straight line path");
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute horizontal path");
     return false;
   }
-
-  // Get approach trajectory message
-  moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, config_.lift_velocity_scaling_factor_))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
-    return false;
-  }
-
-  // Visualize trajectory in Rviz display
-  bool wait_for_trajetory = false;
-  visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, current_state_, wait_for_trajetory);
-
-  // Execute
-  if( !executeTrajectory(cartesian_trajectory_msg) )
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
-    return false;
-  }
-
   return true;
 }
 
-bool Manipulation::executeLeftPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool left)
+bool Manipulation::executeHorizontalPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool left)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeLeftPath()");
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeHorizontalPath()");
 
-  getCurrentState();
-
-  // Compute straight line left above grasp
   Eigen::Vector3d approach_direction;
   approach_direction << 0, (left ? 1 : -1), 0; // 1 is left, -1 is right
-  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
-  double path_length;
-  bool reverse_path = false;
-  if (!computeStraightLinePath( approach_direction, desired_lift_distance,
-                                robot_state_trajectory, current_state_, arm_jmg, reverse_path, path_length))
+
+  if (!executeCartesianPath(arm_jmg, approach_direction, desired_lift_distance, config_.lift_velocity_scaling_factor_))
   {
-    ROS_ERROR_STREAM_NAMED("manipulation","Error occured while computing straight line path");
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute horizontal path");
     return false;
   }
-
-  // Get approach trajectory message
-  moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, config_.lift_velocity_scaling_factor_))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
-    return false;
-  }
-
-  // Visualize trajectory in Rviz display
-  bool wait_for_trajetory = false;
-  visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, current_state_, wait_for_trajetory);
-
-  // Execute
-  if( !executeTrajectory(cartesian_trajectory_msg) )
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
-    return false;
-  }
-
   return true;
 }
 
@@ -733,16 +668,27 @@ bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_j
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeRetreatPath()");
 
-  // Get current state after grasping
-  getCurrentState();
-
   // Compute straight line in reverse from grasp
   Eigen::Vector3d approach_direction;
   approach_direction << (retreat ? -1 : 1), 0, 0; // backwards towards robot body
+
+  if (!executeCartesianPath(arm_jmg, approach_direction, desired_approach_distance, config_.retreat_velocity_scaling_factor_))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute retreat path");
+    return false;
+  }
+  return true;
+}
+
+bool Manipulation::executeCartesianPath(const moveit::core::JointModelGroup *arm_jmg, const Eigen::Vector3d& direction, double desired_distance, 
+                                       double velocity_scaling_factor, bool reverse_path)
+{
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeCartesianPath()");
+  getCurrentState();
+
   double path_length;
   std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
-  bool reverse_path = false;
-  if (!computeStraightLinePath( approach_direction, desired_approach_distance,
+  if (!computeStraightLinePath( direction, desired_distance,
                                 robot_state_trajectory, current_state_, arm_jmg, reverse_path, path_length))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Error occured while computing straight line path");
@@ -751,7 +697,7 @@ bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_j
 
   // Get approach trajectory message
   moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, config_.retreat_velocity_scaling_factor_))
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg, velocity_scaling_factor))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
     return false;
@@ -899,15 +845,16 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
 
   // Reverse the trajectory if neeeded
   if (reverse_trajectory)
+  {
     std::reverse(robot_state_trajectory.begin(), robot_state_trajectory.end());
+
+    // Also, save the first state so that generateApproachPath() can use it
+    first_state_in_trajectory_ = robot_state_trajectory.front();
+  }
 
   // Debug
   if (verbose_)
   {
-
-    //TEMP
-    //const Eigen::Affine3d tip_pose_start2 = robot_state_trajectory.front()->getGlobalLinkTransform(ik_tip_link_model);
-
     // Super debug
     if (false)
     {
@@ -983,7 +930,7 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   std::cout << std::endl << std::endl << std::endl;
   ROS_INFO_STREAM_NAMED("manipulation","Moving camera left distance " << config_.camera_left_distance_);
   bool left = true;
-  if (!executeLeftPath(arm_jmg, config_.camera_left_distance_, left))
+  if (!executeHorizontalPath(arm_jmg, config_.camera_left_distance_, left))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to move left");
   }
@@ -992,7 +939,7 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   std::cout << std::endl << std::endl << std::endl;
   ROS_INFO_STREAM_NAMED("manipulation","Moving camera right distance " << config_.camera_left_distance_ * 2.0);
   left = false;
-  if (!executeLeftPath(arm_jmg, config_.camera_left_distance_ * 2.0, left))
+  if (!executeHorizontalPath(arm_jmg, config_.camera_left_distance_ * 2.0, left))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to move right");
   }
@@ -1008,7 +955,7 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   // Move camera up
   std::cout << std::endl << std::endl << std::endl;
   ROS_INFO_STREAM_NAMED("manipulation","Lifting camera distance " << config_.camera_lift_distance_);
-  if (!executeLiftPath(arm_jmg, config_.camera_lift_distance_))
+  if (!executeVerticlePath(arm_jmg, config_.camera_lift_distance_))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to move up");
   }
@@ -1017,7 +964,7 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   std::cout << std::endl << std::endl << std::endl;
   ROS_INFO_STREAM_NAMED("manipulation","Lowering camera distance " << config_.camera_lift_distance_ * 2.0);
   bool up = false;
-  if (!executeLiftPath(arm_jmg, config_.camera_lift_distance_ * 2.0, up))
+  if (!executeVerticlePath(arm_jmg, config_.camera_lift_distance_ * 2.0, up))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to move down");
   }
@@ -1222,9 +1169,8 @@ bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_ms
     if (trajectory_msg.joint_trajectory.joint_names.size() > 3)
     {
       static std::size_t trajectory_count = 0;
-      saveTrajectory(trajectory_msg, "trajectory_"+ boost::lexical_cast<std::string>(trajectory_count++));
-      //saveTrajectory(trajectory_msg, "trajectory");
-      //delete this trajectory_count++;
+      //saveTrajectory(trajectory_msg, "trajectory_"+ boost::lexical_cast<std::string>(trajectory_count++));
+      saveTrajectory(trajectory_msg, "trajectory");
     }
   }
 
@@ -1236,7 +1182,8 @@ bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_ms
   }
 
   // Confirm trajectory before continuing
-  if (!parent_->getAutonomous() && false)
+  bool require_confirmation = true;
+  if (!parent_->getAutonomous() && require_confirmation)
   {
     // Set robot state
     //moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_));
@@ -1248,7 +1195,6 @@ bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_ms
     std::cout << std::endl;
     std::cout << std::endl;
     std::cout << "Waiting before executing trajectory" << std::endl;
-
     parent_->waitForNextStep();
   }
 
