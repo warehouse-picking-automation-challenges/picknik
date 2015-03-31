@@ -10,7 +10,8 @@
   <arg name="debug" default="false" />
   <arg unless="$(arg debug)" name="launch_prefix" value="" />
   <arg     if="$(arg debug)" name="launch_prefix" 
-	   value="gdb -x $(find picknik_main)/launch/debug_settings.gdb --ex run --args" />
+	   value="valgrind --leak-check=full" />
+<!--	   value="gdb -x $(find picknik_main)/launch/debug_settings.gdb - -ex run - -args" / -->
 
   <!-- Command line arguments -->
   <arg name="mode" default="1" />
