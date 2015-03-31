@@ -59,8 +59,9 @@ public:
    * \param order_file_path
    * \param Use an experience database in planning
    * \param Show the experience database after each plan
+   * \param autonomous - whether it should pause for human input
    */
-  APCManager(bool verbose, std::string order_file_path, bool use_experience, bool show_database);
+  APCManager(bool verbose, std::string order_file_path, bool use_experience, bool show_database, bool autonomous = false);
 
   /**
    * \brief Destructor
@@ -103,11 +104,10 @@ public:
    * \param Which product in the order to skip ahead to
    * \param jump_to - which step in manipulation to start at
    * \param num_orders - how many products to pick from the order, 0 = all
-   * \param autonomous - whether it should pause for human input
    * \return true on success
    */
   bool runOrder(std::size_t order_start = 0, std::size_t jump_to = 0,
-                std::size_t num_orders = 0, bool autonomous = false);
+                std::size_t num_orders = 0);
 
 
   /**

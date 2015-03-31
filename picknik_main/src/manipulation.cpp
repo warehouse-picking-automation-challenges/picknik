@@ -134,8 +134,10 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
 
   // Filter grasps based on IK
   bool filter_pregrasps = true;
-  bool verbose_if_failed = true;
-  if (!grasp_filter_->filterGrasps(grasp_candidates, planning_scene_monitor_, arm_jmg, filter_pregrasps, verbose, verbose_if_failed))
+  bool verbose_if_failed = false;
+  bool grasp_verbose = false;
+  if (!grasp_filter_->filterGrasps(grasp_candidates, planning_scene_monitor_, arm_jmg, filter_pregrasps, grasp_verbose, 
+                                   verbose_if_failed))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to filter grasps");
     return false;
@@ -184,7 +186,8 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
   std::string line;
   current_state_ = getCurrentState();
 
-  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
+  robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, arm_jmg));
+  double dummy_dt = 1; // temp value
 
   // Read each line
   while(std::getline(input_file, line))
@@ -192,33 +195,40 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
     // Convert line to a robot state
     moveit::core::RobotStatePtr new_state(new moveit::core::RobotState(*current_state_));
     moveit::core::streamToRobotState(*new_state, line, ",");
-    robot_state_trajectory.push_back(new_state);
+    robot_trajectory->addSuffixWayPoint(new_state, dummy_dt);
   }
 
   // Close file
   input_file.close();
 
   // Error check
-  if (robot_state_trajectory.size() == 0)
+  if (robot_trajectory->getWayPointCount() == 0)
   {
     ROS_ERROR_STREAM_NAMED("manipultion","No states loaded from CSV file " << file_name);
     return false;
   }
 
-  // Convert to a trajectory
+  // Interpolate between each point
+  double discretization = 0.25;
+  interpolate(robot_trajectory, discretization);
+
+  // Perform iterative parabolic smoothing
+  iterative_smoother_.computeTimeStamps( *robot_trajectory, velocity_scaling_factor );
+
+  // Convert trajectory to a message
   moveit_msgs::RobotTrajectory trajectory_msg;
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, trajectory_msg, arm_jmg,
-                                      velocity_scaling_factor))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
-    return false;
-  }
+  robot_trajectory->getRobotTrajectoryMsg(trajectory_msg);
+
+  std::cout << std::endl << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << "MOVING ARM TO START OF TRAJECTORY" << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
 
   // Plan to start state of trajectory
   bool verbose = true;
   bool execute_trajectory = true;
   ROS_INFO_STREAM_NAMED("manipulation","Moving to start state of trajectory");
-  if (!move(current_state_, robot_state_trajectory.front(), arm_jmg, config_.main_velocity_scaling_factor_, 
+  if (!move(current_state_, robot_trajectory->getFirstWayPointPtr(), arm_jmg, config_.main_velocity_scaling_factor_, 
             verbose, execute_trajectory))
   {
     ROS_ERROR_STREAM_NAMED("manipultion","Unable to plan");
@@ -229,11 +239,10 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
   bool wait_for_trajetory = false;
   visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, current_state_, wait_for_trajetory);
 
-  // Wait for user
   std::cout << std::endl;
-  std::cout << std::endl;
-  std::cout << "Waiting before executing trajectory" << std::endl;
-  parent_->waitForNextStep();
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << "PLAYING BACK TRAJECTORY" << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
 
   // Execute
   if( !executeTrajectory(trajectory_msg) )
@@ -435,24 +444,34 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Trajectory only has " << response.trajectory.joint_trajectory.points.size() << " points");
 
-    for (std::size_t i = 0; i < response.trajectory.joint_trajectory.points.size(); ++i)
+    if (response.trajectory.joint_trajectory.points.size() == 2)
     {
-      response.trajectory.joint_trajectory.points[i].velocities.clear();
-      response.trajectory.joint_trajectory.points[i].accelerations.clear();
-    }
-    // // Add more waypoints
-    // robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, arm_jmg));
-    // robot_trajectory->setRobotTrajectoryMsg(*current_state_, response.trajectory);
+      // Remove previous parameterization
+      for (std::size_t i = 0; i < response.trajectory.joint_trajectory.points.size(); ++i)
+      {
+        response.trajectory.joint_trajectory.points[i].velocities.clear();
+        response.trajectory.joint_trajectory.points[i].accelerations.clear();
+      }
+
+      // Add more waypoints
+      robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, arm_jmg));
+      robot_trajectory->setRobotTrajectoryMsg(*current_state_, response.trajectory);
     
-    // // Duplicate states
-    // double dt = 1; // dummy time
-    // robot_trajectory->addSuffixWayPoint(*robot_trajectory->getLastWayPointPtr(), dt);
+      // Interpolate
+      double discretization = 0.25;
+      interpolate(robot_trajectory, discretization);
 
-    // // Perform iterative parabolic smoothing
-    // iterative_smoother_.computeTimeStamps( *robot_trajectory, config_.main_velocity_scaling_factor_ );
+      // Convert trajectory back to a message
+      robot_trajectory->getRobotTrajectoryMsg(response.trajectory);
+      
+      std::cout << "BEFORE PARAM: \n" << response.trajectory << std::endl;
 
-    // // Convert trajectory back to a message
-    // robot_trajectory->getRobotTrajectoryMsg(response.trajectory);
+      // Perform iterative parabolic smoothing
+      iterative_smoother_.computeTimeStamps( *robot_trajectory, config_.main_velocity_scaling_factor_ );
+
+      // Convert trajectory back to a message
+      robot_trajectory->getRobotTrajectoryMsg(response.trajectory);
+    }
   }
 
   // Execute trajectory
@@ -504,6 +523,37 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   {
     return false;
   }
+  return true;
+}
+
+bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajectory, const double& discretization)
+{
+  double dummy_dt = 1; // dummy value until parameterization
+
+  robot_trajectory::RobotTrajectoryPtr new_robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, 
+                                                                                                  robot_trajectory->getGroup()));
+
+  // For each set of points (A,B) in the original trajectory
+  for (std::size_t i = 0; i < robot_trajectory->getWayPointCount() - 1; ++i)
+  {
+    // Add point A to final trajectory
+    new_robot_trajectory->addSuffixWayPoint(robot_trajectory->getWayPoint(i), dummy_dt);
+
+    for (double t = discretization; t < 1; t += discretization)
+    {
+      // Create new state
+      moveit::core::RobotStatePtr interpolated_state(new moveit::core::RobotState(robot_trajectory->getFirstWayPoint()));
+      // Fill in new values
+      robot_trajectory->getWayPoint(i).interpolate(robot_trajectory->getWayPoint(i+1), t, *interpolated_state);
+      // Add to trajectory
+      new_robot_trajectory->addSuffixWayPoint(interpolated_state, dummy_dt);
+      std::cout << "inserting " << t << " at " << i << std::endl;
+    }
+  }
+
+  // Add final waypoint
+  new_robot_trajectory->addSuffixWayPoint(robot_trajectory->getLastWayPoint(), dummy_dt);
+
   return true;
 }
 

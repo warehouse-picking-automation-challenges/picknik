@@ -122,7 +122,7 @@ int main(int argc, char** argv)
     return 1; // error
   }
 
-  picknik_main::APCManager manager(verbose, order_fp, use_experience, show_database);
+  picknik_main::APCManager manager(verbose, order_fp, use_experience, show_database, autonomous);
 
   std::cout << std::endl;
   std::cout << std::endl;
@@ -133,7 +133,7 @@ int main(int argc, char** argv)
     case 1:
       ROS_INFO_STREAM_NAMED("main","Run actual Amazon Picking Challenge mode");
       if (!manager.checkSystemReady()) return 0;;
-      manager.runOrder(order_start, jump_to, num_orders, autonomous);
+      manager.runOrder(order_start, jump_to, num_orders);
       break;
     case 2:
       ROS_INFO_STREAM_NAMED("main","Train experience database mode");
@@ -185,7 +185,11 @@ int main(int argc, char** argv)
     case 12:
       ROS_INFO_STREAM_NAMED("main","Test camera calibration");
       if (!manager.checkSystemReady()) return 0;;
-      manager.calibrateCamera();
+      while(ros::ok())
+      {
+        manager.calibrateCamera();
+        ros::Duration(1).sleep();
+      }
       break;
     case 13:
       ROS_INFO_STREAM_NAMED("main","Recording a trajectory for calibration");

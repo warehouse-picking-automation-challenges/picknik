@@ -119,6 +119,12 @@ public:
             bool verbose, bool execute_trajectory = true);
 
   /**
+   * \brief Interpolate
+   * \return true on success
+   */
+  bool interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajectory, const double& discretization);
+
+  /**
    * \brief Get planning debug info
    * \return string describing result
    */

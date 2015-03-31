@@ -1,7 +1,7 @@
 # Note: Name of file should match name of robot in URDF
 
 # Robot Execution Speed
-main_velocity_scaling_factor: 0.2 # during planning
+main_velocity_scaling_factor: 0.1 # during planning
 approach_velocity_scaling_factor: 0.1
 lift_velocity_scaling_factor: 0.1
 retreat_velocity_scaling_factor: 0.1
@@ -17,7 +17,8 @@ wait_before_grasp: 0.1
 wait_after_grasp: 0.1
 
 # Poses
-start_pose: both_neutral
+#start_pose: both_neutral
+start_pose: both_neutral_right_disabled
 right_arm_dropoff_pose: right_goal_bin_pose
 left_arm_dropoff_pose: left_goal_bin_pose
 

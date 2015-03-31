@@ -29,10 +29,10 @@
 namespace picknik_main
 {
 
-APCManager::APCManager(bool verbose, std::string order_file_path, bool use_experience, bool show_database)
+APCManager::APCManager(bool verbose, std::string order_file_path, bool use_experience, bool show_database, bool autonomous)
   : nh_private_("~")
   , verbose_(verbose)
-  , autonomous_(false)
+  , autonomous_(autonomous)
   , next_step_ready_(false)
   , is_waiting_(false)
   , fake_perception_(false)
@@ -233,12 +233,8 @@ void APCManager::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
 
 // Mode 1
 bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to,
-                          std::size_t num_orders, bool autonomous)
+                          std::size_t num_orders)
 {
-  // Set autonomy
-  if (autonomous)
-    setAutonomous();
-
   ROS_INFO_STREAM_NAMED("apc_manager","Starting order ----------------------------");
 
   // Decide how many products to pick
@@ -1101,22 +1097,12 @@ bool APCManager::testCameraPositions()
 bool APCManager::calibrateCamera()
 {
   // First move to the same start position every time
-  ROS_DEBUG_STREAM_NAMED("apc_manager","Going home");
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Calibrating camera");
 
   // Choose which planning group to use
   const robot_model::JointModelGroup* arm_jmg = config_.dual_arm_ ? config_.both_arms_ : config_.right_arm_;
-  // if (!moveToStartPosition(arm_jmg))
-  // {
-  //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move home, unable to calibrate");
-  //   return false;
-  // }
 
-  std::cout << std::endl << std::endl << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
-  std::cout << "MOVING ARM FOR CALIBRATION" << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
-
-  // Start playing back
+  // Start playing back file
   std::string file_path;
   const std::string file_name = "calibration_trajectory";
   manipulation_->getFilePath(file_path, file_name);
@@ -1322,9 +1308,9 @@ bool APCManager::testGraspGenerator()
   BOOST_FOREACH(fs::path const &p, std::make_pair(it, eod))
   {
     product_names.push_back(p.stem().string());
-    csv_log_stream << product_names.back() << ",";
+    csv_log_stream << product_names.back() << "\t";
   }
-  csv_log_stream << "total_time" << std::endl;
+  csv_log_stream << "total_time, average" << std::endl;
 
   // For each shelf setup (of a single product in each bin)
   for (std::size_t i = 0; i < product_names.size(); ++i)
@@ -1344,10 +1330,18 @@ bool APCManager::testGraspGenerator()
     }
 
     // Test grasping in each bin
+    std::size_t bin_skipper = 0;
     for (BinObjectMap::const_iterator bin_it = shelf_->getBins().begin(); bin_it != shelf_->getBins().end(); bin_it++)
     {
       if (!ros::ok())
         return false;
+
+      if (false)
+      {
+        bin_skipper++;
+        if (bin_skipper != 3 && bin_skipper != 6 && bin_skipper != 9)
+          continue;
+      }
 
       // Keep score of performance
       overall_attempts++;
@@ -1386,7 +1380,7 @@ bool APCManager::testGraspGenerator()
       std::cout << "-------------------------------------------------------" << std::endl;
 
       // Show robot
-      if (success)
+      if (success && verbose_)
       {
         if (config_.dual_arm_)
           the_grasp_state->setToDefaultValues(config_.both_arms_, config_.start_pose_); // hide the other arm
@@ -1402,14 +1396,15 @@ bool APCManager::testGraspGenerator()
     } // for each bin
 
     // Save the stats on the product
-    csv_log_stream << (double(product_successes)/double(product_attempts)*100.0) << ",";
+    csv_log_stream << (double(product_successes)/double(product_attempts)*100.0) << "\t";
 
   } // for each product
 
   // Benchmark runtime
   double duration = (ros::Time::now() - start_time).toSec();
+  double average = double(overall_successes)/double(overall_attempts)*100.0;
   ROS_INFO_STREAM_NAMED("","Total time: " << duration << " seconds averaging " << duration/overall_successes << " seconds per grasp");
-  csv_log_stream << duration << std::endl;
+  csv_log_stream << duration << "\t" << average << std::endl;
 
   // Save the logging file
   std::string file_path;
