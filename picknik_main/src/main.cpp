@@ -29,6 +29,9 @@ int main(int argc, char** argv)
   ros::AsyncSpinner spinner(2);
   spinner.start();
 
+  // Random
+  srand (time(NULL));
+
   // Command line arguments
   std::size_t mode = 1;
   std::size_t order_start = 0;
