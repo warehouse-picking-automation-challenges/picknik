@@ -1127,11 +1127,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Markers
       Namespaces:
-        Arrow: true
-        Collision: true
         Cylinder: true
-        Line: true
-        Sphere: true
         Text: true
       Queue Size: 100
       Value: true
@@ -1444,7 +1440,7 @@ Visualization Manager:
       Planning Scene Topic: /picknik_main/picknik_planning_scene
       Robot Description: robot_description
       Scene Geometry:
-        Scene Alpha: 0.9
+        Scene Alpha: 1
         Scene Color: 120; 120; 120
         Scene Display Time: 0.2
         Show Scene Geometry: true
@@ -1750,22 +1746,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.84737
+      Distance: 3.57822
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.34609
-        Y: -0.0700164
+        X: 2.46648
+        Y: 0.177086
         Z: -1.07288e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.420398
+      Pitch: 0.290398
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.16722
+      Yaw: 3.21221
     Saved: ~
 Window Geometry:
   Displays:
@@ -1781,5 +1777,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1194
-  X: 1479
+  X: 1469
   Y: 14

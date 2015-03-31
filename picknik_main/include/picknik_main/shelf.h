@@ -489,6 +489,18 @@ public:
   ProductObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name, const std::string &package_path);
   ProductObject(const ProductObject& copy);
 
+  /**
+   * \brief Get pose of product in frame of world
+   * \param shelf - the shelf holding the product
+   * \param bin - the ben holding the product
+   * \return pose of product to world   
+   */
+  Eigen::Affine3d getWorldPose(const ShelfObjectPtr& shelf, const BinObjectPtr& bin)
+  {
+    Eigen::Affine3d value = getCentroid() * bin->getBottomRight() * shelf->getBottomRight(); 
+    return value;
+  }
+
 private:
 
 }; // class

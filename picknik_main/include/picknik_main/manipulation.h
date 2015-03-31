@@ -62,7 +62,7 @@ public:
    */
   Manipulation(bool verbose, VisualsPtr visuals,
                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-               ManipulationData config, GraspDatas grasp_datas,
+               ManipulationDataPtr config, GraspDatas grasp_datas,
                APCManager* parent,
                ShelfObjectPtr shelf, bool use_experience, bool show_database);
 
@@ -152,26 +152,26 @@ public:
    * \brief After grasping an object, lift object up slightly
    * \return true on success
    */
-  bool executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true);
+  bool executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true, bool ignore_collision = false);
 
   /**
    * \brief Translate arm left and right
    * \return true on success
    */
-  bool executeHorizontalPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_left_distance, bool left = true);
+  bool executeHorizontalPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_left_distance, bool left = true, bool ignore_collision = false);
 
   /**
    * \brief After grasping an object, pull object out of shelf in reverse
    * \return true on success
    */
-  bool executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_approach_distance = 0.25, bool retreat = true);
+  bool executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_approach_distance = 0.25, bool retreat = true, bool ignore_collision = false);
 
   /**
    * \brief Generic execute straight line path function
    * \return true on success
    */
   bool executeCartesianPath(const moveit::core::JointModelGroup *arm_jmg, const Eigen::Vector3d& direction, double desired_distance,
-                            double velocity_scaling_factor, bool reverse_path = false);
+                            double velocity_scaling_factor, bool reverse_path = false, bool ignore_collision = false);
 
   /**
    * \brief Function for testing multiple directions
@@ -182,6 +182,7 @@ public:
    * \param arm_jmg - the joint model group of the arm to plan for
    * \param reverse_trajectory - whether to reverse the generated trajectory before displaying visualizations and returning
    * \param path_length - the length of the resulting cartesian path
+   * \param ignore_collision - allows recovery from a collision state
    * \return true on success
    */
   bool computeStraightLinePath( Eigen::Vector3d approach_direction,
@@ -190,7 +191,8 @@ public:
                                 robot_state::RobotStatePtr robot_state,
                                 const moveit::core::JointModelGroup *arm_jmg,
                                 bool reverse_trajectory,
-                                double& path_length);
+                                double& path_length,
+                                bool ignore_collision = false);
 
   /**
    * \brief Choose which arm to use for a particular task
@@ -257,7 +259,13 @@ public:
    * \brief Send trajectory message to robot controllers
    * \return true on success
    */
-  bool executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg);
+  bool executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg, bool ignore_collision = false);
+
+  /**
+   * \brief Attempt to fix when the robot is in collision by moving arm out of way
+   * \return true on success
+   */
+  bool fixCollidingState(planning_scene::PlanningScenePtr cloned_scene);
 
   /**
    * \brief Save a trajectory as CSV to file
@@ -329,7 +337,7 @@ public:
    * \brief Check if current state is in collision or out of bounds
    * \return true if not in collision and not out of bounds
    */
-  bool checkCurrentCollisionAndBounds(const robot_model::JointModelGroup* arm_jmg);
+  bool fixCurrentCollisionAndBounds(const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Check if states are in collision or out of bounds
@@ -383,7 +391,7 @@ protected:
   ShelfObjectPtr shelf_;
 
   // Robot-sepcific data for the APC
-  ManipulationData config_;
+  ManipulationDataPtr config_;
 
   // Robot-specific data for generating grasps
   GraspDatas grasp_datas_;

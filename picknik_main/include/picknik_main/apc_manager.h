@@ -23,6 +23,7 @@
 //#include <picknik_main/learning_pipeline.h>
 #include <picknik_main/visuals.h>
 #include <picknik_main/manipulation_data.h>
+#include <picknik_main/perception_layer.h>
 
 // Picknik Msgs
 #include <picknik_msgs/FindObjectsAction.h>
@@ -32,8 +33,6 @@
 #include <tf/transform_listener.h>
 #include <std_msgs/Bool.h>
 #include <sensor_msgs/Joy.h>
-#include <actionlib/client/simple_action_client.h>
-#include <actionlib/client/terminal_state.h>
 
 // MoveIt!
 #include <moveit_msgs/GetPlanningScene.h>
@@ -45,7 +44,6 @@ static const std::string ROBOT_DESCRIPTION = "robot_description";
 static const std::string JOINT_STATE_TOPIC = "/robot/joint_states";
 static const std::string PACKAGE_NAME = "picknik_main";
 static const std::string GET_PLANNING_SCENE_SERVICE_NAME = "get_planning_scene"; // name of the service that can be used to query the planning scene
-static const double PRODUCT_POSE_WITHIN_BIN_TOLERANCE = 0.2; // throw an error if pose is beyond this amount
 
 //MOVEIT_CLASS_FORWARD(APCManager);
 
@@ -125,12 +123,6 @@ public:
   bool perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder order, bool verbose);
   bool perceiveObjectFake(Eigen::Affine3d& global_object_pose, ProductObjectPtr& product);
 
-  /**
-   * \brief Update the pose, and optionally the mesh, of a particular product
-   * \return false if outside the error tolerance bounds of a pose within a bin
-   */
-  bool processNewObjectPose(Eigen::Affine3d& global_object_pose, picknik_msgs::FindObjectsResultConstPtr result,
-                            ProductObjectPtr& product, BinObjectPtr& bin);
 
   /**
    * \brief Wait until user presses a button
@@ -321,6 +313,9 @@ private:
   // Main worker
   ManipulationPtr manipulation_;
 
+  // Perception interface
+  PerceptionLayerPtr perception_layer_;
+
   // Helper classes
   //LearningPipelinePtr learning_;
 
@@ -330,7 +325,7 @@ private:
   ros::Subscriber remote_joy_;
 
   // Robot-sepcific data for the APC
-  ManipulationData config_;
+  ManipulationDataPtr config_;
 
   // Robot-specific data for generating grasps
   GraspDatas grasp_datas_;
@@ -339,9 +334,6 @@ private:
   bool autonomous_;
   bool next_step_ready_;
   bool is_waiting_;
-
-  // Perception pipeline communication
-  actionlib::SimpleActionClient<picknik_msgs::FindObjectsAction> find_objects_action_;
 
   // Perception
   bool fake_perception_;

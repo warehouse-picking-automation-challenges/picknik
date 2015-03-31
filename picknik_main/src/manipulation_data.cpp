@@ -75,6 +75,7 @@ rvt::getDoubleParameter(parent_name, nh_, "camera/y_rotation_from_standard_grasp
 rvt::getDoubleParameter(parent_name, nh_, "camera/z_rotation_from_standard_grasp", camera_z_rotation_from_standard_grasp_);
 rvt::getDoubleParameter(parent_name, nh_, "camera/lift_distance", camera_lift_distance_);
 rvt::getDoubleParameter(parent_name, nh_, "camera/left_distance", camera_left_distance_);
+rvt::getDoubleParameter(parent_name, nh_, "camera/camera_frame_display_scale", camera_frame_display_scale_);
 
 // Load robot semantics
 rvt::getStringParameter(parent_name, nh_, "start_pose", start_pose_);

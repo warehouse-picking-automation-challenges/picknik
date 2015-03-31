@@ -46,6 +46,7 @@ camera:
   z_rotation_from_standard_grasp: 0  # radians
   lift_distance: 0.05
   left_distance: 0.05
+  camera_frame_display_scale: 0.0005
 
 # Test data
 test:
