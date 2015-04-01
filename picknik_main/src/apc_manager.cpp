@@ -88,7 +88,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   // Load grasp data specific to our robot
   grasp_datas_[config_->right_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_->right_hand_name_, robot_model_));
   if (config_->dual_arm_)
-      grasp_datas_[config_->left_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_->left_hand_name_, robot_model_));
+    grasp_datas_[config_->left_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_->left_hand_name_, robot_model_));
 
   // Create manipulation manager
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
@@ -577,7 +577,7 @@ bool APCManager::perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder o
 
   // Get the global object pose
   global_object_pose = product->getWorldPose(shelf_, bin);
-    
+
   return true;
 }
 
@@ -956,7 +956,7 @@ bool APCManager::testCameraPositions()
       std::cout << std::endl;
       std::cout << std::endl;
       std::cout << "Waiting before moving to next bin" << std::endl;
-      waitForNextStep();    
+      waitForNextStep();
     }
     else
     {
@@ -1016,7 +1016,7 @@ bool APCManager::calibrateCamera()
   }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done calibrating camera");
-  return true;  
+  return true;
 }
 
 // Mode 13
@@ -1048,7 +1048,7 @@ bool APCManager::recordCalibrationTrajectory()
   while(!autonomous_ && ros::ok())
   {
     ROS_INFO_STREAM_THROTTLE_NAMED(1, "apc_manager","Recording waypoint #" << counter++ );
-    
+
     moveit::core::robotStateToStream(*manipulation_->getCurrentState(), output_file, include_header);
 
     ros::Duration(0.25).sleep();
@@ -1198,9 +1198,9 @@ bool APCManager::testGraspGenerator()
   std::size_t product_attempts;
   std::size_t product_successes;
 
-  std::stringstream csv_log_stream; 
+  std::stringstream csv_log_stream;
 
-  // Create header of product names and save 
+  // Create header of product names and save
   namespace fs = boost::filesystem;
   fs::path target_dir(package_path_ + "/meshes/products/");
   fs::directory_iterator it(target_dir), eod;
@@ -1250,8 +1250,8 @@ bool APCManager::testGraspGenerator()
       product_attempts++;
 
       const BinObjectPtr bin = bin_it->second;
-      ProductObjectPtr product = bin->getProducts()[0]; // Choose first object      
-     
+      ProductObjectPtr product = bin->getProducts()[0]; // Choose first object
+
       // Get the pose of the product
       perceiveObjectFake(global_object_pose, product);
 
@@ -1289,7 +1289,7 @@ bool APCManager::testGraspGenerator()
         the_grasp_state->setJointGroupPositions(arm_jmg, chosen->grasp_ik_solution_);
         manipulation_->setStateWithOpenEE(true, the_grasp_state);
         visuals_->visual_tools_->publishRobotState(the_grasp_state, rvt::PURPLE);
-        
+
         if (verbose_)
           ros::Duration(5.0).sleep();
       }
@@ -1319,6 +1319,30 @@ bool APCManager::testGraspGenerator()
   logging_file.flush(); // save
 }
 
+// Mode 17
+bool APCManager::testPerceptionComm()
+{
+  BinObjectPtr& bin = shelf_->getBins()["bin_D"];
+  if (bin->getProducts().size() == 0)
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","No products in bin "<< bin->getName());
+    return false;
+  }
+  ProductObjectPtr& product = bin->getProducts().front();
+
+  // Communicate with perception pipeline
+  perception_layer_->startPerception(product, bin);
+
+  // Get result from perception pipeline
+  moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
+  if (!perception_layer_->endPerception(product, bin, current_state))
+  {
+    return false;
+  }
+
+  return true;
+}
+
 bool APCManager::loadShelfWithOnlyOneProduct(const std::string& product_name)
 {
   ROS_INFO_STREAM_NAMED("apc_manager","Loading shelf with product " << product_name);
@@ -1332,15 +1356,15 @@ bool APCManager::loadShelfWithOnlyOneProduct(const std::string& product_name)
   {
     // Clear products in this bin
     const BinObjectPtr bin = bin_it->second;
-    bin->getProducts().clear();    
+    bin->getProducts().clear();
 
     // Clone the product
     ProductObjectPtr product(new ProductObject(*product_seed));
-    
+
     // Add this product
     bin->getProducts().push_back(product);
   }
-  
+
   // Randomize product locations
   bool product_simulator_verbose = false;
   ProductSimulator product_simulator(product_simulator_verbose, visuals_, planning_scene_monitor_);

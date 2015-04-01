@@ -82,6 +82,8 @@ bool PerceptionLayer::startPerception(ProductObjectPtr& product, BinObjectPtr& b
 
 bool PerceptionLayer::endPerception(ProductObjectPtr& product, BinObjectPtr& bin, moveit::core::RobotStatePtr current_state)
 {
+  ROS_INFO_STREAM_NAMED("perception_layer","Waiting for response from perception server");
+
   // Wait for the action to return with product pose
   if (!find_objects_action_.waitForResult(ros::Duration(30.0)))
   {
@@ -121,14 +123,22 @@ bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstP
 
   // Update product with new pose
   const Eigen::Affine3d object_to_camera = visuals_->visual_tools_->convertPose(result->desired_object_pose);
+  geometry_msgs::PoseStamped object_to_camera_msg;
+  object_to_camera_msg.header.frame_id = "xtion_camera";
+  object_to_camera_msg.header.stamp = ros::Time::now();
+  object_to_camera_msg.pose = result->desired_object_pose;
+  visuals_->visual_tools_->publishArrow(object_to_camera_msg, rvt::PURPLE, rvt::LARGE);
 
   // Get camera pose
   const Eigen::Affine3d& camera_to_world = current_state->getGlobalLinkTransform("xtion");
+  printTransform(camera_to_world);
   visuals_->visual_tools_->publishAxis(camera_to_world);
   visuals_->visual_tools_->publishText(camera_to_world, "camera_pose", rvt::BLACK, rvt::SMALL, false);
 
   // Get bin location
   const Eigen::Affine3d& bin_to_world = transform(bin->getBottomRight(), shelf_->getBottomRight());
+  visuals_->visual_tools_->publishAxis(bin_to_world);
+  visuals_->visual_tools_->publishText(bin_to_world, "bin_pose", rvt::BLACK, rvt::SMALL, false);
 
   // Show camera view
   const double distance_from_camera = 0.3;
@@ -169,7 +179,7 @@ bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstP
       ROS_ERROR_STREAM_NAMED("perception_layer","Product " << product->getName() << " has a reported pose from the perception pipline that is outside the tolerance of " << PRODUCT_POSE_WITHIN_BIN_TOLERANCE);
       ROS_ERROR_STREAM_NAMED("perception_layer","Pose:\n" << visuals_->visual_tools_->convertPose(object_to_bin));
       visuals_->visual_tools_->publishAxis(object_to_bin);
-      visuals_->visual_tools_->publishText(object_to_bin, "object_pose", rvt::BLACK, rvt::SMALL, false);
+      visuals_->visual_tools_->publishText(object_to_bin, "object_pose_2", rvt::BLACK, rvt::SMALL, false);
       return false;
     }
     else

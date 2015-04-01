@@ -278,18 +278,8 @@ bool BinObject::visualizeAxis(const Eigen::Affine3d& trans, VisualsPtr visuals) 
 
   visuals->visual_tools_->publishText( text_location, name_, rvt::BLACK, rvt::REGULAR, false);
 
+  return true;
 }
-
-// bool BinObject::createCollisionBodies(const Eigen::Affine3d &trans) const
-// {
-//   ROS_DEBUG_STREAM_NAMED("shelf","Creating collision bin " << name_);
-
-//   visuals_->visual_tools_->publishCollisionCuboid( transform(bottom_right_, trans).translation(),
-//                                                       transform(top_left_, trans).translation(),
-//                                                       name_, color_ );
-
-//   return true;
-// }
 
 bool BinObject::createCollisionBodiesProducts(const Eigen::Affine3d &trans) const
 {
@@ -640,11 +630,12 @@ bool ShelfObject::visualizeAxis(VisualsPtr visuals) const
 {
   // Show coordinate system
   visuals_->visual_tools_->publishAxis( bottom_right_ );
+  ROS_WARN_STREAM_NAMED("temp","bin axis publishing disabled");
 
   // Show each bin
   for (BinObjectMap::const_iterator bin_it = bins_.begin(); bin_it != bins_.end(); bin_it++)
   {
-    bin_it->second->visualizeAxis(bottom_right_, visuals);
+    //bin_it->second->visualizeAxis(bottom_right_, visuals);
   }
 }
 

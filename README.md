@@ -253,6 +253,7 @@ Button Mapings
 		14. Go home
 		15. Test grasp generator abilities and score results
 		16. Test joint limits
+		17. Test requesting preception results
 	jump_to - which step in the manipulation pipeline to start on
 	  Steps: NOT CORRECT ANYMORE
 	    0. Move to initial position

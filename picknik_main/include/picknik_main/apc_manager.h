@@ -230,6 +230,12 @@ public:
   bool testGraspGenerator();
 
   /**
+   * \brief Requesting perception test
+   * \return true on success
+   */
+  bool testPerceptionComm();
+
+  /**
    * \brief Record a trajectory for calibration
    * \return true on success
    */
