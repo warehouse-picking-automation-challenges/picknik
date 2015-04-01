@@ -100,7 +100,8 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   // Generate random product poses and visualize the shelf
   bool product_simulator_verbose = false;
   ProductSimulator product_simulator(product_simulator_verbose, visuals_, planning_scene_monitor_);
-  product_simulator.generateRandomProductPoses(shelf_);
+  ROS_WARN_STREAM_NAMED("temp","product generator disabled");
+  //product_simulator.generateRandomProductPoses(shelf_);
 
   ROS_INFO_STREAM_NAMED("apc_manager","APC Manager Ready.");
 }
@@ -134,7 +135,6 @@ bool APCManager::checkSystemReady()
   // Check Perception
   if (!fake_perception_)
   {
-    ROS_INFO_STREAM_NAMED("apc_manager","Waiting for find block perception server.");
     perception_layer_->isPerceptionReady();
   }
 
@@ -159,6 +159,9 @@ bool APCManager::checkSystemReady()
   // Check end effectors calibrated
   // TODO
 
+  std::cout << "SYSTEM IS READY " << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << std::endl;
   return true;
 }
 

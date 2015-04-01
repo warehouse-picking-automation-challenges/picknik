@@ -7,7 +7,6 @@ Panels:
         - /Grid1/Offset1
         - /Amazon Markers1
         - /Amazon Markers1/Namespaces1
-        - /Trajectory1
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
         - /TF1
@@ -46,9 +45,9 @@ Visualization Manager:
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: true
-      Enabled: false
+      Enabled: true
       Links:
-        All Links Enabled: false
+        All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
@@ -61,17 +60,17 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         collision_head_link_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         display:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         dummyhead1:
           Alpha: 1
           Show Axes: false
@@ -80,7 +79,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         head_camera:
           Alpha: 1
           Show Axes: false
@@ -189,7 +188,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         right_arm_itb:
           Alpha: 1
           Show Axes: false
@@ -294,34 +293,34 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         sonar_ring:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         torso:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: false
+          Value: true
       Name: Robot State
       Robot Alpha: 1
       Robot Description: robot_description
       Robot State Topic: /picknik_main/robot_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
       Visual Enabled: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: true
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -591,12 +590,12 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_start_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
       Visual Enabled: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: true
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -866,7 +865,7 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_goal_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
       Visual Enabled: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
@@ -1148,11 +1147,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Markers
       Namespaces:
-        Arrow: true
-        Axis: false
-        Cylinder: false
-        Text: true
-        Wireframe Rectangle: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -1463,7 +1458,7 @@ Visualization Manager:
       Trajectory Topic: /picknik_main/display_trajectory
       Value: true
     - Class: moveit_rviz_plugin/PlanningScene
-      Enabled: false
+      Enabled: true
       Move Group Namespace: ""
       Name: PlanningScene
       Planning Scene Topic: /picknik_main/picknik_planning_scene
@@ -1743,7 +1738,7 @@ Visualization Manager:
         Robot Alpha: 0.5
         Show Robot Collision: false
         Show Robot Visual: false
-      Value: false
+      Value: true
     - Class: rviz/TF
       Enabled: true
       Frame Timeout: 15
@@ -2122,13 +2117,6 @@ Visualization Manager:
                 {}
       Update Interval: 0
       Value: true
-    - Class: rviz/Axes
-      Enabled: false
-      Length: 0.5
-      Name: Axes
-      Radius: 0.05
-      Reference Frame: world
-      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -2144,22 +2132,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 2.76448
+      Distance: 3.36946
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.31758
-        Y: 1.74637
-        Z: 2.98027e-07
+        X: 1.22224
+        Y: 1.01941
+        Z: -4.17229e-07
       Name: Current View
       Near Clip Distance: 0.01
       Pitch: 0.505398
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 4.30224
+      Yaw: 4.33725
     Saved: ~
 Window Geometry:
   Displays:

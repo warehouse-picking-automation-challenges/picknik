@@ -43,6 +43,7 @@
 #include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
+#include <tf/transform_listener.h>
 
 // Picknik
 #include <picknik_main/namespaces.h>
@@ -56,6 +57,7 @@ namespace picknik_main
 {
 
 static const double PRODUCT_POSE_WITHIN_BIN_TOLERANCE = 0.2; // throw an error if pose is beyond this amount
+static const std::string PERCEPTION_TOPIC = "perception/recognize_objects";
 
 class PerceptionLayer
 {
@@ -69,6 +71,7 @@ public:
 
   /**
    * \brief Check if perception is ready
+
    * \return true if ready
    */
   bool isPerceptionReady();
@@ -92,7 +95,19 @@ public:
   bool processNewObjectPose(picknik_msgs::FindObjectsResultConstPtr result,
                             ProductObjectPtr& product, BinObjectPtr& bin, moveit::core::RobotStatePtr current_state);
 
+  /**
+   * \brief Display a visualization of a camera view frame
+   * \return true on success
+   */
+  bool publishCameraFrame(Eigen::Affine3d camera_to_world);
 
+  /**
+   * \brief Convert between computer vision frame to ROS frame
+   * \param computer_vision_frame
+   * \param output - ros_frame
+   * \return true on success
+   */
+  bool convertFrameCVToROS(const Eigen::Affine3d& cv_frame, Eigen::Affine3d& ros_frame);
 
 private:
 
@@ -110,6 +125,9 @@ private:
 
   // Perception pipeline communication
   actionlib::SimpleActionClient<picknik_msgs::FindObjectsAction> find_objects_action_;
+
+  // TF Listener
+  tf::TransformListener listener_;
 
 }; // end class
 

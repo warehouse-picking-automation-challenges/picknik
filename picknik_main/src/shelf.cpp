@@ -83,6 +83,7 @@ bool RectangleObject::visualize(const Eigen::Affine3d& trans) const
 
 bool RectangleObject::loadCollisionBodies()
 {
+  ROS_ERROR_STREAM_NAMED("temp","loadingCollisionBodies");
   shapes::Shape *mesh = shapes::createMeshFromResource(collision_mesh_path_); // make sure its prepended by file://
   shapes::ShapeMsg shape_msg; // this is a boost::variant type from shape_messages.h
   if (!mesh || !shapes::constructMsgFromShape(mesh, shape_msg))
@@ -113,14 +114,17 @@ bool RectangleObject::createCollisionBodies(const Eigen::Affine3d &trans)
   // Check if mesh is provided
   if (!collision_mesh_path_.empty())
   {
+    ROS_INFO_STREAM_NAMED("temp","publishing mesh");
     // Check if mesh needs to be loaded
     if (mesh_msg_.triangles.empty()) // load mesh from file      
     {
       if (!loadCollisionBodies())
         return false;
-    }
+    }    
     return visuals_->visual_tools_->publishCollisionMesh(transform(centroid_, trans), collision_object_name_, mesh_msg_, color_);
   }
+
+  ROS_INFO_STREAM_NAMED("temp","just showing rectangle");
 
   // Just use basic rectangle
   return visuals_->visual_tools_->publishCollisionCuboid( transform(bottom_right_, trans).translation(),

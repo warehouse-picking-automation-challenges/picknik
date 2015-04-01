@@ -1,4 +1,5 @@
 <launch>
   <!-- Calibration of camera -->
   <node pkg="tf" type="static_transform_publisher" name="camera_to_ee" args="0.072 -0.02 -0.015 3.14 -1.57 0 /left_gripper_base /xtion_camera 50" />
+  <!--node pkg="tf" type="static_transform_publisher" name="camera_to_ee" args="0.072 -0.02 -0.015 1.57 0 0 /left_gripper_base /xtion_camera 50" /-->
 </launch>
