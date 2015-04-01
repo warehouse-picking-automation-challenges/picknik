@@ -102,13 +102,16 @@ bool PerceptionLayer::endPerception(ProductObjectPtr& product, BinObjectPtr& bin
   if (!perception_result->succeeded)
   {
     ROS_ERROR_STREAM_NAMED("perception_layer","Perception action server reported failure");
-    //return false;
+    return false;
   }
 
   // -----------------------------------------------------------------------------------------------
   // Check bounds and update planning scene
   if (!processNewObjectPose(perception_result, product, bin, current_state))
+  {
+    ROS_ERROR_STREAM_NAMED("perception_layer","Failed to process new object pose");
     return false;
+  }
 
   return true;
 }
@@ -121,12 +124,38 @@ bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstP
 
   ROS_WARN_STREAM_NAMED("perception_layer","Processing new object pose");
 
+  // Find the desired pose
+  //int desired_object_id = -1;
+  const picknik_msgs::FoundObject* desired_object;
+  for (std::size_t i = 0; i < result->found_objects.size(); ++i)
+  {
+    if (result->found_objects[i].object_name == product->getName())
+    {
+      desired_object = &result->found_objects[i];
+    }
+  }
+
+  // Error check
+  if (!desired_object)
+  {
+    ROS_ERROR_STREAM_NAMED("perception_layer","The desired product was not returned in the list of found objects");
+    return false;
+  }
+  if (result->found_objects.size() != bin->getProducts().size())
+  {
+    ROS_ERROR_STREAM_NAMED("perception_layer","The list of found objects does not have the same size as the expected bin contents");
+    return false;
+  }
+
+  // Update bin products with new locations
+  // TODO
+
   // Update product with new pose
-  const Eigen::Affine3d object_to_camera = visuals_->visual_tools_->convertPose(result->desired_object_pose);
+  const Eigen::Affine3d object_to_camera = visuals_->visual_tools_->convertPose(desired_object->object_pose);
   geometry_msgs::PoseStamped object_to_camera_msg;
   object_to_camera_msg.header.frame_id = "xtion_camera";
   object_to_camera_msg.header.stamp = ros::Time::now();
-  object_to_camera_msg.pose = result->desired_object_pose;
+  object_to_camera_msg.pose = desired_object->object_pose;
   visuals_->visual_tools_->publishArrow(object_to_camera_msg, rvt::PURPLE, rvt::LARGE);
 
   // Get camera pose
@@ -198,7 +227,8 @@ bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstP
   //global_object_pose = transform(object_to_bin, world_to_bin_transform);
 
   // Show new mesh if possible
-  if (result->bounding_mesh.triangles.empty() || result->bounding_mesh.vertices.empty())
+  const shape_msgs::Mesh* mesh = &(desired_object->bounding_mesh);
+  if (mesh->triangles.empty() || mesh->vertices.empty())
   {
     ROS_WARN_STREAM_NAMED("perception_layer","No bounding mesh returned");
 
@@ -208,7 +238,7 @@ bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstP
   }
   else
   {
-    product->setCollisionMesh(result->bounding_mesh);
+    product->setCollisionMesh(*mesh);
 
     // Show in collision and display Rvizs
     product->visualize(world_to_bin_transform);

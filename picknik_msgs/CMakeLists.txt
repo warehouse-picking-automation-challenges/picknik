@@ -18,6 +18,8 @@ set(ACT_FILES
   CalibrateShelf.action
 )
 
+add_message_files(DIRECTORY msg FILES FoundObject.msg)
+
 ## Generate actions in the 'action' folder
 add_action_files(DIRECTORY action FILES ${ACT_FILES})
 
