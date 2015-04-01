@@ -122,6 +122,17 @@ target_link_libraries(product_simulator
   ${Boost_LIBRARIES}
 )
 
+# perception_layer library
+add_library(perception_layer
+  src/perception_layer.cpp
+)
+target_link_libraries(perception_layer
+  visuals
+  shelf
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
 # Manipulation pipeline library
 add_library(manipulation
   src/manipulation.cpp
@@ -152,11 +163,9 @@ add_library(apc_manager
   src/apc_manager.cpp
 )
 target_link_libraries(apc_manager
-  #visuals
-  #manipulation_data  
   amazon_json_parser
   manipulation
-  # learning_pipeline
+  perception_layer
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )

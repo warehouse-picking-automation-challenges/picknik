@@ -33,89 +33,89 @@
  *********************************************************************/
 
 /* Author: Dave Coleman <dave@dav.ee>
-   Desc:   Holds common parameters for manipulation
+   Desc:   Interface between the perception pipeline and the manipulation pipeline
 */
 
-#ifndef PICKNIK_MAIN__MANIPULATION_DATA
-#define PICKNIK_MAIN__MANIPULATION_DATA
+#ifndef PICKNIK_MAIN__PERCEPTION_LAYER
+#define PICKNIK_MAIN__PERCEPTION_LAYER
 
 // ROS
 #include <ros/ros.h>
+#include <actionlib/client/simple_action_client.h>
+#include <actionlib/client/terminal_state.h>
 
-// MoveIt!
-#include <moveit/robot_model/robot_model.h>
+// Picknik
+#include <picknik_main/namespaces.h>
+#include <picknik_main/shelf.h>
+#include <picknik_main/visuals.h>
+
+// Picknik Msgs
+#include <picknik_msgs/FindObjectsAction.h>
 
 namespace picknik_main
 {
 
-class ManipulationData
+static const double PRODUCT_POSE_WITHIN_BIN_TOLERANCE = 0.2; // throw an error if pose is beyond this amount
+
+class PerceptionLayer
 {
 public:
 
   /**
    * \brief Constructor
+   * \param verbose - run in debug mode
    */
-  ManipulationData();
+  PerceptionLayer(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf, ManipulationDataPtr config);
 
   /**
-   * \brief Load the configuration from rosparam
+   * \brief Check if perception is ready
+   * \return true if ready
+   */
+  bool isPerceptionReady();
+  
+  /**
+   * \brief Call perception pipeline to start looking around
    * \return true on success
    */
-  bool load(robot_model::RobotModelPtr robot_model);
+  bool startPerception(ProductObjectPtr& product, BinObjectPtr& bin);
 
-  // A shared node handle
-  ros::NodeHandle nh_;
+  /**
+   * \brief Get result from actionserver and process
+   * \return true on success
+   */
+  bool endPerception(ProductObjectPtr& product, BinObjectPtr& bin, moveit::core::RobotStatePtr current_state);
 
-  // Performance variables
-  double main_velocity_scaling_factor_;
-  double approach_velocity_scaling_factor_;
-  double lift_velocity_scaling_factor_;
-  double retreat_velocity_scaling_factor_;
-  double calibration_velocity_scaling_factor_;
+  /**
+   * \brief Update the pose, and optionally the mesh, of a particular product
+   * \return false if outside the error tolerance bounds of a pose within a bin
+   */
+  bool processNewObjectPose(picknik_msgs::FindObjectsResultConstPtr result,
+                            ProductObjectPtr& product, BinObjectPtr& bin, moveit::core::RobotStatePtr current_state);
 
-  // Wait variables
-  double wait_before_grasp_;
-  double wait_after_grasp_;
 
-  // Distance variables
-  double approach_distance_desired_;
-  double lift_distance_desired_;
-  double place_goal_down_distance_desired_;
 
-  // Robot semantics
-  std::string start_pose_; // where to move robot to initially. should be for both arms if applicable
-  std::string right_arm_dropoff_pose_; // where to discard picked items
-  std::string left_arm_dropoff_pose_; // where to discard picked items
-  std::string right_hand_name_;
-  std::string left_hand_name_;
-  std::string right_arm_name_;
-  std::string left_arm_name_;
-  std::string both_arms_name_;
+private:
 
-  // Perception variables
-  double camera_x_translation_from_bin_;
-  double camera_y_translation_from_bin_;
-  double camera_z_translation_from_bin_;
-  double camera_x_rotation_from_standard_grasp_;
-  double camera_y_rotation_from_standard_grasp_;
-  double camera_z_rotation_from_standard_grasp_;
-  double camera_lift_distance_;
-  double camera_left_distance_;
-  double camera_frame_display_scale_;
+  // Show more visual and console output, with general slower run time.
+  bool verbose_;
 
-  // Group for each arm
-  const robot_model::JointModelGroup* right_arm_;
-  const robot_model::JointModelGroup* left_arm_;
-  const robot_model::JointModelGroup* both_arms_; // TODO remove?
+  // Visualization classes
+  VisualsPtr visuals_;
 
-  // Logic on type of robot
-  bool dual_arm_;
+  // Contents
+  ShelfObjectPtr shelf_;
+
+  // Robot-sepcific data for the APC
+  ManipulationDataPtr config_;
+
+  // Perception pipeline communication
+  actionlib::SimpleActionClient<picknik_msgs::FindObjectsAction> find_objects_action_;
 
 }; // end class
 
 // Create boost pointers for this class
-typedef boost::shared_ptr<ManipulationData> ManipulationDataPtr;
-typedef boost::shared_ptr<const ManipulationData> ManipulationDataConstPtr;
+typedef boost::shared_ptr<PerceptionLayer> PerceptionLayerPtr;
+typedef boost::shared_ptr<const PerceptionLayer> PerceptionLayerConstPtr;
 
 } // end namespace
 

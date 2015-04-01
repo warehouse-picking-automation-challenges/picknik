@@ -41,7 +41,7 @@ namespace picknik_main
 
 Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
                            planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                           ManipulationData config, GraspDatas grasp_datas,
+                           ManipulationDataPtr config, GraspDatas grasp_datas,
                            APCManager* parent,
                            ShelfObjectPtr shelf, bool use_experience, bool show_database)
   : nh_("~")
@@ -228,7 +228,7 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
   bool verbose = true;
   bool execute_trajectory = true;
   ROS_INFO_STREAM_NAMED("manipulation","Moving to start state of trajectory");
-  if (!move(current_state_, robot_trajectory->getFirstWayPointPtr(), arm_jmg, config_.main_velocity_scaling_factor_, 
+  if (!move(current_state_, robot_trajectory->getFirstWayPointPtr(), arm_jmg, config_->main_velocity_scaling_factor_, 
             verbose, execute_trajectory))
   {
     ROS_ERROR_STREAM_NAMED("manipultion","Unable to plan");
@@ -467,7 +467,7 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
       std::cout << "BEFORE PARAM: \n" << response.trajectory << std::endl;
 
       // Perform iterative parabolic smoothing
-      iterative_smoother_.computeTimeStamps( *robot_trajectory, config_.main_velocity_scaling_factor_ );
+      iterative_smoother_.computeTimeStamps( *robot_trajectory, config_->main_velocity_scaling_factor_ );
 
       // Convert trajectory back to a message
       robot_trajectory->getRobotTrajectoryMsg(response.trajectory);
@@ -663,14 +663,14 @@ bool Manipulation::generateApproachPath(const moveit::core::JointModelGroup *arm
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","generateApproachPath()");
 
   ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","finger_to_palm_depth: " << grasp_datas_[arm_jmg]->finger_to_palm_depth_);
-  ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","approach_distance_desired: " << config_.approach_distance_desired_);
-  double desired_approach_distance = grasp_datas_[arm_jmg]->finger_to_palm_depth_ + config_.approach_distance_desired_;
+  ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","approach_distance_desired: " << config_->approach_distance_desired_);
+  double desired_approach_distance = grasp_datas_[arm_jmg]->finger_to_palm_depth_ + config_->approach_distance_desired_;
 
   Eigen::Vector3d approach_direction;
   approach_direction << -1, 0, 0; // backwards towards robot body
   bool reverse_path = true;
 
-  if (!executeCartesianPath(arm_jmg, approach_direction, desired_approach_distance, config_.approach_velocity_scaling_factor_, 
+  if (!executeCartesianPath(arm_jmg, approach_direction, desired_approach_distance, config_->approach_velocity_scaling_factor_, 
                             reverse_path))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute horizontal path");
@@ -684,14 +684,17 @@ bool Manipulation::generateApproachPath(const moveit::core::JointModelGroup *arm
   return true;
 }
 
-bool Manipulation::executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up)
+bool Manipulation::executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up,
+                                       bool ignore_collision)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeVerticlePath()");
 
   Eigen::Vector3d approach_direction;
   approach_direction << 0, 0, (up ? 1 : -1); // 1 is up, -1 is down
+  bool reverse_path = false;
 
-  if (!executeCartesianPath(arm_jmg, approach_direction, desired_lift_distance, config_.lift_velocity_scaling_factor_))
+  if (!executeCartesianPath(arm_jmg, approach_direction, desired_lift_distance, config_->lift_velocity_scaling_factor_, reverse_path, 
+                            ignore_collision))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute horizontal path");
     return false;
@@ -699,14 +702,17 @@ bool Manipulation::executeVerticlePath(const moveit::core::JointModelGroup *arm_
   return true;
 }
 
-bool Manipulation::executeHorizontalPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool left)
+bool Manipulation::executeHorizontalPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool left, 
+                                         bool ignore_collision)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeHorizontalPath()");
 
   Eigen::Vector3d approach_direction;
   approach_direction << 0, (left ? 1 : -1), 0; // 1 is left, -1 is right
+  bool reverse_path = false;
 
-  if (!executeCartesianPath(arm_jmg, approach_direction, desired_lift_distance, config_.lift_velocity_scaling_factor_))
+  if (!executeCartesianPath(arm_jmg, approach_direction, desired_lift_distance, config_->lift_velocity_scaling_factor_, reverse_path,
+                            ignore_collision))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute horizontal path");
     return false;
@@ -714,15 +720,18 @@ bool Manipulation::executeHorizontalPath(const moveit::core::JointModelGroup *ar
   return true;
 }
 
-bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_approach_distance, bool retreat)
+bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_approach_distance, bool retreat,
+                                      bool ignore_collision)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeRetreatPath()");
 
   // Compute straight line in reverse from grasp
   Eigen::Vector3d approach_direction;
   approach_direction << (retreat ? -1 : 1), 0, 0; // backwards towards robot body
+  bool reverse_path = false;
 
-  if (!executeCartesianPath(arm_jmg, approach_direction, desired_approach_distance, config_.retreat_velocity_scaling_factor_))
+  if (!executeCartesianPath(arm_jmg, approach_direction, desired_approach_distance, config_->retreat_velocity_scaling_factor_, 
+                            reverse_path, ignore_collision))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute retreat path");
     return false;
@@ -730,16 +739,18 @@ bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_j
   return true;
 }
 
-bool Manipulation::executeCartesianPath(const moveit::core::JointModelGroup *arm_jmg, const Eigen::Vector3d& direction, double desired_distance, 
-                                       double velocity_scaling_factor, bool reverse_path)
+bool Manipulation::executeCartesianPath(const moveit::core::JointModelGroup *arm_jmg, const Eigen::Vector3d& direction, 
+                                        double desired_distance, double velocity_scaling_factor, 
+                                        bool reverse_path, bool ignore_collision)                                        
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeCartesianPath()");
   getCurrentState();
 
   double path_length;
   std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
-  if (!computeStraightLinePath( direction, desired_distance,
-                                robot_state_trajectory, current_state_, arm_jmg, reverse_path, path_length))
+  if (!computeStraightLinePath( direction, desired_distance, robot_state_trajectory, current_state_, arm_jmg, reverse_path, 
+                                path_length, ignore_collision))
+                                
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Error occured while computing straight line path");
     return false;
@@ -758,7 +769,7 @@ bool Manipulation::executeCartesianPath(const moveit::core::JointModelGroup *arm
   visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, current_state_, wait_for_trajetory);
 
   // Execute
-  if( !executeTrajectory(cartesian_trajectory_msg) )
+  if( !executeTrajectory(cartesian_trajectory_msg, ignore_collision) )
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
     return false;
@@ -773,9 +784,13 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
                                             moveit::core::RobotStatePtr robot_state,
                                             const moveit::core::JointModelGroup *arm_jmg,
                                             bool reverse_trajectory,
-                                            double& path_length)
+                                            double& path_length,
+                                            bool ignore_collision)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","computeStraightLinePath()");
+
+  if (ignore_collision)
+    ROS_INFO_STREAM_NAMED("manipulation","computeStraightLinePath() is ignoring collisions");
 
   // End effector parent link (arm tip for ik solving)
   const moveit::core::LinkModel *ik_tip_link_model = grasp_datas_[arm_jmg]->parent_link_;
@@ -859,7 +874,7 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
                                                     desired_approach_distance,
                                                     max_step,
                                                     jump_threshold,
-                                                    constraint_fn // collision check
+                                                    ignore_collision ? NULL : constraint_fn // collision check
                                                     );
 
     ROS_DEBUG_STREAM_NAMED("manipulation","Cartesian resulting distance: " << path_length << " desired: " << desired_approach_distance
@@ -949,20 +964,20 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
 const robot_model::JointModelGroup* Manipulation::chooseArm(const Eigen::Affine3d& ee_pose)
 {
   // Single Arm
-  if (!config_.dual_arm_)
+  if (!config_->dual_arm_)
   {
-    return config_.right_arm_; // right is always the default arm for single arm robots
+    return config_->right_arm_; // right is always the default arm for single arm robots
   }
   // Dual Arm
   else if (ee_pose.translation().y() < 0)
   {
     ROS_INFO_STREAM_NAMED("manipulation","Using right arm for task");
-    return config_.right_arm_;
+    return config_->right_arm_;
   }
   else
   {
     ROS_INFO_STREAM_NAMED("manipulation","Using left arm for task");
-    return config_.left_arm_;
+    return config_->left_arm_;
   }
 }
 
@@ -978,18 +993,18 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
 
   //Move camera left
   std::cout << std::endl << std::endl << std::endl;
-  ROS_INFO_STREAM_NAMED("manipulation","Moving camera left distance " << config_.camera_left_distance_);
+  ROS_INFO_STREAM_NAMED("manipulation","Moving camera left distance " << config_->camera_left_distance_);
   bool left = true;
-  if (!executeHorizontalPath(arm_jmg, config_.camera_left_distance_, left))
+  if (!executeHorizontalPath(arm_jmg, config_->camera_left_distance_, left))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to move left");
   }
 
   // Move camera right
   std::cout << std::endl << std::endl << std::endl;
-  ROS_INFO_STREAM_NAMED("manipulation","Moving camera right distance " << config_.camera_left_distance_ * 2.0);
+  ROS_INFO_STREAM_NAMED("manipulation","Moving camera right distance " << config_->camera_left_distance_ * 2.0);
   left = false;
-  if (!executeHorizontalPath(arm_jmg, config_.camera_left_distance_ * 2.0, left))
+  if (!executeHorizontalPath(arm_jmg, config_->camera_left_distance_ * 2.0, left))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to move right");
   }
@@ -1004,17 +1019,17 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
 
   // Move camera up
   std::cout << std::endl << std::endl << std::endl;
-  ROS_INFO_STREAM_NAMED("manipulation","Lifting camera distance " << config_.camera_lift_distance_);
-  if (!executeVerticlePath(arm_jmg, config_.camera_lift_distance_))
+  ROS_INFO_STREAM_NAMED("manipulation","Lifting camera distance " << config_->camera_lift_distance_);
+  if (!executeVerticlePath(arm_jmg, config_->camera_lift_distance_))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to move up");
   }
 
   // Move camera down
   std::cout << std::endl << std::endl << std::endl;
-  ROS_INFO_STREAM_NAMED("manipulation","Lowering camera distance " << config_.camera_lift_distance_ * 2.0);
+  ROS_INFO_STREAM_NAMED("manipulation","Lowering camera distance " << config_->camera_lift_distance_ * 2.0);
   bool up = false;
-  if (!executeVerticlePath(arm_jmg, config_.camera_lift_distance_ * 2.0, up))
+  if (!executeVerticlePath(arm_jmg, config_->camera_lift_distance_ * 2.0, up))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to move down");
   }
@@ -1029,9 +1044,9 @@ bool Manipulation::moveCameraToBin(BinObjectPtr bin)
   ee_pose = transform(ee_pose, shelf_->getBottomRight()); // convert to world coordinates
 
   // Move centroid backwards
-  ee_pose.translation().x() += config_.camera_x_translation_from_bin_;
-  ee_pose.translation().y() += config_.camera_y_translation_from_bin_;
-  ee_pose.translation().z() += config_.camera_z_translation_from_bin_;
+  ee_pose.translation().x() += config_->camera_x_translation_from_bin_;
+  ee_pose.translation().y() += config_->camera_y_translation_from_bin_;
+  ee_pose.translation().z() += config_->camera_z_translation_from_bin_;
 
   // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
   ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
@@ -1039,7 +1054,7 @@ bool Manipulation::moveCameraToBin(BinObjectPtr bin)
 
   // Debug
   visuals_->visual_tools_->publishAxis(ee_pose);
-  visuals_->visual_tools_->publishText(ee_pose, "camera_pose", rvt::BLACK, rvt::SMALL, false);
+  visuals_->visual_tools_->publishText(ee_pose, "ee_pose", rvt::BLACK, rvt::SMALL, false);
 
   // Choose which arm to utilize for task
   const robot_model::JointModelGroup* arm_jmg = chooseArm(ee_pose);
@@ -1049,13 +1064,13 @@ bool Manipulation::moveCameraToBin(BinObjectPtr bin)
 
   // Customize the direction it is pointing
   // Roll Angle
-  ee_pose = ee_pose * Eigen::AngleAxisd(config_.camera_z_rotation_from_standard_grasp_, Eigen::Vector3d::UnitZ());
+  ee_pose = ee_pose * Eigen::AngleAxisd(config_->camera_z_rotation_from_standard_grasp_, Eigen::Vector3d::UnitZ());
   // Pitch Angle
-  ee_pose = ee_pose * Eigen::AngleAxisd(config_.camera_x_rotation_from_standard_grasp_, Eigen::Vector3d::UnitX());
+  ee_pose = ee_pose * Eigen::AngleAxisd(config_->camera_x_rotation_from_standard_grasp_, Eigen::Vector3d::UnitX());
   // Yaw Angle
-  ee_pose = ee_pose * Eigen::AngleAxisd(config_.camera_y_rotation_from_standard_grasp_, Eigen::Vector3d::UnitY());
+  ee_pose = ee_pose * Eigen::AngleAxisd(config_->camera_y_rotation_from_standard_grasp_, Eigen::Vector3d::UnitY());
 
-  return moveEEToPose(ee_pose, config_.main_velocity_scaling_factor_, arm_jmg);
+  return moveEEToPose(ee_pose, config_->main_velocity_scaling_factor_, arm_jmg);
 }
 
 bool Manipulation::straightProjectPose( const Eigen::Affine3d& original_pose, Eigen::Affine3d& new_pose,
@@ -1107,9 +1122,9 @@ bool Manipulation::openEndEffectors(bool open)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","openEndEffectors()");
 
-  openEndEffector(true, config_.right_arm_);
-  if (config_.dual_arm_)
-    openEndEffector(true, config_.left_arm_);
+  openEndEffector(true, config_->right_arm_);
+  if (config_->dual_arm_)
+    openEndEffector(true, config_->left_arm_);
   return true;
 }
 
@@ -1167,15 +1182,15 @@ bool Manipulation::setStateWithOpenEE(bool open, moveit::core::RobotStatePtr rob
 
   if (open)
   {
-    grasp_datas_[config_.right_arm_]->setRobotStatePreGrasp( robot_state );
-    if (config_.dual_arm_)
-      grasp_datas_[config_.left_arm_]->setRobotStatePreGrasp( robot_state );
+    grasp_datas_[config_->right_arm_]->setRobotStatePreGrasp( robot_state );
+    if (config_->dual_arm_)
+      grasp_datas_[config_->left_arm_]->setRobotStatePreGrasp( robot_state );
   }
   else
   {
-    grasp_datas_[config_.right_arm_]->setRobotStateGrasp( robot_state );
-    if (config_.dual_arm_)
-      grasp_datas_[config_.left_arm_]->setRobotStateGrasp( robot_state );
+    grasp_datas_[config_->right_arm_]->setRobotStateGrasp( robot_state );
+    if (config_->dual_arm_)
+      grasp_datas_[config_->left_arm_]->setRobotStateGrasp( robot_state );
   }
 }
 
@@ -1186,7 +1201,7 @@ bool Manipulation::checkExecutionManager()
   trajectory_execution_manager_.reset(new trajectory_execution_manager::TrajectoryExecutionManager(robot_model_));
   plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
 
-  const robot_model::JointModelGroup* arm_jmg = config_.dual_arm_ ? config_.both_arms_ : config_.right_arm_;
+  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   if (!trajectory_execution_manager_->ensureActiveControllersForGroup(arm_jmg->getName()))
   {
@@ -1197,7 +1212,7 @@ bool Manipulation::checkExecutionManager()
   return true;
 }
 
-bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg)
+bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg, bool ignore_collision)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeTrajectory()");
   ROS_INFO_STREAM_NAMED("manipulation","Executing trajectory");
@@ -1232,21 +1247,15 @@ bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_ms
   }
 
   // Confirm trajectory before continuing
-  bool require_confirmation = true;
-  if (!parent_->getAutonomous() && require_confirmation)
+  if (!parent_->getAutonomous())
   {
-    // Set robot state
-    //moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_));
-    //current_state_->setJointGroupPositions(config_.right_arm_, trajectory_msg.joint_trajectory.points.back().positions);
-
-    // Check robot state
-    //visuals_->goal_state_->publishRobotState(current_state_, rvt::ORANGE);
-
     std::cout << std::endl;
     std::cout << std::endl;
     std::cout << "Waiting before executing trajectory" << std::endl;
     parent_->waitForNextStep();
   }
+
+  ROS_INFO_STREAM_NAMED("manipulation","Executing trajectory...");
 
   // Clear
   plan_execution_->getTrajectoryExecutionManager()->clear();
@@ -1284,6 +1293,28 @@ bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_ms
   else
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
+    return false;
+  }
+
+  return true;
+}
+
+bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_scene)
+{
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","fixCollidingState()");
+
+  // Turn off auto mode
+  parent_->setAutonomous(false);
+
+  // TODO: Decide what direction is needed to fix colliding state, using the cloned scene  
+  ROS_INFO_STREAM_NAMED("temp","TODO: work with dual arms");
+  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->left_arm_ : config_->right_arm_;  
+
+  double desired_lift_distance = 0.2;
+  bool up = true;
+  bool ignore_collision = true;
+  if (!executeVerticlePath(arm_jmg, desired_lift_distance, up, ignore_collision))
+  {
     return false;
   }
 
@@ -1567,9 +1598,9 @@ moveit::core::RobotStatePtr Manipulation::getCurrentState()
   return current_state_;
 }
 
-bool Manipulation::checkCurrentCollisionAndBounds(const robot_model::JointModelGroup* arm_jmg)
+bool Manipulation::fixCurrentCollisionAndBounds(const robot_model::JointModelGroup* arm_jmg)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","checkCurrentCollisionAndBounds()");
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","fixCurrentCollisionAndBounds()");
 
   bool result = true;
 
@@ -1585,10 +1616,21 @@ bool Manipulation::checkCurrentCollisionAndBounds(const robot_model::JointModelG
   bool verbose = true;
   if (cloned_scene->isStateColliding(*current_state_, arm_jmg->getName(), verbose))
   {
-    ROS_WARN_STREAM_NAMED("manipulation","State is colliding");
+    result = false;
+
+    std::cout << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+    ROS_WARN_STREAM_NAMED("manipulation","State is colliding, attempting to fix...");
+    std::cout << "-------------------------------------------------------" << std::endl;
+    
     // Show collisions
     visuals_->visual_tools_->publishContactPoints(*current_state_, cloned_scene.get());
-    result = false;
+
+    // Attempt to fix collision state
+    if (!fixCollidingState(cloned_scene))
+    {
+      ROS_ERROR_STREAM_NAMED("manipulation","Unable to fix colliding state");
+    }
   }
   else
   {
@@ -1598,7 +1640,10 @@ bool Manipulation::checkCurrentCollisionAndBounds(const robot_model::JointModelG
   // Check if satisfies bounds
   if (!current_state_->satisfiesBounds(arm_jmg, fix_state_bounds_.getMaxBoundsError()))
   {
+    std::cout << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
     ROS_WARN_STREAM_NAMED("manipulation","State does not satisfy bounds, attempting to fix...");
+    std::cout << "-------------------------------------------------------" << std::endl;
 
     moveit::core::RobotStatePtr new_state(new moveit::core::RobotState(*current_state_));
 
@@ -1606,12 +1651,20 @@ bool Manipulation::checkCurrentCollisionAndBounds(const robot_model::JointModelG
     {
       ROS_WARN_STREAM_NAMED("manipulation","Unable to fix state bounds or change not required");
     }
-    // State was modified, send to robot
-    else if (!executeState(new_state, arm_jmg, config_.main_velocity_scaling_factor_))
+    else
     {
-      ROS_ERROR_STREAM_NAMED("manipulation","Unable to exceute state bounds fix");
+      std::cout << std::endl;
+      std::cout << std::endl;
+      std::cout << "Waiting before executing trajectory" << std::endl;
+      parent_->waitForNextStep();
+
+      // State was modified, send to robot
+      if (!executeState(new_state, arm_jmg, config_->main_velocity_scaling_factor_))
+      {
+        ROS_ERROR_STREAM_NAMED("manipulation","Unable to exceute state bounds fix");
+      }
+      result = false;
     }
-    result = false;
   }
   else
   {
@@ -1650,7 +1703,7 @@ bool Manipulation::checkCollisionAndBounds(const moveit::core::RobotStatePtr &st
   }
 
   // Check for collisions --------------------------------------------------------
-  const robot_model::JointModelGroup* arm_jmg = config_.dual_arm_ ? config_.both_arms_ : config_.right_arm_;
+  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Get planning scene lock
   {
