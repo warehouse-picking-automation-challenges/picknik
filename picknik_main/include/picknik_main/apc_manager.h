@@ -121,8 +121,20 @@ public:
    * \return true on success
    */
   bool perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder order, bool verbose);
-  bool perceiveObjectFake(Eigen::Affine3d& global_object_pose, ProductObjectPtr& product);
 
+  /**
+   * \brief Move camera around a bin by playing back a file
+   * \param bin
+   * \return true on success
+   */
+  bool observeBinWithCamera(BinObjectPtr& bin);
+
+  /**
+   * \brief Record camera moving around a bin
+   * \param bin
+   * \return true on success
+   */
+  bool recordBinWithCamera(BinObjectPtr& bin);
 
   /**
    * \brief Wait until user presses a button

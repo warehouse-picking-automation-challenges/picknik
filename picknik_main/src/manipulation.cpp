@@ -136,7 +136,7 @@ bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_m
   bool filter_pregrasps = true;
   bool verbose_if_failed = false;
   bool grasp_verbose = false;
-  if (!grasp_filter_->filterGrasps(grasp_candidates, planning_scene_monitor_, arm_jmg, filter_pregrasps, grasp_verbose, 
+  if (!grasp_filter_->filterGrasps(grasp_candidates, planning_scene_monitor_, arm_jmg, filter_pregrasps, grasp_verbose,
                                    verbose_if_failed))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to filter grasps");
@@ -228,7 +228,7 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
   bool verbose = true;
   bool execute_trajectory = true;
   ROS_INFO_STREAM_NAMED("manipulation","Moving to start state of trajectory");
-  if (!move(current_state_, robot_trajectory->getFirstWayPointPtr(), arm_jmg, config_->main_velocity_scaling_factor_, 
+  if (!move(current_state_, robot_trajectory->getFirstWayPointPtr(), arm_jmg, config_->main_velocity_scaling_factor_,
             verbose, execute_trajectory))
   {
     ROS_ERROR_STREAM_NAMED("manipultion","Unable to plan");
@@ -251,6 +251,36 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
     return false;
   }
 
+  return true;
+}
+
+bool Manipulation::recordTrajectoryToFile(const std::string &file_path)
+{
+  bool include_header = false;
+
+  std::ofstream output_file;
+  output_file.open (file_path.c_str());
+  ROS_DEBUG_STREAM_NAMED("manipulation","Saving bin trajectory to file " << file_path);
+
+  std::cout << std::endl << std::endl << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << "START MOVING ARM " << std::endl;
+  std::cout << "Press Auto button to stop recording " << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+
+  std::size_t counter = 0;
+  //  while(!autonomous_ && ros::ok())
+  ROS_WARN_STREAM_NAMED("temp","implenent stop");
+  while(ros::ok())
+  {
+    ROS_INFO_STREAM_THROTTLE_NAMED(1, "manipulation","Recording waypoint #" << counter++ );
+
+    moveit::core::robotStateToStream(*getCurrentState(), output_file, include_header);
+
+    ros::Duration(0.25).sleep();
+  }
+
+  output_file.close();  
   return true;
 }
 
@@ -456,14 +486,14 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
       // Add more waypoints
       robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, arm_jmg));
       robot_trajectory->setRobotTrajectoryMsg(*current_state_, response.trajectory);
-    
+
       // Interpolate
       double discretization = 0.25;
       interpolate(robot_trajectory, discretization);
 
       // Convert trajectory back to a message
       robot_trajectory->getRobotTrajectoryMsg(response.trajectory);
-      
+
       std::cout << "BEFORE PARAM: \n" << response.trajectory << std::endl;
 
       // Perform iterative parabolic smoothing
@@ -530,7 +560,7 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajec
 {
   double dummy_dt = 1; // dummy value until parameterization
 
-  robot_trajectory::RobotTrajectoryPtr new_robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, 
+  robot_trajectory::RobotTrajectoryPtr new_robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_,
                                                                                                   robot_trajectory->getGroup()));
 
   // For each set of points (A,B) in the original trajectory
@@ -670,7 +700,7 @@ bool Manipulation::generateApproachPath(const moveit::core::JointModelGroup *arm
   approach_direction << -1, 0, 0; // backwards towards robot body
   bool reverse_path = true;
 
-  if (!executeCartesianPath(arm_jmg, approach_direction, desired_approach_distance, config_->approach_velocity_scaling_factor_, 
+  if (!executeCartesianPath(arm_jmg, approach_direction, desired_approach_distance, config_->approach_velocity_scaling_factor_,
                             reverse_path))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute horizontal path");
@@ -693,7 +723,7 @@ bool Manipulation::executeVerticlePath(const moveit::core::JointModelGroup *arm_
   approach_direction << 0, 0, (up ? 1 : -1); // 1 is up, -1 is down
   bool reverse_path = false;
 
-  if (!executeCartesianPath(arm_jmg, approach_direction, desired_lift_distance, config_->lift_velocity_scaling_factor_, reverse_path, 
+  if (!executeCartesianPath(arm_jmg, approach_direction, desired_lift_distance, config_->lift_velocity_scaling_factor_, reverse_path,
                             ignore_collision))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute horizontal path");
@@ -702,7 +732,7 @@ bool Manipulation::executeVerticlePath(const moveit::core::JointModelGroup *arm_
   return true;
 }
 
-bool Manipulation::executeHorizontalPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool left, 
+bool Manipulation::executeHorizontalPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool left,
                                          bool ignore_collision)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeHorizontalPath()");
@@ -730,7 +760,7 @@ bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_j
   approach_direction << (retreat ? -1 : 1), 0, 0; // backwards towards robot body
   bool reverse_path = false;
 
-  if (!executeCartesianPath(arm_jmg, approach_direction, desired_approach_distance, config_->retreat_velocity_scaling_factor_, 
+  if (!executeCartesianPath(arm_jmg, approach_direction, desired_approach_distance, config_->retreat_velocity_scaling_factor_,
                             reverse_path, ignore_collision))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute retreat path");
@@ -739,18 +769,18 @@ bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_j
   return true;
 }
 
-bool Manipulation::executeCartesianPath(const moveit::core::JointModelGroup *arm_jmg, const Eigen::Vector3d& direction, 
-                                        double desired_distance, double velocity_scaling_factor, 
-                                        bool reverse_path, bool ignore_collision)                                        
+bool Manipulation::executeCartesianPath(const moveit::core::JointModelGroup *arm_jmg, const Eigen::Vector3d& direction,
+                                        double desired_distance, double velocity_scaling_factor,
+                                        bool reverse_path, bool ignore_collision)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeCartesianPath()");
   getCurrentState();
 
   double path_length;
   std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
-  if (!computeStraightLinePath( direction, desired_distance, robot_state_trajectory, current_state_, arm_jmg, reverse_path, 
+  if (!computeStraightLinePath( direction, desired_distance, robot_state_trajectory, current_state_, arm_jmg, reverse_path,
                                 path_length, ignore_collision))
-                                
+
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Error occured while computing straight line path");
     return false;
@@ -1311,9 +1341,9 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   // Turn off auto mode
   parent_->setAutonomous(false);
 
-  // TODO: Decide what direction is needed to fix colliding state, using the cloned scene  
+  // TODO: Decide what direction is needed to fix colliding state, using the cloned scene
   ROS_INFO_STREAM_NAMED("temp","TODO: work with dual arms");
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->left_arm_ : config_->right_arm_;  
+  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->left_arm_ : config_->right_arm_;
 
   double desired_lift_distance = 0.2;
   bool up = true;
@@ -1627,7 +1657,7 @@ bool Manipulation::fixCurrentCollisionAndBounds(const robot_model::JointModelGro
     std::cout << "-------------------------------------------------------" << std::endl;
     ROS_WARN_STREAM_NAMED("manipulation","State is colliding, attempting to fix...");
     std::cout << "-------------------------------------------------------" << std::endl;
-    
+
     // Show collisions
     visuals_->visual_tools_->publishContactPoints(*current_state_, cloned_scene.get());
 

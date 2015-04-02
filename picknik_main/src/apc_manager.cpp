@@ -568,13 +568,10 @@ bool APCManager::perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder o
   perception_interface_->startPerception(product, bin);
 
   // Perturb camera
-  if (false)
   if (!manipulation_->perturbCamera(bin))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
   }
-
-  moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
 
   // Get result from perception pipeline
   if (!perception_interface_->endPerception(product, bin))
@@ -588,36 +585,40 @@ bool APCManager::perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder o
   return true;
 }
 
-bool APCManager::perceiveObjectFake(Eigen::Affine3d& global_object_pose, ProductObjectPtr& product)
+bool APCManager::observeBinWithCamera(BinObjectPtr& bin)
 {
-  // -----------------------------------------------------------------------------------------------
-  // Get fake location
-  ROS_WARN_STREAM_NAMED("apc_manager","Using fake perception system");
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Moving camera around " << bin->getName());
 
-  const std::string& coll_obj_name = product->getCollisionName();
+  // Choose which planning group to use
+  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->left_arm_ : config_->right_arm_;
+
+  // Start playing back file
+  std::string file_path;
+  const std::string file_name = "observe_bin_" + bin->getName() + "_trajectory";
+  manipulation_->getFilePath(file_path, file_name);
+
+  if (!manipulation_->playbackTrajectoryFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
   {
-    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
-
-    collision_detection::World::ObjectConstPtr world_obj;
-    world_obj = scene->getWorld()->getObject(coll_obj_name);
-    if (!world_obj)
-    {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Unable to find object " << coll_obj_name << " in planning scene world");
-      return false;
-    }
-    if (!world_obj->shape_poses_.size())
-    {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Object " << coll_obj_name << " has no shapes!");
-      return false;
-    }
-    if (!world_obj->shape_poses_.size() > 1)
-    {
-      ROS_WARN_STREAM_NAMED("apc_manager","Unknown situation - object " << coll_obj_name << " has more than one shape");
-    }
-    global_object_pose = world_obj->shape_poses_[0];
-
-    global_object_pose = global_object_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitZ());
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to playback " << file_name);
+    return false;
   }
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Done observing bin");
+  return true;    
+}
+
+bool APCManager::recordBinWithCamera(BinObjectPtr& bin)
+{
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Recoding bin observation trajectory around " << bin->getName());
+
+  std::string file_path;
+  const std::string file_name = "observe_bin_" + bin->getName() + "_trajectory";
+  manipulation_->getFilePath(file_path, file_name);
+
+  // Start recording
+  manipulation_->recordTrajectoryToFile(file_name);
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Done recording bin with camera");
 
   return true;
 }
@@ -1005,7 +1006,6 @@ bool APCManager::testCameraPositions()
 // Mode 12
 bool APCManager::calibrateCamera()
 {
-  // First move to the same start position every time
   ROS_DEBUG_STREAM_NAMED("apc_manager","Calibrating camera");
 
   // Choose which planning group to use
@@ -1018,7 +1018,7 @@ bool APCManager::calibrateCamera()
 
   if (!manipulation_->playbackTrajectoryFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
   {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to playback calibration trajectory");
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to playback " << file_name);
     return false;
   }
 
@@ -1029,39 +1029,17 @@ bool APCManager::calibrateCamera()
 // Mode 13
 bool APCManager::recordCalibrationTrajectory()
 {
-  // First move to the same start position every time
-  ROS_DEBUG_STREAM_NAMED("apc_manager","Going home");
-
-  // Choose which planning group to use
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
-
-  std::cout << std::endl << std::endl << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
-  std::cout << "START MOVING ARM " << std::endl;
-  std::cout << "Press Auto button to stop recording " << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
-
-  // Start recording
-  bool include_header = false;
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Recoding calibration trajectory");
 
   std::string file_path;
   const std::string file_name = "calibration_trajectory";
   manipulation_->getFilePath(file_path, file_name);
-  std::ofstream output_file;
-  output_file.open (file_path.c_str());
-  ROS_DEBUG_STREAM_NAMED("apc_manager","Saving calibration trajectory to file " << file_path);
 
-  static std::size_t counter = 0;
-  while(!autonomous_ && ros::ok())
-  {
-    ROS_INFO_STREAM_THROTTLE_NAMED(1, "apc_manager","Recording waypoint #" << counter++ );
+  // Start recording
+  manipulation_->recordTrajectoryToFile(file_name);
 
-    moveit::core::robotStateToStream(*manipulation_->getCurrentState(), output_file, include_header);
+  ROS_INFO_STREAM_NAMED("apc_manager","Done recording calibration trajectory");
 
-    ros::Duration(0.25).sleep();
-  }
-
-  output_file.close();
   return true;
 }
 
@@ -1260,7 +1238,7 @@ bool APCManager::testGraspGenerator()
       ProductObjectPtr product = bin->getProducts()[0]; // Choose first object
 
       // Get the pose of the product
-      perceiveObjectFake(global_object_pose, product);
+      //perceiveObjectFake(global_object_pose, product);
 
       // Choose which arm to use
       arm_jmg = manipulation_->chooseArm(global_object_pose);

@@ -156,7 +156,7 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
 {
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
-  ROS_WARN_STREAM_NAMED("perception_interface","Processing new object pose");
+  ROS_INFO_STREAM_NAMED("perception_interface","Processing perception results");
 
   // Error check
   if (result->found_objects.size() != bin->getProducts().size())

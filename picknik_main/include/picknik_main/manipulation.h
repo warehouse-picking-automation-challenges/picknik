@@ -96,6 +96,13 @@ public:
                                   double velocity_scaling_factor);
 
   /**
+   * \brief Record the entire state of a robot to file
+   * \param file_name - location of file
+   * \return true on success
+   */
+  bool recordTrajectoryToFile(const std::string &file_name);
+
+  /**
    * \brief Move to any pose as defined in the SRDF
    * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
    * \return true on success
