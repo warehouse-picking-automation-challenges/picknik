@@ -87,14 +87,22 @@ public:
    * \brief Get result from actionserver and process
    * \return true on success
    */
-  bool endPerception(ProductObjectPtr& product, BinObjectPtr& bin, moveit::core::RobotStatePtr current_state);
+  bool endPerception(ProductObjectPtr& product, BinObjectPtr& bin);
 
   /**
-   * \brief Update the pose, and optionally the mesh, of a particular product
+   * \brief Update the poses, and optionally the mesh, of the products in a bin
    * \return false if outside the error tolerance bounds of a pose within a bin
    */
-  bool processNewObjectPose(picknik_msgs::FindObjectsResultConstPtr result,
-                            ProductObjectPtr& product, BinObjectPtr& bin, moveit::core::RobotStatePtr current_state);
+  bool processPerceptionResults(picknik_msgs::FindObjectsResultConstPtr result,
+                                ProductObjectPtr& product, BinObjectPtr& bin);
+  
+  /**
+   * \brief Get the latest location of the camera on the robot from ROS
+   * \param world_to_camera 4x4 matrix to fill in with transpose
+   * \param time_stamp - the time that the arm was in this location
+   * \return true on success
+   */
+  bool getCameraPose(Eigen::Affine3d& world_to_camera, ros::Time& time_stamp);
 
   /**
    * \brief Display a visualization of a camera view frame
@@ -136,6 +144,9 @@ private:
   // Tell the perception pipeline we are done moving the camera
   ros::Publisher stop_perception_pub_;
 
+  // Perception processing has started
+  bool is_processing_perception_;
+  
 }; // end class
 
 // Create boost pointers for this class

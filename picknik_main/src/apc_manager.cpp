@@ -577,7 +577,7 @@ bool APCManager::perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder o
   moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
 
   // Get result from perception pipeline
-  if (!perception_interface_->endPerception(product, bin, current_state))
+  if (!perception_interface_->endPerception(product, bin))
   {
     return false;
   }
@@ -1341,8 +1341,7 @@ bool APCManager::testPerceptionComm()
   perception_interface_->startPerception(product, bin);
 
   // Get result from perception pipeline
-  moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
-  if (!perception_interface_->endPerception(product, bin, current_state))
+  if (!perception_interface_->endPerception(product, bin))
   {
     return false;
   }
