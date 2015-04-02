@@ -122,11 +122,11 @@ target_link_libraries(product_simulator
   ${Boost_LIBRARIES}
 )
 
-# perception_layer library
-add_library(perception_layer
-  src/perception_layer.cpp
+# perception_interface library
+add_library(perception_interface
+  src/perception_interface.cpp
 )
-target_link_libraries(perception_layer
+target_link_libraries(perception_interface
   visuals
   shelf
   ${catkin_LIBRARIES} 
@@ -165,7 +165,7 @@ add_library(apc_manager
 target_link_libraries(apc_manager
   amazon_json_parser
   manipulation
-  perception_layer
+  perception_interface
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )

@@ -21,4 +21,7 @@
 	args="$(arg command_args)" output="screen">
   </node>
 
+  <!-- Allow xbox controller to be used -->
+  <node name="$(anon joy)" pkg="joy" type="joy_node" respawn="false"/>
+
 </launch>

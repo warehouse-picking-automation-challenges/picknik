@@ -98,7 +98,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
                                        this, shelf_, use_experience, show_database));
 
   // Load perception layer
-  perception_layer_.reset(new PerceptionLayer(verbose_, visuals_, shelf_, config_, tf_));
+  perception_interface_.reset(new PerceptionInterface(verbose_, visuals_, shelf_, config_, tf_, nh_private_));
 
   // Generate random product poses and visualize the shelf
   bool product_simulator_verbose = false;
@@ -137,7 +137,7 @@ bool APCManager::checkSystemReady()
   // Check Perception
   if (!fake_perception_)
   {
-    perception_layer_->isPerceptionReady();
+    perception_interface_->isPerceptionReady();
   }
 
   // Choose which planning group to use
@@ -565,9 +565,10 @@ bool APCManager::perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder o
   // Communicate with perception pipeline
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;  
-  perception_layer_->startPerception(product, bin);
+  perception_interface_->startPerception(product, bin);
 
   // Perturb camera
+  if (false)
   if (!manipulation_->perturbCamera(bin))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
@@ -576,7 +577,7 @@ bool APCManager::perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder o
   moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
 
   // Get result from perception pipeline
-  if (!perception_layer_->endPerception(product, bin, current_state))
+  if (!perception_interface_->endPerception(product, bin, current_state))
   {
     return false;
   }
@@ -1337,11 +1338,11 @@ bool APCManager::testPerceptionComm()
   ProductObjectPtr& product = bin->getProducts().front();
 
   // Communicate with perception pipeline
-  perception_layer_->startPerception(product, bin);
+  perception_interface_->startPerception(product, bin);
 
   // Get result from perception pipeline
   moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
-  if (!perception_layer_->endPerception(product, bin, current_state))
+  if (!perception_interface_->endPerception(product, bin, current_state))
   {
     return false;
   }

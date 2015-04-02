@@ -149,7 +149,11 @@ Rviz Visualizers of robot states and debug markers in differnet windows
 Run either the real or a fake object recognition server
 
     roslaunch moveit_arpg_perception object_recognition.launch
-	
+
+A transform of the camera is needed
+
+    roslaunch picknik_main camera_calibration.launch 
+
 Run APC Manager (main program) for BAXTER
 
     roslaunch picknik_main baxter_apc.launch mode:=1 fake_execution:=true
@@ -168,6 +172,10 @@ Rviz Visualizers of robot states and debug markers in differnet windows
 Run either the real or a fake object recognition server
 
     roslaunch moveit_arpg_perception object_recognition.launch
+
+A transform of the camera is needed
+
+    roslaunch picknik_main camera_calibration.launch 
 	
 Run APC Manager (main program) for BAXTER
 
@@ -191,7 +199,11 @@ Rviz Visualizers of robot states and debug markers in differnet windows
 Run either the real or a fake object recognition server
 
     roslaunch moveit_arpg_perception object_recognition.launch
-	
+
+A transform of the camera is needed
+
+    roslaunch picknik_main camera_calibration.launch 
+
 Run APC Manager (main program) for JACOB in simulation
 
 	roslaunch picknik_main jacob_apc.launch fake_execution:=true
@@ -216,15 +228,15 @@ Run either the real or a fake object recognition server
 
     roslaunch moveit_arpg_perception object_recognition.launch
 
+A transform of the camera is needed
+
+    roslaunch picknik_main camera_calibration.launch 
+
 Run APC Manager (main program) for JACOB on hardware
 
 	roslaunch picknik_main jacob_apc.launch mode:=1
 
 ### Joystick Control
-
-Control extra stuff:
-
-    rosrun joy joy_node
 
 Button Mapings
 

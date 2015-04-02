@@ -37,28 +37,34 @@
 */
 
 // PickNik
-#include <picknik_main/perception_layer.h>
+#include <picknik_main/perception_interface.h>
 
 // ROS
 #include <tf_conversions/tf_eigen.h>
+#include <std_msgs/Bool.h>
 
 namespace picknik_main
 {
 
-PerceptionLayer::PerceptionLayer(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf, ManipulationDataPtr config, 
-                                 boost::shared_ptr<tf::TransformListener> tf)
+PerceptionInterface::PerceptionInterface(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf, ManipulationDataPtr config, 
+                                 boost::shared_ptr<tf::TransformListener> tf, ros::NodeHandle nh)
   : verbose_(verbose)
   , visuals_(visuals)
   , shelf_(shelf)
   , config_(config)
   , tf_(tf)
+  , nh_(nh)
   , find_objects_action_(PERCEPTION_TOPIC)
 {
+  // Load ROS publisher
+  std::size_t queue_size = 10;
+  stop_perception_pub_ = nh_.advertise<std_msgs::Bool>( "/perception/stop_perception", queue_size );  
+  
 
-  ROS_INFO_STREAM_NAMED("perception_layer","PerceptionLayer Ready.");
+  ROS_INFO_STREAM_NAMED("perception_interface","PerceptionInterface Ready.");
 }
 
-bool PerceptionLayer::isPerceptionReady()
+bool PerceptionInterface::isPerceptionReady()
 {
   ROS_INFO_STREAM_NAMED("apc_manager","Waiting for object perception server on topic " << PERCEPTION_TOPIC);
 
@@ -66,10 +72,10 @@ bool PerceptionLayer::isPerceptionReady()
   return true;
 }
 
-bool PerceptionLayer::startPerception(ProductObjectPtr& product, BinObjectPtr& bin)
+bool PerceptionInterface::startPerception(ProductObjectPtr& product, BinObjectPtr& bin)
 {
   // Setup goal
-  ROS_INFO_STREAM_NAMED("perception_layer","Communicating with perception pipeline");
+  ROS_INFO_STREAM_NAMED("perception_interface","Communicating with perception pipeline");
   picknik_msgs::FindObjectsGoal find_object_goal;
   find_object_goal.desired_object_name = product->getName();
 
@@ -87,20 +93,32 @@ bool PerceptionLayer::startPerception(ProductObjectPtr& product, BinObjectPtr& b
 }
 
 
-bool PerceptionLayer::endPerception(ProductObjectPtr& product, BinObjectPtr& bin, moveit::core::RobotStatePtr current_state)
+bool PerceptionInterface::endPerception(ProductObjectPtr& product, BinObjectPtr& bin, moveit::core::RobotStatePtr current_state)
 {
-  ROS_INFO_STREAM_NAMED("perception_layer","Waiting for response from perception server");
+  // Tell the perception pipeline we are done moving the camera
+  ROS_INFO_STREAM_NAMED("perception_interface","Sending stop command to perception server");
+  std_msgs::Bool result;
+  result.data = true; // meaningless value
+  stop_perception_pub_.publish( result );
+  ros::spinOnce(); // repeat 3 times for guarantees
+  ros::Duration(0.1).sleep();
+  stop_perception_pub_.publish( result );
+  ros::spinOnce();
+  ros::Duration(0.1).sleep();
+  stop_perception_pub_.publish( result );
+
+  ROS_INFO_STREAM_NAMED("perception_interface","Waiting for response from perception server");
 
   // Wait for the action to return with product pose
   if (!find_objects_action_.waitForResult(ros::Duration(20.0)))
   {
-    ROS_ERROR_STREAM_NAMED("perception_layer","Percetion action did not finish before the time out.");
+    ROS_ERROR_STREAM_NAMED("perception_interface","Percetion action did not finish before the time out.");
     return false;
   }
 
   // Get goal state
   actionlib::SimpleClientGoalState goal_state = find_objects_action_.getState();
-  ROS_INFO_STREAM_NAMED("perception_layer","Perception action finished: " << goal_state.toString());
+  ROS_INFO_STREAM_NAMED("perception_interface","Perception action finished: " << goal_state.toString());
 
   // Get result
   picknik_msgs::FindObjectsResultConstPtr perception_result = find_objects_action_.getResult();
@@ -108,7 +126,7 @@ bool PerceptionLayer::endPerception(ProductObjectPtr& product, BinObjectPtr& bin
 
   if (!perception_result->succeeded)
   {
-    ROS_ERROR_STREAM_NAMED("perception_layer","Perception action server reported failure");
+    ROS_ERROR_STREAM_NAMED("perception_interface","Perception action server reported failure");
     return false;
   }
 
@@ -116,19 +134,19 @@ bool PerceptionLayer::endPerception(ProductObjectPtr& product, BinObjectPtr& bin
   // Check bounds and update planning scene
   if (!processNewObjectPose(perception_result, product, bin, current_state))
   {
-    ROS_ERROR_STREAM_NAMED("perception_layer","Failed to process new object pose");
+    ROS_ERROR_STREAM_NAMED("perception_interface","Failed to process new object pose");
     return false;
   }
 
   return true;
 }
 
-bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstPtr result,
+bool PerceptionInterface::processNewObjectPose(picknik_msgs::FindObjectsResultConstPtr result,
                                            ProductObjectPtr& product, BinObjectPtr& bin, moveit::core::RobotStatePtr current_state)
 {
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
-  ROS_WARN_STREAM_NAMED("perception_layer","Processing new object pose");
+  ROS_WARN_STREAM_NAMED("perception_interface","Processing new object pose");
 
   // Find the desired pose
   const picknik_msgs::FoundObject* desired_object = NULL;
@@ -145,12 +163,12 @@ bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstP
   // Error check
   if (!desired_object)
   {
-    ROS_ERROR_STREAM_NAMED("perception_layer","The desired product was not returned in the list of found objects");
+    ROS_ERROR_STREAM_NAMED("perception_interface","The desired product was not returned in the list of found objects");
     return false;
   }
   if (result->found_objects.size() != bin->getProducts().size())
   {
-    ROS_ERROR_STREAM_NAMED("perception_layer","The list of found objects does not have the same size as the expected bin contents");
+    ROS_ERROR_STREAM_NAMED("perception_interface","The list of found objects does not have the same size as the expected bin contents");
     return false;
   }
 
@@ -184,13 +202,13 @@ bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstP
   tf::StampedTransform transform;
   try
   {
-    ROS_INFO_STREAM_NAMED("perception_layer","Getting transform from /world to /xtion_camera");
+    ROS_INFO_STREAM_NAMED("perception_interface","Getting transform from /world to /xtion_camera");
     tf_->waitForTransform("/world", "/xtion_camera", ros::Time(0), ros::Duration(3));
     tf_->lookupTransform("/world","/xtion_camera", ros::Time(0), transform);
   }
   catch (tf::TransformException ex)
   {
-    ROS_ERROR_STREAM_NAMED("perception_layer", "Error: " << ex.what());
+    ROS_ERROR_STREAM_NAMED("perception_interface", "Error: " << ex.what());
     return false;
   }
 
@@ -231,15 +249,15 @@ bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstP
         )
     {
       // Do not continue because outside of tolerance
-      ROS_ERROR_STREAM_NAMED("perception_layer","Product " << product->getName() << " has a reported pose from the perception pipline that is outside the tolerance of " << PRODUCT_POSE_WITHIN_BIN_TOLERANCE);
-      ROS_ERROR_STREAM_NAMED("perception_layer","Pose:\n" << visuals_->visual_tools_->convertPose(bin_to_object));
+      ROS_ERROR_STREAM_NAMED("perception_interface","Product " << product->getName() << " has a reported pose from the perception pipline that is outside the tolerance of " << PRODUCT_POSE_WITHIN_BIN_TOLERANCE);
+      ROS_ERROR_STREAM_NAMED("perception_interface","Pose:\n" << visuals_->visual_tools_->convertPose(bin_to_object));
       //return false;
     }
     else
     {
       // Its within error tolerance, just warn
-      ROS_WARN_STREAM_NAMED("perception_layer","Product " << product->getName() << " has a reported pose from the perception pipline that is outside the bounds of the bin shape");
-      ROS_WARN_STREAM_NAMED("perception_layer","Pose:\n" << visuals_->visual_tools_->convertPose(bin_to_object));
+      ROS_WARN_STREAM_NAMED("perception_interface","Product " << product->getName() << " has a reported pose from the perception pipline that is outside the bounds of the bin shape");
+      ROS_WARN_STREAM_NAMED("perception_interface","Pose:\n" << visuals_->visual_tools_->convertPose(bin_to_object));
     }
   }
 
@@ -248,9 +266,14 @@ bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstP
 
   // Show new mesh if possible
   const shape_msgs::Mesh* mesh = &(desired_object->bounding_mesh);
+
+  ROS_DEBUG_STREAM_NAMED("perception_interface","Recieved mesh with " << mesh->triangles.size() << " triangles and " 
+                         << mesh->vertices.size() << " vertices");
+                         
+
   if (mesh->triangles.empty() || mesh->vertices.empty())
   {
-    ROS_WARN_STREAM_NAMED("perception_layer","No bounding mesh returned");
+    ROS_WARN_STREAM_NAMED("perception_interface","No bounding mesh returned");
 
     // Show in collision and display Rvizs
     product->visualize(world_to_bin);
@@ -258,8 +281,8 @@ bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstP
   }
   else
   {
-    ROS_INFO_STREAM_NAMED("perception_layer","Setting new bounding mesh");
-    //product->setCollisionMesh(*mesh);
+    ROS_INFO_STREAM_NAMED("perception_interface","Setting new bounding mesh");
+    product->setCollisionMesh(*mesh);
 
     // Show in collision and display Rvizs
     product->visualize(world_to_bin);
@@ -268,10 +291,14 @@ bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstP
 
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
 
+  // Allow mesh to display
+  ros::spinOnce();
+  ros::Duration(5.0).sleep();
+
   return true;
 }
 
-bool PerceptionLayer::publishCameraFrame(Eigen::Affine3d world_to_camera)
+bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera)
 {
   const double distance_from_camera = 0.3;
   const double height = 480 * config_->camera_frame_display_scale_; // size of camera view finder
@@ -290,7 +317,7 @@ bool PerceptionLayer::publishCameraFrame(Eigen::Affine3d world_to_camera)
   visuals_->visual_tools_->publishWireframeRectangle(camera_view_finder, height, width, rvt::PINK, rvt::SMALL);
 }
 
-bool PerceptionLayer::convertFrameCVToROS(const Eigen::Affine3d& cv_frame, Eigen::Affine3d& ros_frame)
+bool PerceptionInterface::convertFrameCVToROS(const Eigen::Affine3d& cv_frame, Eigen::Affine3d& ros_frame)
 {
   Eigen::Matrix3d rotation;
   rotation = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())

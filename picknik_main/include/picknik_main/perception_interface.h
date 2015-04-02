@@ -36,8 +36,8 @@
    Desc:   Interface between the perception pipeline and the manipulation pipeline
 */
 
-#ifndef PICKNIK_MAIN__PERCEPTION_LAYER
-#define PICKNIK_MAIN__PERCEPTION_LAYER
+#ifndef PICKNIK_MAIN__PERCEPTION_INTERFACE
+#define PICKNIK_MAIN__PERCEPTION_INTERFACE
 
 // ROS
 #include <ros/ros.h>
@@ -59,7 +59,7 @@ namespace picknik_main
 static const double PRODUCT_POSE_WITHIN_BIN_TOLERANCE = 0.2; // throw an error if pose is beyond this amount
 static const std::string PERCEPTION_TOPIC = "perception/recognize_objects";
 
-class PerceptionLayer
+class PerceptionInterface
 {
 public:
 
@@ -67,8 +67,8 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  PerceptionLayer(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf, ManipulationDataPtr config, 
-                  boost::shared_ptr<tf::TransformListener> tf);
+  PerceptionInterface(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf, ManipulationDataPtr config, 
+                  boost::shared_ptr<tf::TransformListener> tf, ros::NodeHandle nh);
 
   /**
    * \brief Check if perception is ready
@@ -130,11 +130,17 @@ private:
   // TF Listener
   boost::shared_ptr<tf::TransformListener> tf_;
 
+  // ROS Comm
+  ros::NodeHandle nh_;
+
+  // Tell the perception pipeline we are done moving the camera
+  ros::Publisher stop_perception_pub_;
+
 }; // end class
 
 // Create boost pointers for this class
-typedef boost::shared_ptr<PerceptionLayer> PerceptionLayerPtr;
-typedef boost::shared_ptr<const PerceptionLayer> PerceptionLayerConstPtr;
+typedef boost::shared_ptr<PerceptionInterface> PerceptionInterfacePtr;
+typedef boost::shared_ptr<const PerceptionInterface> PerceptionInterfaceConstPtr;
 
 } // end namespace
 

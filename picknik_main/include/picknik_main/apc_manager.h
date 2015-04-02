@@ -23,7 +23,7 @@
 //#include <picknik_main/learning_pipeline.h>
 #include <picknik_main/visuals.h>
 #include <picknik_main/manipulation_data.h>
-#include <picknik_main/perception_layer.h>
+#include <picknik_main/perception_interface.h>
 
 // Picknik Msgs
 #include <picknik_msgs/FindObjectsAction.h>
@@ -320,7 +320,7 @@ private:
   ManipulationPtr manipulation_;
 
   // Perception interface
-  PerceptionLayerPtr perception_layer_;
+  PerceptionInterfacePtr perception_interface_;
 
   // Helper classes
   //LearningPipelinePtr learning_;
