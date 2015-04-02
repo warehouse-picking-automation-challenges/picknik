@@ -182,20 +182,8 @@ int main(int argc, char** argv)
       break;
     case 11:
       if (!manager.checkSystemReady()) return 0;;
-
-      ROS_INFO_STREAM_NAMED("main","Moving camera to each bin location");
-      
-      while(ros::ok())
-      {
-        manager.testCameraPositions();
-
-        std::cout << std::endl;
-        std::cout << "-------------------------------------------------------" << std::endl;
-        std::cout << "-------------------------------------------------------" << std::endl;
-        std::cout << "-------------------------------------------------------" << std::endl;
-        std::cout << "STARTING CAMERA POSITION REQUEST AGAIN " << std::endl;
-        ros::Duration(5.0).sleep();
-      }
+      ROS_INFO_STREAM_NAMED("main","Moving camera to each bin location");      
+      manager.testCameraPositions();
       break;
     case 12:
       if (!manager.checkSystemReady()) return 0;;

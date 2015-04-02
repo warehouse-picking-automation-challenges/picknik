@@ -45,11 +45,13 @@
 namespace picknik_main
 {
 
-PerceptionLayer::PerceptionLayer(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf, ManipulationDataPtr config)
+PerceptionLayer::PerceptionLayer(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf, ManipulationDataPtr config, 
+                                 boost::shared_ptr<tf::TransformListener> tf)
   : verbose_(verbose)
   , visuals_(visuals)
   , shelf_(shelf)
   , config_(config)
+  , tf_(tf)
   , find_objects_action_(PERCEPTION_TOPIC)
 {
 
@@ -162,24 +164,29 @@ bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstP
   // TODO
 
   // Update product with new pose
-  Eigen::Affine3d object_to_camera_cv_frame = visuals_->visual_tools_->convertPose(desired_object->object_pose);
-  Eigen::Affine3d object_to_camera;
+  Eigen::Affine3d camera_to_object_cv_frame = visuals_->visual_tools_->convertPose(desired_object->object_pose);
+  Eigen::Affine3d camera_to_object;
 
   // Convert coordinate systems
-  convertFrameCVToROS(object_to_camera_cv_frame, object_to_camera);
+  convertFrameCVToROS(camera_to_object_cv_frame, camera_to_object);
 
-  geometry_msgs::PoseStamped object_to_camera_msg;
-  object_to_camera_msg.header.frame_id = "xtion_camera";
-  object_to_camera_msg.header.stamp = ros::Time::now();
-  object_to_camera_msg.pose = visuals_->visual_tools_->convertPose(object_to_camera);
-  visuals_->visual_tools_->publishArrow(object_to_camera_msg, rvt::PURPLE, rvt::LARGE);
+  bool publish_rviz_arrow = false;
+  if (publish_rviz_arrow)
+  {
+    geometry_msgs::PoseStamped camera_to_object_msg;
+    camera_to_object_msg.header.frame_id = "xtion_camera";
+    camera_to_object_msg.header.stamp = ros::Time::now();
+    camera_to_object_msg.pose = visuals_->visual_tools_->convertPose(camera_to_object);
+    visuals_->visual_tools_->publishArrow(camera_to_object_msg, rvt::PURPLE, rvt::LARGE);
+  }
 
   // Get camera pose
   tf::StampedTransform transform;
   try
   {
-    listener_.waitForTransform("/world", "/xtion_camera", ros::Time(0), ros::Duration(3));
-    listener_.lookupTransform("/world", "/xtion_camera", ros::Time(0), transform);
+    ROS_INFO_STREAM_NAMED("perception_layer","Getting transform from /world to /xtion_camera");
+    tf_->waitForTransform("/world", "/xtion_camera", ros::Time(0), ros::Duration(3));
+    tf_->lookupTransform("/world","/xtion_camera", ros::Time(0), transform);
   }
   catch (tf::TransformException ex)
   {
@@ -187,58 +194,57 @@ bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstP
     return false;
   }
 
-  Eigen::Affine3d camera_to_world;
-  tf::transformTFToEigen(transform, camera_to_world);
-  visuals_->visual_tools_->publishAxisWithLabel(camera_to_world, "xtion_to_world");
+  Eigen::Affine3d world_to_camera;
+  tf::transformTFToEigen(transform, world_to_camera);
+  visuals_->visual_tools_->publishAxisWithLabel(world_to_camera, "world_to_camera");
 
   // Show camera view
-  publishCameraFrame(camera_to_world);
+  publishCameraFrame(world_to_camera);
 
   // Get bin location
-  const Eigen::Affine3d& bin_to_world = picknik_main::transform(bin->getBottomRight(), shelf_->getBottomRight());
-  visuals_->visual_tools_->publishAxisWithLabel(bin_to_world, "bin_to_world");
+  const Eigen::Affine3d& world_to_bin = picknik_main::transform(bin->getBottomRight(), shelf_->getBottomRight());
+  visuals_->visual_tools_->publishAxisWithLabel(world_to_bin, "world_to_bin");
 
   // Convert to pose of bin
-  const Eigen::Affine3d object_to_world = object_to_camera * camera_to_world;
-  const Eigen::Affine3d object_to_bin = object_to_world * bin_to_world.inverse();
-
-  visuals_->visual_tools_->publishAxis(object_to_world);
-  visuals_->visual_tools_->publishText(object_to_world, "object_to_world", rvt::BLACK, rvt::SMALL, false);
+  //const Eigen::Affine3d world_to_object = camera_to_object.inverse() * world_to_camera.inverse();
+  const Eigen::Affine3d world_to_object = world_to_camera * camera_to_object;
+  visuals_->visual_tools_->publishAxisWithLabel(world_to_object, "world_to_object");
+  const Eigen::Affine3d bin_to_object = world_to_bin.inverse() * world_to_object;
 
   // Check bounds
   if (
-      object_to_bin.translation().x() < 0 ||
-      object_to_bin.translation().x() > bin->getDepth() ||
-      object_to_bin.translation().y() < 0 ||
-      object_to_bin.translation().y() > bin->getWidth() ||
-      object_to_bin.translation().z() < 0 ||
-      object_to_bin.translation().z() > bin->getHeight()
+      bin_to_object.translation().x() < 0 ||
+      bin_to_object.translation().x() > bin->getDepth() ||
+      bin_to_object.translation().y() < 0 ||
+      bin_to_object.translation().y() > bin->getWidth() ||
+      bin_to_object.translation().z() < 0 ||
+      bin_to_object.translation().z() > bin->getHeight()
       )
   {
     if (
-        object_to_bin.translation().x() < -PRODUCT_POSE_WITHIN_BIN_TOLERANCE ||
-        object_to_bin.translation().x() > bin->getDepth() + PRODUCT_POSE_WITHIN_BIN_TOLERANCE ||
-        object_to_bin.translation().y() < -PRODUCT_POSE_WITHIN_BIN_TOLERANCE ||
-        object_to_bin.translation().y() > bin->getWidth() + PRODUCT_POSE_WITHIN_BIN_TOLERANCE||
-        object_to_bin.translation().z() < -PRODUCT_POSE_WITHIN_BIN_TOLERANCE ||
-        object_to_bin.translation().z() > bin->getHeight() + PRODUCT_POSE_WITHIN_BIN_TOLERANCE
+        bin_to_object.translation().x() < -PRODUCT_POSE_WITHIN_BIN_TOLERANCE ||
+        bin_to_object.translation().x() > bin->getDepth() + PRODUCT_POSE_WITHIN_BIN_TOLERANCE ||
+        bin_to_object.translation().y() < -PRODUCT_POSE_WITHIN_BIN_TOLERANCE ||
+        bin_to_object.translation().y() > bin->getWidth() + PRODUCT_POSE_WITHIN_BIN_TOLERANCE||
+        bin_to_object.translation().z() < -PRODUCT_POSE_WITHIN_BIN_TOLERANCE ||
+        bin_to_object.translation().z() > bin->getHeight() + PRODUCT_POSE_WITHIN_BIN_TOLERANCE
         )
     {
       // Do not continue because outside of tolerance
       ROS_ERROR_STREAM_NAMED("perception_layer","Product " << product->getName() << " has a reported pose from the perception pipline that is outside the tolerance of " << PRODUCT_POSE_WITHIN_BIN_TOLERANCE);
-      ROS_ERROR_STREAM_NAMED("perception_layer","Pose:\n" << visuals_->visual_tools_->convertPose(object_to_bin));
+      ROS_ERROR_STREAM_NAMED("perception_layer","Pose:\n" << visuals_->visual_tools_->convertPose(bin_to_object));
       //return false;
     }
     else
     {
       // Its within error tolerance, just warn
       ROS_WARN_STREAM_NAMED("perception_layer","Product " << product->getName() << " has a reported pose from the perception pipline that is outside the bounds of the bin shape");
-      ROS_WARN_STREAM_NAMED("perception_layer","Pose:\n" << visuals_->visual_tools_->convertPose(object_to_bin));
+      ROS_WARN_STREAM_NAMED("perception_layer","Pose:\n" << visuals_->visual_tools_->convertPose(bin_to_object));
     }
   }
 
   // Save to the product's property
-  product->setCentroid(object_to_bin);
+  product->setCentroid(bin_to_object);
 
   // Show new mesh if possible
   const shape_msgs::Mesh* mesh = &(desired_object->bounding_mesh);
@@ -247,8 +253,8 @@ bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstP
     ROS_WARN_STREAM_NAMED("perception_layer","No bounding mesh returned");
 
     // Show in collision and display Rvizs
-    product->visualize(bin_to_world);
-    product->createCollisionBodies(bin_to_world);
+    product->visualize(world_to_bin);
+    product->createCollisionBodies(world_to_bin);
   }
   else
   {
@@ -256,8 +262,8 @@ bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstP
     //product->setCollisionMesh(*mesh);
 
     // Show in collision and display Rvizs
-    product->visualize(bin_to_world);
-    product->createCollisionBodies(bin_to_world);
+    product->visualize(world_to_bin);
+    product->createCollisionBodies(world_to_bin);
   }
 
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
@@ -265,7 +271,7 @@ bool PerceptionLayer::processNewObjectPose(picknik_msgs::FindObjectsResultConstP
   return true;
 }
 
-bool PerceptionLayer::publishCameraFrame(Eigen::Affine3d camera_to_world)
+bool PerceptionLayer::publishCameraFrame(Eigen::Affine3d world_to_camera)
 {
   const double distance_from_camera = 0.3;
   const double height = 480 * config_->camera_frame_display_scale_; // size of camera view finder
@@ -273,7 +279,7 @@ bool PerceptionLayer::publishCameraFrame(Eigen::Affine3d camera_to_world)
   Eigen::Affine3d camera_view_finder_offset = Eigen::Affine3d::Identity();
   camera_view_finder_offset.translation().x() = distance_from_camera;
 
-  Eigen::Affine3d camera_view_finder = camera_view_finder_offset * camera_to_world;
+  Eigen::Affine3d camera_view_finder = camera_view_finder_offset * world_to_camera;
 
 
   camera_view_finder = camera_view_finder 
@@ -289,10 +295,8 @@ bool PerceptionLayer::convertFrameCVToROS(const Eigen::Affine3d& cv_frame, Eigen
   Eigen::Matrix3d rotation;
   rotation = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
     * Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitZ());
-  std::cout << "Rotation: " << rotation << std::endl;
+  //std::cout << "Rotation: " << rotation << std::endl;
   ros_frame = rotation * cv_frame;
-
-  //    * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
 
   return true;
 }

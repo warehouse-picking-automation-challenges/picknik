@@ -971,12 +971,12 @@ const robot_model::JointModelGroup* Manipulation::chooseArm(const Eigen::Affine3
   // Dual Arm
   else if (ee_pose.translation().y() < 0)
   {
-    ROS_INFO_STREAM_NAMED("manipulation","Using right arm for task");
+    ROS_DEBUG_STREAM_NAMED("manipulation","Using right arm for task");
     return config_->right_arm_;
   }
   else
   {
-    ROS_INFO_STREAM_NAMED("manipulation","Using left arm for task");
+    ROS_DEBUG_STREAM_NAMED("manipulation","Using left arm for task");
     return config_->left_arm_;
   }
 }
@@ -992,7 +992,8 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   const robot_model::JointModelGroup* arm_jmg = chooseArm(ee_pose);
 
   //Move camera left
-  std::cout << std::endl << std::endl << std::endl;
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
   ROS_INFO_STREAM_NAMED("manipulation","Moving camera left distance " << config_->camera_left_distance_);
   bool left = true;
   if (!executeHorizontalPath(arm_jmg, config_->camera_left_distance_, left))
@@ -1001,7 +1002,8 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   }
 
   // Move camera right
-  std::cout << std::endl << std::endl << std::endl;
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
   ROS_INFO_STREAM_NAMED("manipulation","Moving camera right distance " << config_->camera_left_distance_ * 2.0);
   left = false;
   if (!executeHorizontalPath(arm_jmg, config_->camera_left_distance_ * 2.0, left))
@@ -1010,7 +1012,8 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   }
 
   // Move back to center
-  std::cout << std::endl << std::endl << std::endl;
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
   if (!moveCameraToBin(bin))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to move camera to bin " << bin->getName());
@@ -1018,7 +1021,8 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   }
 
   // Move camera up
-  std::cout << std::endl << std::endl << std::endl;
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
   ROS_INFO_STREAM_NAMED("manipulation","Lifting camera distance " << config_->camera_lift_distance_);
   if (!executeVerticlePath(arm_jmg, config_->camera_lift_distance_))
   {
@@ -1026,7 +1030,8 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   }
 
   // Move camera down
-  std::cout << std::endl << std::endl << std::endl;
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
   ROS_INFO_STREAM_NAMED("manipulation","Lowering camera distance " << config_->camera_lift_distance_ * 2.0);
   bool up = false;
   if (!executeVerticlePath(arm_jmg, config_->camera_lift_distance_ * 2.0, up))
@@ -1215,7 +1220,7 @@ bool Manipulation::checkExecutionManager()
 bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg, bool ignore_collision)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeTrajectory()");
-  ROS_INFO_STREAM_NAMED("manipulation","Executing trajectory");
+  ROS_INFO_STREAM_NAMED("manipulation","Executing trajectory with "<< trajectory_msg.joint_trajectory.points.size() << " waypoints");
 
   // Hack? Remove acceleration command
   if (false)

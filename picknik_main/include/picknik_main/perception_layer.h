@@ -67,7 +67,8 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  PerceptionLayer(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf, ManipulationDataPtr config);
+  PerceptionLayer(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf, ManipulationDataPtr config, 
+                  boost::shared_ptr<tf::TransformListener> tf);
 
   /**
    * \brief Check if perception is ready
@@ -127,7 +128,7 @@ private:
   actionlib::SimpleActionClient<picknik_msgs::FindObjectsAction> find_objects_action_;
 
   // TF Listener
-  tf::TransformListener listener_;
+  boost::shared_ptr<tf::TransformListener> tf_;
 
 }; // end class
 

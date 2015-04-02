@@ -48,10 +48,13 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   planning_scene_.reset(new planning_scene::PlanningScene(robot_model_));
 
   // Create the planning scene service
-  get_scene_service_ = nh_root_.advertiseService(GET_PLANNING_SCENE_SERVICE_NAME, &APCManager::getPlanningSceneService, this);
+  //get_scene_service_ = nh_root_.advertiseService(GET_PLANNING_SCENE_SERVICE_NAME, &APCManager::getPlanningSceneService, this);
 
   // Create tf transformer
-  tf_.reset(new tf::TransformListener(nh_private_)); //ros::Duration(10.0)));
+  tf_.reset(new tf::TransformListener(nh_private_));
+  // TODO: remove these lines, only an attempt to fix loadPlanningSceneMonitor bug
+  //ros::spinOnce();
+  //ros::Duration(0.25).sleep();
 
   // Load planning scene monitor
   if (!loadPlanningSceneMonitor())
@@ -95,13 +98,12 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
                                        this, shelf_, use_experience, show_database));
 
   // Load perception layer
-  perception_layer_.reset(new PerceptionLayer(verbose_, visuals_, shelf_, config_));
+  perception_layer_.reset(new PerceptionLayer(verbose_, visuals_, shelf_, config_, tf_));
 
   // Generate random product poses and visualize the shelf
   bool product_simulator_verbose = false;
   ProductSimulator product_simulator(product_simulator_verbose, visuals_, planning_scene_monitor_);
-  ROS_WARN_STREAM_NAMED("temp","product generator disabled");
-  //product_simulator.generateRandomProductPoses(shelf_);
+  product_simulator.generateRandomProductPoses(shelf_);
 
   ROS_INFO_STREAM_NAMED("apc_manager","APC Manager Ready.");
 }
@@ -159,9 +161,9 @@ bool APCManager::checkSystemReady()
   // Check end effectors calibrated
   // TODO
 
-  std::cout << "SYSTEM IS READY " << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
+  ROS_INFO_STREAM_NAMED("apc_manager","checkSystemReady() COMPLETE");
   std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
   return true;
 }
 
@@ -553,7 +555,7 @@ bool APCManager::perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder o
   ProductObjectPtr& product = order.product_;
 
   // Move camera to the bin
-  ROS_INFO_STREAM_NAMED("apc_manager","Moving to bin " << bin->getName() << "\n\n\n");
+  ROS_INFO_STREAM_NAMED("apc_manager","Moving to " << bin->getName());
   if (!manipulation_->moveCameraToBin(bin))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
@@ -561,14 +563,15 @@ bool APCManager::perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder o
   }
 
   // Communicate with perception pipeline
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;  
   perception_layer_->startPerception(product, bin);
 
   // Perturb camera
-  if (false)
-    if (!manipulation_->perturbCamera(bin))
-    {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
-    }
+  if (!manipulation_->perturbCamera(bin))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
+  }
 
   moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
 
@@ -1412,25 +1415,16 @@ bool APCManager::loadPlanningSceneMonitor()
   // Allows us to sycronize to Rviz and also publish collision objects to ourselves
   ROS_DEBUG_STREAM_NAMED("apc_manager","Loading Planning Scene Monitor");
   static const std::string PLANNING_SCENE_MONITOR_NAME = "AmazonShelfWorld";
-  planning_scene_monitor_.reset(new planning_scene_monitor::PlanningSceneMonitor(planning_scene_,
-                                                                                 robot_model_loader_,
-                                                                                 tf_,
-                                                                                 PLANNING_SCENE_MONITOR_NAME));
+  planning_scene_monitor_.reset(new planning_scene_monitor::PlanningSceneMonitor(planning_scene_, robot_model_loader_,
+                                                                                 tf_, PLANNING_SCENE_MONITOR_NAME));
   ros::spinOnce();
 
   // Get the joint state topic
   std::string joint_state_topic;
   rvt::getStringParameter("apc_manager", nh_private_, "joint_state_topic", joint_state_topic);
-
   if (planning_scene_monitor_->getPlanningScene())
   {
     // Optional monitors to start:
-    bool use_octomap_monitor = false; // this prevents a /tf warning
-    //planning_scene_monitor_->startWorldGeometryMonitor(planning_scene_monitor::PlanningSceneMonitor::DEFAULT_COLLISION_OBJECT_TOPIC,
-    //                                                   "",
-    //planning_scene_monitor::PlanningSceneMonitor::DEFAULT_PLANNING_SCENE_WORLD_TOPIC,
-    //                                                   use_octomap_monitor);
-    //planning_scene_monitor_->startSceneMonitor("/move_group/monitored_planning_scene");
     planning_scene_monitor_->startStateMonitor(joint_state_topic, ""); ///attached_collision_object");
     planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE,
                                                           "picknik_planning_scene");
@@ -1441,7 +1435,6 @@ bool APCManager::loadPlanningSceneMonitor()
     ROS_ERROR_STREAM_NAMED("apc_manager","Planning scene not configured");
     return false;
   }
-
   ros::spinOnce();
   ros::Duration(0.5).sleep(); // when at 0.1, i believe sometimes vjoint not properly loaded
 
