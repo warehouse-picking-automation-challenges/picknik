@@ -9,10 +9,6 @@
 
 ## Install
 
-### Perception Pipeline
-
-TODO
-
 ### Manipulation Pipeline
 
 Dave occasionally releases a new zip file with a lot of custom ROS code, that can be built into one workspace. Download the latest zip (~710MB) from here:
@@ -36,6 +32,10 @@ Also, to reduce debug output add the following to your bashrc:
 
     export ROSCONSOLE_CONFIG_FILE=~/ws_picknik/src/picknik/rosconsole.yaml
     export ROSCONSOLE_FORMAT='${severity} ${logger}: ${message}'
+
+### Perception Pipeline
+
+TODO
 
 ## Architecture
 
