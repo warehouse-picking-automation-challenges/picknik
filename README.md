@@ -40,6 +40,28 @@ sudo apt-get install cmake-curses-gui
 git clone git@github.com:zeromq/zmqpp.git
 
 
+
+makedir code
+cd clone
+git clone github arpg/CoreDev
+
+cd CoreDev
+mkdir build
+git submodule init
+git submodule update
+
+cd build
+cmake ..
+
+# Now readme
+
+# Now crap
+ccmake .
+Enter changes from ON to OFF
+diable pangolin_gui
+# sudo apt-get intsall libprotoc-dev protobuf-compiler
+clone google ptorobuf and compile
+
 ## Architecture
 
 ![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/picknik_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
