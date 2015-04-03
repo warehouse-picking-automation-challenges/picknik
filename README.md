@@ -30,7 +30,8 @@ Also, to reduce debug output add the following to your bashrc:
     export ROSCONSOLE_FORMAT='${severity} ${logger}: ${message}'
 
 ### Perception Pipeline
-install dependencies for node:
+
+Install dependencies for node:
    1, install zmq
        sudo apt-get install libzmq3-dev
 
@@ -103,7 +104,6 @@ install DDTR
    cd build
    cmake ..
    make -j4
-
 
 
 ## Architecture
@@ -404,18 +404,3 @@ Notes: make sure you have a Robot STATE display added in Rviz.
 
 TODO
 
-## Collaboration Notes
-
-This just helps Dave know what to pull from when updating.
-
-### Repos Andy commits to:
-
-- cu_amazon
-- open_hand_controller
-- baxter_common
-- baxter_ssh
-
-### Repos Jorge commits to:
-
-- cu_amazon
-- ?
