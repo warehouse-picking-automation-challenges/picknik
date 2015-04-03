@@ -28,10 +28,6 @@ Unzip the file and build
 	rosdep install -y --from-paths src --ignore-src --rosdistro indigo
 	catkin build
 
-Python deps:
-
-    sudo apt-get install python-pandas
-
 Also, to reduce debug output add the following to your bashrc:
 
     export ROSCONSOLE_CONFIG_FILE=~/ws_picknik/src/picknik/rosconsole.yaml
