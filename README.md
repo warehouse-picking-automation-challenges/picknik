@@ -34,39 +34,87 @@ Also, to reduce debug output add the following to your bashrc:
     export ROSCONSOLE_FORMAT='${severity} ${logger}: ${message}'
 
 ### Perception Pipeline
+install dependencies for node:
+   1, install zmq
+       sudo apt-get install libzmq3-dev
 
-sudo apt-get install libzmq3-dev
-sudo apt-get install cmake-curses-gui
-git clone git@github.com:zeromq/zmqpp.git
+   2, install gui version of cmake
+       sudo apt-get install cmake-curses-gui
+
+   3, add cpp binders for zmq
+       git clone git@github.com:zeromq/zmqpp.git
+
+   4, install protobuf
+       https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gzinstall 
+       run ./configure
+       make -j3
+       sudo make install all
+
+       By default, the upper command will install the lib to /usr/local/lib/proto*, make sure all the protobuf libraries files is in /usr/lib/proto*. so you probability need to do
+	   cp /usr/local/lib/proto* /usr/lib/
+
+configurations
+    1, disable pangolin_video
+       ccmake .
+       set BUILD_PANGOLIN_GUI to OFF
+    2, go to the CMakeList.txt file under HAL/Applications comment out everything expect for SensorViewer
+
+Compile:
+    now you should be able to compile CoreDev by:
+	cmake .
+    make
+	
+install kangaroo:
+    git clone git@github.com:arpg/Kangaroo.git
+	cd kangaroo
+	mkdir build
+    cd build
+	ccmake ..
+	make -j
+	Notice: you may have some errors when building the examples, this is because we disabled the pangolin::video function before. just ignore it by now.
+
+install wallaby:
+   install cudpp
+   git clone git@github.com:cudpp/cudpp.git
+   git submodule init
+   git submodule update
+   mkdir build
+   cd build
+   cmake ..
+   make -j4
+
+   now copy the following header files..
+   cp /cudpp/cudpp/include/cudpp_config.h /usr/local/include/
+   cp /cudpp/cudpp/include/cudpp_hash.h /usr/local/include/
+
+   change permission from root to the user
+   sudo chown -R robot cudpp_config.h
+   sudo chown -R robot cudpp_hash.h
+
+   install libglm
+   sudo apt-get install libglm-dev
+
+   compile wallaby
+   cd/wallaby
+   mkdir build
+   cmake ..
+   make -j4
+
+install DDTR
+   git init submodule
+   git update submodule
+   mkdir build
+   cd build
+   cmake ..
+   make -j4
 
 
-
-makedir code
-cd clone
-git clone github arpg/CoreDev
-
-cd CoreDev
-mkdir build
-git submodule init
-git submodule update
-
-cd build
-cmake ..
-
-# Now readme
-
-# Now crap
-ccmake .
-Enter changes from ON to OFF
-diable pangolin_gui
-# sudo apt-get intsall libprotoc-dev protobuf-compiler
-clone google ptorobuf and compile
 
 ## Architecture
 
 ![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/picknik_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
 
-## Run
+## Ru
 
 ### Generate Mock Amazon order
 
