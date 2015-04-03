@@ -340,6 +340,12 @@ public:
   BinObjectMap& getBins();
 
   /**
+   * \brief Getter for a bin by its index number
+   * \param index, where 0 is bin A counting up
+   */
+  BinObjectPtr getBin(std::size_t bin_id);
+
+  /**
    * \brief Get product
    * \param bin
    * \param product name

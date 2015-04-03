@@ -63,7 +63,7 @@ public:
   Manipulation(bool verbose, VisualsPtr visuals,
                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                ManipulationDataPtr config, GraspDatas grasp_datas,
-               APCManager* parent,
+               APCManager* parent, const std::string& package_path,
                ShelfObjectPtr shelf, bool use_experience, bool show_database);
 
   /**
@@ -376,6 +376,9 @@ protected:
 
   // Show more visual and console output, with general slower run time.
   bool verbose_;
+
+  // File path to ROS package on drive
+  std::string package_path_;
 
   // Trajectory execution
   trajectory_execution_manager::TrajectoryExecutionManagerPtr trajectory_execution_manager_;

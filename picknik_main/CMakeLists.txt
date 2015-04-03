@@ -91,6 +91,15 @@ target_link_libraries(amazon_json_parser
   ${Boost_LIBRARIES}
 )
 
+# Remote_control library
+add_library(remote_control
+  src/remote_control.cpp
+)
+target_link_libraries(remote_control
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
 # Shelf library
 add_library(shelf
   src/shelf.cpp
@@ -144,6 +153,7 @@ target_link_libraries(manipulation
   product_simulator
   shelf
   fix_state_bounds
+  remote_control
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )

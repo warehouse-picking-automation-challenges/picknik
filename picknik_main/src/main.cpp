@@ -37,6 +37,7 @@ int main(int argc, char** argv)
   std::size_t order_start = 0;
   std::size_t jump_to = 0;
   std::size_t num_orders = 0;
+  std::size_t bin_id = 0;
   bool verbose = false;
   bool use_experience = true;
   bool show_database = false;
@@ -115,6 +116,13 @@ int main(int argc, char** argv)
       ++i;
       num_orders = atoi(argv[i]);
       ROS_DEBUG_STREAM_NAMED("main","Number of products to process for the order: " << num_orders);
+      continue;
+    }
+    if( std::string(argv[i]).compare("--bin_id") == 0 )
+    {
+      ++i;
+      bin_id = atoi(argv[i]);
+      ROS_DEBUG_STREAM_NAMED("main","Focusing on bin index: " << bin_id);
       continue;
     }
   }
@@ -217,6 +225,16 @@ int main(int argc, char** argv)
       if (!manager.checkSystemReady()) return 0;;
       ROS_INFO_STREAM_NAMED("main","Requesting perception test");
       manager.testPerceptionComm();
+      break;
+    case 18:
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Recording bin observing trajectory");
+      manager.recordBinWithCamera(bin_id);
+      break;
+    case 19:
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Playing back bin observing trajectory");
+      manager.perceiveBinWithCamera(bin_id);
       break;
     default:
       ROS_WARN_STREAM_NAMED("main","Unkown mode: " << mode);

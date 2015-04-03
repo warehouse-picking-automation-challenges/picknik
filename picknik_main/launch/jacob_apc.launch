@@ -20,6 +20,7 @@
   <arg name="order" default="$(find picknik_main)/orders/simple.json" />
   <arg name="order_start" default="0" />
   <arg name="num_orders" default="0" />
+  <arg name="bin_id" default="0" />
   <arg name="jump_to" default="0" />
   <arg name="show_database" default="0" />
   <arg name="fake_execution" default="false"/>
@@ -53,6 +54,7 @@
 	launch-prefix="$(arg launch_prefix)" output="screen" 
 	args="--mode $(arg mode) --auto $(arg auto) --verbose $(arg verbose) --order $(arg order) 
 	      --order_start $(arg order_start) --jump_to $(arg jump_to) --num_orders $(arg num_orders) 
+	      --bin_id $(arg bin_id)
 	      --show_database $(arg show_database) --use_experience $(arg use_experience)">
 
     <!-- Settings of robot -->

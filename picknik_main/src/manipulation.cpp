@@ -42,7 +42,7 @@ namespace picknik_main
 Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
                            planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                            ManipulationDataPtr config, GraspDatas grasp_datas,
-                           APCManager* parent,
+                           APCManager* parent, const std::string& package_path,
                            ShelfObjectPtr shelf, bool use_experience, bool show_database)
   : nh_("~")
   , verbose_(verbose)
@@ -51,6 +51,7 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   , config_(config)
   , grasp_datas_(grasp_datas)
   , parent_(parent)
+  , package_path_(package_path)
   , shelf_(shelf)
   , use_experience_(use_experience)
   , show_database_(show_database)
@@ -265,13 +266,11 @@ bool Manipulation::recordTrajectoryToFile(const std::string &file_path)
   std::cout << std::endl << std::endl << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
   std::cout << "START MOVING ARM " << std::endl;
-  std::cout << "Press Auto button to stop recording " << std::endl;
+  std::cout << "Press stop button to end recording " << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
 
   std::size_t counter = 0;
-  //  while(!autonomous_ && ros::ok())
-  ROS_WARN_STREAM_NAMED("temp","implenent stop");
-  while(ros::ok())
+  while(ros::ok() && !parent_->getRemoteControl()->getStop())
   {
     ROS_INFO_STREAM_THROTTLE_NAMED(1, "manipulation","Recording waypoint #" << counter++ );
 
@@ -279,6 +278,9 @@ bool Manipulation::recordTrajectoryToFile(const std::string &file_path)
 
     ros::Duration(0.25).sleep();
   }
+
+  // Reset the stop button
+  parent_->getRemoteControl()->setStop(false);
 
   output_file.close();  
   return true;
@@ -1282,12 +1284,12 @@ bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_ms
   }
 
   // Confirm trajectory before continuing
-  if (!parent_->getAutonomous())
+  if (!parent_->getRemoteControl()->getAutonomous())
   {
     std::cout << std::endl;
     std::cout << std::endl;
     std::cout << "Waiting before executing trajectory" << std::endl;
-    parent_->waitForNextStep();
+    parent_->getRemoteControl()->waitForNextStep();
   }
 
   ROS_INFO_STREAM_NAMED("manipulation","Executing trajectory...");
@@ -1319,7 +1321,7 @@ bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_ms
             ROS_ERROR_STREAM_NAMED("manipulation","Trajectory execution control failed");
 
         // Disable autonomous mode because something went wrong
-        parent_->setAutonomous(false);
+        parent_->getRemoteControl()->setAutonomous(false);
 
         return false;
       }
@@ -1339,7 +1341,7 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","fixCollidingState()");
 
   // Turn off auto mode
-  parent_->setAutonomous(false);
+  parent_->getRemoteControl()->setAutonomous(false);
 
   // TODO: Decide what direction is needed to fix colliding state, using the cloned scene
   ROS_INFO_STREAM_NAMED("temp","TODO: work with dual arms");
@@ -1691,7 +1693,7 @@ bool Manipulation::fixCurrentCollisionAndBounds(const robot_model::JointModelGro
       std::cout << std::endl;
       std::cout << std::endl;
       std::cout << "Waiting before executing trajectory" << std::endl;
-      parent_->waitForNextStep();
+      parent_->getRemoteControl()->waitForNextStep();
 
       // State was modified, send to robot
       if (!executeState(new_state, arm_jmg, config_->main_velocity_scaling_factor_))
@@ -1779,34 +1781,35 @@ bool Manipulation::getFilePath(std::string &file_path, const std::string &file_n
   namespace fs = boost::filesystem;
 
   // Check that the directory exists, if not, create it
-  fs::path rootPath;
+  fs::path path;
+  /*
   if (!std::string(getenv("HOME")).empty())
-    rootPath = fs::path(getenv("HOME")); // Support Linux/Mac
+    path = fs::path(getenv("HOME")); // Support Linux/Mac
   else if (!std::string(getenv("HOMEPATH")).empty())
-    rootPath = fs::path(getenv("HOMEPATH")); // Support Windows
+    path = fs::path(getenv("HOMEPATH")); // Support Windows
   else
   {
     ROS_WARN("Unable to find a home path for this computer");
-    rootPath = fs::path("");
+    path = fs::path("");
   }
-
-  std::string directory = "ros/ws_robots/src/picknik_trajectories";
-  rootPath = rootPath / fs::path(directory);
+  */
+  path = fs::path(package_path_ + "/trajectories");
 
   boost::system::error_code returnedError;
-  fs::create_directories( rootPath, returnedError );
+  fs::create_directories( path, returnedError );
 
   if ( returnedError )
   {
     //did not successfully create directories
-    ROS_ERROR("Unable to create directory %s", directory.c_str());
+    ROS_ERROR_STREAM_NAMED("manipulation", "Unable to create directory " << path.string());
     return false;
   }
 
   //directories successfully created, append the group name as the file name
-  rootPath = rootPath / fs::path(file_name + ".csv");
-  file_path = rootPath.string();
+  path = path / fs::path(file_name + ".csv");
+  file_path = path.string();
 
+  //ROS_DEBUG_STREAM_NAMED("manipulation","Using full file path" << file_path);
   return true;
 }
 

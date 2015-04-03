@@ -600,7 +600,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
 
 bool ShelfObject::insertBinHelper(int bin_id, double height, double width, double wall_y, double bin_z)
 {
-  std::string bin_name = "bin_" + boost::lexical_cast<std::string>((char)(65 + num_bins_ - bin_id - 1)); // reverse the lettering
+  const std::string bin_name = "bin_" + boost::lexical_cast<std::string>((char)(65 + num_bins_ - bin_id - 1)); // reverse the lettering
   //std::string bin_name = "bin_" + boost::lexical_cast<std::string>(bin_id);
   ROS_DEBUG_STREAM_NAMED("shelf","Creating bin '" << bin_name << "' with id " << bin_id);
 
@@ -750,6 +750,13 @@ bool ShelfObject::createCollisionShelfDetailed()
 BinObjectMap& ShelfObject::getBins()
 {
   return bins_;
+}
+
+BinObjectPtr ShelfObject::getBin(std::size_t bin_id)
+{
+  const std::string bin_name = "bin_" + boost::lexical_cast<std::string>((char)(65 + bin_id));
+  std::cout << "bin_name: " << bin_name << std::endl;
+  return bins_[bin_name];
 }
 
 ProductObjectPtr ShelfObject::getProduct(const std::string &bin_name, const std::string &product_name)

@@ -75,39 +75,28 @@ public:
   // Next come a couple of public Qt slots.
 public Q_SLOTS:
 
-  // In this example setTopic() does not get connected to any signal
-  // (it is called directly), but it is easy to define it as a public
-  // slot instead of a private function in case it would be useful to
-  // some other user.
-  //void setTopic( const QString& topic );
-
   // Here we declare some internal slots.
 protected Q_SLOTS:
 
-  // updateTopic() reads the topic name from the QLineEdit and calls
-  // setTopic() with the result.
-  //void updateTopic();
-
   /// User has chosen to go to next step
-  void moveNextStep();
+  void moveNext();
 
   /// User has chosen to run demo
-  void moveRun();
+  void moveAuto();
+
+  /// User has chosen to stop
+  void moveStop();
 
   // Then we finish up with protected member variables.
 protected:
   QPushButton *btn_next_;
-  QPushButton *btn_run_;
-
-  // One-line text editor for entering the outgoing ROS topic name.
-  //QLineEdit* output_topic_editor_;
-
-  // The current name of the output topic.
-  //QString output_topic_;
+  QPushButton *btn_auto_;
+  QPushButton *btn_stop_;
 
   // The ROS publishers
   ros::Publisher next_publisher_;
-  ros::Publisher run_publisher_;
+  ros::Publisher auto_publisher_;
+  ros::Publisher stop_publisher_;
 
   // The ROS node handle.
   ros::NodeHandle nh_;

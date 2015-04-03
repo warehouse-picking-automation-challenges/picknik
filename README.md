@@ -11,37 +11,6 @@
 
 ### Perception Pipeline
 
-Install ARPG's communication layer 'Node'. First, install ZeroMQ:
-
-	wget http://download.zeromq.org/zeromq-3.2.5.tar.gz
-	untargz zeromq-3.2.5
-	cd zeromq-3.2.5
-	./configure
-	sudo make install
-	
-
-Install ZeroMQ C++ Bindings
-
-	git clone git@github.com:zeromq/zmqpp.git 
-	cd zmqpp 
-	make 
-	make check 
-	sudo make install 
-	make installcheck
-
-Install avahi
-
-	sudo apt-get install libavahi-compat-libdnssd-dev
-
-Then install Node:
-	
-    	git clone git@github.com:arpg/Node.git
-	mkdir -p Node/build
-	cd Node/build
-	cmake ../	
-
-### PCL Dependenies
-
 TODO
 
 ### Manipulation Pipeline
@@ -52,7 +21,16 @@ Dave occasionally releases a new zip file with a lot of custom ROS code, that ca
     User: picknik
     Password: sfd798asfiahfl89o7df980791324jhkls
 
-Unzip the file and put into a catkin workspace and run ``catkin build``
+Unzip the file and build
+
+    unzip ws_picknik.zip
+	cd ws_picknik
+	rosdep install -y --from-paths src --ignore-src --rosdistro indigo
+	catkin build
+
+Python deps:
+
+    sudo apt-get install python-pandas
 
 Also, to reduce debug output add the following to your bashrc:
 
@@ -62,10 +40,6 @@ Also, to reduce debug output add the following to your bashrc:
 ## Architecture
 
 ![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/picknik_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
-
-## Python deps
-
-    sudo apt-get install python-pandas
 
 ## Run
 
@@ -241,7 +215,8 @@ Run APC Manager (main program) for JACOB on hardware
 Button Mapings
 
     A - Next Step
-	B - Go Home
+	B - Stop
+	Back - Go home
 	Xbox Button - AUTO
 
 
@@ -266,6 +241,8 @@ Button Mapings
 		15. Test grasp generator abilities and score results
 		16. Test joint limits
 		17. Test requesting preception results
+		18. Record a bin observing trajectory
+		19. Perceive (playback) a bin with camera
 	jump_to - which step in the manipulation pipeline to start on
 	  Steps: NOT CORRECT ANYMORE
 	    0. Move to initial position
