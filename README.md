@@ -35,7 +35,10 @@ Also, to reduce debug output add the following to your bashrc:
 
 ### Perception Pipeline
 
-TODO
+sudo apt-get install libzmq3-dev
+sudo apt-get install cmake-curses-gui
+git clone git@github.com:zeromq/zmqpp.git
+
 
 ## Architecture
 
