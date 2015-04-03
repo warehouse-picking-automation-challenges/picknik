@@ -34,4 +34,6 @@
   <run_depend>eigen</run_depend>
   <run_depend>picknik_msgs</run_depend>
   <run_depend>python-pandas</run_depend>
+  <run_depend>joy</run_depend>
+
 </package>

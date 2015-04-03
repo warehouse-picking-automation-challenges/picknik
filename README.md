@@ -9,10 +9,6 @@
 
 ## Install
 
-### Perception Pipeline
-
-TODO
-
 ### Manipulation Pipeline
 
 Dave occasionally releases a new zip file with a lot of custom ROS code, that can be built into one workspace. Download the latest zip (~710MB) from here:
@@ -32,6 +28,35 @@ Also, to reduce debug output add the following to your bashrc:
 
     export ROSCONSOLE_CONFIG_FILE=~/ws_picknik/src/picknik/rosconsole.yaml
     export ROSCONSOLE_FORMAT='${severity} ${logger}: ${message}'
+
+### Perception Pipeline
+
+sudo apt-get install libzmq3-dev
+sudo apt-get install cmake-curses-gui
+git clone git@github.com:zeromq/zmqpp.git
+
+
+
+makedir code
+cd clone
+git clone github arpg/CoreDev
+
+cd CoreDev
+mkdir build
+git submodule init
+git submodule update
+
+cd build
+cmake ..
+
+# Now readme
+
+# Now crap
+ccmake .
+Enter changes from ON to OFF
+diable pangolin_gui
+# sudo apt-get intsall libprotoc-dev protobuf-compiler
+clone google ptorobuf and compile
 
 ## Architecture
 
