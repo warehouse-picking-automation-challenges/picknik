@@ -824,4 +824,9 @@ ProductObject::ProductObject(const ProductObject& copy)
 { 
 }
 
+Eigen::Affine3d ProductObject::getWorldPose(const ShelfObjectPtr& shelf, const BinObjectPtr& bin)
+{
+  return shelf->getBottomRight() * bin->getBottomRight() * getCentroid();
+}
+
 } // namespace

@@ -363,26 +363,28 @@ bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera)
   top_left << -camera_min_depth_ * (camera_cy_ - 0) / camera_fx_ , -camera_min_depth_ * (camera_cx_ - 0) / camera_fy_ , camera_min_depth_;
   // top right (640,0) 
   top_right << -camera_min_depth_ * (camera_cy_ - 640) / camera_fx_ , -camera_min_depth_ * (camera_cx_ - 0) / camera_fy_ , camera_min_depth_;
-  // bot left (0,480)
-  bottom_left << -camera_min_depth_ * (camera_cy_ - 0) / camera_fx_ , -camera_min_depth_ * (camera_cx_ - 480) / camera_fy_ , camera_min_depth_;
   // bot right (640.480) 
   bottom_right << -camera_min_depth_ * (camera_cy_ - 640) / camera_fx_ , -camera_min_depth_ * (camera_cx_ - 480) / camera_fy_ , camera_min_depth_;
+  // bot left (0,480)
+  bottom_left << -camera_min_depth_ * (camera_cy_ - 0) / camera_fx_ , -camera_min_depth_ * (camera_cx_ - 480) / camera_fy_ , camera_min_depth_;
 
-  const double distance_from_camera = 0.3;
-  const double height = 480 * config_->camera_frame_display_scale_; // size of camera view finder
-  const double width = 640 * config_->camera_frame_display_scale_; // size of camera view finder
-  Eigen::Affine3d camera_view_finder_offset = Eigen::Affine3d::Identity();
-  camera_view_finder_offset.translation().x() = distance_from_camera;
+  // const double distance_from_camera = 0;
+  // Eigen::Affine3d camera_view_finder_offset = Eigen::Affine3d::Identity();
+  // camera_view_finder_offset.translation().x() = distance_from_camera;
+  // Eigen::Affine3d camera_view_finder = camera_view_finder_offset * world_to_camera;
 
-  Eigen::Affine3d camera_view_finder = camera_view_finder_offset * world_to_camera;
+  Eigen::Affine3d camera_view_finder = Eigen::Affine3d::Identity(); //world_to_camera;
+
+  // camera_view_finder = camera_view_finder
+  //   * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
+  //   * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitZ());
+
+  visuals_->visual_tools_->publishWireframeRectangle(camera_view_finder,
+                                                     top_left, top_right, bottom_right, bottom_left, rvt::PINK, rvt::SMALL);
 
 
-  camera_view_finder = camera_view_finder
-    * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
-    * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitZ());
-
-
-  visuals_->visual_tools_->publishWireframeRectangle(camera_view_finder, height, width, rvt::PINK, rvt::SMALL);
+  // visuals_->visual_tools_->publishWireframeRectangle(camera_view_finder, height, width, rvt::PINK, rvt::SMALL);
+  return true;
 }
 
 bool PerceptionInterface::convertFrameCVToROS(const Eigen::Affine3d& cv_frame, Eigen::Affine3d& ros_frame)

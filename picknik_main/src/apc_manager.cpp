@@ -51,7 +51,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   tf_.reset(new tf::TransformListener(nh_private_));
   // TODO: remove these lines, only an attempt to fix loadPlanningSceneMonitor bug
   ros::spinOnce();
-  //ros::Duration(0.25).sleep();
+  ros::Duration(0.1).sleep();
 
   // Load planning scene monitor
   if (!loadPlanningSceneMonitor())
@@ -1225,6 +1225,7 @@ bool APCManager::perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder o
 
   // Get the global object pose
   global_object_pose = product->getWorldPose(shelf_, bin);
+  visuals_->visual_tools_->publishZArrow(global_object_pose, rvt::BLACK, rvt::LARGE);
 
   return true;
 }
