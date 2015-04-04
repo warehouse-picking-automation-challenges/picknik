@@ -71,6 +71,8 @@ install kangaroo:
 	Notice: you may have some errors when building the examples, this is because we disabled the pangolin::video function before. just ignore it by now.
 
 install wallaby:
+
+```
    install cudpp
    git clone git@github.com:cudpp/cudpp.git
    git submodule init
@@ -96,57 +98,59 @@ install wallaby:
    mkdir build
    cmake ..
    make -j4
+```
 
 install DDTR
+
+```
    git init submodule
    git update submodule
    mkdir build
    cd build
    cmake ..
    make -j4
+```
 
-# Camera deps
+# Install Camera
 
-    sudo apt-get install libavcodec-dev
+    sudo apt-get install libavcodec-dev libudev-dev
 
-# Clone ARPG repos
-
-    git clone https://github.com/arpg/HAL.git
-    cd HAL/
-    https://github.com/arpg/HAL.git
-    git pull origin features/ros_bridge
-    mkdir build
-
-    cd
-
-    git clone https://github.com/arpg/Pangolin.git
     git clone https://github.com/arpg/Sophus.git
-    git clone https://github.com/arpg/miniglog.git
-
-# Build them
-
-    cd Sophus/
+    cd ~/Sophus/
     mkdir build
     cd build
-    ccmake ..
+    cmake ..
     make -j4
 
-    cd
+    git clone https://github.com/arpg/miniglog.git
     cd miniglog/
     mkdir build
     cd build
-    ccmake ..
+    cmake ..
     make -j4
 
-    cd
+    git clone https://github.com/arpg/Pangolin
+    cd Pangolin
+    mkdir build
+    cd build
+    cmake ..
+    make -j4	
+
+	git clone https://github.com/arpg/HAL.git
+    cd HAL/
+	git co -b ros_bridge origin/features/ros_bridge 
+    mkdir build
     cd HAL/build
     ccmake ..
     make -j4
-    cd Applications/SensorViewer
+
+# Test Camera
+
+     cd /home/dave/ros/HAL/build/Applications/SensorViewer
     ./SensorViewer -cam ros:[topics=/camera/image/rgb_raw]//
     ./SensorViewer -cam ros:[topics=/camera/image/rgb_raw+/camera/image/depth_raw]//
     ./SensorViewer -cam convert:[fmt=MONO8]//ros:[topics=/camera/image/rgb_raw+/camera/image/depth_raw]//
-
+    
 ## Architecture
 
 ![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/picknik_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
