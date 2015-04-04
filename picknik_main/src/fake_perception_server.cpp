@@ -42,6 +42,8 @@
 #include <actionlib/server/simple_action_server.h>
 #include <picknik_msgs/FindObjectsAction.h>
 
+#include <rviz_visual_tools/rviz_visual_tools.h>
+
 namespace picknik_main
 {
 
@@ -57,6 +59,8 @@ private:
 
   // Show more visual and console output, with general slower run time.
   bool verbose_;
+  
+  rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
 
 
 public:
@@ -69,6 +73,7 @@ public:
     : verbose_(verbose),
       action_server_("recognize_objects", false) // Load the action server
   {
+    visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("world"));
 
     // Register the goal and feeback callbacks.
     action_server_.registerGoalCallback(boost::bind(&FakePerceptionServer::goalCallback, this));
@@ -117,11 +122,12 @@ public:
       new_product.object_name = goal->expected_objects_names[i];
 
       // Object pose
-      //visual_tools_->generateRandomPose(new_product.object_pose, pose_bounds);
-      new_product.object_pose.position.x = 0;
-      new_product.object_pose.position.y = 0;
-      new_product.object_pose.position.z = 0.4;
-      new_product.object_pose.orientation.w = 1;
+      Eigen::Affine3d pose = Eigen::Affine3d::Identity();
+      pose.translation().z() = 0.45;
+      pose = pose 
+        * Eigen::AngleAxisd(1.7, Eigen::Vector3d::UnitY());
+        
+      new_product.object_pose = visual_tools_->convertPose(pose);
 
       // Value between 0 and 1 for each expected object's confidence of its pose
       new_product.expected_object_confidence = 1.0; // TODO

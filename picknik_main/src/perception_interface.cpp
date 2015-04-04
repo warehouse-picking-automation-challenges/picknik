@@ -236,14 +236,14 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   Eigen::Affine3d world_to_camera;
   ros::Time time_stamp;
   getCameraPose(world_to_camera, time_stamp);
-  visuals_->visual_tools_->publishAxisWithLabel(world_to_camera, "world_to_camera");
+  visuals_->visual_tools_->publishAxisLabeled(world_to_camera, "world_to_camera");
 
   // Show camera view
   publishCameraFrame(world_to_camera);
 
   // Get bin location
   const Eigen::Affine3d& world_to_bin = picknik_main::transform(bin->getBottomRight(), shelf_->getBottomRight());
-  visuals_->visual_tools_->publishAxisWithLabel(world_to_bin, "world_to_bin");
+  visuals_->visual_tools_->publishAxisLabeled(world_to_bin, "world_to_bin");
 
   // Process each product
   for (std::size_t i = 0; i < result->found_objects.size(); ++i)
@@ -259,7 +259,7 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
 
     // Convert to world frame
     const Eigen::Affine3d world_to_object = world_to_camera * camera_to_object;
-    visuals_->visual_tools_->publishAxisWithLabel(world_to_object, found_object.object_name);
+    visuals_->visual_tools_->publishAxisLabeled(world_to_object, found_object.object_name);
 
     // Convert to pose of bin
     const Eigen::Affine3d bin_to_object = world_to_bin.inverse() * world_to_object;

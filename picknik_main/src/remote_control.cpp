@@ -145,6 +145,7 @@ void RemoteControl::setAutonomous(bool autonomous)
 void RemoteControl::setStop(bool stop)
 {
   stop_ = stop;
+  autonomous_ = !stop;
 }
 
 bool RemoteControl::getStop()
@@ -164,6 +165,7 @@ bool RemoteControl::waitForNextStep()
   while (!next_step_ready_ && !autonomous_ && ros::ok())
   {
     ros::Duration(0.25).sleep();
+    ros::spinOnce();
   }
   if (!ros::ok())
     return false;

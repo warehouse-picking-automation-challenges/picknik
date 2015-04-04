@@ -138,6 +138,7 @@ bool APCManager::checkSystemReady()
   const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Check robot state valid
+  manipulation_->createCollisionWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
   while (ros::ok() && !manipulation_->fixCurrentCollisionAndBounds(arm_jmg))
   {
     // Show the current state just for the heck of it
@@ -170,7 +171,7 @@ bool APCManager::focusSceneOnBin( const std::string& bin_name )
   // Visualize
   bool only_show_shelf_frame = false;
   ROS_INFO_STREAM_NAMED("apc_manager","Showing planning scene shelf with focus on bin " << bin_name);
-
+x
   shelf_->createCollisionBodies(bin_name, only_show_shelf_frame);
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
   shelf_->visualizeAxis(visuals_);
@@ -324,12 +325,15 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
           return false;
         }
 
-        the_grasp_state->setJointGroupPositions(arm_jmg, chosen->grasp_ik_solution_);
-        manipulation_->setStateWithOpenEE(true, the_grasp_state);
+        // Get the pre and post grasp states
+        chosen->getPreGraspState(pre_grasp_state);
+        chosen->getGraspState(the_grasp_state);
 
-        if (!remote_control_->getAutonomous())
+        // Visualize
+        if (!remote_control_->getAutonomous() || true)
         {
-          visuals_->visual_tools_->publishRobotState(the_grasp_state, rvt::PURPLE);
+          visuals_->start_state_->publishRobotState(pre_grasp_state, rvt::GREEN);
+          visuals_->goal_state_->publishRobotState(the_grasp_state, rvt::ORANGE);
         }
 
         break;
@@ -340,7 +344,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Hide the purple robot
         visuals_->visual_tools_->hideRobot();
 
-        if (!manipulation_->generateApproachPath(arm_jmg, approach_trajectory_msg, pre_grasp_state, the_grasp_state, verbose))
+        if (!manipulation_->generateApproachPath(chosen, approach_trajectory_msg, pre_grasp_state, the_grasp_state, verbose))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to generate straight approach path");
           return false;
@@ -350,7 +354,6 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, current_state, wait_for_trajetory);
 
         break;
-        //step++;
 
         // #################################################################################################################
       case 5: // Not implemented
@@ -408,7 +411,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         }
 
         // Attach collision object
-        visuals_->visual_tools_->attachCO(work_order.product_->getCollisionName(), grasp_datas_[arm_jmg]->parent_link_name_);
+        visuals_->visual_tools_->attachCO(work_order.product_->getCollisionName(), grasp_datas_[arm_jmg]->parent_link_->getName());
 
         ROS_INFO_STREAM_NAMED("apc_manager","Waiting " << config_->wait_after_grasp_ << " seconds after grasping");
         ros::Duration(config_->wait_after_grasp_).sleep();
@@ -1198,7 +1201,7 @@ bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
   ProductObjectPtr& product = work_order.product_;
 
   // Move camera to the bin
-  ROS_INFO_STREAM_NAMED("apc_manager","Moving to " << bin->getName());
+  ROS_INFO_STREAM_NAMED("apc_manager","Moving camera to bin '" << bin->getName() << "'");
   if (!manipulation_->moveCameraToBin(bin))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
@@ -1216,6 +1219,10 @@ bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
     }
+
+  // Let arm come to rest
+  double timeout = 20;
+  manipulation_->waitForRobotToStop(timeout);
 
   // Get result from perception pipeline
   if (!perception_interface_->endPerception(product, bin))
@@ -1245,12 +1252,12 @@ bool APCManager::placeObjectInGoalBin(const robot_model::JointModelGroup* arm_jm
   return true;
 }
 
-bool APCManager::moveToStartPosition(const robot_model::JointModelGroup* arm_jmg)
+bool APCManager::moveToStartPosition(const robot_model::JointModelGroup* arm_jmg, bool check_validity)
 {
   // Choose which planning group to use
   if (arm_jmg == NULL)
     arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
-  return manipulation_->moveToPose(arm_jmg, config_->start_pose_, config_->main_velocity_scaling_factor_);
+  return manipulation_->moveToPose(arm_jmg, config_->start_pose_, config_->main_velocity_scaling_factor_, check_validity);
 }
 
 bool APCManager::moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg)

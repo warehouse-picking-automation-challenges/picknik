@@ -80,7 +80,7 @@ public:
    * \param trans - transform from parent container to current container
    * \return true on success
    */
-  // virtual bool visualizeWireframe(const Eigen::Affine3d& trans) const;
+  virtual bool visualizeWireframe(const Eigen::Affine3d& trans) const = 0;
 
   /**
    * \brief Get height of rectangle
@@ -193,6 +193,13 @@ public:
   bool visualizeWireframe(const Eigen::Affine3d& trans) const;
 
   /**
+   * \brief Show the bottom right of the object
+   * \param trans - transform from parent container to current container
+   * \return true on success
+   */
+  bool visualizeAxis(const Eigen::Affine3d& trans) const;
+
+  /**
    * \brief Create collision bodies of rectangle
    * \param trans - transform from parent container to current container
    */
@@ -272,6 +279,13 @@ public:
   bool visualizeWireframe(const Eigen::Affine3d& trans) const;
 
   /**
+   * \brief Show the centroid of the object
+   * \param trans - transform from parent container to current container
+   * \return true on success
+   */
+  bool visualizeAxis(const Eigen::Affine3d& trans) const;
+
+  /**
    * \brief Load from file a collision mesh
    * \return true on success
    */
@@ -307,6 +321,21 @@ public:
    * \brief Get depth of rectangle
    */
   double getDepth() const;
+
+  /**
+   * \brief Setter for height
+   */
+  void setHeight(const double& height);
+
+  /**
+   * \brief Setter for width
+   */
+  void setWidth(const double& width);
+
+  /**
+   * \brief Setter for depth
+   */
+  void setDepth(const double& depth);
 
   /**
    * \brief Getter for Centroid

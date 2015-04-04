@@ -138,6 +138,11 @@ bool RectangleObject::visualizeWireframe(const Eigen::Affine3d& trans) const
   //return visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans), getDepth(), getWidth(), getHeight(), color_);
 }
 
+bool RectangleObject::visualizeAxis(const Eigen::Affine3d& trans) const
+{
+  return visuals_->visual_tools_->publishAxisLabeled( transform(bottom_right_, trans), name_ );
+}
+
 bool RectangleObject::createCollisionBodies(const Eigen::Affine3d &trans)
 {
   ROS_DEBUG_STREAM_NAMED("shelf","Adding/updating collision body '" << collision_object_name_ << "'");
@@ -199,11 +204,10 @@ const Eigen::Affine3d RectangleObject::getCentroid() const
 MeshObject::MeshObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name)
   : CollisionObject(visuals, color, name)
   , centroid_(Eigen::Affine3d::Identity())
+  , height_(0.0)
+  , width_(0.0)
+  , depth_(0.0)
 {
-  // TODO remove this test of initizliazation value
-  assert(height_ == 0);
-  assert(width_ == 0);
-  assert(depth_ == 0);
 }
 
 MeshObject::MeshObject(const MeshObject& copy)
@@ -235,7 +239,14 @@ bool MeshObject::visualize(const Eigen::Affine3d& trans) const
 
 bool MeshObject::visualizeWireframe(const Eigen::Affine3d& trans) const
 {
-  return visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans), depth_, width_, height_, color_);
+  visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans), depth_, width_, height_, rvt::LIME_GREEN);
+  visuals_->visual_tools_->publishWireframeCuboid( transform(centroid_, trans), depth_, width_, height_, rvt::LIME_GREEN);
+  return true;
+}
+
+bool MeshObject::visualizeAxis(const Eigen::Affine3d& trans) const
+{
+  return visuals_->visual_tools_->publishAxisLabeled( transform(centroid_, trans), name_ );
 }
 
 bool MeshObject::loadCollisionBodies()
@@ -295,6 +306,21 @@ double MeshObject::getWidth() const
 double MeshObject::getDepth() const
 {
   return depth_;
+}
+
+void MeshObject::setHeight(const double& height)
+{
+  height_ = height;
+}
+
+void MeshObject::setWidth(const double& width)
+{
+  width_ = width;
+}
+
+void MeshObject::setDepth(const double& depth)
+{
+  depth_ = depth;
 }
 
 const Eigen::Affine3d& MeshObject::getCentroid() const

@@ -107,7 +107,8 @@ public:
    * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
    * \return true on success
    */
-  bool moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name, double velocity_scaling_factor);
+  bool moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name, double velocity_scaling_factor, 
+                  bool check_validity = true);
 
   /**
    * \brief Move EE to a particular pose by solving with IK
@@ -123,7 +124,7 @@ public:
    */
   bool move(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
             const robot_model::JointModelGroup* arm_jmg, double velocity_scaling_factor,
-            bool verbose, bool execute_trajectory = true);
+            bool verbose, bool execute_trajectory = true, bool check_validity = true);
 
   /**
    * \brief Interpolate
@@ -147,12 +148,13 @@ public:
 
   /**
    * \brief Generate the straight line path from pregrasp to grasp
-   * \param input - description
+   * \param chosen - all the data on the chosen grasp   
    * \return true on success
    */
-  bool generateApproachPath(const moveit::core::JointModelGroup *arm_jmg,
+  bool generateApproachPath(moveit_grasps::GraspCandidatePtr chosen,
                             moveit_msgs::RobotTrajectory &approach_trajectory_msg,
-                            moveit::core::RobotStatePtr pre_grasp_state, moveit::core::RobotStatePtr the_grasp,
+                            const moveit::core::RobotStatePtr pre_grasp_state, 
+                            const moveit::core::RobotStatePtr the_grasp,
                             bool verbose);
 
   /**
@@ -339,6 +341,13 @@ public:
    * \brief Update the current_state_ RobotState with latest from planning scene
    */
   moveit::core::RobotStatePtr getCurrentState();
+
+  /**
+   * \brief Wait until robot has zero velcity
+   * \param timeout
+   * \return true if robots velocity reached the threshold
+   */
+  bool waitForRobotToStop(const double& timeout);
 
   /**
    * \brief Check if current state is in collision or out of bounds

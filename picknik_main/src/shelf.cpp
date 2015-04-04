@@ -497,6 +497,7 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
 
   // Show goal bin
   goal_bin_->createCollisionBodies(bottom_right_);
+  goal_bin_->visualizeAxis(bottom_right_);
 
   // Show wall limits
   if (left_wall_)
@@ -585,6 +586,9 @@ ProductObject::ProductObject(VisualsPtr visuals,
                              const std::string &package_path)
   : MeshObject( visuals, color, name )
 {
+  // Prepend the collision object type to the collision object name
+  collision_object_name_ = "product_" + collision_object_name_;
+
   // Cache the object's mesh
   high_res_mesh_path_ = "file://" + package_path + "/meshes/products/" + name_ + "/recommended.dae";
   collision_mesh_path_ = "file://" + package_path + "/meshes/products/" + name_ + "/collision.stl";

@@ -232,7 +232,7 @@ public:
    * \param optionally specify which arm to use
    * \return true on success
    */
-  bool moveToStartPosition(const robot_model::JointModelGroup* arm_jmg = NULL);
+  bool moveToStartPosition(const robot_model::JointModelGroup* arm_jmg = NULL, bool check_validity = true);
 
   /**
    * \brief Move to location to get rid of product

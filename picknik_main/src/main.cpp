@@ -26,7 +26,7 @@ int main(int argc, char** argv)
   std::cout << std::endl;
 
   // Allow the action server to recieve and send ros messages
-  ros::AsyncSpinner spinner(2);
+  ros::AsyncSpinner spinner(4);
   spinner.start();
 
   // Random
