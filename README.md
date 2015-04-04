@@ -7,9 +7,7 @@
  - [Timeline](https://docs.google.com/spreadsheets/d/1GG_j6BVir-J8VGwbU8RWDHA8kD8ZSeXrtlLtW9N851o/edit?usp=sharing)
  - [Item Data](https://docs.google.com/spreadsheets/d/1e0Fousz9TUxf9YHeVfnaKVgf06Z0WC50blMGBWJ9cp8/edit#gid=2088756835)
 
-## Install
-
-### Manipulation Pipeline
+## Install Manipulation Pipeline
 
 Dave occasionally releases a new zip file with a lot of custom ROS code, that can be built into one workspace. Download the latest zip (~710MB) from here:
 
@@ -29,19 +27,24 @@ Also, to reduce debug output add the following to your bashrc:
     export ROSCONSOLE_CONFIG_FILE=~/ws_picknik/src/picknik/rosconsole.yaml
     export ROSCONSOLE_FORMAT='${severity} ${logger}: ${message}'
 
-### Perception Pipeline
+## Install Perception Pipeline
 
-Install dependencies for node:
+## Install dependencies for node:
+
    1, install zmq
+   
        sudo apt-get install libzmq3-dev
 
    2, install gui version of cmake
+   
        sudo apt-get install cmake-curses-gui
 
    3, add cpp binders for zmq
+   
        git clone git@github.com:zeromq/zmqpp.git
 
    4, install protobuf
+   
        https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gzinstall 
        run ./configure
        make -j3
@@ -50,68 +53,71 @@ Install dependencies for node:
        By default, the upper command will install the lib to /usr/local/lib/proto*, make sure all the protobuf libraries files is in /usr/lib/proto*. so you probability need to do
 	   cp /usr/local/lib/proto* /usr/lib/
 
-configurations
-    1, disable pangolin_video
+Configurations
+
+   1, disable pangolin_video
+	
        ccmake .
        set BUILD_PANGOLIN_GUI to OFF
-    2, go to the CMakeList.txt file under HAL/Applications comment out everything expect for SensorViewer
+	   
+   2, go to the CMakeList.txt file under HAL/Applications comment out everything expect for SensorViewer
 
 Compile:
-    now you should be able to compile CoreDev by:
+
+   now you should be able to compile CoreDev by:
+   
 	cmake .
     make
 	
-install kangaroo:
+### Install kangaroo:
+
     git clone git@github.com:arpg/Kangaroo.git
 	cd kangaroo
 	mkdir build
     cd build
 	ccmake ..
 	make -j
-	Notice: you may have some errors when building the examples, this is because we disabled the pangolin::video function before. just ignore it by now.
+	
+Notice: you may have some errors when building the examples, this is because we disabled the pangolin::video function before. just ignore it by now.
 
-install wallaby:
+### Install wallaby:
 
-```
-   install cudpp
-   git clone git@github.com:cudpp/cudpp.git
-   git submodule init
-   git submodule update
-   mkdir build
-   cd build
-   cmake ..
-   make -j4
+	install cudpp
+	git clone git@github.com:cudpp/cudpp.git
+	git submodule init
+	git submodule update
+	mkdir build
+	cd build
+	cmake ..
+	make -j4
 
-   now copy the following header files..
-   cp /cudpp/cudpp/include/cudpp_config.h /usr/local/include/
-   cp /cudpp/cudpp/include/cudpp_hash.h /usr/local/include/
+	now copy the following header files..
+	cp /cudpp/cudpp/include/cudpp_config.h /usr/local/include/
+	cp /cudpp/cudpp/include/cudpp_hash.h /usr/local/include/
 
-   change permission from root to the user
-   sudo chown -R robot cudpp_config.h
-   sudo chown -R robot cudpp_hash.h
+	change permission from root to the user
+	sudo chown -R robot cudpp_config.h
+	sudo chown -R robot cudpp_hash.h
 
-   install libglm
-   sudo apt-get install libglm-dev
+	install libglm
+	sudo apt-get install libglm-dev
 
-   compile wallaby
-   cd/wallaby
-   mkdir build
-   cmake ..
-   make -j4
-```
+	compile wallaby
+	cd/wallaby
+	mkdir build
+	cmake ..
+	make -j4
 
-install DDTR
+### Install DDTR
 
-```
-   git init submodule
-   git update submodule
-   mkdir build
-   cd build
-   cmake ..
-   make -j4
-```
+	git init submodule
+	git update submodule
+	mkdir build
+	cd build
+	cmake ..
+	make -j4
 
-# Install Camera
+### Install Camera
 
     sudo apt-get install libavcodec-dev libudev-dev
 
@@ -144,7 +150,7 @@ install DDTR
     ccmake ..
     make -j4
 
-# Test Camera
+### Test Camera
 
      cd /home/dave/ros/HAL/build/Applications/SensorViewer
     ./SensorViewer -cam ros:[topics=/camera/image/rgb_raw]//
@@ -155,7 +161,7 @@ install DDTR
 
 ![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/picknik_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
 
-## Ru
+## Run
 
 ### Generate Mock Amazon order
 
