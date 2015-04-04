@@ -111,21 +111,21 @@ bool AmazonJSONParser::parseBins(const std::string& package_path, const Json::Va
 
       // Set location of product
 
-      bottom_right = product->getBottomRight();
-      bottom_right.translation() = Eigen::Vector3d(0.05, //visuals_->visual_tools_->dRand(0.0, 0.05),  // depth
-                                                            bin_y_space,  // from right
-                                                            0.05);
-      product->setBottomRight(bottom_right);
+      // bottom_right = product->getBottomRight();
+      // bottom_right.translation() = Eigen::Vector3d(0.05, //visuals_->visual_tools_->dRand(0.0, 0.05),  // depth
+      //                                                       bin_y_space,  // from right
+      //                                                       0.05);
+      // product->setBottomRight(bottom_right);
 
-      // Set size of product
-      double width = visuals_->visual_tools_->dRand(0.01, 0.06);
-      top_left = product->getTopLeft();
-      top_left.translation() = product->getBottomRight().translation() + 
-        Eigen::Vector3d(visuals_->visual_tools_->dRand(0.01, 0.2), // depth
-                        width, //width
-                        visuals_->visual_tools_->dRand(0.05, 0.2)); // height
-      product->setTopLeft(top_left);
-      bin_y_space += width + 0.07; // spacing between objects
+      // // Set size of product
+      // double width = visuals_->visual_tools_->dRand(0.01, 0.06);
+      // top_left = product->getTopLeft();
+      // top_left.translation() = product->getBottomRight().translation() + 
+      //   Eigen::Vector3d(visuals_->visual_tools_->dRand(0.01, 0.2), // depth
+      //                   width, //width
+      //                   visuals_->visual_tools_->dRand(0.05, 0.2)); // height
+      // product->setTopLeft(top_left);
+      // bin_y_space += width + 0.07; // spacing between objects
 
       // Add product to correct location
       shelf->getBins()[bin_name]->getProducts().push_back(product);

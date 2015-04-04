@@ -21,230 +21,6 @@ namespace picknik_main
 {
 
 // -------------------------------------------------------------------------------------------------
-// Rectangle Object
-// -------------------------------------------------------------------------------------------------
-
-RectangleObject::RectangleObject(VisualsPtr visuals,
-                     const rvt::colors &color, const std::string &name)
-  : visuals_(visuals)
-  , color_(color)
-  , bottom_right_(Eigen::Affine3d::Identity())
-  , top_left_(Eigen::Affine3d::Identity())
-{
-  if (name.empty())
-  {
-    // Create dummy name for this rectangle
-    static std::size_t rectangle_id = 0;
-    rectangle_id++;
-
-    // use this func so that a unique collision ID is also generated
-    setName("rectangle_" + boost::lexical_cast<std::string>(rectangle_id));
-
-    ROS_WARN_STREAM_NAMED("shelf","Creating default rectangle named " << name_);
-  }
-  else
-  {
-    setName(name); // use this func so that a unique collision ID is also generated
-  }
-}
-
-RectangleObject::RectangleObject(const RectangleObject& copy)
-{
-  visuals_= copy.visuals_;
-  high_res_mesh_path_= copy.high_res_mesh_path_;
-  collision_mesh_path_= copy.collision_mesh_path_;
-  mesh_msg_= copy.mesh_msg_;
-  centroid_= copy.centroid_;
-  bottom_right_= copy.bottom_right_;
-  top_left_= copy.top_left_;
-  color_= copy.color_;
-
-  // Must set collision_object_name_ and name_ manually via setName() function
-  setName(copy.name_);
-}
-
-bool RectangleObject::visualize(const Eigen::Affine3d& trans) const
-{
-  if (!high_res_mesh_path_.empty())
-  {
-    // Show axis
-    visuals_->visual_tools_display_->publishAxis(transform(centroid_, trans), 0.1/2, 0.01/2);
-
-    // Show full resolution mesh - scale = 1, id = 1, namespace = collision object name
-    return visuals_->visual_tools_display_->publishMesh(transform(centroid_, trans), high_res_mesh_path_, rvt::CLEAR, 1,
-                                                        collision_object_name_, 1);
-  }
-
-  // Show simple geometric shape
-  return visuals_->visual_tools_display_->publishCuboid( transform(bottom_right_, trans).translation(),
-                                                            transform(top_left_, trans).translation(),
-                                                            color_);
-}
-
-bool RectangleObject::visualizeWireframe(const Eigen::Affine3d& trans) const
-{
-  return visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans), getDepth(), getWidth(), getHeight(), color_);
-}
-
-bool RectangleObject::loadCollisionBodies()
-{
-  shapes::Shape *mesh = shapes::createMeshFromResource(collision_mesh_path_); // make sure its prepended by file://
-  shapes::ShapeMsg shape_msg; // this is a boost::variant type from shape_messages.h
-  if (!mesh || !shapes::constructMsgFromShape(mesh, shape_msg))
-  {
-    ROS_ERROR_STREAM_NAMED("shelf","Unable to create mesh shape message from resource " << collision_mesh_path_);
-    return false;
-  }      
-
-  mesh_msg_ = boost::get<shape_msgs::Mesh>(shape_msg);
-
-  return true;
-}
-
-const shape_msgs::Mesh& RectangleObject::getCollisionMesh() const
-{
-  return mesh_msg_;
-}
-  
-void RectangleObject::setCollisionMesh(const shape_msgs::Mesh& mesh)
-{
-  mesh_msg_ = mesh;
-}
-
-bool RectangleObject::createCollisionBodies(const Eigen::Affine3d &trans)
-{
-  ROS_DEBUG_STREAM_NAMED("shelf","Adding/updating collision body '" << collision_object_name_ << "'");
-
-  // Check if mesh is provided
-  if (!collision_mesh_path_.empty())
-  {
-    // Check if mesh needs to be loaded
-    if (mesh_msg_.triangles.empty()) // load mesh from file      
-    {
-      if (!loadCollisionBodies())
-        return false;
-    }    
-    return visuals_->visual_tools_->publishCollisionMesh(transform(centroid_, trans), collision_object_name_, mesh_msg_, color_);
-  }
-
-  // Just use basic rectangle
-  return visuals_->visual_tools_->publishCollisionCuboid( transform(bottom_right_, trans).translation(),
-                                                          transform(top_left_, trans).translation(),
-                                                          collision_object_name_, color_ );
-}
-
-void RectangleObject::calcCentroid()
-{
-  centroid_ = bottom_right_;
-  centroid_.translation().x() += getDepth() / 2.0;
-  centroid_.translation().y() += getWidth() / 2.0;
-  centroid_.translation().z() += getHeight() / 2.0;
-}
-
-double RectangleObject::getHeight() const
-{
-  return top_left_.translation().z() - bottom_right_.translation().z();
-}
-
-double RectangleObject::getWidth() const
-{
-  return top_left_.translation().y() - bottom_right_.translation().y();
-}
-
-double RectangleObject::getDepth() const
-{
-  return top_left_.translation().x() - bottom_right_.translation().x();
-}
-
-std::string RectangleObject::getName() const
-{
-  return name_;
-}
-
-void RectangleObject::setName(std::string name)
-{
-  name_ = name;
-
-  // Create unique collision name
-  static std::size_t collision_id = 0;
-  collision_id++;
-  collision_object_name_ = name + "_" + boost::lexical_cast<std::string>(collision_id);
-}
-
-const std::string& RectangleObject::getCollisionName() const
-{
-  return collision_object_name_;
-}
-
-void RectangleObject::setCollisionName(std::string name)
-{
-  collision_object_name_ = name;
-}
-
-const std::string& RectangleObject::getHighResMeshPath()
-{
-  return high_res_mesh_path_;
-}
-  
-void RectangleObject::setHighResMeshPath(const std::string &high_res_mesh_path)
-{
-  high_res_mesh_path_ = high_res_mesh_path;
-}
-
-const std::string& RectangleObject::getCollisionMeshPath()
-{
-  return collision_mesh_path_;
-}
-  
-void RectangleObject::setCollisionMeshPath(const std::string &collision_mesh_path)
-{
-  collision_mesh_path_ = collision_mesh_path;
-}
-
-const Eigen::Affine3d& RectangleObject::getCentroid() const
-{
-  return centroid_;
-}
-  
-void RectangleObject::setCentroid(const Eigen::Affine3d& centroid)
-{
-  centroid_ = centroid;
-}
-
-const Eigen::Affine3d& RectangleObject::getBottomRight() const
-{
-  return bottom_right_;
-}
-  
-void RectangleObject::setBottomRight(const Eigen::Affine3d& bottom_right)
-{
-  bottom_right_ = bottom_right;
-  calcCentroid();
-}
-
-const Eigen::Affine3d& RectangleObject::getTopLeft() const
-{
-  return top_left_;
-}
-  
-void RectangleObject::setTopLeft(const Eigen::Affine3d& top_left)
-{
-  top_left_ = top_left;
-  calcCentroid();
-}
-
-const rvt::colors& RectangleObject::getColor() const
-{
-  return color_;
-}
-
-void RectangleObject::setColor(const rvt::colors& color)
-{
-  color_ = color;
-}
-
-
-// -------------------------------------------------------------------------------------------------
 // Bin Object
 // -------------------------------------------------------------------------------------------------
 
@@ -518,18 +294,12 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   }
 
   // Goal bin
-  goal_bin_.reset(new RectangleObject(visuals_, rvt::RED, "goal_bin"));
-  bottom_right = goal_bin_->getBottomRight();
-  bottom_right.translation().x() = goal_bin_x_;
-  bottom_right.translation().y() = goal_bin_y_;
-  bottom_right.translation().z() = goal_bin_z_;
-  goal_bin_->setBottomRight(bottom_right);
-
-  top_left = goal_bin_->getBottomRight();
-  top_left.translation().x() += 0.61595; // goal bin depth (long side)
-  top_left.translation().y() += 0.37465; // goal bin width
-  top_left.translation().z() += 0.2032; // goal bin height
-  goal_bin_->setTopLeft(top_left);
+  goal_bin_.reset(new MeshObject(visuals_, rvt::RED, "goal_bin"));
+  Eigen::Affine3d goal_bin_centroid = Eigen::Affine3d::Identity();
+  goal_bin_centroid.translation().x() = goal_bin_x_;
+  goal_bin_centroid.translation().y() = goal_bin_y_;
+  goal_bin_centroid.translation().z() = goal_bin_z_;
+  goal_bin_->setCentroid(goal_bin_centroid);
 
   goal_bin_->setHighResMeshPath("file://" + package_path + "/meshes/goal_bin/goal_bin.stl");
   goal_bin_->setCollisionMeshPath("file://" + package_path + "/meshes/goal_bin/goal_bin.stl");
@@ -813,7 +583,7 @@ ProductObject::ProductObject(VisualsPtr visuals,
                              const rvt::colors &color,
                              const std::string &name,
                              const std::string &package_path)
-  : RectangleObject( visuals, color, name )
+  : MeshObject( visuals, color, name )
 {
   // Cache the object's mesh
   high_res_mesh_path_ = "file://" + package_path + "/meshes/products/" + name_ + "/recommended.dae";
@@ -825,7 +595,7 @@ ProductObject::ProductObject(VisualsPtr visuals,
 }
 
 ProductObject::ProductObject(const ProductObject& copy)
-  : RectangleObject( copy )
+  : MeshObject( copy )
 { 
 }
 

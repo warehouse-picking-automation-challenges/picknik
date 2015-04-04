@@ -100,12 +100,23 @@ target_link_libraries(remote_control
   ${Boost_LIBRARIES}
 )
 
+# Collision_object library
+add_library(collision_object
+  src/collision_object.cpp
+)
+target_link_libraries(collision_object
+  visuals  
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
 # Shelf library
 add_library(shelf
   src/shelf.cpp
 )
 target_link_libraries(shelf
   visuals
+  collision_object
   manipulation_data
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
