@@ -25,7 +25,6 @@
 namespace picknik_main
 {
 
-MOVEIT_CLASS_FORWARD(CollisionObject);
 MOVEIT_CLASS_FORWARD(RectangleObject);
 MOVEIT_CLASS_FORWARD(MeshObject);
 
@@ -74,29 +73,29 @@ public:
    * \brief Show bin in Rviz (not collision bodies)
    * \param trans - transform from parent container to current container
    */
-  virtual bool visualize(const Eigen::Affine3d& trans) const;
+  // virtual bool visualize(const Eigen::Affine3d& trans) const;
 
   /**
    * \brief Show the outline of the object
    * \param trans - transform from parent container to current container
    * \return true on success
    */
-  virtual bool visualizeWireframe(const Eigen::Affine3d& trans) const;
+  // virtual bool visualizeWireframe(const Eigen::Affine3d& trans) const;
 
   /**
    * \brief Get height of rectangle
    */
-  virtual double getHeight() const;
+  // virtual double getHeight() const;
 
   /**
    * \brief Get width of rectangle
    */
-  virtual double getWidth() const;
+  // virtual double getWidth() const;
 
   /**
    * \brief Get depth of rectangle
    */
-  virtual double getDepth() const;
+  // virtual double getDepth() const;
 
   /**
    * \brief Getter for rectangle name
