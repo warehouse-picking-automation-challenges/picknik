@@ -105,6 +105,47 @@ install DDTR
    cmake ..
    make -j4
 
+# Camera deps
+
+    sudo apt-get install libavcodec-dev
+
+# Clone ARPG repos
+
+    git clone https://github.com/arpg/HAL.git
+    cd HAL/
+    https://github.com/arpg/HAL.git
+    git pull origin features/ros_bridge
+    mkdir build
+
+    cd
+
+    git clone https://github.com/arpg/Pangolin.git
+    git clone https://github.com/arpg/Sophus.git
+    git clone https://github.com/arpg/miniglog.git
+
+# Build them
+
+    cd Sophus/
+    mkdir build
+    cd build
+    ccmake ..
+    make -j4
+
+    cd
+    cd miniglog/
+    mkdir build
+    cd build
+    ccmake ..
+    make -j4
+
+    cd
+    cd HAL/build
+    ccmake ..
+    make -j4
+    cd Applications/SensorViewer
+    ./SensorViewer -cam ros:[topics=/camera/image/rgb_raw]//
+    ./SensorViewer -cam ros:[topics=/camera/image/rgb_raw+/camera/image/depth_raw]//
+    ./SensorViewer -cam convert:[fmt=MONO8]//ros:[topics=/camera/image/rgb_raw+/camera/image/depth_raw]//
 
 ## Architecture
 
@@ -403,4 +444,3 @@ Notes: make sure you have a Robot STATE display added in Rviz.
 ### Grasp Generator
 
 TODO
-
