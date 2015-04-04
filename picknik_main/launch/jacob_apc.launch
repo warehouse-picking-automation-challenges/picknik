@@ -57,18 +57,20 @@
 	      --bin_id $(arg bin_id)
 	      --show_database $(arg show_database) --use_experience $(arg use_experience)">
 
-    <!-- Settings of robot -->
+    <!-- Robot-specific settings -->
+    <rosparam command="load" file="$(find picknik_main)/config/jacob_apc.yaml"/>
     <rosparam command="load" file="$(find jacob_moveit_config)/config/kinematics.yaml"/>
-    <rosparam command="load" file="$(find moveit_grasps)/config/jacob_grasp_data.yaml"/>
+    <rosparam command="load" file="$(find moveit_grasps)/config_robot/jacob_grasp_data.yaml"/>
 
-    <!-- Grasp Debug settings -->
+    <!-- Grasp Settings -->
     <rosparam command="load" file="$(find moveit_grasps)/config/grasp_debug_level.yaml"/>    
+    <rosparam command="load" file="$(find moveit_grasps)/config/grasp_default_parameters.yaml"/>
 
     <!-- Settings of Amazon competition -->
     <rosparam command="load" file="$(find picknik_main)/config/apc_configuration.yaml"/>
 
-    <!-- Robot-specific settings -->
-    <rosparam command="load" file="$(find picknik_main)/config/jacob_apc.yaml"/>
+    <!-- Camera settings -->
+    <rosparam command="load" file="$(find picknik_main)/config/camera_intrinsics.yaml"/>
 
     <!-- Only used by Thunder, read within moveit_ompl -->
     <param name="use_scratch"     if="$(arg use_scratch)" value="true"/>

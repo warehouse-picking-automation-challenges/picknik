@@ -18,7 +18,7 @@
 // ROS
 #include <ros/ros.h>
 
-// MoveIt
+// PickNik
 #include <picknik_main/namespaces.h>
 #include <picknik_main/visuals.h>
 #include <picknik_main/manipulation_data.h>
@@ -77,6 +77,13 @@ public:
    * \param trans - transform from parent container to current container
    */
   bool visualize(const Eigen::Affine3d& trans) const;
+
+  /**
+   * \brief Show the outline of the object
+   * \param trans - transform from parent container to current container
+   * \return true on success
+   */
+  bool visualizeWireframe(const Eigen::Affine3d& trans) const;
 
   /**
    * \brief Load from file a collision mesh
@@ -501,11 +508,7 @@ public:
    * \param bin - the ben holding the product
    * \return pose of product to world   
    */
-  Eigen::Affine3d getWorldPose(const ShelfObjectPtr& shelf, const BinObjectPtr& bin)
-  {
-    Eigen::Affine3d value = getCentroid() * bin->getBottomRight() * shelf->getBottomRight(); 
-    return value;
-  }
+  Eigen::Affine3d getWorldPose(const ShelfObjectPtr& shelf, const BinObjectPtr& bin);
 
 private:
 

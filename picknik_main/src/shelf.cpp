@@ -81,6 +81,11 @@ bool RectangleObject::visualize(const Eigen::Affine3d& trans) const
                                                             color_);
 }
 
+bool RectangleObject::visualizeWireframe(const Eigen::Affine3d& trans) const
+{
+  return visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans), getDepth(), getWidth(), getHeight(), color_);
+}
+
 bool RectangleObject::loadCollisionBodies()
 {
   shapes::Shape *mesh = shapes::createMeshFromResource(collision_mesh_path_); // make sure its prepended by file://
@@ -822,6 +827,11 @@ ProductObject::ProductObject(VisualsPtr visuals,
 ProductObject::ProductObject(const ProductObject& copy)
   : RectangleObject( copy )
 { 
+}
+
+Eigen::Affine3d ProductObject::getWorldPose(const ShelfObjectPtr& shelf, const BinObjectPtr& bin)
+{
+  return shelf->getBottomRight() * bin->getBottomRight() * getCentroid();
 }
 
 } // namespace

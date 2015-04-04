@@ -146,6 +146,14 @@ private:
 
   // Perception processing has started
   bool is_processing_perception_;
+
+  // Camera intrinsics
+  double camera_fx_; 
+  double camera_fy_; 
+  double camera_cx_; 
+  double camera_cy_; 
+  double camera_min_depth_; 
+  
   
 }; // end class
 

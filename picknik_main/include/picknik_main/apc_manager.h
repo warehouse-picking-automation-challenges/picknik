@@ -219,7 +219,7 @@ public:
    * \param order - desired object
    * \return true on success
    */
-  bool perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder order, bool verbose);
+  bool perceiveObject(WorkOrder work_order, bool verbose);
 
   /**
    * \brief Move object into the goal bin
