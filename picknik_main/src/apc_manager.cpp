@@ -205,12 +205,12 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to,
   return true;
 }
 
-bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t jump_to)
+bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::size_t jump_to)
 {
   // Error check
-  if (!order.product_ || !order.bin_)
+  if (!work_order.product_ || !work_order.bin_)
   {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Invalid pointers to product or bin in order");
+    ROS_ERROR_STREAM_NAMED("apc_manager","Invalid pointers to product or bin in work_order");
     return false;
   }
 
@@ -225,7 +225,6 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
   moveit::core::RobotStatePtr the_grasp_state(new moveit::core::RobotState(*current_state)); // Allocate robot states
   moveit_msgs::RobotTrajectory approach_trajectory_msg;
   bool wait_for_trajetory = false;
-  Eigen::Affine3d global_object_pose; // the pose of the object we want to desire, in world coordiantes
 
   // Prevent jump-to errors
   if (jump_to == 3)
@@ -292,17 +291,17 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
         break;
 
         // #################################################################################################################
-      case 2: manipulation_->statusPublisher("Finding location of product " + order.product_->getName() + " from " + order.bin_->getName());
+      case 2: manipulation_->statusPublisher("Finding location of product " + work_order.product_->getName() + " from " + work_order.bin_->getName());
 
         // Move camera to desired bin
-        if (!focusSceneOnBin( order.bin_->getName() ))
+        if (!focusSceneOnBin( work_order.bin_->getName() ))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to setup planning scene");
           return false;
         }
 
         // Get pose of product
-        if (!perceiveObject(global_object_pose, order, verbose))
+        if (!perceiveObject(work_order, verbose))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
           return false;
@@ -310,16 +309,16 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
         break;
 
         // #################################################################################################################
-      case 3: manipulation_->statusPublisher("Get grasp for product " + order.product_->getName() + " from " + order.bin_->getName());
+      case 3: manipulation_->statusPublisher("Get grasp for product " + work_order.product_->getName() + " from " + work_order.bin_->getName());
 
         // Choose which arm to use
-        arm_jmg = manipulation_->chooseArm(global_object_pose);
+        arm_jmg = manipulation_->chooseArm(work_order.product_->getWorldPose(shelf_, work_order.bin_));
 
         // Allow fingers to touch object
-        manipulation_->allowFingerTouch(order.product_->getCollisionName(), arm_jmg);
+        manipulation_->allowFingerTouch(work_order.product_->getCollisionName(), arm_jmg);
 
         // Generate and chose grasp
-        if (!manipulation_->chooseGrasp(global_object_pose, arm_jmg, chosen, verbose))
+        if (!manipulation_->chooseGrasp(work_order, arm_jmg, chosen, verbose))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","No grasps found");
           return false;
@@ -378,7 +377,7 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
       case 7: manipulation_->statusPublisher("Cartesian move to the-grasp position");
 
         // Create the collision objects
-        if (!focusSceneOnBin( order.bin_->getName() ))
+        if (!focusSceneOnBin( work_order.bin_->getName() ))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to setup planning scene");
           return false;
@@ -409,7 +408,7 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
         }
 
         // Attach collision object
-        visuals_->visual_tools_->attachCO(order.product_->getCollisionName(), grasp_datas_[arm_jmg]->parent_link_name_);
+        visuals_->visual_tools_->attachCO(work_order.product_->getCollisionName(), grasp_datas_[arm_jmg]->parent_link_name_);
 
         ROS_INFO_STREAM_NAMED("apc_manager","Waiting " << config_->wait_after_grasp_ << " seconds after grasping");
         ros::Duration(config_->wait_after_grasp_).sleep();
@@ -461,11 +460,11 @@ bool APCManager::graspObjectPipeline(WorkOrder order, bool verbose, std::size_t 
         }
 
         // Delete from planning scene the product
-        shelf_->deleteProduct(order.bin_->getName(), order.product_->getName());
+        shelf_->deleteProduct(work_order.bin_->getName(), work_order.product_->getName());
 
         // Unattach from EE
-        visuals_->visual_tools_->cleanupACO( order.product_->getCollisionName() ); // use unique name
-        visuals_->visual_tools_->cleanupCO( order.product_->getCollisionName() ); // use unique name
+        visuals_->visual_tools_->cleanupACO( work_order.product_->getCollisionName() ); // use unique name
+        visuals_->visual_tools_->cleanupCO( work_order.product_->getCollisionName() ); // use unique name
         break;
 
         // #################################################################################################################
@@ -830,12 +829,12 @@ bool APCManager::testCameraPositions()
       return false;
     }
     const ProductObjectPtr product = bin->getProducts()[0]; // Choose first object
-    WorkOrder order(bin, product);
+    WorkOrder work_order(bin, product);
 
     // Get pose
     Eigen::Affine3d object_pose;
     bool verbose = true;
-    if (!perceiveObject(object_pose, order, verbose))
+    if (!perceiveObject(work_order, verbose))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to get product");
       return false;
@@ -972,6 +971,7 @@ bool APCManager::testGraspGenerator()
 
       const BinObjectPtr bin = bin_it->second;
       ProductObjectPtr product = bin->getProducts()[0]; // Choose first object
+      WorkOrder work_order(bin, product);
 
       // Get the pose of the product
       //perceiveObjectFake(global_object_pose, product);
@@ -984,7 +984,7 @@ bool APCManager::testGraspGenerator()
 
       // Generate and chose grasp
       bool success = true;
-      if (!manipulation_->chooseGrasp(global_object_pose, arm_jmg, chosen, verbose_))
+      if (!manipulation_->chooseGrasp(work_order, arm_jmg, chosen, verbose_))
       {
         ROS_WARN_STREAM_NAMED("apc_manager","No grasps found for product " << product->getName() << " in bin " << bin->getName() );
         success = false;
@@ -1192,10 +1192,10 @@ bool APCManager::perceiveBinWithCamera(BinObjectPtr bin)
 }
 
 
-bool APCManager::perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder order, bool verbose)
+bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
 {
-  BinObjectPtr& bin = order.bin_;
-  ProductObjectPtr& product = order.product_;
+  BinObjectPtr& bin = work_order.bin_;
+  ProductObjectPtr& product = work_order.product_;
 
   // Move camera to the bin
   ROS_INFO_STREAM_NAMED("apc_manager","Moving to " << bin->getName());
@@ -1222,10 +1222,6 @@ bool APCManager::perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder o
   {
     return false;
   }
-
-  // Get the global object pose
-  global_object_pose = product->getWorldPose(shelf_, bin);
-  visuals_->visual_tools_->publishZArrow(global_object_pose, rvt::BLACK, rvt::LARGE);
 
   return true;
 }
@@ -1303,12 +1299,12 @@ bool APCManager::loadShelfWithOnlyOneProduct(const std::string& product_name)
   return true;
 }
 
-bool APCManager::loadShelfContents(std::string order_file_path)
+bool APCManager::loadShelfContents(std::string work_order_file_path)
 {
   // Choose file
   AmazonJSONParser parser(verbose_, visuals_);
   // Parse json
-  return parser.parse(order_file_path, package_path_, shelf_, orders_);
+  return parser.parse(work_order_file_path, package_path_, shelf_, orders_);
 }
 
 bool APCManager::visualizeShelf()

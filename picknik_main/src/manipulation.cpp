@@ -108,26 +108,54 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   ROS_INFO_STREAM_NAMED("manipulation","Manipulation Ready.");
 }
 
-bool Manipulation::chooseGrasp(const Eigen::Affine3d& object_pose, const robot_model::JointModelGroup* arm_jmg,
+bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointModelGroup* arm_jmg,
                                moveit_grasps::GraspCandidatePtr& chosen, bool verbose)
 {
+  BinObjectPtr& bin = work_order.bin_;
+  ProductObjectPtr& product = work_order.product_;
+
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","chooseGrasp()");
+
+  Eigen::Affine3d world_to_product = product->getWorldPose(shelf_, bin);
 
   if (verbose)
   {
-    visuals_->visual_tools_->publishAxis(object_pose);
-    visuals_->visual_tools_->publishText(object_pose, "object_pose", rvt::BLACK, rvt::SMALL, false);
+    visuals_->visual_tools_->publishAxis(world_to_product);
+    visuals_->visual_tools_->publishText(world_to_product, "object_pose", rvt::BLACK, rvt::SMALL, false);
   }
+
+  // Get bounding box
+  std::cout << "Before getBoundingingBoxFromMesh(): " << std::endl;
+  std::cout << "  Cuboid Pose: "; printTransform(product->getCentroid());
+  std::cout << "  Height: " << product->getHeight() << std::endl;
+  std::cout << "  Depth: " << product->getDepth() << std::endl;
+  std::cout << "  Width: " << product->getWidth() << std::endl;
+  Eigen::Affine3d cuboid_pose;
+  double depth, width, height;
+  if (!grasp_generator_->getBoundingBoxFromMesh(product->getCollisionMesh(), cuboid_pose, depth, width, height))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to get bounding box");
+    return false;
+  }
+  ROS_WARN_STREAM_NAMED("temp","todo");
+  // product->setDepth(depth);
+  // product->setWidth(width);
+  // product->setHeight(height);
+  std::cout << "After getBoundingingBoxFromMesh(): " << std::endl;
+  std::cout << "  Cuboid Pose: "; printTransform(product->getCentroid());
+  std::cout << "  Height: " << product->getHeight() << std::endl;
+  std::cout << "  Depth: " << product->getDepth() << std::endl;
+  std::cout << "  Width: " << product->getWidth() << std::endl;
+
+  // Visualize
+  product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()));
 
   // Generate all possible grasps
   std::vector<moveit_msgs::Grasp> possible_grasps;
 
-  double depth = 0.05;
-  double width = 0.05;
-  double height = 0.05;
   double max_grasp_size = 0.10; // TODO: verify max object size Open Hand can grasp
-  grasp_generator_->generateGrasps( object_pose, depth, width, height, max_grasp_size,
-                                    grasp_datas_[arm_jmg], possible_grasps);
+  grasp_generator_->generateGrasps( world_to_product, product->getDepth(), product->getWidth(), product->getHeight(),
+                                    max_grasp_size, grasp_datas_[arm_jmg], possible_grasps);
 
   // Convert to the correct type for filtering
   std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates;
@@ -282,7 +310,7 @@ bool Manipulation::recordTrajectoryToFile(const std::string &file_path)
   // Reset the stop button
   parent_->getRemoteControl()->setStop(false);
 
-  output_file.close();  
+  output_file.close();
   return true;
 }
 
@@ -1019,8 +1047,7 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   ROS_INFO_STREAM_NAMED("manipulation","Perturbing camera for perception");
 
   // Choose which arm to utilize for task
-  Eigen::Affine3d ee_pose = bin->getCentroid();
-  ee_pose = transform(ee_pose, shelf_->getBottomRight()); // convert to world coordinates
+  Eigen::Affine3d ee_pose = transform(bin->getCentroid(), shelf_->getBottomRight()); // convert to world coordinates
   const robot_model::JointModelGroup* arm_jmg = chooseArm(ee_pose);
 
   //Move camera left
@@ -1077,8 +1104,7 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
 bool Manipulation::moveCameraToBin(BinObjectPtr bin)
 {
   // Create pose to find IK solver
-  Eigen::Affine3d ee_pose = bin->getCentroid();
-  ee_pose = transform(ee_pose, shelf_->getBottomRight()); // convert to world coordinates
+  Eigen::Affine3d ee_pose = transform(bin->getCentroid(), shelf_->getBottomRight()); // convert to world coordinates  
 
   // Move centroid backwards
   ee_pose.translation().x() += config_->camera_x_translation_from_bin_;

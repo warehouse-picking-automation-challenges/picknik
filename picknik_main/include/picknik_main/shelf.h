@@ -79,6 +79,13 @@ public:
   bool visualize(const Eigen::Affine3d& trans) const;
 
   /**
+   * \brief Show the outline of the object
+   * \param trans - transform from parent container to current container
+   * \return true on success
+   */
+  bool visualizeWireframe(const Eigen::Affine3d& trans) const;
+
+  /**
    * \brief Load from file a collision mesh
    * \return true on success
    */

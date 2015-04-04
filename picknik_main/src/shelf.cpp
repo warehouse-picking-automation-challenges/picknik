@@ -81,6 +81,11 @@ bool RectangleObject::visualize(const Eigen::Affine3d& trans) const
                                                             color_);
 }
 
+bool RectangleObject::visualizeWireframe(const Eigen::Affine3d& trans) const
+{
+  return visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans), getDepth(), getWidth(), getHeight(), color_);
+}
+
 bool RectangleObject::loadCollisionBodies()
 {
   shapes::Shape *mesh = shapes::createMeshFromResource(collision_mesh_path_); // make sure its prepended by file://

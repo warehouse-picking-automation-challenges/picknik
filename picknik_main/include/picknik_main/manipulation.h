@@ -76,7 +76,7 @@ public:
    * \brief Choose the grasp for the object
    * \return true on success
    */
-  bool chooseGrasp(const Eigen::Affine3d& object_pose, const robot_model::JointModelGroup* arm_jmg,
+  bool chooseGrasp(WorkOrder work_order, const robot_model::JointModelGroup* arm_jmg,
                    moveit_grasps::GraspCandidatePtr& chosen, bool verbose);
 
   /**
