@@ -31,38 +31,127 @@ Also, to reduce debug output add the following to your bashrc:
 
 ### Perception Pipeline
 
-sudo apt-get install libzmq3-dev
-sudo apt-get install cmake-curses-gui
-git clone git@github.com:zeromq/zmqpp.git
+Install dependencies for node:
+   1, install zmq
+       sudo apt-get install libzmq3-dev
 
+   2, install gui version of cmake
+       sudo apt-get install cmake-curses-gui
 
+   3, add cpp binders for zmq
+       git clone git@github.com:zeromq/zmqpp.git
 
-makedir code
-cd clone
-git clone github arpg/CoreDev
+   4, install protobuf
+       https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gzinstall 
+       run ./configure
+       make -j3
+       sudo make install all
 
-cd CoreDev
-mkdir build
-git submodule init
-git submodule update
+       By default, the upper command will install the lib to /usr/local/lib/proto*, make sure all the protobuf libraries files is in /usr/lib/proto*. so you probability need to do
+	   cp /usr/local/lib/proto* /usr/lib/
 
-cd build
-cmake ..
+configurations
+    1, disable pangolin_video
+       ccmake .
+       set BUILD_PANGOLIN_GUI to OFF
+    2, go to the CMakeList.txt file under HAL/Applications comment out everything expect for SensorViewer
 
-# Now readme
+Compile:
+    now you should be able to compile CoreDev by:
+	cmake .
+    make
+	
+install kangaroo:
+    git clone git@github.com:arpg/Kangaroo.git
+	cd kangaroo
+	mkdir build
+    cd build
+	ccmake ..
+	make -j
+	Notice: you may have some errors when building the examples, this is because we disabled the pangolin::video function before. just ignore it by now.
 
-# Now crap
-ccmake .
-Enter changes from ON to OFF
-diable pangolin_gui
-# sudo apt-get intsall libprotoc-dev protobuf-compiler
-clone google ptorobuf and compile
+install wallaby:
+   install cudpp
+   git clone git@github.com:cudpp/cudpp.git
+   git submodule init
+   git submodule update
+   mkdir build
+   cd build
+   cmake ..
+   make -j4
+
+   now copy the following header files..
+   cp /cudpp/cudpp/include/cudpp_config.h /usr/local/include/
+   cp /cudpp/cudpp/include/cudpp_hash.h /usr/local/include/
+
+   change permission from root to the user
+   sudo chown -R robot cudpp_config.h
+   sudo chown -R robot cudpp_hash.h
+
+   install libglm
+   sudo apt-get install libglm-dev
+
+   compile wallaby
+   cd/wallaby
+   mkdir build
+   cmake ..
+   make -j4
+
+install DDTR
+   git init submodule
+   git update submodule
+   mkdir build
+   cd build
+   cmake ..
+   make -j4
+
+# Camera deps
+
+    sudo apt-get install libavcodec-dev
+
+# Clone ARPG repos
+
+    git clone https://github.com/arpg/HAL.git
+    cd HAL/
+    https://github.com/arpg/HAL.git
+    git pull origin features/ros_bridge
+    mkdir build
+
+    cd
+
+    git clone https://github.com/arpg/Pangolin.git
+    git clone https://github.com/arpg/Sophus.git
+    git clone https://github.com/arpg/miniglog.git
+
+# Build them
+
+    cd Sophus/
+    mkdir build
+    cd build
+    ccmake ..
+    make -j4
+
+    cd
+    cd miniglog/
+    mkdir build
+    cd build
+    ccmake ..
+    make -j4
+
+    cd
+    cd HAL/build
+    ccmake ..
+    make -j4
+    cd Applications/SensorViewer
+    ./SensorViewer -cam ros:[topics=/camera/image/rgb_raw]//
+    ./SensorViewer -cam ros:[topics=/camera/image/rgb_raw+/camera/image/depth_raw]//
+    ./SensorViewer -cam convert:[fmt=MONO8]//ros:[topics=/camera/image/rgb_raw+/camera/image/depth_raw]//
 
 ## Architecture
 
 ![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/picknik_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
 
-## Run
+## Ru
 
 ### Generate Mock Amazon order
 
@@ -356,22 +445,3 @@ Load meshes
 
 Notes: make sure you have a Robot STATE display added in Rviz.
 
-### Grasp Generator
-
-TODO
-
-## Collaboration Notes
-
-This just helps Dave know what to pull from when updating.
-
-### Repos Andy commits to:
-
-- cu_amazon
-- open_hand_controller
-- baxter_common
-- baxter_ssh
-
-### Repos Jorge commits to:
-
-- cu_amazon
-- ?
