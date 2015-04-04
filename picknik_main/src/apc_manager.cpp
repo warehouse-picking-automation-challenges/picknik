@@ -50,7 +50,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   // Create tf transformer
   tf_.reset(new tf::TransformListener(nh_private_));
   // TODO: remove these lines, only an attempt to fix loadPlanningSceneMonitor bug
-  //ros::spinOnce();
+  ros::spinOnce();
   //ros::Duration(0.25).sleep();
 
   // Load planning scene monitor
@@ -1211,10 +1211,11 @@ bool APCManager::perceiveObject(Eigen::Affine3d& global_object_pose, WorkOrder o
   perception_interface_->startPerception(product, bin);
 
   // Perturb camera
-  if (!manipulation_->perturbCamera(bin))
-  {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
-  }
+  if (false)
+    if (!manipulation_->perturbCamera(bin))
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
+    }
 
   // Get result from perception pipeline
   if (!perception_interface_->endPerception(product, bin))

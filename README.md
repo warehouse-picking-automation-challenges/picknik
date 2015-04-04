@@ -141,9 +141,9 @@ Rviz Visualizers of robot states and debug markers in differnet windows
     roslaunch picknik_main rviz_display.launch jacob:=false
     roslaunch picknik_main rviz.launch jacob:=false
 
-Run either the real or a fake object recognition server
+Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
-    roslaunch moveit_arpg_perception object_recognition.launch
+	roslaunch picknik_main fake_perception_server.launch
 
 A transform of the camera is needed
 
@@ -164,9 +164,9 @@ Rviz Visualizers of robot states and debug markers in differnet windows
     roslaunch picknik_main rviz_display.launch jacob:=false
     roslaunch picknik_main rviz.launch jacob:=false
 
-Run either the real or a fake object recognition server
+Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
-    roslaunch moveit_arpg_perception object_recognition.launch
+	roslaunch picknik_main fake_perception_server.launch
 
 A transform of the camera is needed
 
@@ -191,9 +191,9 @@ Rviz Visualizers of robot states and debug markers in differnet windows
     roslaunch picknik_main rviz_display.launch 
     roslaunch picknik_main rviz.launch
 
-Run either the real or a fake object recognition server
+Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
-    roslaunch moveit_arpg_perception object_recognition.launch
+	roslaunch picknik_main fake_perception_server.launch
 
 A transform of the camera is needed
 
@@ -219,9 +219,9 @@ Rviz Visualizers of robot states and debug markers in differnet windows (differe
     roslaunch picknik_main rviz_display.launch
     roslaunch picknik_main rviz.launch
 	
-Run either the real or a fake object recognition server
+Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
-    roslaunch moveit_arpg_perception object_recognition.launch
+	roslaunch picknik_main fake_perception_server.launch
 
 A transform of the camera is needed
 
@@ -230,6 +230,10 @@ A transform of the camera is needed
 Run APC Manager (main program) for JACOB on hardware
 
 	roslaunch picknik_main jacob_apc.launch mode:=1
+
+### ROS Video Integration
+
+    rosrun image_view image_view image:=/camera/image/rgb_raw
 
 ### Joystick Control
 

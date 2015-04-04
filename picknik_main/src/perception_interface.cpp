@@ -38,10 +38,14 @@
 
 // PickNik
 #include <picknik_main/perception_interface.h>
+#include <picknik_main/namespaces.h>
 
 // ROS
 #include <tf_conversions/tf_eigen.h>
 #include <std_msgs/Bool.h>
+
+// Parameter loading
+#include <rviz_visual_tools/ros_param_utilities.h>
 
 namespace picknik_main
 {
@@ -61,6 +65,14 @@ PerceptionInterface::PerceptionInterface(bool verbose, VisualsPtr visuals, Shelf
   std::size_t queue_size = 10;
   stop_perception_pub_ = nh_.advertise<std_msgs::Bool>( "/perception/stop_perception", queue_size );
 
+
+  // Load caamera intrinsics
+  const std::string parent_name = "perception_interface"; // for namespacing logging messages  
+  rvt::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_fx_);
+  rvt::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_fy_);
+  rvt::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_cx_);
+  rvt::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_cy_);
+  rvt::getDoubleParameter(parent_name, nh, "camera_intrinsics/min_depth", camera_min_depth_);
 
   ROS_INFO_STREAM_NAMED("perception_interface","PerceptionInterface Ready.");
 }
@@ -343,8 +355,19 @@ bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::T
   time_stamp = camera_transform.stamp_;
 }
 
-bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera)
+bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera) 
 {
+  // get the pose of the top left point which depth is 0.5 meters away 
+  Eigen::Vector3d top_left, top_right, bottom_left, bottom_right;
+  // top left (0,0) 
+  top_left << -camera_min_depth_ * (camera_cy_ - 0) / camera_fx_ , -camera_min_depth_ * (camera_cx_ - 0) / camera_fy_ , camera_min_depth_;
+  // top right (640,0) 
+  top_right << -camera_min_depth_ * (camera_cy_ - 640) / camera_fx_ , -camera_min_depth_ * (camera_cx_ - 0) / camera_fy_ , camera_min_depth_;
+  // bot left (0,480)
+  bottom_left << -camera_min_depth_ * (camera_cy_ - 0) / camera_fx_ , -camera_min_depth_ * (camera_cx_ - 480) / camera_fy_ , camera_min_depth_;
+  // bot right (640.480) 
+  bottom_right << -camera_min_depth_ * (camera_cy_ - 640) / camera_fx_ , -camera_min_depth_ * (camera_cx_ - 480) / camera_fy_ , camera_min_depth_;
+
   const double distance_from_camera = 0.3;
   const double height = 480 * config_->camera_frame_display_scale_; // size of camera view finder
   const double width = 640 * config_->camera_frame_display_scale_; // size of camera view finder

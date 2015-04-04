@@ -18,7 +18,7 @@
 // ROS
 #include <ros/ros.h>
 
-// MoveIt
+// PickNik
 #include <picknik_main/namespaces.h>
 #include <picknik_main/visuals.h>
 #include <picknik_main/manipulation_data.h>

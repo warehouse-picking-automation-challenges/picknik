@@ -2,3 +2,4 @@
 *.blend
 
 CATKIN_IGNORE
+*.csv
