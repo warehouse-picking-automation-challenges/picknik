@@ -15,7 +15,7 @@
     ],
     "bin_D":
     [
-      "oreo_mega_stuff"
+      "oreo_mega_stuf"
     ],
     "bin_E":
     [
@@ -55,7 +55,7 @@
   [
     {
       "bin": "bin_D",
-      "item": "oreo_mega_stuff"
+      "item": "oreo_mega_stuf"
     },
     {
       "bin": "bin_G",
