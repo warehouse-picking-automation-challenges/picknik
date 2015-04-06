@@ -115,7 +115,10 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   const std::string parent_name = "shelf"; // for namespacing logging messages
 
   // Loaded shelf parameter values
-  if (!rvt::getDoubleParameter(parent_name, nh, "shelf_distance_from_robot", shelf_distance_from_robot_))
+  std::vector<double> world_to_shelf_transform_doubles;
+  if (!rvt::getDoubleParameters(parent_name, nh, "world_to_shelf_transform", world_to_shelf_transform_doubles))
+    return false;
+  if (!rvt::convertDoublesToEigen(parent_name, world_to_shelf_transform_doubles, world_to_shelf_transform_))
     return false;
   if (!rvt::getDoubleParameter(parent_name, nh, "shelf_width", shelf_width_))
     return false;
@@ -171,9 +174,10 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     return false;
 
   // Calculate shelf corners for *this ShelfObject
-  bottom_right_.translation().x() = shelf_distance_from_robot_;
-  bottom_right_.translation().y() = -shelf_width_/2.0;
-  bottom_right_.translation().z() = 0;
+  bottom_right_ = world_to_shelf_transform_;
+  // bottom_right_.translation().x() = world_to_shelf_transform_.translation().x();
+  // bottom_right_.translation().y() = -shelf_width_/2.0;
+  // bottom_right_.translation().z() = 0;
   top_left_.translation().x() = bottom_right_.translation().x() + shelf_depth_;
   top_left_.translation().y() = shelf_width_/2.0;
   top_left_.translation().z() = shelf_height_;
@@ -353,12 +357,13 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   collision_mesh_path_ = high_res_mesh_path_;
 
   // Calculate offset for high-res mesh
+  //high_res_mesh_offset_ = Eigen::Affine3d::Identity();
   high_res_mesh_offset_ = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitX())
     * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
     * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ());
-  high_res_mesh_offset_.translation().x() = bottom_right_.translation().x() + shelf_depth_ / 2.0;
-  high_res_mesh_offset_.translation().y() = 0;
-  //high_res_mesh_offset_.translation().z() = first_bin_from_bottom_ - 0.81; // TODO remove this height - only for temp table setup
+  high_res_mesh_offset_.translation().x() = shelf_depth_ / 2.0;
+  high_res_mesh_offset_.translation().y() = shelf_width_ / 2.0;
+  high_res_mesh_offset_.translation().z() = 0; //first_bin_from_bottom_ - 0.81; // TODO remove this height - only for temp table setup
 
 
   // Calculate offset - FOR COLLISION
@@ -415,8 +420,10 @@ bool ShelfObject::visualizeAxis(VisualsPtr visuals) const
 
 bool ShelfObject::visualize(bool show_products) const
 {
+  Eigen::Affine3d high_res_pose = bottom_right_ * high_res_mesh_offset_;
+
   // Publish mesh
-  if (!visuals_->visual_tools_display_->publishMesh(high_res_mesh_offset_, high_res_mesh_path_, rvt::BROWN, 1, "Shelf"))
+  if (!visuals_->visual_tools_display_->publishMesh(high_res_pose, high_res_mesh_path_, rvt::BROWN, 1, "Shelf"))
     return false;
 
   // Show each bin's products
@@ -439,8 +446,8 @@ bool ShelfObject::visualize(bool show_products) const
 
   // Show workspace
   static const double GAP_TO_SHELF = 0.1;
-  const double x1 = shelf_distance_from_robot_ - GAP_TO_SHELF;
-  const double x2 = shelf_distance_from_robot_ - GAP_TO_SHELF - 2;
+  const double x1 = world_to_shelf_transform_.translation().x() - GAP_TO_SHELF;
+  const double x2 = world_to_shelf_transform_.translation().x() - GAP_TO_SHELF - 2;
   const Eigen::Vector3d point1(x1, 1, 0);
   const Eigen::Vector3d point2(x2, -1, 0.001);
   visuals_->visual_tools_display_->publishCuboid(point1, point2, rvt::DARK_GREY);
@@ -513,7 +520,7 @@ bool ShelfObject::createCollisionShelfDetailed()
   ROS_DEBUG_STREAM_NAMED("shelf","Creating collision body with name " << collision_object_name_);
 
   // Publish mesh
-  if (!visuals_->visual_tools_->publishCollisionMesh(high_res_mesh_offset_, collision_object_name_, high_res_mesh_path_, color_))
+  if (!visuals_->visual_tools_->publishCollisionMesh(high_res_mesh_offset_, collision_object_name_, high_res_mesh_path_, rvt::BLUE)) //color_))
     return false;
 
   // Add products to shelves

@@ -236,7 +236,8 @@ public:
   }
   
   // Loaded shelf parameter values
-  double shelf_distance_from_robot_;
+  //double shelf_distance_from_robot_;
+  Eigen::Affine3d world_to_shelf_transform_;
   double shelf_width_;
   double shelf_height_;
   double shelf_depth_;
@@ -253,6 +254,7 @@ public:
   double bin_short_height_;
   double bin_tall_height_;
   double bin_depth_;
+
   double bin_top_margin_;
   double bin_left_margin_;
   double num_bins_;

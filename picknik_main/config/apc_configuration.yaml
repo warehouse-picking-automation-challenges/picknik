@@ -13,7 +13,7 @@ first_bin_from_right: 0.025
 #bin_middle_width: 0.2921 #measures
 
 bin_right_width: 0.236
-bin_middle_width: 0.298
+bin_middle_width: 0.299
 bin_left_width: 0.264
 
 bin_short_height: 0.2286
@@ -27,14 +27,14 @@ num_bins: 12.0
 # Movement config
 approach_distance_desired: 0.3
 lift_distance_desired: 0.02
-place_goal_down_distance_desired: 0.04
+place_goal_down_distance_desired: 0.1
 
 # Safety
 collision_wall_safety_margin: 0.01 # 0.02
 
 # Sleep timers
-wait_before_grasp: 0.1
-wait_after_grasp: 0.1
+wait_before_grasp: 1.0
+wait_after_grasp: 1.0
 
 # Perception Data
 camera:

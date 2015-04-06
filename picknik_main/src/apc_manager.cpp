@@ -395,7 +395,6 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
           ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move to the-grasp position");
           return false;
         }
-
         ROS_INFO_STREAM_NAMED("apc_manager","Waiting " << config_->wait_before_grasp_ << " seconds before grasping");
         ros::Duration(config_->wait_after_grasp_).sleep();
         break;
@@ -413,6 +412,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         visuals_->visual_tools_->attachCO(work_order.product_->getCollisionName(), grasp_datas_[arm_jmg]->parent_link_->getName());
 
         ROS_INFO_STREAM_NAMED("apc_manager","Waiting " << config_->wait_after_grasp_ << " seconds after grasping");
+
         ros::Duration(config_->wait_after_grasp_).sleep();
         break;
 
@@ -458,6 +458,12 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         if (!manipulation_->openEndEffector(true, arm_jmg))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
+          return false;
+        }
+
+        if (!liftFromGoalBin(arm_jmg))
+        {
+          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to lift up from goal bin");
           return false;
         }
 
@@ -1247,7 +1253,20 @@ bool APCManager::placeObjectInGoalBin(const robot_model::JointModelGroup* arm_jm
   bool lift = false;
   if (!manipulation_->executeVerticlePath(arm_jmg, config_->place_goal_down_distance_desired_, lift))
   {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Failed to lower product into goal bin distance "
+    ROS_ERROR_STREAM_NAMED("apc_manager","Failed to lower product into goal bin, using distance "
+                           << config_->place_goal_down_distance_desired_);
+    return false;
+  }
+
+  return true;
+}
+
+bool APCManager::liftFromGoalBin(const robot_model::JointModelGroup* arm_jmg)
+{
+  bool lift = true;
+  if (!manipulation_->executeVerticlePath(arm_jmg, config_->place_goal_down_distance_desired_, lift))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Failed to raise arm back up from goal, using distance "
                            << config_->place_goal_down_distance_desired_);
     return false;
   }

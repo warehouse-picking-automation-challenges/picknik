@@ -1830,9 +1830,9 @@ bool Manipulation::waitForRobotToStop(const double& timeout)
   ROS_INFO_STREAM_NAMED("manipulation","Waiting for robot to stop moving");
   ros::Time when_to_stop = ros::Time::now() + ros::Duration(timeout);
 
-  static const double UPDATE_RATE = 0.5; // how often to check if robot is stopped
+  static const double UPDATE_RATE = 0.1; // how often to check if robot is stopped
   static const double POSITION_ERROR_THRESHOLD = 0.002;
-  static const std::size_t REQUIRED_STABILITY_PASSES = 3; // how many times it must be within threshold in a row
+  static const std::size_t REQUIRED_STABILITY_PASSES = 4; // how many times it must be within threshold in a row
   std::size_t stability_passes = 0;
   double error;
   // Get the current position
@@ -1861,7 +1861,7 @@ bool Manipulation::waitForRobotToStop(const double& timeout)
     if (stopped)
     {
       stability_passes++;
-      ROS_INFO_STREAM_NAMED("manipulation","On stability pass " << stability_passes);
+      //ROS_INFO_STREAM_NAMED("manipulation","On stability pass " << stability_passes);
     }
     else
     {

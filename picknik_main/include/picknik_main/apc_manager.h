@@ -228,6 +228,12 @@ public:
   bool placeObjectInGoalBin(const robot_model::JointModelGroup* arm_jmg);
 
   /**
+   * \brief Lift from goal bin
+   * \return true on success
+   */
+  bool liftFromGoalBin(const robot_model::JointModelGroup* arm_jmg);
+
+  /**
    * \brief Move both arms to their start location
    * \param optionally specify which arm to use
    * \return true on success
