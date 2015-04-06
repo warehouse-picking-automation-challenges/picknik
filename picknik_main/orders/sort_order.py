@@ -26,8 +26,8 @@ class ContestInterface(object):
     # Things to consider:
     # 'first_years_take_and_toss_straw_cup',  # berkeley data had cups, amz cup
     # 'oreo_mega_stuf',  # berkeley data had double ff, amz example one
-    # 'dr_browns_bottle_brush',  # (no longer) missing from berkeley
-    # 'laugh_out_loud_joke_book'  # (no longer) missing from berkeley
+    # 'dr_browns_bottle_brush',  # added later
+    # 'laugh_out_loud_joke_book'  # added later
 
     def __init__(self, bin_contents, work_order):
         self.bin_contents = bin_contents
