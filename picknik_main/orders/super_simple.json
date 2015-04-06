@@ -3,7 +3,7 @@
   {
     "bin_A":
     [
-      "oreo_mega_stuff","champion_copper_plus_spark_plug"
+      "oreo_mega_stuf","champion_copper_plus_spark_plug"
     ],
     "bin_B":
     [
@@ -37,7 +37,7 @@
   [
     {
       "bin": "bin_A",
-      "item": "oreo_mega_stuff"
+      "item": "oreo_mega_stuf"
     },
     {
       "bin": "bin_B",
