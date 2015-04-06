@@ -31,6 +31,8 @@ Also, to reduce debug output add the following to your bashrc:
 
 ## Install dependencies for node:
 
+NOTE: WE NO LONGER NEED NODE
+
    1, install zmq
    
        sudo apt-get install libzmq3-dev
@@ -213,7 +215,7 @@ Its help documentation:
     optional arguments:
       -h, --help       show this help message and exit
 
-### Turn on Yale Controller
+### Start Yale Controller
 
 If needed.
 
@@ -227,6 +229,16 @@ Check to make sure you have ``dialout`` group
 
     sudo adduser second_user dialout
 
+## Start Realsense Camera
+
+Start driver on computer where USB3 camera is plugged in
+
+    roslaunch realsense_camera realsense_camera.launch
+
+Testing
+
+    rosrun image_view image_view image:=/camera/image/rgb_raw
+	
 ## Start Robots
 
 ### Simulation of BAXTER
@@ -235,9 +247,8 @@ Start fake controllers
 
     roslaunch baxter_control baxter_visualization.launch
 
-Rviz Visualizers of robot states and debug markers in differnet windows
+Rviz Visualizers of robot states and debug markers 
 
-    roslaunch picknik_main rviz_display.launch jacob:=false
     roslaunch picknik_main rviz.launch jacob:=false
 
 Run the fake object recognition server: (or real one if you have Lu Ma skillz)
@@ -258,9 +269,8 @@ Use Rethink's controllers
 
     roslaunch baxter_control baxter_hardware_rethink.launch
 
-Rviz Visualizers of robot states and debug markers in differnet windows
+Rviz Visualizers of robot states and debug markers 
 
-    roslaunch picknik_main rviz_display.launch jacob:=false
     roslaunch picknik_main rviz.launch jacob:=false
 
 Run the fake object recognition server: (or real one if you have Lu Ma skillz)
@@ -285,9 +295,8 @@ Start this separate to speed up launching:
 
     roslaunch jacob_control jacob_sim_hardware.launch
 
-Rviz Visualizers of robot states and debug markers in differnet windows
+Rviz Visualizers of robot states and debug markers 
 
-    roslaunch picknik_main rviz_display.launch 
     roslaunch picknik_main rviz.launch
 
 Run the fake object recognition server: (or real one if you have Lu Ma skillz)
@@ -313,9 +322,8 @@ Plugin in robot then choose one of the 2 control methods:
 	roslaunch jacob_control jacob_control_old.launch  # uses velocity+position trajectory controller
 	roslaunch jacob_control jacob_control.launch      # experimental ros_control method
 
-Rviz Visualizers of robot states and debug markers in differnet windows (different windows)
+Rviz Visualizers of robot states and debug markers
 
-    roslaunch picknik_main rviz_display.launch
     roslaunch picknik_main rviz.launch
 	
 Run the fake object recognition server: (or real one if you have Lu Ma skillz)
@@ -359,7 +367,7 @@ Button Mapings
 		9. Check if current state is in collision
 		10. Plan to random valid locations
 		11. Move camera to each bin location and request ObjectRecognitionServer
-		12. Calibrate camera
+		12. Playback calibration trajectory
 		13. Record a calibration trajectory
 		14. Go home
 		15. Test grasp generator abilities and score results

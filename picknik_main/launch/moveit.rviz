@@ -5,13 +5,14 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Grid1/Offset1
-        - /Amazon Markers1
         - /Amazon Markers1/Namespaces1
+        - /Trajectory1
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
-        - /TF1
+        - /Camera1
+        - /Camera1/Status1
       Splitter Ratio: 0.603704
-    Tree Height: 826
+    Tree Height: 582
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -1147,7 +1148,17 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Markers
       Namespaces:
-        {}
+        Arrow: true
+        Axis: true
+        Collision: true
+        Line: true
+        Sphere: true
+        Text: true
+        Wireframe Rectangle: true
+        goal_bin: true
+        oreo_mega_stuff: true
+        world_to_bin: true
+        world_to_camera: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -1447,7 +1458,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-      Loop Animation: false
+      Loop Animation: true
       Name: Trajectory
       Robot Alpha: 0.5
       Robot Description: robot_description
@@ -1753,6 +1764,61 @@ Visualization Manager:
         {}
       Update Interval: 0
       Value: false
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.001
+      Style: Flat Squares
+      Topic: /camera/depth/points
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Class: rviz/Camera
+      Enabled: true
+      Image Rendering: background and overlay
+      Image Topic: /camera/image/rgb_raw
+      Name: Camera
+      Overlay Alpha: 0.2
+      Queue Size: 2
+      Transport Hint: raw
+      Value: true
+      Visibility:
+        Amazon Markers: true
+        Amazon Markers Detailed: true
+        Grid: true
+        MoveIt Contacts: true
+        MoveIt Grasps: true
+        OMPL Experience: true
+        OMPL State: true
+        Planning Goal State: true
+        Planning Start State: true
+        PlanningScene: true
+        PointCloud2: true
+        Robot State: true
+        TF: true
+        Trajectory: true
+        Value: true
+      Zoom Factor: 1
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -1768,24 +1834,26 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.36946
+      Distance: 5.5612
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.22224
-        Y: 1.01941
-        Z: -4.17229e-07
+        X: 2.35269
+        Y: 1.2208
+        Z: -5.36438e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.505398
+      Pitch: 0.210399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 4.33725
+      Yaw: 4.03224
     Saved: ~
 Window Geometry:
+  Camera:
+    collapsed: false
   Displays:
     collapsed: false
   Height: 1028
@@ -1795,9 +1863,9 @@ Window Geometry:
   Hide Right Dock: false
   PickNik:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000001a1000003e6fc020000000cfb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c00610079007301000000000000037b000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000145000000cb000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000230000001b60000000000000000fb0000000c00540065006c0065006f00700000000331000000b50000000000000000fb0000000e005000690063006b004e0069006b0100000381000000650000004300fffffffb0000000c00430061006d00650072006100000003d000000016000000000000000000000303000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000001e1000003e6fc020000000dfb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c006100790073010000000000000287000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000145000000cb000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000230000001b60000000000000000fb0000000c00540065006c0065006f00700000000331000000b50000000000000000fb0000000e005000690063006b004e0069006b010000028d000000430000004300fffffffb0000000c00430061006d00650072006100000003d0000000160000000000000000fb0000000c00430061006d00650072006101000002d6000001100000001600ffffff000002c3000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
   Views:
     collapsed: false
   Width: 1194
-  X: 1449
+  X: 1439
   Y: 14

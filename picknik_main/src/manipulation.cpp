@@ -622,7 +622,7 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajec
       robot_trajectory->getWayPoint(i).interpolate(robot_trajectory->getWayPoint(i+1), t, *interpolated_state);
       // Add to trajectory
       new_robot_trajectory->addSuffixWayPoint(interpolated_state, dummy_dt);
-      std::cout << "inserting " << t << " at " << i << std::endl;
+      //std::cout << "inserting " << t << " at " << i << std::endl;
     }
   }
 
@@ -748,7 +748,7 @@ bool Manipulation::generateApproachPath(moveit_grasps::GraspCandidatePtr chosen,
   Eigen::Vector3d direction = grasp_generator_->getPreGraspDirection(chosen->grasp_, chosen->grasp_data_->parent_link_->getName());
   //            x, y, z
   //direction << -1, 0, 0.5; // backwards towards robot body
-  std::cout << "DIRECTION: " << direction << std::endl;
+  //std::cout << "DIRECTION: " << direction << std::endl;
   bool reverse_path = true;
 
   double path_length;
@@ -1357,7 +1357,9 @@ bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_ms
   }
 
   // Confirm trajectory before continuing
-  if (!parent_->getRemoteControl()->getAutonomous())
+  if (!parent_->getRemoteControl()->getAutonomous() &&
+      // Only wait for non-finger trajectories
+      trajectory_msg.joint_trajectory.joint_names.size() > 3)
   {
     std::cout << std::endl;
     std::cout << std::endl;
@@ -1476,7 +1478,11 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   {
     reverse_out = true;
   }
-  if (colliding_world_object.substr(0, 7) == "shelf") // TODO string name
+  else if (colliding_world_object.substr(0, 7) == "front_w") // front_wall
+  {
+    reverse_out = true;
+  }
+  else if (colliding_world_object.substr(0, 7) == "shelf") // TODO string name
   {
     reverse_out = true;
   }
@@ -1489,6 +1495,18 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   else if (colliding_world_object.substr(0, 7) == "side_wall") // TODO string name
   {
     move_in = true;
+  }
+  else
+  {
+    int mode = iRand(0,2);
+    ROS_WARN_STREAM_NAMED("manipulation","Unknown object, not sure how to handle. Performing random action using mode " << mode);
+    
+    if (mode == 0)
+      reverse_out = true;
+    else if (mode == 1)
+      raise_up = true;
+    else // mode = 2
+      move_in = true;
   }
 
   if (raise_up)
@@ -1525,6 +1543,7 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
       return false;
     }
   }
+
 
   return true;
 }
@@ -1812,7 +1831,9 @@ bool Manipulation::waitForRobotToStop(const double& timeout)
   ros::Time when_to_stop = ros::Time::now() + ros::Duration(timeout);
 
   static const double UPDATE_RATE = 0.5; // how often to check if robot is stopped
-  static const double POSITION_ERROR_THRESHOLD = 0.001;
+  static const double POSITION_ERROR_THRESHOLD = 0.002;
+  static const std::size_t REQUIRED_STABILITY_PASSES = 3; // how many times it must be within threshold in a row
+  std::size_t stability_passes = 0;
   double error;
   // Get the current position
   moveit::core::RobotState previous_position = *getCurrentState(); // copy the memory
@@ -1838,6 +1859,17 @@ bool Manipulation::waitForRobotToStop(const double& timeout)
       }
     }
     if (stopped)
+    {
+      stability_passes++;
+      ROS_INFO_STREAM_NAMED("manipulation","On stability pass " << stability_passes);
+    }
+    else
+    {
+      // Reset the stability passes because this round didn't pass
+      stability_passes = 0;
+    }
+
+    if (stability_passes > 2)
       return true;
 
     // Check timeout

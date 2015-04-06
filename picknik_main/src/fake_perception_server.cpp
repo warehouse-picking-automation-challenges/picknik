@@ -124,6 +124,7 @@ public:
       // Object pose
       Eigen::Affine3d pose = Eigen::Affine3d::Identity();
       pose.translation().z() = 0.45;
+      //pose.translation().x() = 0.1;
       pose = pose 
         * Eigen::AngleAxisd(1.7, Eigen::Vector3d::UnitY());
         

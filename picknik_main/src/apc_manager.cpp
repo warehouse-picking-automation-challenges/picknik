@@ -171,7 +171,7 @@ bool APCManager::focusSceneOnBin( const std::string& bin_name )
   // Visualize
   bool only_show_shelf_frame = false;
   ROS_INFO_STREAM_NAMED("apc_manager","Showing planning scene shelf with focus on bin " << bin_name);
-x
+
   shelf_->createCollisionBodies(bin_name, only_show_shelf_frame);
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
   shelf_->visualizeAxis(visuals_);
@@ -245,7 +245,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
   while(ros::ok())
   {
 
-    if (!remote_control_->getAutonomous())
+    if (!remote_control_->getAutonomous() && false)
     {
       std::cout << std::endl;
       std::cout << std::endl;
@@ -289,7 +289,8 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to open end effectors");
           return false;
         }
-        break;
+        //break;
+        step++;
 
         // #################################################################################################################
       case 2: manipulation_->statusPublisher("Finding location of product " + work_order.product_->getName() + " from " + work_order.bin_->getName());
@@ -366,8 +367,6 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
 
         current_state = manipulation_->getCurrentState();
         manipulation_->setStateWithOpenEE(true, current_state);
-
-        manipulation_->createCollisionWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
 
         if (!manipulation_->move(current_state, pre_grasp_state, arm_jmg, config_->main_velocity_scaling_factor_, verbose, execute_trajectory))
         {
@@ -1214,11 +1213,15 @@ bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
   perception_interface_->startPerception(product, bin);
 
   // Perturb camera
+  // if (!manipulation_->perturbCamera(bin))
+  // {
+  //   ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
+  // }
+
+  // Run pre-recorded camera trajectory
   if (false)
-    if (!manipulation_->perturbCamera(bin))
-    {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
-    }
+    if (!perceiveBinWithCamera(bin))
+      ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera around bin");
 
   // Let arm come to rest
   double timeout = 20;
