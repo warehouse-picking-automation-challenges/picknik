@@ -362,7 +362,8 @@ public:
    * \return true if not in collision and not out of bounds
    */
   bool checkCollisionAndBounds(const robot_state::RobotStatePtr &start_state,
-                               const robot_state::RobotStatePtr &goal_state = robot_state::RobotStatePtr());
+                               const robot_state::RobotStatePtr &goal_state = robot_state::RobotStatePtr(),
+                               bool verbose = true);
 
   /**
    * \brief Get location to save a CSV file

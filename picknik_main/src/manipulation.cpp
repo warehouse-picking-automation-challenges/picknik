@@ -1963,26 +1963,28 @@ bool Manipulation::fixCurrentCollisionAndBounds(const robot_model::JointModelGro
 }
 
 bool Manipulation::checkCollisionAndBounds(const moveit::core::RobotStatePtr &start_state,
-                                           const moveit::core::RobotStatePtr &goal_state)
+                                           const moveit::core::RobotStatePtr &goal_state,
+                                           bool verbose)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","checkCollisionAndBounds()");
 
   bool result = true;
-  bool verbose = true;
 
   // Check if satisfies bounds  --------------------------------------------------------
 
   // Start
   if (!start_state->satisfiesBounds(fix_state_bounds_.getMaxBoundsError()))
   {
-    ROS_WARN_STREAM_NAMED("manipulation","Start state does not satisfy bounds");
+    if (verbose)
+      ROS_WARN_STREAM_NAMED("manipulation","Start state does not satisfy bounds");
     result = false;
   }
 
   // Goal
   if (goal_state && !goal_state->satisfiesBounds(fix_state_bounds_.getMaxBoundsError()))
   {
-    ROS_WARN_STREAM_NAMED("manipulation","Goal state does not satisfy bounds");
+    if (verbose)
+      ROS_WARN_STREAM_NAMED("manipulation","Goal state does not satisfy bounds");
     //std::cout << "bounds: " << robot_model_->getJointModel("jaco2_joint_6")->getVariableBoundsMsg()[0] << std::endl;
     result = false;
   }
@@ -1996,10 +1998,13 @@ bool Manipulation::checkCollisionAndBounds(const moveit::core::RobotStatePtr &st
     // Start
     if (scene->isStateColliding(*start_state, arm_jmg->getName(), verbose))
     {
-      ROS_WARN_STREAM_NAMED("manipulation","Start state is colliding");
-      // Show collisions
-      visuals_->visual_tools_->publishContactPoints(*start_state, planning_scene_monitor_->getPlanningScene().get());
-      visuals_->visual_tools_->publishRobotState(*start_state, rvt::RED);
+      if (verbose)
+      {
+        ROS_WARN_STREAM_NAMED("manipulation","Start state is colliding");
+        // Show collisions
+        visuals_->visual_tools_->publishContactPoints(*start_state, planning_scene_monitor_->getPlanningScene().get());
+        visuals_->visual_tools_->publishRobotState(*start_state, rvt::RED);
+      }
       result = false;
     }
 
@@ -2010,10 +2015,13 @@ bool Manipulation::checkCollisionAndBounds(const moveit::core::RobotStatePtr &st
 
       if (scene->isStateColliding(*goal_state, arm_jmg->getName(), verbose))
       {
-        ROS_WARN_STREAM_NAMED("manipulation","Goal state is colliding");
-        // Show collisions
-        visuals_->visual_tools_->publishContactPoints(*goal_state, planning_scene_monitor_->getPlanningScene().get());
-        visuals_->visual_tools_->publishRobotState(*goal_state, rvt::RED);
+        if (verbose)
+        {
+          ROS_WARN_STREAM_NAMED("manipulation","Goal state is colliding");
+          // Show collisions
+          visuals_->visual_tools_->publishContactPoints(*goal_state, planning_scene_monitor_->getPlanningScene().get());
+          visuals_->visual_tools_->publishRobotState(*goal_state, rvt::RED);
+        }
         result = false;
       }
     }

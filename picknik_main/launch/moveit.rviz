@@ -46,7 +46,7 @@ Visualization Manager:
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: true
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -57,254 +57,79 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        collision_head_link_1:
+        frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        collision_head_link_2:
+        gantry:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        display:
+        gantry_plate:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        dummyhead1:
+        jaco2_end_effector:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        head:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        head_camera:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_arm_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_arm_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_gripper:
+        jaco2_link_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_base:
+        jaco2_link_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_l_finger:
+        jaco2_link_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_r_finger:
+        jaco2_link_4:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand:
+        jaco2_link_5:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand_accelerometer:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_hand_camera:
+        jaco2_link_base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand_camera_axis:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_hand_range:
+        jaco2_link_finger_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_elbow:
+        jaco2_link_finger_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_forearm:
+        jaco2_link_finger_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_shoulder:
+        jaco2_link_hand:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_torso_itb:
+        jaco2_wrist:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        left_upper_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_elbow_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_forearm_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pedestal:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_arm_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_arm_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_gripper:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_l_finger:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_r_finger:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand_accelerometer:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_hand_camera:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand_camera_axis:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_hand_range:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_torso_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_upper_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_elbow_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_forearm_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        screen:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sonar_ring:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        torso:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
@@ -316,12 +141,12 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
       Visual Enabled: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: true
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -332,254 +157,79 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        collision_head_link_1:
+        frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        collision_head_link_2:
+        gantry:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        display:
+        gantry_plate:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        dummyhead1:
+        jaco2_end_effector:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        head:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        head_camera:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_arm_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_arm_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_gripper:
+        jaco2_link_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_base:
+        jaco2_link_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_l_finger:
+        jaco2_link_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_r_finger:
+        jaco2_link_4:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand:
+        jaco2_link_5:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand_accelerometer:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_hand_camera:
+        jaco2_link_base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand_camera_axis:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_hand_range:
+        jaco2_link_finger_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_elbow:
+        jaco2_link_finger_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_forearm:
+        jaco2_link_finger_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_shoulder:
+        jaco2_link_hand:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_torso_itb:
+        jaco2_wrist:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        left_upper_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_elbow_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_forearm_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pedestal:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_arm_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_arm_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_gripper:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_l_finger:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_r_finger:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand_accelerometer:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_hand_camera:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand_camera_axis:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_hand_range:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_torso_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_upper_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_elbow_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_forearm_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        screen:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sonar_ring:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        torso:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
@@ -591,12 +241,12 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_start_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
       Visual Enabled: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: true
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -607,254 +257,79 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        collision_head_link_1:
+        frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        collision_head_link_2:
+        gantry:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        display:
+        gantry_plate:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        dummyhead1:
+        jaco2_end_effector:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        head:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        head_camera:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_arm_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_arm_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_gripper:
+        jaco2_link_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_base:
+        jaco2_link_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_l_finger:
+        jaco2_link_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_r_finger:
+        jaco2_link_4:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand:
+        jaco2_link_5:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand_accelerometer:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_hand_camera:
+        jaco2_link_base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand_camera_axis:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_hand_range:
+        jaco2_link_finger_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_elbow:
+        jaco2_link_finger_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_forearm:
+        jaco2_link_finger_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_shoulder:
+        jaco2_link_hand:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_torso_itb:
+        jaco2_wrist:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        left_upper_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_elbow_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_forearm_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pedestal:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_arm_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_arm_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_gripper:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_l_finger:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_r_finger:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand_accelerometer:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_hand_camera:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand_camera_axis:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_hand_range:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_torso_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_upper_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_elbow_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_forearm_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        screen:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sonar_ring:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        torso:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
@@ -866,7 +341,7 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_goal_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
       Visual Enabled: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
@@ -882,254 +357,79 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        collision_head_link_1:
+        frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        collision_head_link_2:
+        gantry:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        display:
+        gantry_plate:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        dummyhead1:
+        jaco2_end_effector:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        head:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        head_camera:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_arm_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_arm_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_gripper:
+        jaco2_link_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_base:
+        jaco2_link_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_l_finger:
+        jaco2_link_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_r_finger:
+        jaco2_link_4:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand:
+        jaco2_link_5:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand_accelerometer:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_hand_camera:
+        jaco2_link_base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand_camera_axis:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_hand_range:
+        jaco2_link_finger_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_elbow:
+        jaco2_link_finger_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_forearm:
+        jaco2_link_finger_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_shoulder:
+        jaco2_link_hand:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_torso_itb:
+        jaco2_wrist:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        left_upper_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_elbow_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_forearm_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pedestal:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_arm_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_arm_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_gripper:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_l_finger:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_r_finger:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand_accelerometer:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_hand_camera:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand_camera_axis:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_hand_range:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_torso_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_upper_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_elbow_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_forearm_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        screen:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sonar_ring:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        torso:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
@@ -1149,6 +449,7 @@ Visualization Manager:
       Name: Amazon Markers
       Namespaces:
         Axis: true
+        Collision: true
         Text: true
         goal_bin: true
       Queue Size: 100
@@ -1197,254 +498,79 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        collision_head_link_1:
+        frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        collision_head_link_2:
+        gantry:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        display:
+        gantry_plate:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        dummyhead1:
+        jaco2_end_effector:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        head:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        head_camera:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_arm_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_arm_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_gripper:
+        jaco2_link_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_base:
+        jaco2_link_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_l_finger:
+        jaco2_link_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_r_finger:
+        jaco2_link_4:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand:
+        jaco2_link_5:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand_accelerometer:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_hand_camera:
+        jaco2_link_base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand_camera_axis:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_hand_range:
+        jaco2_link_finger_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_elbow:
+        jaco2_link_finger_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_forearm:
+        jaco2_link_finger_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_shoulder:
+        jaco2_link_hand:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_torso_itb:
+        jaco2_wrist:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        left_upper_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_elbow_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_forearm_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pedestal:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_arm_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_arm_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_gripper:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_l_finger:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_r_finger:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand_accelerometer:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_hand_camera:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand_camera_axis:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_hand_range:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_torso_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_upper_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_elbow_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_forearm_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        screen:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sonar_ring:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        torso:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
@@ -1485,254 +611,79 @@ Visualization Manager:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          collision_head_link_1:
+          frame:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          collision_head_link_2:
+          gantry:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          display:
+          gantry_plate:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          dummyhead1:
+          jaco2_end_effector:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          head:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          head_camera:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          left_arm_itb:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          left_arm_mount:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          left_gripper:
+          jaco2_link_1:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          left_gripper_base:
+          jaco2_link_2:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          left_gripper_l_finger:
+          jaco2_link_3:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          left_gripper_r_finger:
+          jaco2_link_4:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          left_hand:
+          jaco2_link_5:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          left_hand_accelerometer:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          left_hand_camera:
+          jaco2_link_base:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          left_hand_camera_axis:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          left_hand_range:
+          jaco2_link_finger_1:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          left_lower_elbow:
+          jaco2_link_finger_2:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          left_lower_forearm:
+          jaco2_link_finger_3:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          left_lower_shoulder:
+          jaco2_link_hand:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
-          left_torso_itb:
+          jaco2_wrist:
             Alpha: 1
             Show Axes: false
             Show Trail: false
-          left_upper_elbow:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          left_upper_elbow_visual:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          left_upper_forearm:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          left_upper_forearm_visual:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          left_upper_shoulder:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          left_wrist:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          pedestal:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          right_arm_itb:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          right_arm_mount:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          right_gripper:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          right_gripper_base:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          right_gripper_l_finger:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          right_gripper_r_finger:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          right_hand:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          right_hand_accelerometer:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          right_hand_camera:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          right_hand_camera_axis:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          right_hand_range:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          right_lower_elbow:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          right_lower_forearm:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          right_lower_shoulder:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          right_torso_itb:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          right_upper_elbow:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          right_upper_elbow_visual:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          right_upper_forearm:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          right_upper_forearm_visual:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          right_upper_shoulder:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          right_wrist:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          screen:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          sonar_ring:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          torso:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
           xtion:
             Alpha: 1
             Show Axes: false
@@ -1843,7 +794,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 7.24109
+      Distance: 5.14012
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -1855,10 +806,10 @@ Visualization Manager:
         Z: -1.96695e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.664796
+      Pitch: 0.684796
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.56406
+      Yaw: 4.19407
     Saved: ~
 Window Geometry:
   Camera:
@@ -1876,5 +827,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1194
-  X: 1419
+  X: 1499
   Y: 14

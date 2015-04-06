@@ -191,13 +191,23 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   // TODO delete first_bin_from_right_
 
   // Base
+  bool fake_table = true;
   shelf_parts_.push_back(RectangleObject(visuals_, color_, "base"));
   RectangleObject &base = shelf_parts_.back();
   top_left = base.getTopLeft();
   top_left.translation().x() += shelf_depth_;
   top_left.translation().y() += shelf_width_;
   top_left.translation().z() += first_bin_from_bottom_;
+  if (fake_table)
+    top_left.translation().y() += 1.0;
   base.setTopLeft(top_left);
+  if (fake_table)
+  {
+    Eigen::Affine3d temp = base.getBottomRight();
+    temp.translation().x() = -1.0;
+    temp.translation().y() = -1.0;
+    base.setBottomRight(temp);
+  }
   
   // Extend base to protect robot from table
   bool immitation_table_mount = false;
@@ -364,7 +374,6 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   high_res_mesh_offset_.translation().x() = shelf_depth_ / 2.0;
   high_res_mesh_offset_.translation().y() = shelf_width_ / 2.0;
   high_res_mesh_offset_.translation().z() = 0; //first_bin_from_bottom_ - 0.81; // TODO remove this height - only for temp table setup
-
 
   // Calculate offset - FOR COLLISION
   Eigen::Affine3d offset;

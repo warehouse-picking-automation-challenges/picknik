@@ -757,6 +757,20 @@ bool APCManager::testInCollision()
 // Mode 10
 bool APCManager::testRandomValidMotions()
 {
+  visualizeShelf();
+
+  // Allow collision between Jacob and bottom for most links
+  {
+    planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning scene
+
+    scene->getAllowedCollisionMatrixNonConst().setEntry("base_39", "frame", true);
+    scene->getAllowedCollisionMatrixNonConst().setEntry("base_39", "gantry", true);
+    scene->getAllowedCollisionMatrixNonConst().setEntry("base_39", "gantry_plate", true);
+    scene->getAllowedCollisionMatrixNonConst().setEntry("base_39", "jaco2_link_base", true);
+    scene->getAllowedCollisionMatrixNonConst().setEntry("base_39", "jaco2_link_1", true);
+  }
+
+  // Plan to random
   while (ros::ok())
   {
 
@@ -780,7 +794,8 @@ bool APCManager::testRandomValidMotions()
       goal_state->setToRandomPositions(arm_jmg);
 
       // Check if random goal state is valid
-      if (manipulation_->checkCollisionAndBounds(current_state, goal_state))
+      bool collision_verbose = false;
+      if (manipulation_->checkCollisionAndBounds(current_state, goal_state, collision_verbose))
       {
         // Plan to this position
         bool verbose = true;
