@@ -317,9 +317,8 @@ Start roscore:
 
     roscore &
 
-Plugin in robot then choose one of the 2 control methods:
+Start controller: WARNING - **THIS STARTS THE CALIBRATION ROUTINE AND WILL MOVE ROBOT INTO POSSIBLE COLLISION WITH GANTRY!!**
 
-	roslaunch jacob_control jacob_control_old.launch  # uses velocity+position trajectory controller
 	roslaunch jacob_control jacob_control.launch      # experimental ros_control method
 
 Rviz Visualizers of robot states and debug markers
