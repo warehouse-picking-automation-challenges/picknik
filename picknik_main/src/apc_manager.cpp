@@ -533,9 +533,9 @@ bool APCManager::testEndEffectors()
       visuals_->visual_tools_->publishRobotState(current_state);
 
       // Close right and optionally right EE
-      manipulation_->openEndEffector(open, config_->right_arm_);
+      manipulation_->openEndEffectorWithVelocity(open, config_->right_arm_);
       if (config_->dual_arm_)
-        manipulation_->openEndEffector(open, config_->left_arm_);
+        manipulation_->openEndEffectorWithVelocity(open, config_->left_arm_);
 
       ros::Duration(4.0).sleep();
     }
@@ -547,9 +547,9 @@ bool APCManager::testEndEffectors()
       visuals_->visual_tools_->publishRobotState(current_state);
 
       // Open right and optionally right EE
-      manipulation_->openEndEffector(open, config_->right_arm_);
+      manipulation_->openEndEffectorWithVelocity(open, config_->right_arm_);
       if (config_->dual_arm_)
-        manipulation_->openEndEffector(open, config_->left_arm_);
+        manipulation_->openEndEffectorWithVelocity(open, config_->left_arm_);
       ros::Duration(4.0).sleep();
     }
     ++i;

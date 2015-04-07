@@ -622,16 +622,19 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajec
       robot_trajectory->getWayPoint(i).interpolate(robot_trajectory->getWayPoint(i+1), t, *interpolated_state);
       // Add to trajectory
       new_robot_trajectory->addSuffixWayPoint(interpolated_state, dummy_dt);
-      //std::cout << "inserting " << t << " at " << i << std::endl;
+      std::cout << "inserting " << t << " at " << new_robot_trajectory->getWayPointCount() << std::endl;
     }
   }
 
   // Add final waypoint
   new_robot_trajectory->addSuffixWayPoint(robot_trajectory->getLastWayPoint(), dummy_dt);
 
-  std::size_t modified_num_waypoints = robot_trajectory->getWayPointCount();
+  std::size_t modified_num_waypoints = new_robot_trajectory->getWayPointCount();
   ROS_INFO_STREAM_NAMED("manipulation","Interpolated trajectory from " << original_num_waypoints 
                         << " to " << modified_num_waypoints);
+
+  // Copy back to original datastructure
+  *robot_trajectory = *new_robot_trajectory;
 
   return true;
 }
@@ -1275,6 +1278,72 @@ bool Manipulation::openEndEffector(bool open, const robot_model::JointModelGroup
   // Convert trajectory to a message
   moveit_msgs::RobotTrajectory trajectory_msg;
   ee_traj->getRobotTrajectoryMsg(trajectory_msg);
+
+  // Execute trajectory
+  if( !executeTrajectory(trajectory_msg) )
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute grasp trajectory");
+    return false;
+  }
+
+  return true;
+}
+
+bool Manipulation::openEndEffectorWithVelocity(bool open, const robot_model::JointModelGroup* arm_jmg)
+{
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","openEndEffectorWithVelocity()");
+  ROS_WARN_STREAM_NAMED("temp","velocity EE");
+  getCurrentState();
+  robot_trajectory::RobotTrajectoryPtr ee_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, grasp_datas_[arm_jmg]->ee_jmg_));
+
+  // Add goal state to trajectory
+  if (open)
+  {
+    ROS_INFO_STREAM_NAMED("manipulation","Opening end effector for " << grasp_datas_[arm_jmg]->ee_jmg_->getName());
+    ee_trajectory->setRobotTrajectoryMsg(*current_state_, grasp_datas_[arm_jmg]->pre_grasp_posture_); // open
+  }
+  else
+  {
+    ROS_INFO_STREAM_NAMED("manipulation","Closing end effector for " << grasp_datas_[arm_jmg]->ee_jmg_->getName());
+    ee_trajectory->setRobotTrajectoryMsg(*current_state_, grasp_datas_[arm_jmg]->grasp_posture_); // closed
+  }
+
+  // Add start state to trajectory
+  double dummy_dt = 1;
+  ee_trajectory->addPrefixWayPoint(current_state_, dummy_dt);
+
+  // Interpolate between each point
+  double discretization = 0.1;
+  interpolate(ee_trajectory, discretization);
+
+  // Perform iterative parabolic smoothing
+  double ee_velocity_scaling_factor = 0.1;
+  iterative_smoother_.computeTimeStamps( *ee_trajectory, ee_velocity_scaling_factor );
+
+  // Show the change in end effector
+  if (verbose_)
+  {
+    visuals_->start_state_->publishRobotState(current_state_, rvt::GREEN);
+    visuals_->goal_state_->publishRobotState(ee_trajectory->getLastWayPoint(), rvt::ORANGE);
+  }
+
+  // Check if already in new position
+  if (statesEqual(*current_state_, ee_trajectory->getLastWayPoint(), grasp_datas_[arm_jmg]->ee_jmg_))
+  {
+    ROS_INFO_STREAM_NAMED("manipulation","Not executing motion because current state and goal state are close enough.");
+    return true;
+  }
+
+  // Convert trajectory to a message
+  moveit_msgs::RobotTrajectory trajectory_msg;
+  ee_trajectory->getRobotTrajectoryMsg(trajectory_msg);
+
+
+  std::cout << "trajectory_msg " << trajectory_msg << std::endl;
+
+  // Visualize trajectory in Rviz display
+  bool wait_for_trajetory = false;
+  visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, current_state_, wait_for_trajetory);
 
   // Execute trajectory
   if( !executeTrajectory(trajectory_msg) )
