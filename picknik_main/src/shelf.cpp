@@ -175,9 +175,6 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
 
   // Calculate shelf corners for *this ShelfObject
   bottom_right_ = world_to_shelf_transform_;
-  // bottom_right_.translation().x() = world_to_shelf_transform_.translation().x();
-  // bottom_right_.translation().y() = -shelf_width_/2.0;
-  // bottom_right_.translation().z() = 0;
   top_left_.translation().x() = bottom_right_.translation().x() + shelf_depth_;
   top_left_.translation().y() = shelf_width_/2.0;
   top_left_.translation().z() = shelf_height_;

@@ -28,7 +28,7 @@ both_arms_name: manipulator_DISABLED
 world_to_shelf_transform: [0.52, -0.4365, 0.0, 0.0, 0.0, 0.0]  # IDEAL
 
 # Topics
-joint_state_topic: /jacob/joint_states
+joint_state_topic: /joint_states
 
 # Goal bin - different for each robot
 goal_bin_x: -0.3
