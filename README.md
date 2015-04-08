@@ -265,6 +265,10 @@ Run APC Manager (main program) for BAXTER
 	
 ### Setup Hardware of BAXTER
 
+Enable Baxter:
+
+    rostopic pub -1 /robot/set_super_enable std_msgs/Bool True	
+
 Use Rethink's controllers
 
     roslaunch baxter_control baxter_hardware_rethink.launch
@@ -293,7 +297,7 @@ Start roscore:
 
 Start this separate to speed up launching:
 
-    roslaunch jacob_control jacob_sim_hardware.launch
+    roslaunch jacob_control jacob_simulation.launch
 
 Rviz Visualizers of robot states and debug markers 
 
@@ -319,7 +323,7 @@ Start roscore:
 
 Start controller: WARNING - **THIS STARTS THE CALIBRATION ROUTINE AND WILL MOVE ROBOT INTO POSSIBLE COLLISION WITH GANTRY!!**
 
-	roslaunch jacob_control jacob_control.launch      # experimental ros_control method
+	roslaunch jacob_control jacob_hardware.launch
 
 Rviz Visualizers of robot states and debug markers
 
