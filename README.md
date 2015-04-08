@@ -353,7 +353,8 @@ Button Mapings
 	B - Stop
 	Back - Go home
 	Xbox Button - AUTO
-
+	LB - switch gantry to manual mode
+	Up/Down Axis Stick Left - manually move gantry
 
 ### PickNik Main Optional Arguments:
 

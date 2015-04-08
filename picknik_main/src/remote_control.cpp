@@ -107,22 +107,14 @@ void RemoteControl::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
 
   // Table of index number of /joy.axis: ------------------------------------
 
-  // 0
-  // Left/Right Axis stick left
-  // 1
-  // Up/Down Axis stick left
-  // 2
-  // Left/Right Axis stick right
-  // 3
-  // Up/Down Axis stick right
-  // 4
-  // RT
-  // 4
-  // LT
-  // 6
-  // cross key left/right
-  // 7
-  // cross key up/down
+  // 0 - Left/Right Axis stick left
+  // 1 - Up/Down Axis stick left
+  // 2 - Left/Right Axis stick right
+  // 3 - Up/Down Axis stick right
+  // 4 - RT
+  // 4 - LT
+  // 6 - cross key left/right
+  // 7 - cross key up/down
 
 }
 

@@ -188,7 +188,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   // TODO delete first_bin_from_right_
 
   // Base
-  bool fake_table = true;
+  bool fake_table = false;
   shelf_parts_.push_back(RectangleObject(visuals_, color_, "base"));
   RectangleObject &base = shelf_parts_.back();
   top_left = base.getTopLeft();
