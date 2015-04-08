@@ -208,11 +208,13 @@ bool Manipulation::createCollisionWall()
   // Goal bin
   shelf_->getGoalBin()->createCollisionBodies(shelf_->getBottomRight());
 
-  // Side walls
+  // Bounding walls
   if (shelf_->getLeftWall())
     shelf_->getLeftWall()->createCollisionBodies(shelf_->getBottomRight());
   if (shelf_->getRightWall())
     shelf_->getRightWall()->createCollisionBodies(shelf_->getBottomRight());
+  shelf_->getCeilingWall()->createCollisionBodies(shelf_->getBottomRight());
+  shelf_->getFloorWall()->createCollisionBodies(shelf_->getBottomRight());
 
   // Output planning scene
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
@@ -1538,8 +1540,8 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   // Categorize this world object
   bool reverse_out = false;
   bool raise_up = false;
-  bool move_in = false;
-
+  bool move_in_right = false;
+  bool move_in_left = false;
   std::cout << "substring is: " << colliding_world_object.substr(0, 7) << std::endl;
 
   // if shelf or product, reverse out
@@ -1560,22 +1562,29 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   {
     raise_up = true;
   }
-  // if side walls, move in
-  else if (colliding_world_object.substr(0, 7) == "side_wall") // TODO string name
+  // Right wall
+  else if (colliding_world_object.substr(0, 7) == "right_w")
   {
-    move_in = true;
+    move_in_left = true;
+  }
+  // Left wall
+  else if (colliding_world_object.substr(0, 7) == "left_w")
+  {
+    move_in_right = true;
   }
   else
   {
-    int mode = iRand(0,2);
+    int mode = iRand(0,3);
     ROS_WARN_STREAM_NAMED("manipulation","Unknown object, not sure how to handle. Performing random action using mode " << mode);
     
     if (mode == 0)
       reverse_out = true;
     else if (mode == 1)
       raise_up = true;
-    else // mode = 2
-      move_in = true;
+    else if (mode == 2)
+      move_in_left = true;
+    else // mode = 3
+      move_in_right = true;
   }
 
   if (raise_up)
@@ -1600,12 +1609,22 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
       return false;
     }
   }
-  else if (move_in)
+  else if (move_in_left)
   {
-    ROS_INFO_STREAM_NAMED("manipulation","Moving in");
-    ROS_ERROR_STREAM_NAMED("manipulation","TODO implement");
+    ROS_INFO_STREAM_NAMED("manipulation","Moving in left");
     double desired_distance = 0.2;
-    bool left = true; // TODO decide
+    bool left = true;
+    bool ignore_collision = true;
+    if (!executeHorizontalPath(arm_jmg, desired_distance, left, ignore_collision))
+    {
+      return false;
+    }
+  }
+  else if (move_in_right)
+  {
+    ROS_INFO_STREAM_NAMED("manipulation","Moving in right");
+    double desired_distance = 0.2;
+    bool left = false;
     bool ignore_collision = true;
     if (!executeHorizontalPath(arm_jmg, desired_distance, left, ignore_collision))
     {

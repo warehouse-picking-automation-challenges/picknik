@@ -257,7 +257,7 @@ Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
 A transform of the camera is needed
 
-    roslaunch picknik_main camera_calibration.launch 
+    roslaunch picknik_main camera_calibration.launch jacob:=false
 
 Run APC Manager (main program) for BAXTER
 
@@ -283,7 +283,7 @@ Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
 A transform of the camera is needed
 
-    roslaunch picknik_main camera_calibration.launch 
+    roslaunch picknik_main camera_calibration.launch jacob:=false
 	
 Run APC Manager (main program) for BAXTER
 

@@ -196,11 +196,7 @@ int main(int argc, char** argv)
     case 12:
       if (!manager.checkSystemReady()) return 0;;
       ROS_INFO_STREAM_NAMED("main","Test camera calibration");
-      while(ros::ok())
-      {
-        manager.calibrateCamera();
-        ros::Duration(1).sleep();
-      }
+      manager.calibrateCamera();
       break;
     case 13:
       if (!manager.checkSystemReady()) return 0;;

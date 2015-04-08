@@ -800,7 +800,8 @@ bool APCManager::testRandomValidMotions()
         // Plan to this position
         bool verbose = true;
         bool execute_trajectory = true;
-        if (manipulation_->move(current_state, goal_state, arm_jmg, config_->main_velocity_scaling_factor_, verbose, execute_trajectory))
+        if (manipulation_->move(current_state, goal_state, arm_jmg, config_->main_velocity_scaling_factor_, verbose, 
+                                execute_trajectory))
         {
           ROS_INFO_STREAM_NAMED("apc_manager","Planned to random valid state successfullly");
         }
@@ -897,14 +898,14 @@ bool APCManager::calibrateCamera()
 // Mode 13
 bool APCManager::recordCalibrationTrajectory()
 {
-  ROS_DEBUG_STREAM_NAMED("apc_manager","Recoding calibration trajectory");
+  ROS_INFO_STREAM_NAMED("apc_manager","Recoding calibration trajectory");
 
   std::string file_path;
   const std::string file_name = "calibration_trajectory";
   manipulation_->getFilePath(file_path, file_name);
 
   // Start recording
-  manipulation_->recordTrajectoryToFile(file_name);
+  manipulation_->recordTrajectoryToFile(file_path);
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done recording calibration trajectory");
 

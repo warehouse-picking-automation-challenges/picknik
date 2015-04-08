@@ -178,6 +178,13 @@ void RectangleObject::setBottomRight(const Eigen::Affine3d& bottom_right)
   bottom_right_ = bottom_right;
 }
 
+void RectangleObject::setBottomRight(const double& x, const double& y, const double& z)
+{
+  bottom_right_.translation().x() = x;
+  bottom_right_.translation().y() = y;
+  bottom_right_.translation().z() = z;
+}
+
 const Eigen::Affine3d& RectangleObject::getTopLeft() const
 {
   return top_left_;
@@ -186,6 +193,13 @@ const Eigen::Affine3d& RectangleObject::getTopLeft() const
 void RectangleObject::setTopLeft(const Eigen::Affine3d& top_left)
 {
   top_left_ = top_left;
+}
+
+void RectangleObject::setTopLeft(const double& x, const double& y, const double& z)
+{
+  top_left_.translation().x() = x;
+  top_left_.translation().y() = y;
+  top_left_.translation().z() = z;
 }
 
 const Eigen::Affine3d RectangleObject::getCentroid() const

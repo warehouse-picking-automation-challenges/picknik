@@ -27,7 +27,7 @@ both_arms_name: both_arms
 
 # Calibration - xyz, rpy
 #world_to_shelf_transform: [1.0, -0.4365, 0.0, 0.0, 0.0, 0.0]  # IDEAL
-world_to_shelf_transform: [1.005, -0.45, 0.011, 0.0, 0.0, 0.0]
+world_to_shelf_transform:  [0.99, -0.4, 0.0, 0.0, 0.0, 0.0]
 
 # Topics
 joint_state_topic: /robot/joint_states
@@ -38,6 +38,11 @@ goal_bin_y: 0.4365
 goal_bin_z: 0.4
 
 # Side limits (walls)
-left_wall_y: 1.40 # 0 means disabled
-right_wall_y: 0.0 # 0 means disabled
+left_wall_y: 0.0 # 0 means disabled
+#left_wall_y: 1.40 # 0 means disabled
+right_wall_y: -0.60 # 0 means disabled
+
+# Top limit
+ceiling_z: 2.4
+
 

@@ -1,10 +1,17 @@
 # Note: Name of file should match name of robot in URDF
 
 # Robot Execution Speed
-main_velocity_scaling_factor: 1.0 # during planning
-approach_velocity_scaling_factor: 0.5
-lift_velocity_scaling_factor: 1.0
-retreat_velocity_scaling_factor: 0.6
+# main_velocity_scaling_factor: 1.0 # during planning
+# approach_velocity_scaling_factor: 0.5
+# lift_velocity_scaling_factor: 1.0
+# retreat_velocity_scaling_factor: 0.6
+# calibration_velocity_scaling_factor: 0.05
+
+# DEBUG Robot Execution Speed
+main_velocity_scaling_factor: 0.5 # during planning
+approach_velocity_scaling_factor: 0.1
+lift_velocity_scaling_factor: 0.1
+retreat_velocity_scaling_factor: 0.1
 calibration_velocity_scaling_factor: 0.05
 
 # Sleep timers
@@ -38,3 +45,6 @@ goal_bin_z: 0.4
 # Side limits (walls)
 left_wall_y: 0 # 0 means disabled
 right_wall_y: 0 # 0 means disabled
+
+# Top limit
+ceiling_z: 2.4

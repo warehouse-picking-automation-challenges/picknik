@@ -170,6 +170,8 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     return false;
   if (!rvt::getDoubleParameter(parent_name, nh, "right_wall_y", right_wall_y_))
     return false;
+  if (!rvt::getDoubleParameter(parent_name, nh, "ceiling_z", ceiling_z_))
+    return false;
   if (!rvt::getDoubleParameter(parent_name, nh, "collision_wall_safety_margin", collision_wall_safety_margin_))
     return false;
 
@@ -205,7 +207,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     temp.translation().y() = -1.0;
     base.setBottomRight(temp);
   }
-  
+
   // Extend base to protect robot from table
   bool immitation_table_mount = false;
   if (immitation_table_mount)
@@ -233,7 +235,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     else
       this_shelf_wall_width = shelf_wall_width_;
 
-    // Shelf Wall Geometry 
+    // Shelf Wall Geometry
     bottom_right = wall.getBottomRight();
     bottom_right.translation().x() = 0;
     bottom_right.translation().y() = previous_y - this_shelf_wall_width * 0.5;
@@ -263,7 +265,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     // Create a column of shelf bins from top to bottom
     if (wall_id < 3)
     {
-      bin_z = first_bin_from_bottom_;      
+      bin_z = first_bin_from_bottom_;
       insertBinHelper(wall_id + 0, bin_tall_height_, this_bin_width, top_left.translation().y(), bin_z); // bottom rop
       bin_z += bin_tall_height_;
       insertBinHelper(wall_id + 3, bin_short_height_, this_bin_width, top_left.translation().y(), bin_z); // middle bottom row
@@ -321,12 +323,12 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   {
     left_wall_.reset(new RectangleObject(visuals_, rvt::YELLOW, "left_wall"));
     bottom_right = left_wall_->getBottomRight();
-    bottom_right.translation().x() = 1;
+    bottom_right.translation().x() = -1;
     bottom_right.translation().y() = left_wall_y_;
     bottom_right.translation().z() = 0;
     left_wall_->setBottomRight(bottom_right);
     top_left = left_wall_->getBottomRight();
-    top_left.translation().x() = -1;
+    top_left.translation().x() = 1;
     top_left.translation().y() = left_wall_y_ + shelf_wall_width_;
     top_left.translation().z() = shelf_height_;
     left_wall_->setTopLeft(top_left);
@@ -334,30 +336,44 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   if (right_wall_y_ > 0.001 || right_wall_y_ < -0.001)
   {
     right_wall_.reset(new RectangleObject(visuals_, rvt::YELLOW, "right_wall"));
-    bottom_right = right_wall_->getBottomRight();
-    bottom_right.translation().x() = 1;
-    bottom_right.translation().y() = right_wall_y_;
-    bottom_right.translation().z() = 0;
-    right_wall_->setBottomRight(bottom_right);
-    top_left = right_wall_->getBottomRight();
-    top_left.translation().x() = -1;
-    top_left.translation().y() = right_wall_y_ + shelf_wall_width_;
-    top_left.translation().z() = shelf_height_;
-    right_wall_->setTopLeft(top_left);
+    right_wall_->setBottomRight(-2,
+                                right_wall_y_,
+                                0);
+    right_wall_->setTopLeft(0,
+                            right_wall_y_ + shelf_wall_width_,
+                            shelf_height_);
   }
+
+  // Width of arbitrary collision objects
+  static const double COLLISION_OBJECT_WIDTH = 0.1;
+
   // Front wall limit
-  static const double INTERNAL_WIDTH = 0.1;
   front_wall_.reset(new RectangleObject(visuals_, rvt::YELLOW, "front_wall"));
-  bottom_right = front_wall_->getBottomRight();
-  bottom_right.translation().x() = -collision_wall_safety_margin_;
-  bottom_right.translation().y() = - shelf_width_ / 2.0;
-  bottom_right.translation().z() = 0;
-  front_wall_->setBottomRight(bottom_right);
-  top_left = front_wall_->getBottomRight();
-  top_left.translation().x() = INTERNAL_WIDTH;
-  top_left.translation().y() = shelf_width_ * 1.5;
-  top_left.translation().z() = shelf_height_;
-  front_wall_->setTopLeft(top_left);  
+  front_wall_->setBottomRight(-collision_wall_safety_margin_,
+                              - shelf_width_ / 2.0,
+                              0);
+  front_wall_->setTopLeft(COLLISION_OBJECT_WIDTH,
+                          shelf_width_ * 1.5,
+                          shelf_height_);
+
+  // Ceiling wall limit
+  ceiling_wall_.reset(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "ceiling_wall"));
+  ceiling_wall_->setBottomRight(-2,
+                                - shelf_width_,
+                                ceiling_z_);
+  ceiling_wall_->setTopLeft(1,
+                            shelf_width_ * 2,
+                            ceiling_z_ + COLLISION_OBJECT_WIDTH);
+
+  // Floor wall limit
+  floor_wall_.reset(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "floor_wall"));
+  floor_wall_->setBottomRight(ceiling_wall_->getBottomRight().translation().x(),
+                              ceiling_wall_->getBottomRight().translation().y(),
+                              0);
+  floor_wall_->setTopLeft(ceiling_wall_->getTopLeft().translation().x(),
+                          ceiling_wall_->getTopLeft().translation().y(),
+                          -COLLISION_OBJECT_WIDTH);
+
 
   // Load mesh file name
   high_res_mesh_path_ = "file://" + package_path + "/meshes/kiva_pod/meshes/pod_lowres.stl";
@@ -449,6 +465,8 @@ bool ShelfObject::visualize(bool show_products) const
     left_wall_->visualize(bottom_right_);
   if (right_wall_)
     right_wall_->visualize(bottom_right_);
+  ceiling_wall_->visualize(bottom_right_);
+  floor_wall_->visualize(bottom_right_);
 
   // Show workspace
   static const double GAP_TO_SHELF = 0.1;
@@ -474,7 +492,7 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
   {
     shelf_parts_[i].createCollisionBodies(bottom_right_);
   }
-  
+
   // Show each bin except the focus on
   if (!only_show_shelf_frame)
   {
@@ -517,6 +535,8 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
     left_wall_->createCollisionBodies(bottom_right_);
   if (right_wall_)
     right_wall_->createCollisionBodies(bottom_right_);
+  ceiling_wall_->createCollisionBodies(bottom_right_);
+  floor_wall_->createCollisionBodies(bottom_right_);
 
   return visuals_->visual_tools_->triggerBatchPublishAndDisable();
 }
@@ -607,13 +627,13 @@ ProductObject::ProductObject(VisualsPtr visuals,
   collision_mesh_path_ = "file://" + package_path + "/meshes/products/" + name_ + "/collision.stl";
 
   // Debug
-  ROS_DEBUG_STREAM_NAMED("shelf","Creating collision product with name " << collision_object_name_ << " from mesh: " 
+  ROS_DEBUG_STREAM_NAMED("shelf","Creating collision product with name " << collision_object_name_ << " from mesh: "
                          << high_res_mesh_path_ << "\n Collision mesh: " << collision_mesh_path_);
 }
 
 ProductObject::ProductObject(const ProductObject& copy)
   : MeshObject( copy )
-{ 
+{
 }
 
 Eigen::Affine3d ProductObject::getWorldPose(const ShelfObjectPtr& shelf, const BinObjectPtr& bin)

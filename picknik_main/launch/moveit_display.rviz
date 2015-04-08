@@ -48,25 +48,25 @@ Visualization Manager:
       Marker Topic: /amazon_shelf_markers_display
       Name: Amazon Shelf Markers
       Namespaces:
+        Axis: true
         Cuboid: true
-        Cylinder: true
         Shelf: true
-        cheezit_big_original_28: true
-        crayola_64_ct_29: true
-        expo_dry_erase_board_eraser_27: true
-        expo_dry_erase_board_eraser_31: true
-        expo_dry_erase_board_eraser_32: true
-        expo_dry_erase_board_eraser_34: true
-        feline_greenies_dental_treats_33: true
-        feline_greenies_dental_treats_39: true
-        first_years_take_and_toss_straw_cup_36: true
-        first_years_take_and_toss_straw_cup_41: true
-        goal_bin_24: true
-        highland_6539_self_stick_notes_35: true
-        mommys_helper_outlet_plugs_40: true
-        munchkin_white_hot_duck_bath_toy_37: true
-        oreo_mega_stuf_30: true
-        sharpie_accent_tank_style_highlighters_38: true
+        goal_bin_49: true
+        product_cheezit_big_original_53: true
+        product_crayola_64_ct_54: true
+        product_expo_dry_erase_board_eraser_52: true
+        product_expo_dry_erase_board_eraser_56: true
+        product_expo_dry_erase_board_eraser_57: true
+        product_expo_dry_erase_board_eraser_59: true
+        product_feline_greenies_dental_treats_58: true
+        product_feline_greenies_dental_treats_64: true
+        product_first_years_take_and_toss_straw_cup_61: true
+        product_first_years_take_and_toss_straw_cup_66: true
+        product_highland_6539_self_stick_notes_60: true
+        product_mommys_helper_outlet_plugs_65: true
+        product_munchkin_white_hot_duck_bath_toy_62: true
+        product_oreo_mega_stuf_55: true
+        product_sharpie_accent_tank_style_highlighters_63: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -331,6 +331,11 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        xtion:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
@@ -359,15 +364,15 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.17398
-        Y: 0.351936
-        Z: -1.19209e-06
+        X: 1.55809
+        Y: 0.323089
+        Z: -4.76834e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.615399
+      Pitch: 0.650399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.59674
+      Yaw: 3.70674
     Saved: ~
 Window Geometry:
   Displays:

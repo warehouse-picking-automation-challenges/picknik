@@ -231,6 +231,11 @@ public:
   void setBottomRight(const Eigen::Affine3d& bottom_right);
 
   /**
+   * \brief Setter for BottomRight
+   */
+  void setBottomRight(const double& x, const double& y, const double& z);
+
+  /**
    * \brief Getter for TopLeft
    */ 
   const Eigen::Affine3d& getTopLeft() const;
@@ -239,6 +244,11 @@ public:
    * \brief Setter for TopLeft
    */
   void setTopLeft(const Eigen::Affine3d& top_left);
+
+  /**
+   * \brief Setter for TopLeft
+   */
+  void setTopLeft(const double& x, const double& y, const double& z);
 
   /**
    * \brief Getter for Centroid

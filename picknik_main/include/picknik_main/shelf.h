@@ -196,6 +196,22 @@ public:
   }
   
   /**
+   * \brief Getter for FloorWall
+   */ 
+  const RectangleObjectPtr& getFloorWall() const
+  {
+    return floor_wall_;
+  }
+  
+  /**
+   * \brief Getter for CeilingWall
+   */ 
+  const RectangleObjectPtr& getCeilingWall() const
+  {
+    return ceiling_wall_;
+  }
+  
+  /**
    * \brief Setter for RightWall
    */
   void setRightWall(const RectangleObjectPtr& right_wall)
@@ -268,6 +284,9 @@ public:
   double left_wall_y_;
   double right_wall_y_;
 
+  // Top limit
+  double ceiling_z_;
+
   // Safety
   double collision_wall_safety_margin_;
 
@@ -282,6 +301,8 @@ private:
   RectangleObjectPtr left_wall_;
   RectangleObjectPtr right_wall_;
   RectangleObjectPtr front_wall_;
+  RectangleObjectPtr ceiling_wall_;
+  RectangleObjectPtr floor_wall_;
 
   Eigen::Affine3d high_res_mesh_offset_;
 
