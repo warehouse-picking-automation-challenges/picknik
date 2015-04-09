@@ -349,11 +349,13 @@ Run APC Manager (main program) for JACOB on hardware
 
 Button Mapings
 
-    A - Next Step
-	B - Stop
+    A - Next Step in Manipulation Pipeline
+	B - Motion Stop (switch controllers to manual mode)
+	Y - Stop Manipulation Pipeline
+	X - Motion start (switch controllers to trajectory mode)
 	Back - Go home
 	Xbox Button - AUTO
-	LB - switch gantry to manual mode
+	RB - Calibrate gantry (home it)
 	Up/Down Axis Stick Left - manually move gantry
 
 ### PickNik Main Optional Arguments:

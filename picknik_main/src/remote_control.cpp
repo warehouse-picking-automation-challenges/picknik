@@ -89,10 +89,10 @@ void RemoteControl::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
   if (msg->buttons[0])
     setReadyForNextStep();
   // 1 - B
-  if (msg->buttons[1])
-    setStop();
   // 2 - X
   // 3 - Y
+  if (msg->buttons[3])
+    setStop();
   // 4 - LB
   // 5 - RB
   // 6 - back
