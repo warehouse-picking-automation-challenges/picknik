@@ -275,7 +275,7 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
   bool verbose = true;
   bool execute_trajectory = true;
   ROS_INFO_STREAM_NAMED("manipulation","Moving to start state of trajectory");
-  if (!move(current_state_, robot_trajectory->getFirstWayPointPtr(), arm_jmg, config_->main_velocity_scaling_factor_,
+  if (!move(current_state_, robot_trajectory->getFirstWayPointPtr(), arm_jmg, velocity_scaling_factor,
             verbose, execute_trajectory))
   {
     ROS_ERROR_STREAM_NAMED("manipultion","Unable to plan");
@@ -624,7 +624,7 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajec
       robot_trajectory->getWayPoint(i).interpolate(robot_trajectory->getWayPoint(i+1), t, *interpolated_state);
       // Add to trajectory
       new_robot_trajectory->addSuffixWayPoint(interpolated_state, dummy_dt);
-      std::cout << "inserting " << t << " at " << new_robot_trajectory->getWayPointCount() << std::endl;
+      //std::cout << "inserting " << t << " at " << new_robot_trajectory->getWayPointCount() << std::endl;
     }
   }
 

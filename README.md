@@ -238,7 +238,11 @@ Start driver on computer where USB3 camera is plugged in
 Testing
 
     rosrun image_view image_view image:=/camera/image/rgb_raw
-	
+
+## Start Primesense Camera
+
+    roslaunch openni_launch openni.launch depth_registration:=true
+
 ## Start Robots
 
 ### Simulation of BAXTER
@@ -345,7 +349,15 @@ Run APC Manager (main program) for JACOB on hardware
 
     rosrun image_view image_view image:=/camera/image/rgb_raw
 
-### Joystick Control
+### Jaco Joystick Control
+
+Button Mapings
+
+    1 - Next (not implemented in ros_control yet)
+	2 - Disable actuators (0 PID gains)
+	3 - Disable control (turn off PC controller)
+
+### XBox Joystick Control
 
 Button Mapings
 

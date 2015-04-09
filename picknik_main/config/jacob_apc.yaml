@@ -12,7 +12,7 @@ main_velocity_scaling_factor: 0.5 # during planning
 approach_velocity_scaling_factor: 0.1
 lift_velocity_scaling_factor: 0.1
 retreat_velocity_scaling_factor: 0.1
-calibration_velocity_scaling_factor: 0.05
+calibration_velocity_scaling_factor: 0.3
 
 # Sleep timers
 wait_before_grasp: 0.1
