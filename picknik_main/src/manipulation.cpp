@@ -172,6 +172,35 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
   std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates;
   grasp_candidates = grasp_filter_->convertToGraspCandidatePtrs(possible_grasps,grasp_datas_[arm_jmg]);
 
+  // add grasp filters
+  grasp_filter_->clearCuttingPlanes();
+  grasp_filter_->clearDesiredGraspOrientations();
+
+  Eigen::Affine3d cutting_pose = shelf_->getBottomRight() * bin->getBottomRight();
+  visuals_->visual_tools_->publishAxis(cutting_pose, 0.2);
+  grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XY, -1);
+  grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XZ, -1);
+
+  if (verbose)
+  {
+    visuals_->visual_tools_->publishXYPlane(cutting_pose);
+    visuals_->visual_tools_->publishXZPlane(cutting_pose);
+  }
+
+  cutting_pose.translation() += Eigen::Vector3d(0, bin->getWidth(), bin->getHeight());
+  grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XY, 1);
+  grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XZ, 1);
+
+  if (verbose)
+  {
+    visuals_->visual_tools_->publishXYPlane(cutting_pose);
+    visuals_->visual_tools_->publishXZPlane(cutting_pose);
+  }
+
+    //cutting_pose *= Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitY());
+    // grasp_filter_->addDesiredGraspOrientation(cutting_pose, M_PI / 4.0);
+
+
   // Filter grasps based on IK
   bool filter_pregrasps = true;
   bool verbose_if_failed = false;
