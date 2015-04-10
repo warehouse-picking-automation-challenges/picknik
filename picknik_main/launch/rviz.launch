@@ -23,7 +23,4 @@
 	args="-d $(find picknik_main)/launch/moveit_display.rviz" output="screen">
   </node>
 
-  <!-- Allow xbox controller to be used -->
-  <node name="$(anon joy)" pkg="joy" type="joy_node" respawn="false"/>
-
 </launch>

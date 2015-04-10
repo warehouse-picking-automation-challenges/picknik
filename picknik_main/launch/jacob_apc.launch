@@ -36,9 +36,9 @@
   </include>
 
   <!-- Sensors Functionality -->
-  <!--include ns="picknik_main" file="$(find jacob_moveit_config)/launch/sensor_manager.launch.xml" >
-    <arg name="moveit_sensor_manager" value="JACOB" /> 
-  </include-->
+  <!-- <include ns="picknik_main" file="$(find jacob_moveit_config)/launch/sensor_manager.launch.xml" > -->
+  <!--   <arg name="moveit_sensor_manager" value="JACOB" />  -->
+  <!-- </include> -->
 
   <arg name="allow_trajectory_execution" default="true"/>
 

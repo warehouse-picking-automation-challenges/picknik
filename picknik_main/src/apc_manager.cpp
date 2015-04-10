@@ -717,23 +717,29 @@ bool APCManager::getSRDFPose()
 // Mode 8
 bool APCManager::testGoalBinPose()
 {
+  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
-  while (ros::ok())
+  // Close end effector
+  if (!manipulation_->openEndEffectorWithVelocity(false, arm_jmg))
   {
-    // Go to dropoff position
-    if (!moveToDropOffPosition(config_->right_arm_))
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
+    return false;
+  }
+
+  // Go to dropoff position
+  if (!placeObjectInGoalBin(config_->right_arm_))
+    return false;
+
+  // Lower down into bin
+  if (config_->dual_arm_)
+    if (!placeObjectInGoalBin(config_->left_arm_))
       return false;
 
-    if (config_->dual_arm_)
-      if (!moveToDropOffPosition(config_->left_arm_))
-        return false;
-
-    ros::Duration(5.0).sleep();
-
-    // Choose which planning group to use
-    const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
-    if (!moveToStartPosition(arm_jmg))
-      return false;
+  // Open end effector
+  if (!manipulation_->openEndEffectorWithVelocity(true, arm_jmg))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to open end effector");
+    return false;
   }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done going to goal bin pose");

@@ -447,3 +447,12 @@ Load meshes
 
     rosrun ros_control_boilerplate controller_state_to_csv /home/dave/ros/combined_analysis/jaco_trajectory_1.csv /jacob/kinova/velocity_trajectory_controller/state
 	rosrun ros_control_boilerplate controller_state_to_csv /home/dave/ros/combined_analysis/gantry_trajectory_1.csv /jacob/zaber/velocity_trajectory_controller/state
+
+
+### See Kinova USB Hub
+
+    lsusb -t | grep ftdi
+
+## See Gantry USB Device
+
+    ll /dev/zaber_vert
