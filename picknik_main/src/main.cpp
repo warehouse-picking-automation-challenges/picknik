@@ -42,7 +42,7 @@ int main(int argc, char** argv)
   bool use_experience = true;
   bool show_database = false;
   bool autonomous = false;
-  std::string order_fp;
+  std::string order_file;
 
   // Parse command line arguments
   for (std::size_t i = 0; i < argc; ++i)
@@ -62,8 +62,8 @@ int main(int argc, char** argv)
         ROS_ERROR_STREAM_NAMED("main", "Remember to tell us where's the json order, aborting");
         return 1;
       }
-      order_fp = argv[i];
-      ROS_DEBUG_STREAM_NAMED("main","Using order file " << order_fp);
+      order_file = argv[i];
+      ROS_DEBUG_STREAM_NAMED("main","Using order file " << order_file);
       continue;
     }
 
@@ -127,13 +127,13 @@ int main(int argc, char** argv)
     }
   }
 
-  if (order_fp.empty())
+  if (order_file.empty())
   {
     ROS_ERROR_STREAM_NAMED("main","No order json file passed in as argument, aborting.");
     return 1; // error
   }
 
-  picknik_main::APCManager manager(verbose, order_fp, use_experience, show_database, autonomous);
+  picknik_main::APCManager manager(verbose, order_file, use_experience, show_database, autonomous);
 
   std::cout << std::endl;
   std::cout << std::endl;

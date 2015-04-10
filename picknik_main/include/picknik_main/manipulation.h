@@ -21,6 +21,7 @@
 #include <picknik_main/visuals.h>
 #include <picknik_main/manipulation_data.h>
 #include <picknik_main/fix_state_bounds.h>
+#include <picknik_main/remote_control.h>
 
 // ROS
 #include <ros/ros.h>
@@ -49,7 +50,6 @@ namespace picknik_main
 
 typedef std::map<const robot_model::JointModelGroup*,moveit_grasps::GraspDataPtr> GraspDatas;
 
-MOVEIT_CLASS_FORWARD(APCManager);
 MOVEIT_CLASS_FORWARD(Manipulation);
 
 class Manipulation
@@ -63,7 +63,7 @@ public:
   Manipulation(bool verbose, VisualsPtr visuals,
                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                ManipulationDataPtr config, GraspDatas grasp_datas,
-               APCManager* parent, const std::string& package_path,
+               RemoteControlPtr remote_control, const std::string& package_path,
                ShelfObjectPtr shelf, bool use_experience, bool show_database);
 
   /**
@@ -95,6 +95,16 @@ public:
    */
   bool playbackTrajectoryFromFile(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
                                   double velocity_scaling_factor);
+
+  /**
+   * \brief Read a trajectory from CSV and execute on robot state by state
+   * \param file_name - location of file
+   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
+   * \return true on success
+   */
+  bool playbackTrajectoryFromFileInteractive(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
+                                             double velocity_scaling_factor);
 
   /**
    * \brief Record the entire state of a robot to file
@@ -439,8 +449,8 @@ protected:
   // Robot-specific data for generating grasps
   GraspDatas grasp_datas_;
 
-  // The parent manager
-  APCManager* parent_;
+  // Remote control
+  RemoteControlPtr remote_control_;
 
   // Experience-based planning
   bool use_experience_;

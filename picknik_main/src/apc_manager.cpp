@@ -58,7 +58,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to load planning scene monitor");
   }
-
+  
   visuals_.reset(new Visuals(robot_model_, planning_scene_monitor_));
 
   // Get package path
@@ -89,7 +89,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
 
   // Create manipulation manager
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
-                                       this, package_path_, shelf_, use_experience, show_database));
+                                       remote_control_, package_path_, shelf_, use_experience, show_database));
 
   // Load perception layer
   perception_interface_.reset(new PerceptionInterface(verbose_, visuals_, shelf_, config_, tf_, nh_private_));
@@ -98,6 +98,9 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   bool product_simulator_verbose = false;
   ProductSimulator product_simulator(product_simulator_verbose, visuals_, planning_scene_monitor_);
   product_simulator.generateRandomProductPoses(shelf_);
+
+  // Allow collisions between frame of robot and floor
+  allowCollisions();
 
   ROS_INFO_STREAM_NAMED("apc_manager","APC Manager Ready.");
 }
@@ -402,7 +405,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // #################################################################################################################
       case 8: manipulation_->statusPublisher("Grasping");
 
-        if (!manipulation_->openEndEffector(false, arm_jmg))
+        if (!manipulation_->openEndEffectorWithVelocity(false, arm_jmg))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
           return false;
@@ -455,7 +458,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // #################################################################################################################
       case 12: manipulation_->statusPublisher("Releasing product");
 
-        if (!manipulation_->openEndEffector(true, arm_jmg))
+        if (!manipulation_->openEndEffectorWithVelocity(true, arm_jmg))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
           return false;
@@ -600,13 +603,12 @@ bool APCManager::testUpAndDown()
 bool APCManager::testShelfLocation()
 {
   static const double SAFETY_PADDING = -0.23; // Amount to prevent collision with shelf edge
-  double velocity_scaling_factor = 0.75;
   Eigen::Affine3d ee_pose;
 
   // Set EE as closed so that we can touch the tip easier
-  manipulation_->openEndEffector(false, config_->right_arm_);
+  manipulation_->openEndEffectorWithVelocity(false, config_->right_arm_);
   if (config_->dual_arm_)
-    manipulation_->openEndEffector(false, config_->left_arm_);
+    manipulation_->openEndEffectorWithVelocity(false, config_->left_arm_);
 
   // Reduce collision world to simple
   manipulation_->createCollisionWall();
@@ -637,37 +639,37 @@ bool APCManager::testShelfLocation()
     // Visual debug
     visuals_->visual_tools_->publishSphere(ee_pose);
 
-    if (!manipulation_->moveEEToPose(ee_pose, velocity_scaling_factor, arm_jmg))
+    if (!manipulation_->moveEEToPose(ee_pose, config_->main_velocity_scaling_factor_, arm_jmg))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move arm to desired shelf location");
       continue;
     }
 
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << "Waiting before moving forward" << std::endl;
-    remote_control_->waitForNextStep();
+    // std::cout << std::endl;
+    // std::cout << std::endl;
+    // std::cout << "Waiting before moving forward" << std::endl;
+    // remote_control_->waitForNextStep();
 
 
-    ROS_INFO_STREAM_NAMED("apc_manager","Moving forward");
-    bool retreat = false;
-    double desired_approach_distance = 0.02;
-    if (!manipulation_->executeRetreatPath(arm_jmg, desired_approach_distance, retreat))
-    {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move forward " << desired_approach_distance);
-    }
+    // ROS_INFO_STREAM_NAMED("apc_manager","Moving forward");
+    // bool retreat = false;
+    // double desired_approach_distance = 0.02;
+    // if (!manipulation_->executeRetreatPath(arm_jmg, desired_approach_distance, retreat))
+    // {
+    //   ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move forward " << desired_approach_distance);
+    // }
 
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << "Waiting before retreating" << std::endl;
-    remote_control_->waitForNextStep();
+    // std::cout << std::endl;
+    // std::cout << std::endl;
+    // std::cout << "Waiting before retreating" << std::endl;
+    // remote_control_->waitForNextStep();
 
 
-    retreat = true;
-    if (!manipulation_->executeRetreatPath(arm_jmg, desired_approach_distance, retreat))
-    {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move backwards " << desired_approach_distance);
-    }
+    // retreat = true;
+    // if (!manipulation_->executeRetreatPath(arm_jmg, desired_approach_distance, retreat))
+    // {
+    //   ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move backwards " << desired_approach_distance);
+    // }
 
     std::cout << std::endl;
     std::cout << std::endl;
@@ -885,6 +887,7 @@ bool APCManager::calibrateCamera()
   const std::string file_name = "calibration_trajectory";
   manipulation_->getFilePath(file_path, file_name);
 
+  //  if (!manipulation_->playbackTrajectoryFromFileInteractive(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
   if (!manipulation_->playbackTrajectoryFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to playback " << file_name);
@@ -1444,6 +1447,18 @@ bool APCManager::getPlanningSceneService(moveit_msgs::GetPlanningScene::Request 
 RemoteControlPtr APCManager::getRemoteControl()
 {
   return remote_control_;
+}
+
+bool APCManager::allowCollisions()
+{
+  // Allow collisions between frame of robot and floor
+  {
+    planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning 
+    scene->getAllowedCollisionMatrixNonConst().setEntry(shelf_->getEnvironmentCollisionObject("floor_wall")->getCollisionName(), 
+                                                        "frame", true);
+  }
+
+  return true;
 }
 
 } // end namespace

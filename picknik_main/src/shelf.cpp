@@ -317,36 +317,6 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   goal_bin_->setHighResMeshPath("file://" + package_path + "/meshes/goal_bin/goal_bin.stl");
   goal_bin_->setCollisionMeshPath("file://" + package_path + "/meshes/goal_bin/goal_bin.stl");
 
-
-  // Side limit walls
-  if (left_wall_y_ > 0.001 || left_wall_y_ < -0.001)
-  {
-    left_wall_.reset(new RectangleObject(visuals_, rvt::YELLOW, "left_wall"));
-    bottom_right = left_wall_->getBottomRight();
-    bottom_right.translation().x() = -1;
-    bottom_right.translation().y() = left_wall_y_;
-    bottom_right.translation().z() = 0;
-    left_wall_->setBottomRight(bottom_right);
-    top_left = left_wall_->getBottomRight();
-    top_left.translation().x() = 1;
-    top_left.translation().y() = left_wall_y_ + shelf_wall_width_;
-    top_left.translation().z() = shelf_height_;
-    left_wall_->setTopLeft(top_left);
-  }
-  if (right_wall_y_ > 0.001 || right_wall_y_ < -0.001)
-  {
-    right_wall_.reset(new RectangleObject(visuals_, rvt::YELLOW, "right_wall"));
-    right_wall_->setBottomRight(-2,
-                                right_wall_y_,
-                                0);
-    right_wall_->setTopLeft(0,
-                            right_wall_y_ + shelf_wall_width_,
-                            shelf_height_);
-  }
-
-  // Width of arbitrary collision objects
-  static const double COLLISION_OBJECT_WIDTH = 0.1;
-
   // Front wall limit
   front_wall_.reset(new RectangleObject(visuals_, rvt::YELLOW, "front_wall"));
   front_wall_->setBottomRight(-collision_wall_safety_margin_,
@@ -356,24 +326,8 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
                           shelf_width_ * 1.5,
                           shelf_height_);
 
-  // Ceiling wall limit
-  ceiling_wall_.reset(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "ceiling_wall"));
-  ceiling_wall_->setBottomRight(-2,
-                                - shelf_width_,
-                                ceiling_z_);
-  ceiling_wall_->setTopLeft(1,
-                            shelf_width_ * 2,
-                            ceiling_z_ + COLLISION_OBJECT_WIDTH);
-
-  // Floor wall limit
-  floor_wall_.reset(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "floor_wall"));
-  floor_wall_->setBottomRight(ceiling_wall_->getBottomRight().translation().x(),
-                              ceiling_wall_->getBottomRight().translation().y(),
-                              0);
-  floor_wall_->setTopLeft(ceiling_wall_->getTopLeft().translation().x(),
-                          ceiling_wall_->getTopLeft().translation().y(),
-                          -COLLISION_OBJECT_WIDTH);
-
+  // Other objects in our collision environment
+  addOtherCollisionObjects();
 
   // Load mesh file name
   high_res_mesh_path_ = "file://" + package_path + "/meshes/kiva_pod/meshes/pod_lowres.stl";
@@ -398,6 +352,75 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
 
 
   return true;
+}
+
+void ShelfObject::addOtherCollisionObjects()
+{
+  // Side limit walls
+  if (left_wall_y_ > 0.001 || left_wall_y_ < -0.001)
+  {
+    RectangleObjectPtr left_wall(new RectangleObject(visuals_, rvt::YELLOW, "left_wall"));
+    left_wall->setBottomRight(-1,
+                              left_wall_y_,
+                              0);
+    left_wall->setTopLeft(1,
+                          left_wall_y_ + shelf_wall_width_,
+                          shelf_height_);
+    environment_objects_["left_wall"]  =  left_wall;
+  }
+  if (right_wall_y_ > 0.001 || right_wall_y_ < -0.001)
+  {
+    RectangleObjectPtr right_wall(new RectangleObject(visuals_, rvt::YELLOW, "right_wall"));
+    right_wall->setBottomRight(-2,
+                               right_wall_y_,
+                               0);
+    right_wall->setTopLeft(0,
+                           right_wall_y_ + shelf_wall_width_,
+                           shelf_height_);
+    environment_objects_["right_wall"]  =  right_wall;
+  }
+
+  // Ceiling wall limit
+  RectangleObjectPtr ceiling_wall(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "ceiling_wall"));
+  ceiling_wall->setBottomRight(-2,
+                               - shelf_width_,
+                               ceiling_z_);
+  ceiling_wall->setTopLeft(1,
+                           shelf_width_ * 2,
+                           ceiling_z_ + COLLISION_OBJECT_WIDTH);
+  environment_objects_["ceiling_wall"]  =  ceiling_wall;
+
+  // Floor wall limit
+  RectangleObjectPtr floor_wall(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "floor_wall"));
+  floor_wall->setBottomRight(ceiling_wall->getBottomRight().translation().x(),
+                             ceiling_wall->getBottomRight().translation().y(),
+                             0);
+  floor_wall->setTopLeft(ceiling_wall->getTopLeft().translation().x(),
+                         ceiling_wall->getTopLeft().translation().y(),
+                         -COLLISION_OBJECT_WIDTH);
+  environment_objects_["floor_wall"]  =  floor_wall;
+
+  // Left side bars of our dummy shelf
+  static const double SIDE_BAR_WIDTH = 0.12;
+  RectangleObjectPtr left_shelf_bars(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "left_shelf_bars"));
+  left_shelf_bars->setBottomRight(-0.05,
+                                  -SIDE_BAR_WIDTH,
+                                  0.0);
+  left_shelf_bars->setTopLeft(0,
+                              0,
+                              shelf_height_);
+  environment_objects_["left_shelf_bars"]  =  left_shelf_bars;
+
+  // Right side bars of our dummy shelf
+  RectangleObjectPtr right_shelf_bars(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "right_shelf_bars"));
+  right_shelf_bars->setBottomRight(-0.05,
+                                   shelf_width_,
+                                   0.0);
+  right_shelf_bars->setTopLeft(0,
+                               shelf_width_ + SIDE_BAR_WIDTH,
+                               shelf_height_);
+  environment_objects_["right_shelf_bars"]  =  right_shelf_bars;
+
 }
 
 bool ShelfObject::insertBinHelper(int bin_id, double height, double width, double wall_y, double bin_z)
@@ -460,13 +483,8 @@ bool ShelfObject::visualize(bool show_products) const
   // Show goal bin
   goal_bin_->visualize(bottom_right_);
 
-  // Show wall limits
-  if (left_wall_)
-    left_wall_->visualize(bottom_right_);
-  if (right_wall_)
-    right_wall_->visualize(bottom_right_);
-  ceiling_wall_->visualize(bottom_right_);
-  floor_wall_->visualize(bottom_right_);
+  // Show all other collision objects
+  visualizeEnvironmentObjects();
 
   // Show workspace
   static const double GAP_TO_SHELF = 0.1;
@@ -475,6 +493,16 @@ bool ShelfObject::visualize(bool show_products) const
   const Eigen::Vector3d point1(x1, 1, 0);
   const Eigen::Vector3d point2(x2, -1, 0.001);
   visuals_->visual_tools_display_->publishCuboid(point1, point2, rvt::DARK_GREY);
+}
+
+bool ShelfObject::visualizeEnvironmentObjects() const
+{
+  // Show all other environmental objects (walls, etc)
+  for (std::map<std::string,RectangleObjectPtr>::const_iterator env_it = environment_objects_.begin();
+       env_it != environment_objects_.end(); env_it++)
+  {
+    env_it->second->visualize(bottom_right_);
+  }
 }
 
 bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool only_show_shelf_frame, bool show_all_products)
@@ -530,13 +558,12 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
   goal_bin_->createCollisionBodies(bottom_right_);
   goal_bin_->visualizeAxis(bottom_right_);
 
-  // Show wall limits
-  if (left_wall_)
-    left_wall_->createCollisionBodies(bottom_right_);
-  if (right_wall_)
-    right_wall_->createCollisionBodies(bottom_right_);
-  ceiling_wall_->createCollisionBodies(bottom_right_);
-  floor_wall_->createCollisionBodies(bottom_right_);
+  // Show all other environmental objects (walls, etc)
+  for (std::map<std::string,RectangleObjectPtr>::const_iterator env_it = environment_objects_.begin();
+       env_it != environment_objects_.end(); env_it++)
+  {
+    env_it->second->createCollisionBodies(bottom_right_);
+  }
 
   return visuals_->visual_tools_->triggerBatchPublishAndDisable();
 }

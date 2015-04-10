@@ -14,7 +14,6 @@
 
 // PickNik
 #include <picknik_main/manipulation.h>
-#include <picknik_main/apc_manager.h>
 #include <picknik_main/product_simulator.h>
 
 // MoveIt
@@ -42,7 +41,7 @@ namespace picknik_main
 Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
                            planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                            ManipulationDataPtr config, GraspDatas grasp_datas,
-                           APCManager* parent, const std::string& package_path,
+                           RemoteControlPtr remote_control, const std::string& package_path,
                            ShelfObjectPtr shelf, bool use_experience, bool show_database)
   : nh_("~")
   , verbose_(verbose)
@@ -50,7 +49,7 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   , planning_scene_monitor_(planning_scene_monitor)
   , config_(config)
   , grasp_datas_(grasp_datas)
-  , parent_(parent)
+  , remote_control_(remote_control)
   , package_path_(package_path)
   , shelf_(shelf)
   , use_experience_(use_experience)
@@ -200,8 +199,6 @@ bool Manipulation::createCollisionWall()
   // Clear all old collision objects
   visuals_->visual_tools_->removeAllCollisionObjects();
 
-  //shelf_->visualizeAxis(visuals_);
-
   // Front Wall
   shelf_->getFrontWall()->createCollisionBodies(shelf_->getBottomRight());
 
@@ -209,12 +206,7 @@ bool Manipulation::createCollisionWall()
   shelf_->getGoalBin()->createCollisionBodies(shelf_->getBottomRight());
 
   // Bounding walls
-  if (shelf_->getLeftWall())
-    shelf_->getLeftWall()->createCollisionBodies(shelf_->getBottomRight());
-  if (shelf_->getRightWall())
-    shelf_->getRightWall()->createCollisionBodies(shelf_->getBottomRight());
-  shelf_->getCeilingWall()->createCollisionBodies(shelf_->getBottomRight());
-  shelf_->getFloorWall()->createCollisionBodies(shelf_->getBottomRight());
+  shelf_->visualizeEnvironmentObjects();
 
   // Output planning scene
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
@@ -301,6 +293,76 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
   return true;
 }
 
+bool Manipulation::playbackTrajectoryFromFileInteractive(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
+                                                         double velocity_scaling_factor)
+{
+  std::ifstream input_file;
+  input_file.open (file_name.c_str());
+  ROS_DEBUG_STREAM_NAMED("manipultion","Loading trajectory from file " << file_name);
+
+  std::string line;
+  current_state_ = getCurrentState();
+
+  robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, arm_jmg));
+  double dummy_dt = 1; // temp value
+
+  // Read each line
+  while(std::getline(input_file, line))
+  {
+    // Convert line to a robot state
+    moveit::core::RobotStatePtr new_state(new moveit::core::RobotState(*current_state_));
+    moveit::core::streamToRobotState(*new_state, line, ",");
+    robot_trajectory->addSuffixWayPoint(new_state, dummy_dt);
+  }
+
+  // Close file
+  input_file.close();
+
+  // Error check
+  if (robot_trajectory->getWayPointCount() == 0)
+  {
+    ROS_ERROR_STREAM_NAMED("manipultion","No states loaded from CSV file " << file_name);
+    return false;
+  }
+
+  std::cout << std::endl << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << "MOVING ARM TO START OF TRAJECTORY" << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+
+  // Plan to start state of trajectory
+  bool verbose = true;
+  bool execute_trajectory = true;
+  ROS_INFO_STREAM_NAMED("manipulation","Moving to start state of trajectory");
+  if (!move(current_state_, robot_trajectory->getFirstWayPointPtr(), arm_jmg, velocity_scaling_factor,
+            verbose, execute_trajectory))
+  {
+    ROS_ERROR_STREAM_NAMED("manipultion","Unable to plan");
+    return false;
+  }
+
+  // Convert trajectory to a message
+  //moveit_msgs::RobotTrajectory trajectory_msg;
+  //robot_trajectory->getRobotTrajectoryMsg(trajectory_msg);
+
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << "PLAYING BACK TRAJECTORY" << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+
+  for (std::size_t i = 0; i < robot_trajectory->getWayPointCount(); ++i)
+  {
+    ROS_INFO_STREAM_NAMED("manipulation","On trajectory point " << i);
+    if (!executeState(robot_trajectory->getWayPointPtr(i), arm_jmg, velocity_scaling_factor))
+    {
+      ROS_ERROR_STREAM_NAMED("manipulation","Unable to move to next trajectory point");
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool Manipulation::recordTrajectoryToFile(const std::string &file_path)
 {
   bool include_header = false;
@@ -316,7 +378,7 @@ bool Manipulation::recordTrajectoryToFile(const std::string &file_path)
   std::cout << "-------------------------------------------------------" << std::endl;
 
   std::size_t counter = 0;
-  while(ros::ok() && !parent_->getRemoteControl()->getStop())
+  while(ros::ok() && !remote_control_->getStop())
   {
     ROS_INFO_STREAM_THROTTLE_NAMED(1, "manipulation","Recording waypoint #" << counter++ );
 
@@ -326,7 +388,7 @@ bool Manipulation::recordTrajectoryToFile(const std::string &file_path)
   }
 
   // Reset the stop button
-  parent_->getRemoteControl()->setStop(false);
+  remote_control_->setStop(false);
 
   output_file.close();
   return true;
@@ -1237,15 +1299,16 @@ bool Manipulation::openEndEffectors(bool open)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","openEndEffectors()");
 
-  openEndEffector(true, config_->right_arm_);
+  openEndEffectorWithVelocity(true, config_->right_arm_);
   if (config_->dual_arm_)
-    openEndEffector(true, config_->left_arm_);
+    openEndEffectorWithVelocity(true, config_->left_arm_);
   return true;
 }
 
 bool Manipulation::openEndEffector(bool open, const robot_model::JointModelGroup* arm_jmg)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","openEndEffector()");
+  ROS_ERROR_STREAM_NAMED("temp","THIS FUNCTION IS DPERECATED");
 
   getCurrentState();
   const robot_model::JointModelGroup* ee_jmg = grasp_datas_[arm_jmg]->ee_jmg_;
@@ -1294,7 +1357,7 @@ bool Manipulation::openEndEffector(bool open, const robot_model::JointModelGroup
 bool Manipulation::openEndEffectorWithVelocity(bool open, const robot_model::JointModelGroup* arm_jmg)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","openEndEffectorWithVelocity()");
-  ROS_WARN_STREAM_NAMED("temp","velocity EE");
+
   getCurrentState();
   robot_trajectory::RobotTrajectoryPtr ee_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, grasp_datas_[arm_jmg]->ee_jmg_));
 
@@ -1339,9 +1402,6 @@ bool Manipulation::openEndEffectorWithVelocity(bool open, const robot_model::Joi
   // Convert trajectory to a message
   moveit_msgs::RobotTrajectory trajectory_msg;
   ee_trajectory->getRobotTrajectoryMsg(trajectory_msg);
-
-
-  std::cout << "trajectory_msg " << trajectory_msg << std::endl;
 
   // Visualize trajectory in Rviz display
   bool wait_for_trajetory = false;
@@ -1428,14 +1488,14 @@ bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_ms
   }
 
   // Confirm trajectory before continuing
-  if (!parent_->getRemoteControl()->getAutonomous() &&
+  if (!remote_control_->getAutonomous() &&
       // Only wait for non-finger trajectories
       trajectory_msg.joint_trajectory.joint_names.size() > 3)
   {
     std::cout << std::endl;
     std::cout << std::endl;
     std::cout << "Waiting before executing trajectory" << std::endl;
-    parent_->getRemoteControl()->waitForNextStep();
+    remote_control_->waitForNextStep();
   }
 
   ROS_INFO_STREAM_NAMED("manipulation","Executing trajectory...");
@@ -1467,7 +1527,7 @@ bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_ms
             ROS_ERROR_STREAM_NAMED("manipulation","Trajectory execution control failed");
 
         // Disable autonomous mode because something went wrong
-        parent_->getRemoteControl()->setAutonomous(false);
+        remote_control_->setAutonomous(false);
 
         return false;
       }
@@ -1487,9 +1547,8 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","fixCollidingState()");
 
   // Turn off auto mode
-  parent_->getRemoteControl()->setAutonomous(false);
+  remote_control_->setAutonomous(false);
 
-  ROS_INFO_STREAM_NAMED("manipulation","fixCollidingState() TODO: work with dual arms");
   const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->left_arm_ : config_->right_arm_;
 
   // Decide what direction is needed to fix colliding state, using the cloned scene
@@ -1532,7 +1591,8 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   {
     ROS_WARN_STREAM_NAMED("manipulation","Did not find any world objects in collision. Attempting to move home");
     bool check_validity = false;
-    return parent_->moveToStartPosition(NULL, check_validity);
+    ROS_WARN_STREAM_NAMED("manipulation","DISABLED MOVE TO START POSITION TEMP");
+    return false; //parent_->moveToStartPosition(NULL, check_validity);
   }
 
   ROS_INFO_STREAM_NAMED("manipulation","World object " << colliding_world_object << " in collision");
@@ -2033,7 +2093,7 @@ bool Manipulation::fixCurrentCollisionAndBounds(const robot_model::JointModelGro
       std::cout << std::endl;
       std::cout << std::endl;
       std::cout << "Waiting before executing trajectory" << std::endl;
-      parent_->getRemoteControl()->waitForNextStep();
+      remote_control_->waitForNextStep();
 
       // State was modified, send to robot
       if (!executeState(new_state, arm_jmg, config_->main_velocity_scaling_factor_))

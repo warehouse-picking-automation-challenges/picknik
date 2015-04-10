@@ -441,44 +441,9 @@ Load meshes
 
     rosrun picknik_main mesh_publisher
 
-### Random Planning
+## Debugging Tools
 
-Has Baxter choose random poses with both arms and plan to them.
+### Record CSV Files of Controller Data
 
- - Visualization: UNTESTED
- - Hardware: UNTESTED
-
-Start fake controllers
-
-    roslaunch baxter_control baxter_visualization.launch
-
-Rviz Visualizer
-
-    roslaunch picknik_main rviz.launch
-
-Planner
-
-    roslaunch baxter_moveit_scripts random_planning.launch
-
-### End Effector Test
-
-Open and closes both end effectors
-
- - Visualization: Working Jan 30
- - Hardware: UNTESTED
-
-Start fake controllers
-
-    roslaunch baxter_control baxter_visualization.launch
-
-Rviz Visualizer
-
-    roslaunch picknik_main rviz.launch
-
-Load meshes
-
-    roslaunch baxter_moveit_scripts gripper_open_close.launch arm:=right
-
-Notes: make sure you have a Robot STATE display added in Rviz.
-
-
+    rosrun ros_control_boilerplate controller_state_to_csv /home/dave/ros/combined_analysis/jaco_trajectory_1.csv /jacob/kinova/velocity_trajectory_controller/state
+	rosrun ros_control_boilerplate controller_state_to_csv /home/dave/ros/combined_analysis/gantry_trajectory_1.csv /jacob/zaber/velocity_trajectory_controller/state

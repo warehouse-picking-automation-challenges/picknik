@@ -31,6 +31,9 @@ MOVEIT_CLASS_FORWARD(ShelfObject);
 MOVEIT_CLASS_FORWARD(BinObject);
 MOVEIT_CLASS_FORWARD(ProductObject);
 
+// Width of non-important collision objects such that the collision detector does not pass through them
+static const double COLLISION_OBJECT_WIDTH = 0.1;
+
 // -------------------------------------------------------------------------------------------------
 // Bin Object
 // -------------------------------------------------------------------------------------------------
@@ -109,6 +112,11 @@ public:
   bool initialize(const std::string &package_path, ros::NodeHandle &nh);
 
   /**
+   * \brief Other objects in our collision environment
+   */
+  void addOtherCollisionObjects();
+
+  /**
    * \brief Helper for creating a bin
    */
   bool insertBinHelper(int bin_id, double height, double width, double wall_y, double bin_z);
@@ -122,6 +130,11 @@ public:
    * \brief Show shelf in Rviz (not collision bodies)
    */
   bool visualize(bool show_products = true) const;
+
+  /**
+   * \brief Show all other collision objects
+   */
+  bool visualizeEnvironmentObjects() const;
 
   /**
    * \brief Create collision bodies of shelf
@@ -190,50 +203,50 @@ public:
   /**
    * \brief Getter for RightWall
    */ 
-  const RectangleObjectPtr& getRightWall() const
-  {
-    return right_wall_;
-  }
+  // const RectangleObjectPtr& getRightWall() const
+  // {
+  //   return right_wall_;
+  // }
   
-  /**
-   * \brief Getter for FloorWall
-   */ 
-  const RectangleObjectPtr& getFloorWall() const
-  {
-    return floor_wall_;
-  }
+  // /**
+  //  * \brief Getter for FloorWall
+  //  */ 
+  // const RectangleObjectPtr& getFloorWall() const
+  // {
+  //   return floor_wall_;
+  // }
   
-  /**
-   * \brief Getter for CeilingWall
-   */ 
-  const RectangleObjectPtr& getCeilingWall() const
-  {
-    return ceiling_wall_;
-  }
+  // /**
+  //  * \brief Getter for CeilingWall
+  //  */ 
+  // const RectangleObjectPtr& getCeilingWall() const
+  // {
+  //   return ceiling_wall_;
+  // }
   
-  /**
-   * \brief Setter for RightWall
-   */
-  void setRightWall(const RectangleObjectPtr& right_wall)
-  {
-    right_wall_ = right_wall;
-  }
+  // /**
+  //  * \brief Setter for RightWall
+  //  */
+  // void setRightWall(const RectangleObjectPtr& right_wall)
+  // {
+  //   right_wall_ = right_wall;
+  // }
 
-  /**
-   * \brief Getter for LeftWall
-   */ 
-  const RectangleObjectPtr& getLeftWall() const
-  {
-    return left_wall_;
-  }
+  // /**
+  //  * \brief Getter for LeftWall
+  //  */ 
+  // const RectangleObjectPtr& getLeftWall() const
+  // {
+  //   return left_wall_;
+  // }
   
-  /**
-   * \brief Setter for LeftWall
-   */
-  void setLeftWall(const RectangleObjectPtr& left_wall)
-  {
-    left_wall_ = left_wall;
-  }
+  // /**
+  //  * \brief Setter for LeftWall
+  //  */
+  // void setLeftWall(const RectangleObjectPtr& left_wall)
+  // {
+  //   left_wall_ = left_wall;
+  // }
 
   /**
    * \brief Getter for FrontWall
@@ -249,6 +262,14 @@ public:
   void setFrontWall(const RectangleObjectPtr& front_wall)
   {
     front_wall_ = front_wall;
+  }
+
+  /**
+   * \brief Get an object in the environment collision
+   */
+  RectangleObjectPtr getEnvironmentCollisionObject(const std::string& name)
+  {
+    return environment_objects_[name];
   }
   
   // Loaded shelf parameter values
@@ -298,11 +319,9 @@ private:
   BinObjectMap bins_;
 
   MeshObjectPtr goal_bin_;
-  RectangleObjectPtr left_wall_;
-  RectangleObjectPtr right_wall_;
   RectangleObjectPtr front_wall_;
-  RectangleObjectPtr ceiling_wall_;
-  RectangleObjectPtr floor_wall_;
+
+  std::map<std::string,RectangleObjectPtr> environment_objects_;
 
   Eigen::Affine3d high_res_mesh_offset_;
 

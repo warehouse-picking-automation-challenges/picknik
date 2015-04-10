@@ -285,6 +285,11 @@ public:
    */
   RemoteControlPtr getRemoteControl();
 
+  /**
+   * \brief Disable collision checking for certain pairs
+   */
+  bool allowCollisions();
+
 private:
 
   // A shared node handle
