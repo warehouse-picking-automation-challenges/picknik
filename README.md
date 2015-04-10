@@ -392,7 +392,7 @@ Button Mapings
 		16. Test joint limits
 		17. Test requesting preception results
 		18. Record a bin observing trajectory
-		19. Perceive (playback) a bin with camera
+		19. Playback bin observing trajectory (perceive)
 	jump_to - which step in the manipulation pipeline to start on
 	  Steps: NOT CORRECT ANYMORE
 	    0. Move to initial position

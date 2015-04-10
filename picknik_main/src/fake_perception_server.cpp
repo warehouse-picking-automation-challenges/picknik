@@ -123,10 +123,10 @@ public:
 
       // Object pose
       Eigen::Affine3d pose = Eigen::Affine3d::Identity();
-      pose.translation().z() = 0.45;
-      //pose.translation().x() = 0.1;
-      pose = pose 
-        * Eigen::AngleAxisd(1.7, Eigen::Vector3d::UnitY());
+      //pose.translation().z() = 0.45;
+      pose.translation().y() = -0.45;
+      //pose = pose 
+      //  * Eigen::AngleAxisd(1.7, Eigen::Vector3d::UnitY());
         
       new_product.object_pose = visual_tools_->convertPose(pose);
 
