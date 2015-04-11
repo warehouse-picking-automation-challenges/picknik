@@ -177,20 +177,24 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
 
   Eigen::Affine3d cutting_pose = shelf_->getBottomRight() * bin->getBottomRight();
   visuals_->visual_tools_->publishAxis(cutting_pose, 0.2);
+  // Bottom of bin
   grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XY, -1);
+  // Right wall of bin
   grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XZ, -1);
 
-  if (verbose)
+  if (verbose && true)
   {
     visuals_->visual_tools_->publishXYPlane(cutting_pose);
     visuals_->visual_tools_->publishXZPlane(cutting_pose);
   }
 
   cutting_pose.translation() += Eigen::Vector3d(0, bin->getWidth(), bin->getHeight());
+  // Top of bin
   grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XY, 1);
+  // Left wall of bin
   grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XZ, 1);
 
-  if (verbose)
+  if (verbose && true)
   {
     visuals_->visual_tools_->publishXYPlane(cutting_pose);
     visuals_->visual_tools_->publishXZPlane(cutting_pose);

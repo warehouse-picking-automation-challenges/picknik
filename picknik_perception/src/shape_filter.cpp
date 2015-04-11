@@ -70,6 +70,8 @@ public:
     point_cloud_filter_.reset(new PointCloudFilter(tf_, map_frame));
     point_cloud_filter_->initialize();
 
+    point_cloud_filter_->setTransformCacheCallback(boost::bind(&ShapeFilter::getShapeTransformCache, this, 0, _1, _2, _3));
+
     // Load shelf cad
     shapes::ShapeConstPtr shape;
     if (!loadShelf(shape))
@@ -89,11 +91,39 @@ public:
     ROS_INFO_STREAM_NAMED("ShapeFilter","ShapeFilter Ready.");
   }
 
+  bool getShapeTransformCache(std::size_t index, const std::string &target_frame, const ros::Time &target_time, 
+                              ShapeTransformCache &cache) const
+  {
+    if (transform_cache_callback_)
+    {
+      ShapeTransformCache tempCache;
+      if (transform_cache_callback_(target_frame, target_time, tempCache))
+      {
+        for (ShapeTransformCache::iterator it = tempCache.begin() ; it != tempCache.end() ; ++it)
+        {
+          std::map<ShapeHandle, ShapeHandle>::const_iterator jt = mesh_handles_[index].find(it->first);
+          if (jt == mesh_handles_[index].end())
+          {
+            ROS_ERROR_THROTTLE(1, "Incorrect mapping of mesh handles");
+            return false;
+          }
+          else
+            cache[jt->second] = it->second;
+        }
+        return true;
+      }
+      else
+        return false;
+    }
+    else
+      return false;
+  }
+
   bool loadShelf(shapes::ShapeConstPtr shape)
   {
     std::string collision_mesh_path = "file:///home/dave/ros/ws_amazon/src/picknik/picknik_main/meshes/kiva_pod/meshes/pod_lowres.stl";
     //shapes::Shape *mesh = shapes::createMeshFromResource(collision_mesh_path); // make sure its prepended by file://
-    
+
     shape.reset(shapes::createMeshFromResource(collision_mesh_path)); // make sure its prepended by file://
     // &shape = shapes::createMeshFromResource(collision_mesh_path); // make sure its prepended by file://
     //shapes::ShapeMsg shape_msg; // this is a boost::variant type from shape_messages.h
