@@ -22,7 +22,17 @@ Unzip the file and build
 	rosdep install -y --from-paths src --ignore-src --rosdistro indigo
 	catkin build
 
-Also, to reduce debug output add the following to your bashrc:
+To run simulation on your computer, add to your bashrc:
+
+    export ROS_MASTER_URI=http://localhost:11311
+    export ROS_IP=`hostname -I`
+
+To run from someone else's roscore, add to your bashrc:
+
+    export ROS_MASTER_URI=http://THEIR_IP_ADRESS:11311
+    export ROS_IP=`hostname -I`
+
+Also, to reduce debug output, add to your bashrc:
 
     export ROSCONSOLE_CONFIG_FILE=~/ws_picknik/src/picknik/rosconsole.yaml
     export ROSCONSOLE_FORMAT='${severity} ${logger}: ${message}'
