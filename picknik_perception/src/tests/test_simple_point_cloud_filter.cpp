@@ -8,14 +8,17 @@
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <Eigen/Core>
-#include <Eigen/Geometry> // do I really need this?
 
 #include <picknik_perception/simple_point_cloud_filter.h>
 
 #include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 
 #include <keyboard/Key.h>
 #include <sensor_msgs/PointCloud2.h>
+
+#include <pcl_ros/point_cloud.h>
+#include <pcl_ros/transforms.h>
 
 namespace picknik_perception
 {
@@ -28,6 +31,10 @@ private:
   Eigen::Vector3d camera_translation_, camera_rotation_;
   int mode_;
   double delta_;
+  bool processing_;
+  tf::TransformListener tf_listener_;
+
+  ros::Publisher aligned_cloud_pub_;
 
 public:
 
@@ -42,8 +49,12 @@ public:
       nh_.subscribe("/keyboard/keydown", 100, &SimplePointCloudFilterTest::keyboardCallback, this);
 
     // listen to point cloud topic
+    processing_ = false;
     ros::Subscriber pc_sub = 
       nh_.subscribe("/camera/depth_registered/points", 1, &SimplePointCloudFilterTest::pointCloudCallback, this);
+
+    // publish aligned point cloud
+    aligned_cloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("aligned_cloud",1);
 
     // set initial camera transform
     camera_translation_ = Eigen::Vector3d(-1.533, 0.0, 1.076);
@@ -63,18 +74,47 @@ public:
     std::cout << "p\tAdjust Pitch (rotation about Y)" << std::endl;
     std::cout << "w\tAdjust Yaw (rotation about Z)" << std::endl;
 
-    ros::Rate rate(10.0);
+    ros::Rate rate(40.0);
     while (nh_.ok())
     {
       publishCameraTransform();
+      rate.sleep();
     }
 
   }
 
-  void pointCloudCallback(const sensor_msgs::PointCloud2& msg)
+  void pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
   {
+    if (processing_)
+    {
+      ROS_ERROR_STREAM_NAMED("PC_filter.pcCallback","skipped point cloud because currently busy");
+      return;
+    }
+
+    processing_ = true;
+    processPointCloud(msg);
+
+    processing_ = false;
 
   }
+
+  void processPointCloud(const sensor_msgs::PointCloud2ConstPtr& msg)
+  {
+    ROS_DEBUG_STREAM_NAMED("PC_filter.process","processing cloud");
+
+    pcl::PointCloud<pcl::PointXYZRGB> cloud;
+    pcl::fromROSMsg(*msg, cloud);
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr aligned_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+    if (!pcl_ros::transformPointCloud("world", cloud, *aligned_cloud, tf_listener_))
+    {
+      ROS_ERROR_STREAM_NAMED("PC_filter.process","Error converting to desired frame");
+    }
+    
+    
+    aligned_cloud_pub_.publish(aligned_cloud);
+  }
+
 
   void keyboardCallback(const keyboard::Key::ConstPtr& msg)
   {
