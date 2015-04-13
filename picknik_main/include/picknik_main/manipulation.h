@@ -81,12 +81,6 @@ public:
                    moveit_grasps::GraspCandidatePtr& chosen, bool verbose);
 
   /**
-   * \brief Show simple collision wall that protects shelf
-   * \return true on success
-   */
-  bool createCollisionWall();
-
-  /**
    * \brief Read a trajectory from CSV and execute on robot
    * \param file_name - location of file
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)

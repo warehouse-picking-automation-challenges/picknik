@@ -505,6 +505,16 @@ bool ShelfObject::visualizeEnvironmentObjects() const
   }
 }
 
+bool ShelfObject::createCollisionBodiesEnvironmentObjects() const
+{
+  // Show all other environmental objects (walls, etc)
+  for (std::map<std::string,RectangleObjectPtr>::const_iterator env_it = environment_objects_.begin();
+       env_it != environment_objects_.end(); env_it++)
+  {
+    env_it->second->createCollisionBodies(bottom_right_);
+  }
+}
+
 bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool only_show_shelf_frame, bool show_all_products)
 {
   // Publish in batch
@@ -559,11 +569,7 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
   goal_bin_->visualizeAxis(bottom_right_);
 
   // Show all other environmental objects (walls, etc)
-  for (std::map<std::string,RectangleObjectPtr>::const_iterator env_it = environment_objects_.begin();
-       env_it != environment_objects_.end(); env_it++)
-  {
-    env_it->second->createCollisionBodies(bottom_right_);
-  }
+  createCollisionBodiesEnvironmentObjects();
 
   return visuals_->visual_tools_->triggerBatchPublishAndDisable();
 }

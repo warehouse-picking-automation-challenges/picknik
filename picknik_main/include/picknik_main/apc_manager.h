@@ -22,6 +22,7 @@
 #include <picknik_main/manipulation.h>
 //#include <picknik_main/learning_pipeline.h>
 #include <picknik_main/visuals.h>
+#include <picknik_main/planning_scene_manager.h>
 #include <picknik_main/manipulation_data.h>
 #include <picknik_main/perception_interface.h>
 #include <picknik_main/remote_control.h>
@@ -59,12 +60,6 @@ public:
    * \param autonomous - whether it should pause for human input
    */
   APCManager(bool verbose, std::string order_file_path, bool use_experience, bool show_database, bool autonomous = false);
-
-  /**
-   * \brief Destructor
-   */
-  ~APCManager()
-  {}
 
   /**
    * \brief Check if all communication is properly active
@@ -108,6 +103,12 @@ public:
    * \return true on success
    */
   bool testEndEffectors();
+
+  /**
+   * \brief Test switching planning scene modes
+   * \return true on success
+   */
+  bool testVisualizeShelf();
 
   /**
    * \brief Simple script to move hand up and down on z axis from whereever it currently is
@@ -261,11 +262,6 @@ public:
   bool loadShelfContents(std::string order_file_path);
 
   /**
-   * \brief Show detailed shelf
-   */
-  bool visualizeShelf();
-
-  /**
    * \brief Connect to the MoveIt! planning scene messages
    */
   bool loadPlanningSceneMonitor();
@@ -302,6 +298,7 @@ private:
 
   // For visualizing things in rviz
   VisualsPtr visuals_;
+  PlanningSceneManagerPtr planning_scene_manager_;
 
   // Core MoveIt components
   robot_model_loader::RobotModelLoaderPtr robot_model_loader_;

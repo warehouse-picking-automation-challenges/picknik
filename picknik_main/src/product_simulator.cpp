@@ -76,12 +76,15 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
   
   // Show empty shelf in Rviz DISPLAY
-  visuals_->visual_tools_display_->deleteAllMarkers(); // clear all old markers
-  visuals_->visual_tools_display_->enableBatchPublishing(true); // don't show markers yet
-  bool show_products = false;
-  shelf->visualize(show_products);
-  shelf->visualizeAxis(visuals_);
-
+  bool change_rviz_displays = false;
+  if (change_rviz_displays)
+  {
+    visuals_->visual_tools_display_->deleteAllMarkers(); // clear all old markers
+    visuals_->visual_tools_display_->enableBatchPublishing(true); // don't show markers yet
+    bool show_products = false;
+    shelf->visualize(show_products);
+    shelf->visualizeAxis(visuals_);
+  }
   // Loop through each bin
   for (BinObjectMap::const_iterator bin_it = shelf->getBins().begin(); bin_it != shelf->getBins().end(); bin_it++)
   {
@@ -130,8 +133,11 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
           } // for lower z height
 
           // Use current location, no matter where it ended up
+          if (change_rviz_displays)
+          {
           product->createCollisionBodies(world_to_bin_transform);
           product->visualize(world_to_bin_transform);
+          }
           break;
         }
 
@@ -143,7 +149,8 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
   } // for each bin
 
   // Show all display markers at once
-  visuals_->visual_tools_display_->triggerBatchPublishAndDisable();
+  if (change_rviz_displays)
+    visuals_->visual_tools_display_->triggerBatchPublishAndDisable();
 }
 
 bool ProductSimulator::addCollisionMesh(ProductObjectPtr& product, const Eigen::Affine3d& trans)

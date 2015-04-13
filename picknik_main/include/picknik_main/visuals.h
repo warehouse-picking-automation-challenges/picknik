@@ -24,10 +24,15 @@
 // PickNik
 #include <picknik_main/namespaces.h>
 
+// Boost
+#include <boost/enable_shared_from_this.hpp>
+
 namespace picknik_main
 {
 
-class Visuals
+MOVEIT_CLASS_FORWARD(ShelfObject);
+
+class Visuals : public boost::enable_shared_from_this<Visuals>
 {
 public:
 
@@ -36,6 +41,8 @@ public:
    * \param verbose - run in debug mode
    */
   Visuals(robot_model::RobotModelPtr robot_model, planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor);
+
+  bool visualizeDisplayShelf(ShelfObjectPtr shelf);
 
   // Public vars
   mvt::MoveItVisualToolsPtr visual_tools_;

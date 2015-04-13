@@ -86,13 +86,6 @@ public:
   }
 
   /**
-   * \brief Destructor
-   */
-  ~FakePerceptionServer()
-  {
-  }
-
-  /**
    * \brief Callback when a request is recieved for recognized objects
    * \param req - Request
    * \param res - Response

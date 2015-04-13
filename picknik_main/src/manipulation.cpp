@@ -209,29 +209,6 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
   return true;
 }
 
-bool Manipulation::createCollisionWall()
-{
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","createCollisionWall()");
-
-  // Clear all old collision objects
-  visuals_->visual_tools_->removeAllCollisionObjects();
-
-  // Front Wall
-  shelf_->getFrontWall()->createCollisionBodies(shelf_->getBottomRight());
-
-  // Goal bin
-  shelf_->getGoalBin()->createCollisionBodies(shelf_->getBottomRight());
-
-  // Bounding walls
-  shelf_->visualizeEnvironmentObjects();
-
-  // Output planning scene
-  visuals_->visual_tools_->triggerPlanningSceneUpdate();
-  ros::Duration(0.1).sleep(); // TODO remove?
-
-  return true;
-}
-
 bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
                                               double velocity_scaling_factor)
 {

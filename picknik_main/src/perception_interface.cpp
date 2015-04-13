@@ -79,7 +79,7 @@ PerceptionInterface::PerceptionInterface(bool verbose, VisualsPtr visuals, Shelf
 
 bool PerceptionInterface::isPerceptionReady()
 {
-  ROS_INFO_STREAM_NAMED("apc_manager","Waiting for object perception server on topic " << PERCEPTION_TOPIC);
+  ROS_INFO_STREAM_NAMED("perception_interface","Waiting for object perception server on topic " << PERCEPTION_TOPIC);
 
   find_objects_action_.waitForServer();
   return true;
@@ -113,16 +113,22 @@ bool PerceptionInterface::endPerception(ProductObjectPtr& product, BinObjectPtr&
   }
 
   // Tell the perception pipeline we are done moving the camera
-  ROS_INFO_STREAM_NAMED("perception_interface","Sending stop command to perception server");
-  std_msgs::Bool result;
-  result.data = true; // meaningless value
-  stop_perception_pub_.publish( result );
-  ros::spinOnce(); // repeat 3 times for guarantees
-  ros::Duration(0.1).sleep();
-  stop_perception_pub_.publish( result );
-  ros::spinOnce();
-  ros::Duration(0.1).sleep();
-  stop_perception_pub_.publish( result );
+  bool use_stop_command = false;
+  if (use_stop_command)
+  {
+    ROS_INFO_STREAM_NAMED("perception_interface","Sending stop command to perception server");
+    std_msgs::Bool result;
+    result.data = true; // meaningless value
+    stop_perception_pub_.publish( result );
+    ros::spinOnce(); // repeat 3 times for guarantees
+    ros::Duration(0.1).sleep();
+    stop_perception_pub_.publish( result );
+    ros::spinOnce();
+    ros::Duration(0.1).sleep();
+    stop_perception_pub_.publish( result );
+  }
+  else
+    ROS_WARN_STREAM_NAMED("pereption_interface","Not using stop command!");
 
   ROS_INFO_STREAM_NAMED("perception_interface","Waiting for response from perception server");
 
@@ -142,7 +148,7 @@ bool PerceptionInterface::endPerception(ProductObjectPtr& product, BinObjectPtr&
 
   // Get result
   picknik_msgs::FindObjectsResultConstPtr perception_result = find_objects_action_.getResult();
-  ROS_DEBUG_STREAM_NAMED("apc_manager.perception","Perception result:\n" << *perception_result);
+  //ROS_DEBUG_STREAM_NAMED("perception_interface","Perception result:\n" << *perception_result);
 
   if (!perception_result->succeeded)
   {

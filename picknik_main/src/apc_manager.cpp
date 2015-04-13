@@ -58,7 +58,8 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to load planning scene monitor");
   }
-  
+
+  // Load multiple visual_tools classes
   visuals_.reset(new Visuals(robot_model_, planning_scene_monitor_));
 
   // Get package path
@@ -98,6 +99,13 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   bool product_simulator_verbose = false;
   ProductSimulator product_simulator(product_simulator_verbose, visuals_, planning_scene_monitor_);
   product_simulator.generateRandomProductPoses(shelf_);
+
+  // Load planning scene manager
+  planning_scene_manager_.reset(new PlanningSceneManager(verbose, visuals_, shelf_));
+  planning_scene_manager_->displayShelfWithOpenBins();
+
+  // Visualize detailed shelf
+  visuals_->visualizeDisplayShelf(shelf_);
 
   // Allow collisions between frame of robot and floor
   allowCollisions();
@@ -141,7 +149,7 @@ bool APCManager::checkSystemReady()
   const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Check robot state valid
-  manipulation_->createCollisionWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
+  planning_scene_manager_->displayShelfAsWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
   while (ros::ok() && !manipulation_->fixCurrentCollisionAndBounds(arm_jmg))
   {
     // Show the current state just for the heck of it
@@ -162,24 +170,6 @@ bool APCManager::checkSystemReady()
   ROS_INFO_STREAM_NAMED("apc_manager","checkSystemReady() COMPLETE");
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
-  return true;
-}
-
-bool APCManager::focusSceneOnBin( const std::string& bin_name )
-{
-  // Disable all bins except desired one
-  visuals_->visual_tools_->deleteAllMarkers(); // clear all old markers
-  visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
-
-  // Visualize
-  bool only_show_shelf_frame = false;
-  ROS_INFO_STREAM_NAMED("apc_manager","Showing planning scene shelf with focus on bin " << bin_name);
-
-  shelf_->createCollisionBodies(bin_name, only_show_shelf_frame);
-  visuals_->visual_tools_->triggerPlanningSceneUpdate();
-  shelf_->visualizeAxis(visuals_);
-  ros::Duration(0.5).sleep();
-
   return true;
 }
 
@@ -282,7 +272,9 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
 
         // Clear the temporary purple robot state image
         visuals_->visual_tools_->hideRobot();
-        manipulation_->createCollisionWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
+
+        // Set planning scene
+        planning_scene_manager_->displayShelfAsWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
 
         if (!skip_homing_step_)
         {
@@ -300,6 +292,9 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // #################################################################################################################
       case 1: manipulation_->statusPublisher("Open end effectors");
 
+        // Set planning scene
+        planning_scene_manager_->displayShelfWithOpenBins();
+
         if (!manipulation_->openEndEffectors(true))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to open end effectors");
@@ -311,14 +306,10 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // #################################################################################################################
       case 2: manipulation_->statusPublisher("Finding location of product " + work_order.product_->getName() + " from " + work_order.bin_->getName());
 
-        // Move camera to desired bin
-        if (!focusSceneOnBin( work_order.bin_->getName() ))
-        {
-          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to setup planning scene");
-          return false;
-        }
+        // Set planning scene
+        planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
-        // Get pose of product
+        // Move camera to desired bin to get pose of product
         if (!perceiveObject(work_order, verbose))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
@@ -328,6 +319,9 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
 
         // #################################################################################################################
       case 3: manipulation_->statusPublisher("Get grasp for product " + work_order.product_->getName() + " from " + work_order.bin_->getName());
+
+        // Set planning scene
+        planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
         // Choose which arm to use
         arm_jmg = manipulation_->chooseArm(work_order.product_->getWorldPose(shelf_, work_order.bin_));
@@ -361,6 +355,9 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Hide the purple robot
         visuals_->visual_tools_->hideRobot();
 
+        // Set planning scene
+        planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
+
         if (!manipulation_->generateApproachPath(chosen, approach_trajectory_msg, pre_grasp_state, the_grasp_state, verbose))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to generate straight approach path");
@@ -381,6 +378,9 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // #################################################################################################################
       case 6: manipulation_->statusPublisher("Moving to pre-grasp position");
 
+        // Set planning scene
+        planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
+
         current_state = manipulation_->getCurrentState();
         manipulation_->setStateWithOpenEE(true, current_state);
 
@@ -394,8 +394,11 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // #################################################################################################################
       case 7: manipulation_->statusPublisher("Cartesian move to the-grasp position");
 
+        // Set planning scene
+        planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
+
         // Create the collision objects
-        if (!focusSceneOnBin( work_order.bin_->getName() ))
+        if (!planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() ))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to setup planning scene");
           return false;
@@ -418,6 +421,9 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // #################################################################################################################
       case 8: manipulation_->statusPublisher("Grasping");
 
+        // Set planning scene
+        planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
+
         if (!manipulation_->openEndEffectorWithVelocity(false, arm_jmg))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
@@ -435,6 +441,9 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // #################################################################################################################
       case 9: manipulation_->statusPublisher("Lifting product UP slightly");
 
+        // Set planning scene
+        planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
+
         // Clear all collision objects
         visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
 
@@ -448,6 +457,9 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // #################################################################################################################
       case 10: manipulation_->statusPublisher("Moving BACK to pre-grasp position (retreat path)");
 
+        // Set planning scene
+        planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
+
         if (!manipulation_->executeRetreatPath(arm_jmg))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute retrieval path after grasping");
@@ -458,7 +470,10 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // #################################################################################################################
       case 11: manipulation_->statusPublisher("Placing product in bin");
 
-        manipulation_->createCollisionWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
+        // Set planning scene
+        planning_scene_manager_->displayShelfAsWall();
+
+        planning_scene_manager_->displayShelfAsWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
 
         if (!placeObjectInGoalBin(arm_jmg))
         {
@@ -470,6 +485,9 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
 
         // #################################################################################################################
       case 12: manipulation_->statusPublisher("Releasing product");
+
+        // Set planning scene
+        planning_scene_manager_->displayShelfAsWall();
 
         if (!manipulation_->openEndEffectorWithVelocity(true, arm_jmg))
         {
@@ -576,7 +594,13 @@ bool APCManager::testEndEffectors()
 }
 
 // Mode 13
-// Do nothing
+bool APCManager::testVisualizeShelf()
+{
+  ROS_INFO_STREAM_NAMED("apc_manager","Testing all planning scene manager modes");
+  planning_scene_manager_->testAllModes();
+  ros::spin();
+  return true;
+}
 
 // Mode 5
 bool APCManager::testUpAndDown()
@@ -624,7 +648,7 @@ bool APCManager::testShelfLocation()
     manipulation_->openEndEffectorWithVelocity(false, config_->left_arm_);
 
   // Reduce collision world to simple
-  manipulation_->createCollisionWall();
+  planning_scene_manager_->displayShelfAsWall();
 
   // Loop through each bin
   for (BinObjectMap::const_iterator bin_it = shelf_->getBins().begin(); bin_it != shelf_->getBins().end(); bin_it++)
@@ -778,7 +802,7 @@ bool APCManager::testInCollision()
 // Mode 6
 bool APCManager::testRandomValidMotions()
 {
-  visualizeShelf();
+  planning_scene_manager_->displayShelfWithOpenBins();
 
   // Allow collision between Jacob and bottom for most links
   {
@@ -821,7 +845,7 @@ bool APCManager::testRandomValidMotions()
         // Plan to this position
         bool verbose = true;
         bool execute_trajectory = true;
-        if (manipulation_->move(current_state, goal_state, arm_jmg, config_->main_velocity_scaling_factor_, verbose, 
+        if (manipulation_->move(current_state, goal_state, arm_jmg, config_->main_velocity_scaling_factor_, verbose,
                                 execute_trajectory))
         {
           ROS_INFO_STREAM_NAMED("apc_manager","Planned to random valid state successfullly");
@@ -903,7 +927,7 @@ bool APCManager::calibrateCamera()
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effectors");
     return false;
-  }  
+  }
 
   // Choose which planning group to use
   const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
@@ -1246,7 +1270,7 @@ bool APCManager::perceiveBinWithCamera(BinObjectPtr bin)
   }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done observing bin");
-  return true;    
+  return true;
 }
 
 
@@ -1265,7 +1289,7 @@ bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
 
   // Communicate with perception pipeline
   std::cout << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;  
+  std::cout << "-------------------------------------------------------" << std::endl;
   perception_interface_->startPerception(product, bin);
 
   // Perturb camera
@@ -1386,29 +1410,6 @@ bool APCManager::loadShelfContents(std::string work_order_file_path)
   return parser.parse(work_order_file_path, package_path_, shelf_, orders_);
 }
 
-bool APCManager::visualizeShelf()
-{
-  // Show the mesh visualization
-  visuals_->visual_tools_display_->deleteAllMarkers(); // clear all old markers
-  visuals_->visual_tools_display_->enableBatchPublishing(true);
-  shelf_->visualize();
-  shelf_->visualizeAxis(visuals_);
-  visuals_->visual_tools_display_->triggerBatchPublishAndDisable();
-
-  // Show empty shelf to help in reversing robot arms to initial position
-  visuals_->visual_tools_->removeAllCollisionObjects();
-  bool just_frame = false;
-  bool show_all_products = false;
-  shelf_->createCollisionBodies("bin_A", just_frame, show_all_products); // only show the frame
-  shelf_->visualizeAxis(visuals_);
-  visuals_->visual_tools_->triggerPlanningSceneUpdate();
-
-  // Show the current state just for the heck of it
-  publishCurrentState();
-
-  return true;
-}
-
 bool APCManager::loadPlanningSceneMonitor()
 {
   // Allows us to sycronize to Rviz and also publish collision objects to ourselves
@@ -1484,8 +1485,8 @@ bool APCManager::allowCollisions()
 {
   // Allow collisions between frame of robot and floor
   {
-    planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning 
-    scene->getAllowedCollisionMatrixNonConst().setEntry(shelf_->getEnvironmentCollisionObject("floor_wall")->getCollisionName(), 
+    planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning
+    scene->getAllowedCollisionMatrixNonConst().setEntry(shelf_->getEnvironmentCollisionObject("floor_wall")->getCollisionName(),
                                                         "frame", true);
   }
 

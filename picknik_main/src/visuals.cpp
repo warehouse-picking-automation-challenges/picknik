@@ -12,7 +12,9 @@
   Desc:   Holder for multiple visuals tools
 */
 
+// PickNik
 #include <picknik_main/visuals.h>
+#include <picknik_main/shelf.h>
 
 namespace picknik_main
 {
@@ -52,6 +54,17 @@ Visuals::Visuals(robot_model::RobotModelPtr robot_model, planning_scene_monitor:
   goal_state_->hideRobot(); // show that things have been reset
 
 }
+
+bool Visuals::visualizeDisplayShelf(ShelfObjectPtr shelf)
+{
+  visual_tools_display_->deleteAllMarkers(); // clear all old markers
+  visual_tools_display_->enableBatchPublishing(true);
+  shelf->visualize();
+  shelf->visualizeAxis(shared_from_this());
+  visual_tools_display_->triggerBatchPublishAndDisable();
+  return true;
+}
+
 
 
 } // end namespace

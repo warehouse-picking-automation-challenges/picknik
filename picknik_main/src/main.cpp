@@ -205,6 +205,7 @@ int main(int argc, char** argv)
 
     case 13:
       ROS_INFO_STREAM_NAMED("main","Only visualizing shelf... ready to shutdown.");
+      manager.testVisualizeShelf();
       ros::spin();
       break;
     case 14:

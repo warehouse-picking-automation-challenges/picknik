@@ -137,6 +137,11 @@ public:
   bool visualizeEnvironmentObjects() const;
 
   /**
+   * \brief Add all other collision objects to planning scene
+   */
+  bool createCollisionBodiesEnvironmentObjects() const;
+
+  /**
    * \brief Create collision bodies of shelf
    * \param focus_bin_id - which bin to enable e.g. allow manipulation in
    * \param only_show_shelf_frame - when false, show the contents of the shelf too
