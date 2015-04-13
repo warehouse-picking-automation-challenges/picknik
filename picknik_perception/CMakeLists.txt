@@ -40,19 +40,33 @@ include_directories(SYSTEM
   ${EIGEN_INCLUDE_DIRS}
 )
 
-add_library(point_cloud_filter
-  src/point_cloud_filter.cpp
+#add_library(point_cloud_filter
+#  src/point_cloud_filter.cpp
+#)
+#target_link_libraries(point_cloud_filter
+#  ${catkin_LIBRARIES} 
+#  ${Boost_LIBRARIES}
+#)
+
+#add_executable(shape_filter
+#  src/shape_filter.cpp
+#)
+#target_link_libraries(shape_filter
+#  point_cloud_filter
+#  ${catkin_LIBRARIES} 
+#  ${Boost_LIBRARIES}
+
+add_library(simple_point_cloud_filter
+  src/simple_point_cloud_filter.cpp
 )
-target_link_libraries(point_cloud_filter
-  ${catkin_LIBRARIES} 
-  ${Boost_LIBRARIES}
+target_link_libraries(simple_point_cloud_filter
+  ${catkin_LIBRARIES}
 )
 
-add_executable(shape_filter
-  src/shape_filter.cpp
+add_executable(test_simple_point_cloud_filter
+  src/tests/test_simple_point_cloud_filter.cpp
 )
-target_link_libraries(shape_filter
-  point_cloud_filter
-  ${catkin_LIBRARIES} 
-  ${Boost_LIBRARIES}
+target_link_libraries(test_simple_point_cloud_filter
+  simple_point_cloud_filter
+  ${catkin_LIBRARIES}
 )
