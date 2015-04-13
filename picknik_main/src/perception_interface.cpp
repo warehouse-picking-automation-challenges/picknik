@@ -166,7 +166,7 @@ bool PerceptionInterface::endPerception(ProductObjectPtr& product, BinObjectPtr&
 }
 
 bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResultConstPtr result,
-                                               ProductObjectPtr& product, BinObjectPtr& bin)
+                                                   ProductObjectPtr& product, BinObjectPtr& bin)
 {
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;

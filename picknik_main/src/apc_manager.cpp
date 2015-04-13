@@ -230,11 +230,24 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
   moveit_msgs::RobotTrajectory approach_trajectory_msg;
   bool wait_for_trajetory = false;
 
-  // Prevent jump-to errors
+  // Fake perception of product
   if (jump_to == 3)
   {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Cannot jump to step 3 - must start on step 2 to choose grasp");
-    jump_to = 0;
+    BinObjectPtr bin = shelf_->getBin(3);
+    ProductObjectPtr product = bin->getProducts()[0];
+    const Eigen::Affine3d& world_to_bin = picknik_main::transform(bin->getBottomRight(), shelf_->getBottomRight());
+
+    Eigen::Affine3d fake_centroid = Eigen::Affine3d::Identity();
+    fake_centroid.translation().y() = 0.1;
+    fake_centroid.translation().x() = 0.1;
+    fake_centroid.translation().z() = 0.1;
+    fake_centroid = fake_centroid
+      * Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX());
+    product->setCentroid(fake_centroid);
+
+    // Show in collision and display Rvizs
+    product->visualize(world_to_bin);
+    product->createCollisionBodies(world_to_bin);
   }
 
   if (!remote_control_->getAutonomous())
@@ -499,7 +512,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
   return true;
 }
 
-// Mode 2
+// Mode 19
 bool APCManager::trainExperienceDatabase()
 {
   ROS_ERROR_STREAM_NAMED("apc_manager","disabled");
@@ -517,7 +530,7 @@ bool APCManager::trainExperienceDatabase()
   return true;
 }
 
-// Mode 3
+// Mode 8
 bool APCManager::testEndEffectors()
 {
   // Test visualization
@@ -562,7 +575,7 @@ bool APCManager::testEndEffectors()
   return true;
 }
 
-// Mode 4
+// Mode 13
 // Do nothing
 
 // Mode 5
@@ -599,7 +612,7 @@ bool APCManager::testUpAndDown()
   return true;
 }
 
-// Mode 6
+// Mode 7
 bool APCManager::testShelfLocation()
 {
   static const double SAFETY_PADDING = -0.23; // Amount to prevent collision with shelf edge
@@ -681,7 +694,7 @@ bool APCManager::testShelfLocation()
   return true;
 }
 
-// Mode 7
+// Mode 14
 bool APCManager::getSRDFPose()
 {
   ROS_DEBUG_STREAM_NAMED("apc_manager","Get SRDF pose");
@@ -714,7 +727,7 @@ bool APCManager::getSRDFPose()
 
 }
 
-// Mode 8
+// Mode 3
 bool APCManager::testGoalBinPose()
 {
   const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
@@ -746,7 +759,7 @@ bool APCManager::testGoalBinPose()
   return true;
 }
 
-// Mode 9
+// Mode 15
 bool APCManager::testInCollision()
 {
   // Choose which planning group to use
@@ -762,7 +775,7 @@ bool APCManager::testInCollision()
   return true;
 }
 
-// Mode 10
+// Mode 6
 bool APCManager::testRandomValidMotions()
 {
   visualizeShelf();
@@ -829,7 +842,7 @@ bool APCManager::testRandomValidMotions()
   return true;
 }
 
-// Mode 11
+// Mode 4
 bool APCManager::testCameraPositions()
 {
   std::size_t bin_skipper = 0;
@@ -880,7 +893,7 @@ bool APCManager::testCameraPositions()
   return true;
 }
 
-// Mode 12
+// Mode 9
 bool APCManager::calibrateCamera()
 {
   ROS_DEBUG_STREAM_NAMED("apc_manager","Calibrating camera");
@@ -911,7 +924,7 @@ bool APCManager::calibrateCamera()
   return true;
 }
 
-// Mode 13
+// Mode 10
 bool APCManager::recordCalibrationTrajectory()
 {
   ROS_INFO_STREAM_NAMED("apc_manager","Recoding calibration trajectory");
@@ -928,7 +941,7 @@ bool APCManager::recordCalibrationTrajectory()
   return true;
 }
 
-// Mode 14
+// Mode 2
 bool APCManager::testGoHome()
 {
   ROS_DEBUG_STREAM_NAMED("apc_manager","Going home");
@@ -938,7 +951,7 @@ bool APCManager::testGoHome()
   moveToStartPosition(arm_jmg);
 }
 
-// Mode 15
+// Mode 16
 bool APCManager::testGraspGenerator()
 {
   // Benchmark runtime
@@ -1080,7 +1093,7 @@ bool APCManager::testGraspGenerator()
   logging_file.flush(); // save
 }
 
-// Mode 16
+// Mode 17
 bool APCManager::testJointLimits()
 {
   ROS_INFO_STREAM_NAMED("apc_manager","Testing joint limits");
@@ -1158,7 +1171,7 @@ bool APCManager::testJointLimits()
   return true;
 }
 
-// Mode 17
+// Mode 18
 bool APCManager::testPerceptionComm()
 {
   BinObjectPtr& bin = shelf_->getBins()["bin_D"];
@@ -1186,13 +1199,13 @@ bool APCManager::testPerceptionComm()
   return true;
 }
 
-// Mode 18
+// Mode 11
 bool APCManager::recordBinWithCamera(std::size_t bin_id)
 {
   return recordBinWithCamera(shelf_->getBin(bin_id));
 }
 
-// Mode 19
+// Mode 12
 bool APCManager::perceiveBinWithCamera(std::size_t bin_id)
 {
   return perceiveBinWithCamera(shelf_->getBin(bin_id));

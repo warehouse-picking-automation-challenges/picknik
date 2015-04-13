@@ -1497,6 +1497,11 @@ bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_ms
     }
   }
 
+  // Visualize the path
+  if (true)
+    visuals_->visual_tools_->publishTrajectoryLine(trajectory_msg, grasp_datas_[config_->right_arm_]->parent_link_, 
+                                                   config_->right_arm_, rvt::LIME_GREEN);
+
   // Create trajectory execution manager
   if( !trajectory_execution_manager_ )
   {

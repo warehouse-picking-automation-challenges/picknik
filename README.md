@@ -389,24 +389,27 @@ Button Mapings
     mode - what program to run inside the apc_manager, defaults to 1
 	  Available Modes:
 	    1. Actual APC contest mode
-		2. Train experience database mode / workspace analysis
-		3. Test open close end effectors
-		4. Visualize shelf
-		5. Up and Down arms
-		6. Verify shelf location
-		7. SRDF: Get the current pose of the robot for the SRDF
-		8. Go to goal bin pose
-		9. Check if current state is in collision
-		10. Plan to random valid locations
-		11. Move camera to each bin location and request ObjectRecognitionServer
-		12. Playback calibration trajectory
-		13. Record a calibration trajectory
-		14. Go home
-		15. Test grasp generator abilities and score results
-		16. Test joint limits
-		17. Test requesting preception results
-		18. Record a bin observing trajectory
-		19. Playback bin observing trajectory (perceive)
+		2. GO home
+		3. GO goal bin
+		4. GO each bin location and request ObjectRecognitionServer
+		5. GO up and down with arms
+		6. GO to random valid locations
+		7. GO to verify shelf locaiton
+		8. Open close end effectors
+		
+		9. Playback calibration trajectory
+		10. Record a calibration trajectory
+		11. Record a bin observing trajectory
+		12. Playback bin observing trajectory (perceive)
+
+        13. Visualize shelf
+		14. SRDF: Get the current pose of the robot for the SRDF
+		15. Check if current state is in collision
+		16. Test grasp generator abilities and score results
+		17. Test joint limits
+		18. Test requesting preception results
+		19. Train experience database mode / workspace analysis
+		
 	jump_to - which step in the manipulation pipeline to start on
 	  Steps: NOT CORRECT ANYMORE
 	    0. Move to initial position

@@ -147,91 +147,94 @@ int main(int argc, char** argv)
       manager.runOrder(order_start, jump_to, num_orders);
       break;
     case 2:
-      ROS_INFO_STREAM_NAMED("main","Train experience database mode");
-      manager.trainExperienceDatabase();
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Go to home position");
+      manager.testGoHome();
       break;
     case 3:
       if (!manager.checkSystemReady()) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Test end effectors mode");
-      manager.testEndEffectors();
+      ROS_INFO_STREAM_NAMED("main","Going to goal_bin place pose");
+      manager.testGoalBinPose();
       break;
     case 4:
-      ROS_INFO_STREAM_NAMED("main","Only visualizing shelf... ready to shutdown.");
-      ros::spin();
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Moving camera to each bin location");      
+      manager.testCameraPositions();
       break;
     case 5:
       if (!manager.checkSystemReady()) return 0;;
       ROS_INFO_STREAM_NAMED("main","Raise the roof (go up and down)");
       manager.testUpAndDown();
-      break;
+      break;      
     case 6:
-      if (!manager.checkSystemReady()) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Verify shelf location");
-      manager.testShelfLocation();
-      break;
-    case 7:
-      ROS_INFO_STREAM_NAMED("main","Get SRDF pose");
-      manager.getSRDFPose();
-      break;
-    case 8:
-      if (!manager.checkSystemReady()) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Going to goal_bin place pose");
-      manager.testGoalBinPose();
-      break;
-    case 9:
-      ROS_INFO_STREAM_NAMED("main","Check if current state is in collision");
-      manager.testInCollision();
-      ros::Duration(5.0).sleep();
-      break;
-    case 10:
       if (!manager.checkSystemReady()) return 0;;
       ROS_INFO_STREAM_NAMED("main","Plan to random valid locations");
       manager.testRandomValidMotions();
       break;
-    case 11:
+    case 7:
       if (!manager.checkSystemReady()) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Moving camera to each bin location");      
-      manager.testCameraPositions();
+      ROS_INFO_STREAM_NAMED("main","Verify shelf location");
+      manager.testShelfLocation();
       break;
-    case 12:
+    case 8:
       if (!manager.checkSystemReady()) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Test camera calibration");
+      ROS_INFO_STREAM_NAMED("main","Test end effectors mode");
+      manager.testEndEffectors();
+      break;
+
+    case 9:
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Playback trajectory for calibration");
       manager.calibrateCamera();
       break;
-    case 13:
+    case 10:
       if (!manager.checkSystemReady()) return 0;;
       ROS_INFO_STREAM_NAMED("main","Recording a trajectory for calibration");
       manager.recordCalibrationTrajectory();
       break;
-    case 14:
-      if (!manager.checkSystemReady()) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Go to home position");
-      manager.testGoHome();
-      break;
-    case 15:
-      ROS_INFO_STREAM_NAMED("main","Testing grasp generator abilities and scoring results");
-      manager.testGraspGenerator();
-      break;
-    case 16:
-      if (!manager.checkSystemReady()) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Test joint limits");
-      manager.testJointLimits();
-      break;
-    case 17:
-      if (!manager.checkSystemReady()) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Requesting perception test");
-      manager.testPerceptionComm();
-      break;
-    case 18:
+    case 11:
       if (!manager.checkSystemReady()) return 0;;
       ROS_INFO_STREAM_NAMED("main","Recording bin observing trajectory");
       manager.recordBinWithCamera(bin_id);
       break;
-    case 19:
+    case 12:
       if (!manager.checkSystemReady()) return 0;;
       ROS_INFO_STREAM_NAMED("main","Playing back bin observing trajectory");
       manager.perceiveBinWithCamera(bin_id);
       break;
+
+    case 13:
+      ROS_INFO_STREAM_NAMED("main","Only visualizing shelf... ready to shutdown.");
+      ros::spin();
+      break;
+    case 14:
+      ROS_INFO_STREAM_NAMED("main","Get SRDF pose");
+      manager.getSRDFPose();
+      break;
+    case 15:
+      ROS_INFO_STREAM_NAMED("main","Check if current state is in collision");
+      manager.testInCollision();
+      ros::Duration(5.0).sleep();
+      break;
+    case 16:
+      ROS_INFO_STREAM_NAMED("main","Testing grasp generator abilities and scoring results");
+      manager.testGraspGenerator();
+      break;
+    case 17:
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Test joint limits");
+      manager.testJointLimits();
+      break;
+    case 18:
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Requesting perception test");
+      manager.testPerceptionComm();
+      break;
+    case 19:
+      ROS_INFO_STREAM_NAMED("main","Train experience database mode");
+      manager.trainExperienceDatabase();
+      break;
+
     default:
       ROS_WARN_STREAM_NAMED("main","Unkown mode: " << mode);
   }

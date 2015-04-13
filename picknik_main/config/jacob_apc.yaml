@@ -39,7 +39,7 @@ joint_state_topic: /joint_states
 
 # Goal bin - different for each robot
 goal_bin_x: -0.35
-goal_bin_y: 0.9365
+goal_bin_y: 0.0635
 goal_bin_z: 0.4
 
 # Side limits (walls)
