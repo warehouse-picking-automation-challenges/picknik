@@ -127,7 +127,9 @@ bool PerceptionInterface::endPerception(ProductObjectPtr& product, BinObjectPtr&
   ROS_INFO_STREAM_NAMED("perception_interface","Waiting for response from perception server");
 
   // Wait for the action to return with product pose
-  if (!find_objects_action_.waitForResult(ros::Duration(20.0)))
+  double timeout = 60;
+  ROS_WARN_STREAM_NAMED("perception_interface","TIMEOUT IS SET HIGH");
+  if (!find_objects_action_.waitForResult(ros::Duration(timeout)))
   {
     ROS_ERROR_STREAM_NAMED("perception_interface","Percetion action did not finish before the time out.");
     is_processing_perception_ = false;

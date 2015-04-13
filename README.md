@@ -257,6 +257,10 @@ Testing
 
 ### Simulation of BAXTER
 
+Start roscore:
+
+    roscore &
+	
 Start fake controllers
 
     roslaunch baxter_control baxter_visualization.launch

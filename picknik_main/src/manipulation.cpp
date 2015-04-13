@@ -182,27 +182,11 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
   // Right wall of bin
   grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XZ, -1);
 
-  if (verbose && true)
-  {
-    visuals_->visual_tools_->publishXYPlane(cutting_pose);
-    visuals_->visual_tools_->publishXZPlane(cutting_pose);
-  }
-
   cutting_pose.translation() += Eigen::Vector3d(0, bin->getWidth(), bin->getHeight());
   // Top of bin
   grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XY, 1);
   // Left wall of bin
   grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XZ, 1);
-
-  if (verbose && true)
-  {
-    visuals_->visual_tools_->publishXYPlane(cutting_pose);
-    visuals_->visual_tools_->publishXZPlane(cutting_pose);
-  }
-
-    //cutting_pose *= Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitY());
-    // grasp_filter_->addDesiredGraspOrientation(cutting_pose, M_PI / 4.0);
-
 
   // Filter grasps based on IK
   bool filter_pregrasps = true;
@@ -1332,9 +1316,9 @@ bool Manipulation::openEndEffectors(bool open)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","openEndEffectors()");
 
-  openEndEffectorWithVelocity(true, config_->right_arm_);
+  openEndEffectorWithVelocity(open, config_->right_arm_);
   if (config_->dual_arm_)
-    openEndEffectorWithVelocity(true, config_->left_arm_);
+    openEndEffectorWithVelocity(open, config_->left_arm_);
   return true;
 }
 

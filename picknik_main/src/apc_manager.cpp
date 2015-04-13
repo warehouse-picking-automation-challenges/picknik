@@ -248,7 +248,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
   while(ros::ok())
   {
 
-    if (!remote_control_->getAutonomous() && false)
+    if (!remote_control_->getAutonomous())
     {
       std::cout << std::endl;
       std::cout << std::endl;
@@ -885,6 +885,13 @@ bool APCManager::calibrateCamera()
 {
   ROS_DEBUG_STREAM_NAMED("apc_manager","Calibrating camera");
 
+  // Close fingers
+  if (!manipulation_->openEndEffectors(false))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effectors");
+    return false;
+  }  
+
   // Choose which planning group to use
   const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
@@ -1165,9 +1172,14 @@ bool APCManager::testPerceptionComm()
   // Communicate with perception pipeline
   perception_interface_->startPerception(product, bin);
 
+  // Dummy wait
+  ROS_WARN_STREAM_NAMED("apc_manager","dummy wait");
+  ros::Duration(15).sleep();
+
   // Get result from perception pipeline
   if (!perception_interface_->endPerception(product, bin))
   {
+    ROS_ERROR_STREAM_NAMED("apc_manager","End perception failed");
     return false;
   }
 

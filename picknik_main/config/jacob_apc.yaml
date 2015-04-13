@@ -8,7 +8,7 @@
 # calibration_velocity_scaling_factor: 0.05
 
 # DEBUG Robot Execution Speed
-main_velocity_scaling_factor: 0.2 # during planning
+main_velocity_scaling_factor: 0.4 # during planning
 approach_velocity_scaling_factor: 0.1
 lift_velocity_scaling_factor: 0.1
 retreat_velocity_scaling_factor: 0.1
