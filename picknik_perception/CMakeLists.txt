@@ -4,6 +4,7 @@ project(picknik_perception)
 find_package(catkin REQUIRED COMPONENTS
   moveit_visual_tools
   cmake_modules
+  eigen_conversions
   picknik_msgs
   picknik_main
   moveit_ros_perception

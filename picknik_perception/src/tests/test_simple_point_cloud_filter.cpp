@@ -8,7 +8,10 @@
 
 #include <ros/ros.h>
 #include <ros/package.h>
+
 #include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <Eigen/Eigenvalues>
 
 #include <picknik_perception/simple_point_cloud_filter.h>
 
@@ -21,7 +24,9 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
 #include <pcl/filters/passthrough.h>
-
+#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/filters/radius_outlier_removal.h>
+#include <pcl/filters/voxel_grid.h>
 
 #include <boost/shared_ptr.hpp>
 
@@ -149,6 +154,13 @@ public:
     pcl::transformPointCloud(*aligned_cloud, *bin_cloud, bin_pose_.inverse());
 
     // Filter based on bounding box
+
+    // does not work as expected
+    // pcl::VoxelGrid<pcl::PointXYZRGB> vox;
+    // vox.setInputCloud(bin_cloud);
+    // vox.setLeafSize(0.01f, 0.01f, 0.01f);
+    // vox.filter(*bin_cloud);o
+
     pcl::PassThrough<pcl::PointXYZRGB> pass_x;
     pass_x.setInputCloud(bin_cloud);
     pass_x.setFilterFieldName("x");
@@ -167,6 +179,19 @@ public:
     pass_z.setFilterLimits(-bin_height_ / 2.0, bin_height_ / 2.0);
     pass_z.filter(*bin_cloud);
 
+    // slowish
+    pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> rad;
+    rad.setInputCloud(bin_cloud);
+    rad.setRadiusSearch(0.03);
+    rad.setMinNeighborsInRadius(200);
+    rad.filter(*bin_cloud);
+
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
+    sor.setInputCloud(bin_cloud);
+    sor.setMeanK(50);
+    sor.setStddevMulThresh(1.0);
+    sor.filter(*bin_cloud);
+
     // Transform point cloud back to world CS
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr bin_cloud_final(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::transformPointCloud(*bin_cloud, *bin_cloud_final, bin_pose_);
@@ -178,6 +203,11 @@ public:
     }
     
     bin_cloud_pub_.publish(bin_cloud_final);
+
+    // display bounding box
+    double depth, width, height;
+    Eigen::Affine3d cuboid_pose;
+    bool bbox = getBoundingBox(bin_cloud_final, cuboid_pose, depth, width, height);
   }
 
   void keyboardCallback(const keyboard::Key::ConstPtr& msg)
@@ -363,6 +393,136 @@ public:
     // publish
     br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "/world" , "/camera_link"));
   }
+
+  // cut/paste from grasp_generator, need to implement point cloud version
+  bool getBoundingBox(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, Eigen::Affine3d& cuboid_pose,
+                      double& depth, double& width, double& height)
+  {
+    int num_vertices = cloud->points.size();
+    ROS_DEBUG_STREAM_NAMED("PC_filter.bbox","num triangles = " << cloud->points.size());
+
+    // calculate centroid and moments of inertia
+    // NOTE: Assimp adds verticies to imported meshes, which is not accounted for in the MOI and CG calculations
+    Eigen::Vector3d centroid = Eigen::Vector3d::Zero();
+    Eigen::Vector3d point = Eigen::Vector3d::Zero();
+    double Ixx, Iyy, Izz, Ixy, Ixz, Iyz;
+    Ixx = 0; Iyy = 0; Izz = 0; Ixy = 0; Ixz = 0; Iyz = 0;
+
+    for (int i = 0; i < num_vertices; i++)
+    {
+      // centroid sum
+      point << cloud->points[i].x, cloud->points[i].y, cloud->points[i].z;
+      centroid += point;
+
+      // moments of inertia sum
+      Ixx += point[1] * point[1] + point[2] * point[2];
+      Iyy += point[0] * point[0] + point[2] * point[2];
+      Izz += point[0] * point[0] + point[1] * point[1];
+      Ixy += point[0] * point[1];
+      Ixz += point[0] * point[2];
+      Iyz += point[1] * point[2];
+
+    }
+
+    // final centroid calculation
+    for (int i = 0; i < 3; i++)
+    {
+      centroid[i] /= num_vertices;
+    }
+    ROS_DEBUG_STREAM_NAMED("PC_filter.bbox","centroid = \n" << centroid);
+
+    visual_tools_->publishSphere(centroid, rviz_visual_tools::PINK, 0.01);
+
+    // Solve for principle axes of inertia
+    Eigen::Matrix3d inertia_axis_aligned;
+    inertia_axis_aligned.row(0) <<  Ixx, -Ixy, -Ixz;
+    inertia_axis_aligned.row(1) << -Ixy,  Iyy, -Iyz;
+    inertia_axis_aligned.row(2) << -Ixz, -Iyz,  Izz;
+
+    ROS_DEBUG_STREAM_NAMED("PC_filter.bbox","inertia_axis_aligned = \n" << inertia_axis_aligned);
+
+    Eigen::EigenSolver<Eigen::MatrixXd> es(inertia_axis_aligned);
+
+    ROS_DEBUG_STREAM_NAMED("PC_filter.bbox","eigenvalues = \n" << es.eigenvalues());
+    ROS_DEBUG_STREAM_NAMED("PC_filter.bbox","eigenvectors = \n" << es.eigenvectors());
+
+    Eigen::Vector3d axis_1 = es.eigenvectors().col(0).real();
+    Eigen::Vector3d axis_2 = es.eigenvectors().col(1).real();
+    Eigen::Vector3d axis_3 = es.eigenvectors().col(2).real();
+
+    // Test if eigenvectors are right-handed
+    Eigen::Vector3d w = axis_1.cross(axis_2) - axis_3;
+    double epsilon = 0.000001;
+    if ( !(std::abs(w(0)) < epsilon && std::abs(w(1)) < epsilon && std::abs(w(2)) < epsilon) )
+    {
+      axis_3 *= -1;
+      ROS_DEBUG_STREAM_NAMED("PC_filter.bbox","eigenvectors are left-handed, multiplying v3 by -1");
+    }
+
+    // assumes msg was given wrt world... probably needs better name
+    Eigen::Affine3d world_to_mesh_transform = Eigen::Affine3d::Identity();
+    world_to_mesh_transform.linear() << axis_1, axis_2, axis_3;
+    world_to_mesh_transform.translation() = centroid;
+
+    // Transform and get bounds
+    Eigen::Vector3d min;
+    Eigen::Vector3d max;
+    for (int i = 0; i < 3; i++)
+    {
+      min(i)=std::numeric_limits<double>::max();
+      max(i)=std::numeric_limits<double>::min();
+    }
+
+    for (int i = 0; i < num_vertices; i++)
+    {
+      point << cloud->points[i].x, cloud->points[i].y, cloud->points[i].z;
+      point = world_to_mesh_transform.inverse() * point;
+      for (int j = 0; j < 3; j++)
+      {
+        if (point(j) < min(j))
+          min(j) = point(j);
+
+        if (point(j) > max(j))
+          max(j) = point(j);
+      }
+    }
+    ROS_DEBUG_STREAM_NAMED("PC_filter.bbox","min = \n" << min);
+    ROS_DEBUG_STREAM_NAMED("PC_filter.bbox","max = \n" << max);
+
+    // points
+    Eigen::Vector3d p[8];
+
+    p[0] << min(0), min(1), min(2);
+    p[1] << max(0), min(1), min(2);
+    p[2] << min(0), max(1), min(2);
+    p[3] << max(0), max(1), min(2);
+
+    p[4] << min(0), min(1), max(2);
+    p[5] << max(0), min(1), max(2);
+    p[6] << min(0), max(1), max(2);
+    p[7] << max(0), max(1), max(2);
+
+    for (int i = 0; i < 8; i++)
+      visual_tools_->publishSphere(world_to_mesh_transform * p[i],rviz_visual_tools::YELLOW,0.01);
+
+    depth = max(0) - min(0);
+    width = max(1) - min(1);
+    height = max(2) - min(2);
+    ROS_DEBUG_STREAM_NAMED("PC_filter.bbox","bbox size = " << depth << ", " << width << ", " << height);
+
+    Eigen::Vector3d translation;
+    translation << (min(0) + max(0)) / 2.0, (min(1) + max(1)) / 2.0, (min(2) + max(2)) / 2.0;
+    ROS_DEBUG_STREAM_NAMED("PC_filter.bbox","bbox origin = \n" << translation);
+    cuboid_pose = world_to_mesh_transform;
+    cuboid_pose.translation() = world_to_mesh_transform * translation;
+
+    visual_tools_->publishCuboid(visual_tools_->convertPose(cuboid_pose),
+                                 depth,width,height,rviz_visual_tools::TRANSLUCENT);
+    visual_tools_->publishAxis(world_to_mesh_transform);
+
+    return true;
+  }
+
 
 };
 
