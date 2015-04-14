@@ -60,6 +60,7 @@ RemoteControl::RemoteControl(bool verbose, ros::NodeHandle nh, APCManager* paren
   std::size_t queue_size = 10;
   remote_next_control_ = nh_.subscribe("/picknik_main/next_command", queue_size, &RemoteControl::remoteNextCallback, this);
   remote_auto_control_ = nh_.subscribe("/picknik_main/auto_command", queue_size, &RemoteControl::remoteAutoCallback, this);
+  remote_full_auto_control_ = nh_.subscribe("/picknik_main/full_auto_command", queue_size, &RemoteControl::remoteFullAutoCallback, this);
   remote_stop_control_ = nh_.subscribe("/picknik_main/stop_command", queue_size, &RemoteControl::remoteStopCallback, this);
   remote_joy_ = nh_.subscribe("/joy", queue_size, &RemoteControl::joyCallback, this);
 
@@ -74,6 +75,11 @@ void RemoteControl::remoteNextCallback(const std_msgs::Bool::ConstPtr& msg)
 void RemoteControl::remoteAutoCallback(const std_msgs::Bool::ConstPtr& msg)
 {
   setAutonomous();
+}
+
+void RemoteControl::remoteFullAutoCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+  setFullAutonomous();
 }
 
 void RemoteControl::remoteStopCallback(const std_msgs::Bool::ConstPtr& msg)
@@ -134,6 +140,14 @@ void RemoteControl::setAutonomous(bool autonomous)
   stop_ = false;
 }
 
+void RemoteControl::setFullAutonomous(bool autonomous)
+{
+  // TODO: disable this feature for final competition
+  full_autonomous_ = autonomous;
+  autonomous_ = autonomous;
+  stop_ = false;
+}
+
 void RemoteControl::setStop(bool stop)
 {
   stop_ = stop;
@@ -148,6 +162,11 @@ bool RemoteControl::getStop()
 bool RemoteControl::getAutonomous()
 {
   return autonomous_;
+}
+
+bool RemoteControl::getFullAutonomous()
+{
+  return full_autonomous_;
 }
 
 bool RemoteControl::waitForNextStep()

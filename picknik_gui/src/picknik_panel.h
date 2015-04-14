@@ -84,6 +84,9 @@ protected Q_SLOTS:
   /// User has chosen to run demo
   void moveAuto();
 
+  /// User has chosen to run demo
+  void moveFullAuto();
+
   /// User has chosen to stop
   void moveStop();
 
@@ -91,11 +94,13 @@ protected Q_SLOTS:
 protected:
   QPushButton *btn_next_;
   QPushButton *btn_auto_;
+  QPushButton *btn_full_auto_;
   QPushButton *btn_stop_;
 
   // The ROS publishers
   ros::Publisher next_publisher_;
   ros::Publisher auto_publisher_;
+  ros::Publisher full_auto_publisher_;
   ros::Publisher stop_publisher_;
 
   // The ROS node handle.

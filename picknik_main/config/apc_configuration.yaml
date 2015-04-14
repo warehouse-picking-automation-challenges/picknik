@@ -25,9 +25,9 @@ bin_left_margin: 0.01
 num_bins: 12.0
 
 # Movement config
-approach_distance_desired: 0.3
-lift_distance_desired: 0.02
-place_goal_down_distance_desired: 0.1
+approach_distance_desired: 5
+lift_distance_desired: 0.03
+place_goal_down_distance_desired: 0.03
 
 # Safety
 collision_wall_safety_margin: 0.01 # 0.02

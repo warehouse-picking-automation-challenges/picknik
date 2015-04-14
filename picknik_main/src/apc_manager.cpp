@@ -125,7 +125,7 @@ bool APCManager::checkSystemReady()
     return false;
   }
   const robot_model::JointModelGroup* ee_jmg = grasp_datas_[config_->right_arm_]->ee_jmg_;
-  if (ee_jmg->getVariableCount() > 3)
+  if (ee_jmg->getVariableCount() > 6)
   {
     ROS_FATAL_STREAM_NAMED("apc_manager","Incorrect number of joints for group " << ee_jmg->getName() << ", joints: "
                            << ee_jmg->getVariableCount());
@@ -193,6 +193,9 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to,
       ROS_ERROR_STREAM_NAMED("apc_manager","Shutting down for debug purposes only (it could continue on)");
       return false;
     }
+
+    // Reset markers for next loop
+    visuals_->visual_tools_->deleteAllMarkers();
   }
 
   manipulation_->statusPublisher("Finished");
@@ -223,7 +226,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
   // Fake perception of product
   if (jump_to == 3)
   {
-    BinObjectPtr bin = shelf_->getBin(3);
+    BinObjectPtr bin = shelf_->getBin(5);
     ProductObjectPtr product = bin->getProducts()[0];
     const Eigen::Affine3d& world_to_bin = picknik_main::transform(bin->getBottomRight(), shelf_->getBottomRight());
 
@@ -232,7 +235,8 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
     fake_centroid.translation().x() = 0.1;
     fake_centroid.translation().z() = 0.1;
     fake_centroid = fake_centroid
-      * Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX());
+      * Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
+      * Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitY());
     product->setCentroid(fake_centroid);
 
     // Show in collision and display Rvizs
@@ -338,25 +342,21 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
 
         // Get the pre and post grasp states
         chosen->getPreGraspState(pre_grasp_state);
-        chosen->getGraspState(the_grasp_state);
+        chosen->getGraspStateOpen(the_grasp_state);
 
         // Visualize
-        if (!remote_control_->getAutonomous() || true)
-        {
-          visuals_->start_state_->publishRobotState(pre_grasp_state, rvt::GREEN);
-          visuals_->goal_state_->publishRobotState(the_grasp_state, rvt::ORANGE);
-        }
-
+        visuals_->start_state_->publishRobotState(pre_grasp_state, rvt::GREEN);
+        visuals_->goal_state_->publishRobotState(the_grasp_state, rvt::ORANGE);
         break;
 
         // #################################################################################################################
       case 4: manipulation_->statusPublisher("Get pre-grasp by generateApproachPath()");
 
-        // Hide the purple robot
-        visuals_->visual_tools_->hideRobot();
-
         // Set planning scene
         planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
+
+        // Hide the purple robot
+        visuals_->visual_tools_->hideRobot();
 
         if (!manipulation_->generateApproachPath(chosen, approach_trajectory_msg, pre_grasp_state, the_grasp_state, verbose))
         {
@@ -379,7 +379,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
       case 6: manipulation_->statusPublisher("Moving to pre-grasp position");
 
         // Set planning scene
-        planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
+        planning_scene_manager_->displayShelfAsWall();
 
         current_state = manipulation_->getCurrentState();
         manipulation_->setStateWithOpenEE(true, current_state);
@@ -521,6 +521,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // #################################################################################################################
       default:
         ROS_INFO_STREAM_NAMED("apc_manager","Manipulation pipeline end reached, ending");
+
         return true;
 
     } // end switch
@@ -597,7 +598,7 @@ bool APCManager::testEndEffectors()
 bool APCManager::testVisualizeShelf()
 {
   ROS_INFO_STREAM_NAMED("apc_manager","Testing all planning scene manager modes");
-  planning_scene_manager_->testAllModes();
+  //planning_scene_manager_->testAllModes();
   ros::spin();
   return true;
 }
@@ -1198,6 +1199,9 @@ bool APCManager::testJointLimits()
 // Mode 18
 bool APCManager::testPerceptionComm()
 {
+  // Display planning scene
+  planning_scene_manager_->displayShelfWithOpenBins();
+
   BinObjectPtr& bin = shelf_->getBins()["bin_D"];
   if (bin->getProducts().size() == 0)
   {
@@ -1263,9 +1267,30 @@ bool APCManager::perceiveBinWithCamera(BinObjectPtr bin)
   std::string file_path;
   manipulation_->getFilePath(file_path, file_name);
 
-  if (!manipulation_->playbackTrajectoryFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
+  if (bin->getProducts().empty())
   {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to playback " << file_name);
+    ROS_ERROR_STREAM_NAMED("apc_manager","No products in bin " << bin->getName());
+    return false;
+  }
+  ROS_WARN_STREAM_NAMED("apc_manager","Temp");
+  ProductObjectPtr product = bin->getProducts()[0];
+
+  // Communicate with perception pipeline
+  perception_interface_->startPerception(product, bin);
+
+  // if (!manipulation_->playbackTrajectoryFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
+  // {
+  //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to playback " << file_name);
+  //   return false;
+  // }
+
+  // Set planning scene
+  planning_scene_manager_->displayShelfWithOpenBins();
+
+  // Get result from perception pipeline
+  if (!perception_interface_->endPerception(product, bin))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","End perception failed");
     return false;
   }
 

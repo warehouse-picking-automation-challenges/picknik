@@ -71,6 +71,7 @@ public:
    * \brief Remote control from Rviz
    */
   void remoteAutoCallback(const std_msgs::Bool::ConstPtr& msg);
+  void remoteFullAutoCallback(const std_msgs::Bool::ConstPtr& msg);
 
   /**
    * \brief Remote control from Rviz
@@ -94,12 +95,14 @@ public:
    * \brief Enable autonomous mode
    */
   void setAutonomous(bool autonomous = true);
+  void setFullAutonomous(bool autonomous = true);
 
   /**
    * \brief Get the autonomous mode
    * \return true if is in autonomous mode
    */
   bool getAutonomous();
+  bool getFullAutonomous();
 
   /**
    * \brief Stop something in pipeline
@@ -131,11 +134,13 @@ private:
   // Remote control
   ros::Subscriber remote_next_control_;
   ros::Subscriber remote_auto_control_;
+  ros::Subscriber remote_full_auto_control_;
   ros::Subscriber remote_stop_control_;
   ros::Subscriber remote_joy_;
 
   // Remote control
   bool autonomous_;
+  bool full_autonomous_;
   bool next_step_ready_;
   bool is_waiting_;
   bool stop_;

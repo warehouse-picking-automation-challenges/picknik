@@ -7,7 +7,7 @@ Panels:
         - /Grid1/Offset1
         - /Amazon Shelf Markers1/Namespaces1
       Splitter Ratio: 0.666041
-    Tree Height: 437
+    Tree Height: 933
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -45,28 +45,29 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /amazon_shelf_markers_display
+      Marker Topic: /picknik_main/highres_markers
       Name: Amazon Shelf Markers
       Namespaces:
         Axis: true
         Cuboid: true
+        Line: true
         Shelf: true
         goal_bin_49: true
-        product_cheezit_big_original_53: true
-        product_crayola_64_ct_54: true
-        product_expo_dry_erase_board_eraser_52: true
-        product_expo_dry_erase_board_eraser_56: true
-        product_expo_dry_erase_board_eraser_57: true
+        product_cheezit_big_original_58: true
+        product_cheezit_big_original_61: true
+        product_crayola_64_ct_57: true
+        product_expo_dry_erase_board_eraser_55: true
         product_expo_dry_erase_board_eraser_59: true
-        product_feline_greenies_dental_treats_58: true
-        product_feline_greenies_dental_treats_64: true
-        product_first_years_take_and_toss_straw_cup_61: true
-        product_first_years_take_and_toss_straw_cup_66: true
-        product_highland_6539_self_stick_notes_60: true
-        product_mommys_helper_outlet_plugs_65: true
-        product_munchkin_white_hot_duck_bath_toy_62: true
-        product_oreo_mega_stuf_55: true
-        product_sharpie_accent_tank_style_highlighters_63: true
+        product_expo_dry_erase_board_eraser_60: true
+        product_expo_dry_erase_board_eraser_62: true
+        product_feline_greenies_dental_treats_67: true
+        product_first_years_take_and_toss_straw_cup_64: true
+        product_first_years_take_and_toss_straw_cup_69: true
+        product_highland_6539_self_stick_notes_63: true
+        product_mommys_helper_outlet_plugs_68: true
+        product_munchkin_white_hot_duck_bath_toy_65: true
+        product_oreo_mega_stuf_56: true
+        product_sharpie_accent_tank_style_highlighters_66: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -79,258 +80,108 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        arm_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        collision_head_link_1:
+        camera_mount:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        collision_head_link_2:
+        frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        display:
+        gantry:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        dummyhead1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        head:
+        gantry_plate:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        head_camera:
+        jaco2_end_effector:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        left_arm_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_arm_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_gripper:
+        jaco2_link_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_base:
+        jaco2_link_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_l_finger:
+        jaco2_link_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_r_finger:
+        jaco2_link_4:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand:
+        jaco2_link_5:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand_accelerometer:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_hand_camera:
+        jaco2_link_base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand_camera_axis:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_hand_range:
+        jaco2_link_finger_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_elbow:
+        jaco2_link_finger_1_tip:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_forearm:
+        jaco2_link_finger_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_shoulder:
+        jaco2_link_finger_2_tip:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_torso_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_upper_elbow:
+        jaco2_link_finger_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_upper_elbow_visual:
+        jaco2_link_finger_3_tip:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_upper_forearm:
+        jaco2_link_hand:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_upper_forearm_visual:
+        jaco2_wrist:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
-        left_upper_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pedestal:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_arm_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_arm_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_gripper:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_l_finger:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_r_finger:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand_accelerometer:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_hand_camera:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand_camera_axis:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_hand_range:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_torso_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_upper_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_elbow_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_forearm_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        screen:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sonar_ring:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        torso:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
@@ -357,22 +208,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.59681
+      Distance: 3.76221
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.55809
-        Y: 0.323089
-        Z: -4.76834e-07
+        X: 0.774556
+        Y: 0.44662
+        Z: -7.15253e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.650399
+      Pitch: 0.600399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.70674
+      Yaw: 3.98675
     Saved: ~
 Window Geometry:
   Displays:
@@ -386,5 +237,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 721
-  X: 773
+  X: 1058
   Y: 14

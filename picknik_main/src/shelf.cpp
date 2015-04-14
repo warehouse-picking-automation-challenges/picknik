@@ -520,15 +520,22 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
   // Publish in batch
   visuals_->visual_tools_->enableBatchPublishing(true);
 
-  // Show full resolution shelf -----------------------------------------------------------------
-  //createCollisionShelfDetailed();
+  bool show_full_res = true;
 
-  // Show simple version of shelf -----------------------------------------------------------------
-
-  // Create side walls of shelf
-  for (std::size_t i = 0; i < shelf_parts_.size(); ++i)
+  if (show_full_res)
   {
-    shelf_parts_[i].createCollisionBodies(bottom_right_);
+    // Show full resolution shelf -----------------------------------------------------------------
+    createCollisionShelfDetailed();
+  }
+  else
+  {
+    // Show simple version of shelf -----------------------------------------------------------------
+
+    // Create side walls of shelf
+    for (std::size_t i = 0; i < shelf_parts_.size(); ++i)
+    {
+      shelf_parts_[i].createCollisionBodies(bottom_right_);
+    }
   }
 
   // Show each bin except the focus on
@@ -566,6 +573,8 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
 
   // Show goal bin
   goal_bin_->createCollisionBodies(bottom_right_);
+
+  // Show axis
   goal_bin_->visualizeAxis(bottom_right_);
 
   // Show all other environmental objects (walls, etc)
@@ -578,8 +587,10 @@ bool ShelfObject::createCollisionShelfDetailed()
 {
   ROS_DEBUG_STREAM_NAMED("shelf","Creating collision body with name " << collision_object_name_);
 
+  Eigen::Affine3d high_res_pose = bottom_right_ * high_res_mesh_offset_;
+
   // Publish mesh
-  if (!visuals_->visual_tools_->publishCollisionMesh(high_res_mesh_offset_, collision_object_name_, high_res_mesh_path_, rvt::BLUE)) //color_))
+  if (!visuals_->visual_tools_->publishCollisionMesh(high_res_pose, collision_object_name_, high_res_mesh_path_, color_))
     return false;
 
   // Add products to shelves

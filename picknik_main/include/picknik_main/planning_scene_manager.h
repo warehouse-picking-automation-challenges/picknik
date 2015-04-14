@@ -85,7 +85,7 @@ public:
   {
     if (mode_ == ALL_OPEN_BINS)
     {
-      ROS_WARN_STREAM_NAMED("planning_scene_manager","Skipped showing planning scene because already in corret mode");
+      //ROS_WARN_STREAM_NAMED("planning_scene_manager","Skipped showing planning scene because already in corret mode");
       return true;
     }
     ROS_WARN_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE all_open_bins");
@@ -113,7 +113,7 @@ public:
   {
     if (mode_ == ONLY_COLLISION_WALL)
     {
-      ROS_WARN_STREAM_NAMED("planning_scene_manager","Skipped showing planning scene because already in corret mode");
+      //ROS_WARN_STREAM_NAMED("planning_scene_manager","Skipped showing planning scene because already in corret mode");
       return true;
     }
     ROS_WARN_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE only_collision_wall");
@@ -138,7 +138,7 @@ public:
   {
     if (mode_ == FOCUSED_ON_BIN && focused_bin_ == bin_name)
     {
-      ROS_WARN_STREAM_NAMED("planning_scene_manager","Skipped showing planning scene because already in corret mode");
+      //ROS_WARN_STREAM_NAMED("planning_scene_manager","Skipped showing planning scene because already in corret mode");
       return true;
     }
     ROS_WARN_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE focused_on_bin");

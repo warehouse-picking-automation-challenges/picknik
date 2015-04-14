@@ -97,10 +97,10 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   }
 
   // Load grasp generator
-  grasp_generator_.reset( new moveit_grasps::GraspGenerator(visuals_->visual_tools_) );
+  grasp_generator_.reset( new moveit_grasps::GraspGenerator(visuals_->start_state_) );
   getCurrentState();
   setStateWithOpenEE(true, current_state_); // so that grasp filter is started up with EE open
-  grasp_filter_.reset(new moveit_grasps::GraspFilter(current_state_, visuals_->visual_tools_) );
+  grasp_filter_.reset(new moveit_grasps::GraspFilter(current_state_, visuals_->start_state_) );
 
 
   // Done
@@ -688,7 +688,7 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajec
   new_robot_trajectory->addSuffixWayPoint(robot_trajectory->getLastWayPoint(), dummy_dt);
 
   std::size_t modified_num_waypoints = new_robot_trajectory->getWayPointCount();
-  ROS_INFO_STREAM_NAMED("manipulation","Interpolated trajectory from " << original_num_waypoints 
+  ROS_INFO_STREAM_NAMED("manipulation","Interpolated trajectory from " << original_num_waypoints
                         << " to " << modified_num_waypoints);
 
   // Copy back to original datastructure
@@ -804,20 +804,22 @@ bool Manipulation::generateApproachPath(moveit_grasps::GraspCandidatePtr chosen,
 
   ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","finger_to_palm_depth: " << chosen->grasp_data_->finger_to_palm_depth_);
   ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","approach_distance_desired: " << config_->approach_distance_desired_);
-  double desired_distance = chosen->grasp_data_->finger_to_palm_depth_ + config_->approach_distance_desired_;
+  ROS_WARN_STREAM_NAMED("temp","fake desired distance");
+  double desired_approach_distance = chosen->grasp_data_->finger_to_palm_depth_ + config_->approach_distance_desired_;
 
-  Eigen::Vector3d direction = grasp_generator_->getPreGraspDirection(chosen->grasp_, chosen->grasp_data_->parent_link_->getName());
+  Eigen::Vector3d approach_direction = grasp_generator_->getPreGraspDirection(chosen->grasp_,
+                                                                              chosen->grasp_data_->parent_link_->getName());
   //            x, y, z
-  //direction << -1, 0, 0.5; // backwards towards robot body
-  //std::cout << "DIRECTION: " << direction << std::endl;
+  //approach_direction << -1, 0, 0.5; // backwards towards robot body
+  //std::cout << "DIRECTION: " << approach_direction << std::endl;
   bool reverse_path = true;
 
   double path_length;
   bool ignore_collision = false;
   std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
   getCurrentState();
-  if (!computeStraightLinePath( direction, desired_distance, robot_state_trajectory, the_grasp_state, chosen->grasp_data_->arm_jmg_,
-                                reverse_path, path_length, ignore_collision))
+  if (!computeStraightLinePath( approach_direction, desired_approach_distance, robot_state_trajectory, the_grasp_state,
+                                chosen->grasp_data_->arm_jmg_, reverse_path, path_length, ignore_collision))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Error occured while computing straight line path");
     return false;
@@ -971,9 +973,8 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
   {
     visuals_->visual_tools_->publishSphere(tip_pose_start, rvt::RED, rvt::LARGE);
 
-    Eigen::Affine3d tip_pose_end; // = tip_pose_start;
-    //tip_pose_end.translation().x() -= desired_approach_distance;
-
+    // Get desired end pose
+    Eigen::Affine3d tip_pose_end;
     straightProjectPose( tip_pose_start, tip_pose_end, approach_direction, desired_approach_distance);
 
     visuals_->visual_tools_->publishLine(tip_pose_start, tip_pose_end, rvt::BLACK, rvt::REGULAR);
@@ -1277,9 +1278,9 @@ bool Manipulation::convertRobotStatesToTrajectory(const std::vector<moveit::core
 
     // Interpolate between each point
     double discretization = 0.25;
-    interpolate(robot_trajectory, discretization);    
+    interpolate(robot_trajectory, discretization);
   }
-  
+
   // Perform iterative parabolic smoothing
   iterative_smoother_.computeTimeStamps( *robot_trajectory, velocity_scaling_factor );
 
@@ -1476,8 +1477,11 @@ bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_ms
 
   // Visualize the path
   if (true)
-    visuals_->visual_tools_->publishTrajectoryLine(trajectory_msg, grasp_datas_[config_->right_arm_]->parent_link_, 
-                                                   config_->right_arm_, rvt::LIME_GREEN);
+  {
+    visuals_->goal_state_->deleteAllMarkers();
+    visuals_->goal_state_->publishTrajectoryLine(trajectory_msg, grasp_datas_[config_->right_arm_]->parent_link_,
+                                                 config_->right_arm_, rvt::LIME_GREEN);
+  }
 
   // Create trajectory execution manager
   if( !trajectory_execution_manager_ )
@@ -1487,7 +1491,7 @@ bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_ms
   }
 
   // Confirm trajectory before continuing
-  if (!remote_control_->getAutonomous() &&
+  if (!remote_control_->getFullAutonomous() &&
       // Only wait for non-finger trajectories
       trajectory_msg.joint_trajectory.joint_names.size() > 3)
   {
@@ -1555,7 +1559,7 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   cloned_scene->getCollidingPairs(contacts);
 
   std::string colliding_world_object = "";
-  for (collision_detection::CollisionResult::ContactMap::const_iterator contact_it = contacts.begin(); 
+  for (collision_detection::CollisionResult::ContactMap::const_iterator contact_it = contacts.begin();
        contact_it != contacts.end(); contact_it++)
   {
     const std::string& body_id_1 = contact_it->first.first;
@@ -1635,7 +1639,7 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   {
     int mode = iRand(0,3);
     ROS_WARN_STREAM_NAMED("manipulation","Unknown object, not sure how to handle. Performing random action using mode " << mode);
-    
+
     if (mode == 0)
       reverse_out = true;
     else if (mode == 1)
@@ -2089,10 +2093,8 @@ bool Manipulation::fixCurrentCollisionAndBounds(const robot_model::JointModelGro
     }
     else
     {
-      std::cout << std::endl;
-      std::cout << std::endl;
-      std::cout << "Waiting before executing trajectory" << std::endl;
-      remote_control_->waitForNextStep();
+      // Alert human to error
+      remote_control_->setAutonomous(false);
 
       // State was modified, send to robot
       if (!executeState(new_state, arm_jmg, config_->main_velocity_scaling_factor_))
