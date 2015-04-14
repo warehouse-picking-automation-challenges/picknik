@@ -63,6 +63,7 @@ rvt::getDoubleParameter(parent_name, nh_, "calibration_velocity_scaling_factor",
 rvt::getDoubleParameter(parent_name, nh_, "wait_before_grasp", wait_before_grasp_);
 rvt::getDoubleParameter(parent_name, nh_, "wait_after_grasp", wait_after_grasp_);
 rvt::getDoubleParameter(parent_name, nh_, "approach_distance_desired", approach_distance_desired_);
+rvt::getDoubleParameter(parent_name, nh_, "retreat_distance_desired", retreat_distance_desired_);
 rvt::getDoubleParameter(parent_name, nh_, "lift_distance_desired", lift_distance_desired_);
 rvt::getDoubleParameter(parent_name, nh_, "place_goal_down_distance_desired", place_goal_down_distance_desired_);
 

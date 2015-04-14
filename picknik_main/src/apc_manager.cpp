@@ -133,7 +133,7 @@ bool APCManager::checkSystemReady()
   }
 
   // Check trajectory execution manager
-  if( !manipulation_->checkExecutionManager() )
+  if( !manipulation_->getExecutionInterface()->checkExecutionManager() )
   {
     ROS_FATAL_STREAM_NAMED("apc_manager","Trajectory controllers unable to connect");
     return false;
@@ -223,27 +223,6 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
   moveit_msgs::RobotTrajectory approach_trajectory_msg;
   bool wait_for_trajetory = false;
 
-  // Fake perception of product
-  if (jump_to == 3)
-  {
-    BinObjectPtr bin = shelf_->getBin(5);
-    ProductObjectPtr product = bin->getProducts()[0];
-    const Eigen::Affine3d& world_to_bin = picknik_main::transform(bin->getBottomRight(), shelf_->getBottomRight());
-
-    Eigen::Affine3d fake_centroid = Eigen::Affine3d::Identity();
-    fake_centroid.translation().y() = 0.1;
-    fake_centroid.translation().x() = 0.1;
-    fake_centroid.translation().z() = 0.1;
-    fake_centroid = fake_centroid
-      * Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
-      * Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitY());
-    product->setCentroid(fake_centroid);
-
-    // Show in collision and display Rvizs
-    product->visualize(world_to_bin);
-    product->createCollisionBodies(world_to_bin);
-  }
-
   if (!remote_control_->getAutonomous())
   {
     visuals_->start_state_->publishRobotState(current_state, rvt::GREEN);
@@ -313,12 +292,20 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Set planning scene
         planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
-        // Move camera to desired bin to get pose of product
-        if (!perceiveObject(work_order, verbose))
+        // Fake perception of product
+        if (!perceiveObjectFake(work_order, verbose))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
           return false;
         }
+
+        // // Move camera to desired bin to get pose of product
+        // if (!perceiveObject(work_order, verbose))
+        // {
+        //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
+        //   return false;
+        // }
+
         break;
 
         // #################################################################################################################
@@ -409,7 +396,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, current_state, wait_for_trajetory);
 
         // Run
-        if( !manipulation_->executeTrajectory(approach_trajectory_msg) )
+        if( !manipulation_->getExecutionInterface()->executeTrajectory(approach_trajectory_msg) )
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move to the-grasp position");
           return false;
@@ -424,6 +411,10 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Set planning scene
         planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
+        // Cleanup grasp generator makers
+        visuals_->start_state_->deleteAllMarkers(); // clear all old markers
+
+        // Close EE
         if (!manipulation_->openEndEffectorWithVelocity(false, arm_jmg))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
@@ -460,7 +451,8 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Set planning scene
         planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
-        if (!manipulation_->executeRetreatPath(arm_jmg))
+        // Retreat backwards
+        if (!manipulation_->executeRetreatPath(arm_jmg, config_->retreat_distance_desired_))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute retrieval path after grasping");
           return false;
@@ -1096,12 +1088,12 @@ bool APCManager::testGraspGenerator()
       visuals_->visual_tools_->deleteAllMarkers();
     } // for each bin
 
-    // Save the stats on the product
+      // Save the stats on the product
     csv_log_stream << (double(product_successes)/double(product_attempts)*100.0) << "\t";
 
   } // for each product
 
-  // Benchmark runtime
+    // Benchmark runtime
   double duration = (ros::Time::now() - start_time).toSec();
   double average = double(overall_successes)/double(overall_attempts)*100.0;
   ROS_INFO_STREAM_NAMED("","Total time: " << duration << " seconds averaging " << duration/overall_successes << " seconds per grasp");
@@ -1337,6 +1329,30 @@ bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
   {
     return false;
   }
+
+  return true;
+}
+
+bool APCManager::perceiveObjectFake(WorkOrder work_order, bool verbose)
+{
+  BinObjectPtr& bin = work_order.bin_;
+  ProductObjectPtr& product = work_order.product_;
+
+  const Eigen::Affine3d& world_to_bin = picknik_main::transform(bin->getBottomRight(), shelf_->getBottomRight());
+
+  Eigen::Affine3d fake_centroid = Eigen::Affine3d::Identity();
+  fake_centroid.translation().y() = 0.1;
+  fake_centroid.translation().x() = 0.1;
+  fake_centroid.translation().z() = 0.1;
+  fake_centroid = fake_centroid
+    * Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
+    * Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitY());
+  product->setCentroid(fake_centroid);
+
+  // Show in collision and display Rvizs
+  product->visualize(world_to_bin);
+  product->createCollisionBodies(world_to_bin);
+
 
   return true;
 }

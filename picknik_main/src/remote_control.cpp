@@ -53,6 +53,7 @@ RemoteControl::RemoteControl(bool verbose, ros::NodeHandle nh, APCManager* paren
   , is_waiting_(false)
   , next_step_ready_(false)
   , autonomous_(false)
+  , full_autonomous_(false)
   , stop_(false)
 {
   // Subscribe to remote control topic
@@ -174,6 +175,22 @@ bool RemoteControl::waitForNextStep()
   is_waiting_ = true;
   // Wait until next step is ready
   while (!next_step_ready_ && !autonomous_ && ros::ok())
+  {
+    ros::Duration(0.25).sleep();
+    ros::spinOnce();
+  }
+  if (!ros::ok())
+    return false;
+  next_step_ready_ = false;
+  is_waiting_ = false;
+  return true;
+}
+
+bool RemoteControl::waitForNextFullStep()
+{
+  is_waiting_ = true;
+  // Wait until next step is ready
+  while (!next_step_ready_ && !full_autonomous_ && ros::ok())
   {
     ros::Duration(0.25).sleep();
     ros::spinOnce();

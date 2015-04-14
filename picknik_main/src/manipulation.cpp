@@ -40,7 +40,7 @@ namespace picknik_main
 
 Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
                            planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                           ManipulationDataPtr config, GraspDatas grasp_datas,
+                           ManipulationDataPtr config, moveit_grasps::GraspDatas grasp_datas,
                            RemoteControlPtr remote_control, const std::string& package_path,
                            ShelfObjectPtr shelf, bool use_experience, bool show_database)
   : nh_("~")
@@ -102,6 +102,9 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   setStateWithOpenEE(true, current_state_); // so that grasp filter is started up with EE open
   grasp_filter_.reset(new moveit_grasps::GraspFilter(current_state_, visuals_->start_state_) );
 
+  // Load execution interface
+  execution_interface_.reset( new ExecutionInterface(verbose_, remote_control_, visuals_, grasp_datas_, planning_scene_monitor_, 
+                                                     config_, package_path_) );
 
   // Done
   ROS_INFO_STREAM_NAMED("manipulation","Manipulation Ready.");
@@ -278,7 +281,7 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
   std::cout << "-------------------------------------------------------" << std::endl;
 
   // Execute
-  if( !executeTrajectory(trajectory_msg) )
+  if( !execution_interface_->executeTrajectory(trajectory_msg) )
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
     return false;
@@ -608,7 +611,7 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   // Execute trajectory
   if (execute_trajectory)
   {
-    if( !executeTrajectory(response.trajectory) )
+    if( !execution_interface_->executeTrajectory(response.trajectory) )
     {
       ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
       return false;
@@ -786,7 +789,7 @@ bool Manipulation::executeState(const moveit::core::RobotStatePtr goal_state, co
   visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, current_state_, wait_for_trajetory);
 
   // Execute
-  if( !executeTrajectory(trajectory_msg) )
+  if( !execution_interface_->executeTrajectory(trajectory_msg) )
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
     return false;
@@ -930,7 +933,7 @@ bool Manipulation::executeCartesianPath(const moveit::core::JointModelGroup *arm
   visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, current_state_, wait_for_trajetory);
 
   // Execute
-  if( !executeTrajectory(cartesian_trajectory_msg, ignore_collision) )
+  if( !execution_interface_->executeTrajectory(cartesian_trajectory_msg, ignore_collision) )
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
     return false;
@@ -1340,7 +1343,7 @@ bool Manipulation::openEndEffector(bool open, const robot_model::JointModelGroup
   ee_traj->getRobotTrajectoryMsg(trajectory_msg);
 
   // Execute trajectory
-  if( !executeTrajectory(trajectory_msg) )
+  if( !execution_interface_->executeTrajectory(trajectory_msg) )
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute grasp trajectory");
     return false;
@@ -1403,7 +1406,7 @@ bool Manipulation::openEndEffectorWithVelocity(bool open, const robot_model::Joi
   visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, current_state_, wait_for_trajetory);
 
   // Execute trajectory
-  if( !executeTrajectory(trajectory_msg) )
+  if( !execution_interface_->executeTrajectory(trajectory_msg) )
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute grasp trajectory");
     return false;
@@ -1430,119 +1433,9 @@ bool Manipulation::setStateWithOpenEE(bool open, moveit::core::RobotStatePtr rob
   }
 }
 
-bool Manipulation::checkExecutionManager()
+ExecutionInterfacePtr Manipulation::getExecutionInterface()
 {
-  ROS_INFO_STREAM_NAMED("manipulation","Checking that execution manager is loaded.");
-
-  trajectory_execution_manager_.reset(new trajectory_execution_manager::TrajectoryExecutionManager(robot_model_));
-  plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
-
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
-
-  if (!trajectory_execution_manager_->ensureActiveControllersForGroup(arm_jmg->getName()))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Group " << arm_jmg->getName() << " does not have active controllers loaded");
-    return false;
-  }
-
-  return true;
-}
-
-bool Manipulation::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg, bool ignore_collision)
-{
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeTrajectory()");
-  ROS_INFO_STREAM_NAMED("manipulation","Executing trajectory with " << trajectory_msg.joint_trajectory.points.size() << " waypoints");
-
-  // Hack? Remove acceleration command
-  if (false)
-    for (std::size_t i = 0; i < trajectory_msg.joint_trajectory.points.size(); ++i)
-    {
-      trajectory_msg.joint_trajectory.points[i].accelerations.clear();
-    }
-
-  // Debug
-  ROS_DEBUG_STREAM_NAMED("manipulation.trajectory","Publishing:\n" << trajectory_msg);
-
-  // Save to file
-  if (true)
-  {
-    // Only save non-finger trajectories
-    if (trajectory_msg.joint_trajectory.joint_names.size() > 3)
-    {
-      static std::size_t trajectory_count = 0;
-      //saveTrajectory(trajectory_msg, "trajectory_"+ boost::lexical_cast<std::string>(trajectory_count++));
-      saveTrajectory(trajectory_msg, "trajectory");
-    }
-  }
-
-  // Visualize the path
-  if (true)
-  {
-    visuals_->goal_state_->deleteAllMarkers();
-    visuals_->goal_state_->publishTrajectoryLine(trajectory_msg, grasp_datas_[config_->right_arm_]->parent_link_,
-                                                 config_->right_arm_, rvt::LIME_GREEN);
-  }
-
-  // Create trajectory execution manager
-  if( !trajectory_execution_manager_ )
-  {
-    trajectory_execution_manager_.reset(new trajectory_execution_manager::TrajectoryExecutionManager(robot_model_));
-    plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
-  }
-
-  // Confirm trajectory before continuing
-  if (!remote_control_->getFullAutonomous() &&
-      // Only wait for non-finger trajectories
-      trajectory_msg.joint_trajectory.joint_names.size() > 3)
-  {
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << "Waiting before executing trajectory" << std::endl;
-    remote_control_->waitForNextStep();
-  }
-
-  ROS_INFO_STREAM_NAMED("manipulation","Executing trajectory...");
-
-  // Clear
-  plan_execution_->getTrajectoryExecutionManager()->clear();
-
-  if(plan_execution_->getTrajectoryExecutionManager()->push(trajectory_msg))
-  {
-    plan_execution_->getTrajectoryExecutionManager()->execute();
-
-    bool wait_exection = true;
-    if (wait_exection)
-    {
-      // wait for the trajectory to complete
-      moveit_controller_manager::ExecutionStatus es = plan_execution_->getTrajectoryExecutionManager()->waitForExecution();
-      if (es == moveit_controller_manager::ExecutionStatus::SUCCEEDED)
-      {
-        ROS_DEBUG_STREAM_NAMED("manipulation","Trajectory execution succeeded");
-      }
-      else // Failed
-      {
-        if (es == moveit_controller_manager::ExecutionStatus::PREEMPTED)
-          ROS_INFO_STREAM_NAMED("manipulation","Trajectory execution preempted");
-        else
-          if (es == moveit_controller_manager::ExecutionStatus::TIMED_OUT)
-            ROS_ERROR_STREAM_NAMED("manipulation","Trajectory execution timed out");
-          else
-            ROS_ERROR_STREAM_NAMED("manipulation","Trajectory execution control failed");
-
-        // Disable autonomous mode because something went wrong
-        remote_control_->setAutonomous(false);
-
-        return false;
-      }
-    }
-  }
-  else
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
-    return false;
-  }
-
-  return true;
+  return execution_interface_;
 }
 
 bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_scene)
@@ -1696,68 +1589,6 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   }
 
 
-  return true;
-}
-
-bool Manipulation::saveTrajectory(const moveit_msgs::RobotTrajectory &trajectory_msg, const std::string &file_name)
-{
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","saveTrajectory()");
-
-  const trajectory_msgs::JointTrajectory &joint_trajectory = trajectory_msg.joint_trajectory;
-
-  // Error check
-  if (!joint_trajectory.points.size() || !joint_trajectory.points[0].positions.size())
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","No trajectory points available to save");
-    return false;
-  }
-  bool has_accelerations = true;
-  if (joint_trajectory.points[0].accelerations.size() == 0)
-  {
-    has_accelerations = false;
-  }
-
-  std::string file_path;
-  getFilePath(file_path, file_name);
-  std::ofstream output_file;
-  output_file.open (file_path.c_str());
-
-  // Output header -------------------------------------------------------
-  output_file << "time_from_start,";
-  for (std::size_t j = 0; j < joint_trajectory.joint_names.size(); ++j)
-  {
-    output_file << joint_trajectory.joint_names[j] << "_pos,"
-                << joint_trajectory.joint_names[j] << "_vel,";
-    if (has_accelerations)
-      output_file << joint_trajectory.joint_names[j] << "_acc,";
-  }
-  output_file << std::endl;
-
-  // Output data ------------------------------------------------------
-
-  // Subtract starting time
-
-  for (std::size_t i = 0; i < joint_trajectory.points.size(); ++i)
-  {
-    // Timestamp
-    output_file.precision(20);
-    output_file << joint_trajectory.points[i].time_from_start.toSec() << ",";
-    output_file.precision(5);
-    // Output entire trajectory to single line
-    for (std::size_t j = 0; j < joint_trajectory.points[i].positions.size(); ++j)
-    {
-      // Output State
-      output_file << joint_trajectory.points[i].positions[j] << ","
-                  << joint_trajectory.points[i].velocities[j] << ",";
-      if (has_accelerations)
-        output_file << joint_trajectory.points[i].accelerations[j] << ",";
-
-    }
-
-    output_file << std::endl;
-  }
-  output_file.close();
-  ROS_DEBUG_STREAM_NAMED("manipulation","Saved trajectory to file " << file_path);
   return true;
 }
 
@@ -2180,41 +2011,28 @@ bool Manipulation::checkCollisionAndBounds(const moveit::core::RobotStatePtr &st
 }
 
 bool Manipulation::getFilePath(std::string &file_path, const std::string &file_name) const
-
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","getFilePath()");
   namespace fs = boost::filesystem;
 
   // Check that the directory exists, if not, create it
   fs::path path;
-  /*
-    if (!std::string(getenv("HOME")).empty())
-    path = fs::path(getenv("HOME")); // Support Linux/Mac
-    else if (!std::string(getenv("HOMEPATH")).empty())
-    path = fs::path(getenv("HOMEPATH")); // Support Windows
-    else
-    {
-    ROS_WARN("Unable to find a home path for this computer");
-    path = fs::path("");
-    }
-  */
   path = fs::path(package_path_ + "/trajectories");
 
   boost::system::error_code returnedError;
   fs::create_directories( path, returnedError );
 
+  // Error check
   if ( returnedError )
   {
-    //did not successfully create directories
     ROS_ERROR_STREAM_NAMED("manipulation", "Unable to create directory " << path.string());
     return false;
   }
 
-  //directories successfully created, append the group name as the file name
+  // Directories successfully created, append the group name as the file name
   path = path / fs::path(file_name + ".csv");
   file_path = path.string();
 
-  //ROS_DEBUG_STREAM_NAMED("manipulation","Using full file path" << file_path);
+  ROS_DEBUG_STREAM_NAMED("manipulation.file_path","Using full file path" << file_path);
   return true;
 }
 

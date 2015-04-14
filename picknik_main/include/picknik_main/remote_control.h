@@ -119,6 +119,7 @@ public:
    * \return true on success
    */
   bool waitForNextStep();
+  bool waitForNextFullStep();
 
 private:
 

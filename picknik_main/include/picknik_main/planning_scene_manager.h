@@ -40,15 +40,19 @@
 #define PICKNIK_MAIN__PLANNING_SCENE_MANAGER
 
 // PickNik
-#include <picknik_main/shelf.h>
 #include <picknik_main/namespaces.h>
-#include <picknik_main/visuals.h>
+
+// MoveIt
+#include <moveit/macros/class_forward.h>
 
 // ROS
 #include <ros/ros.h>
 
 namespace picknik_main
 {
+
+MOVEIT_CLASS_FORWARD(ShelfObject);
+MOVEIT_CLASS_FORWARD(Visuals);
 
 enum SceneModes {
   NOT_LOADED,
@@ -66,117 +70,30 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  PlanningSceneManager(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf)
-    : verbose_(verbose)
-    , visuals_(visuals)
-    , shelf_(shelf)
-    , mode_(NOT_LOADED)
-    , focused_bin_("")
-  {
-
-    ROS_INFO_STREAM_NAMED("planning_scene_manager","PlanningSceneManager Ready.");
-  }
+  PlanningSceneManager(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf);
 
   /**
    * \brief Show shelf with all bins enabled
    * \return true on success
    */
-  bool displayShelfWithOpenBins()
-  {
-    if (mode_ == ALL_OPEN_BINS)
-    {
-      //ROS_WARN_STREAM_NAMED("planning_scene_manager","Skipped showing planning scene because already in corret mode");
-      return true;
-    }
-    ROS_WARN_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE all_open_bins");
-    mode_ = ALL_OPEN_BINS;
-
-    // Clear all old collision objects
-    visuals_->visual_tools_->removeAllCollisionObjects();
-
-    // Create new scene
-    bool just_frame = false;
-    bool show_all_products = true;
-    shelf_->createCollisionBodies("", just_frame, show_all_products); // only show the frame
-
-    // Output planning scene
-    visuals_->visual_tools_->triggerPlanningSceneUpdate();
-
-    return true;
-  }
+  bool displayShelfWithOpenBins();
 
   /**
    * \brief Show shelf as simple solid wall, not details
    * \return true on success
    */
-  bool displayShelfAsWall()
-  {
-    if (mode_ == ONLY_COLLISION_WALL)
-    {
-      //ROS_WARN_STREAM_NAMED("planning_scene_manager","Skipped showing planning scene because already in corret mode");
-      return true;
-    }
-    ROS_WARN_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE only_collision_wall");
-    mode_ = ONLY_COLLISION_WALL;
+  bool displayShelfAsWall();
 
-    // Clear all old collision objects
-    visuals_->visual_tools_->removeAllCollisionObjects();
+  /**
+   * \brief Only show one bin, disable the rest
+   * \return true on success
+   */
+  bool displayShelfOnlyBin( const std::string& bin_name );
 
-    // Create new scene
-    shelf_->getFrontWall()->createCollisionBodies(shelf_->getBottomRight());
-    shelf_->getGoalBin()->createCollisionBodies(shelf_->getBottomRight());
-    shelf_->createCollisionBodiesEnvironmentObjects();
-
-    // Output planning scene
-    visuals_->visual_tools_->triggerPlanningSceneUpdate();
-    ros::Duration(0.1).sleep(); // TODO remove?
-
-    return true;
-  }
-
-  bool displayShelfOnlyBin( const std::string& bin_name )
-  {
-    if (mode_ == FOCUSED_ON_BIN && focused_bin_ == bin_name)
-    {
-      //ROS_WARN_STREAM_NAMED("planning_scene_manager","Skipped showing planning scene because already in corret mode");
-      return true;
-    }
-    ROS_WARN_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE focused_on_bin");
-    mode_ = FOCUSED_ON_BIN;
-    focused_bin_ = bin_name;
-
-    // Clear all old collision objects
-    visuals_->visual_tools_->removeAllCollisionObjects();
-
-    // Create new scene
-    bool only_show_shelf_frame = false;
-    bool show_all_products = false;
-    ROS_INFO_STREAM_NAMED("apc_manager","Showing planning scene shelf with focus on bin " << bin_name);
-
-    shelf_->createCollisionBodies(bin_name, only_show_shelf_frame, show_all_products);
-
-    // Output planning scene
-    visuals_->visual_tools_->triggerPlanningSceneUpdate();
-    ros::Duration(0.5).sleep();
-
-    return true;
-  }
-
-  bool testAllModes()
-  {
-    while (ros::ok())
-    {
-      displayShelfWithOpenBins();
-      ros::Duration(4.0).sleep();
-
-      displayShelfAsWall();
-      ros::Duration(4.0).sleep();
-
-      displayShelfOnlyBin("bin_B");
-      ros::Duration(4.0).sleep();
-    }
-    return true;
-  }
+  /**
+   * \brief Switch between the 3 modes
+   */
+  bool testAllModes();
 
 private:
 

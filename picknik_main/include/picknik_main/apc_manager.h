@@ -221,6 +221,7 @@ public:
    * \return true on success
    */
   bool perceiveObject(WorkOrder work_order, bool verbose);
+  bool perceiveObjectFake(WorkOrder work_order, bool verbose);
 
   /**
    * \brief Move object into the goal bin
@@ -329,7 +330,7 @@ private:
   ManipulationDataPtr config_;
 
   // Robot-specific data for generating grasps
-  GraspDatas grasp_datas_;
+  moveit_grasps::GraspDatas grasp_datas_;
 
   // Perception
   bool fake_perception_;
