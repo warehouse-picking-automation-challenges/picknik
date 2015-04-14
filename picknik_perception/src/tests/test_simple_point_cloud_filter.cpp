@@ -3,6 +3,7 @@
   Desc  : Test for SimplePointCloudFilter class
 */
 #include <iostream>
+#include <fstream>
 #include <string>
 
 #include <ros/ros.h>
@@ -67,8 +68,9 @@ public:
     bin_cloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("bin_cloud",1);
 
     // set initial camera transform
-    camera_translation_ = Eigen::Vector3d(0.0, 0.0, 1.23);
-    camera_rotation_ = Eigen::Vector3d(0.0, 0.0, 0.0);
+    delta_ = 0.010;
+    camera_translation_ = Eigen::Vector3d(-1.459, 0.09, 1.0844);
+    camera_rotation_ = Eigen::Vector3d(0.01, -0.009, 0.07);
     camera_pose_ = Eigen::Affine3d::Identity();
     camera_pose_ *= Eigen::AngleAxisd(camera_rotation_[0],Eigen::Vector3d::UnitX())
       * Eigen::AngleAxisd(camera_rotation_[1],Eigen::Vector3d::UnitY())
@@ -76,18 +78,16 @@ public:
     camera_pose_.translation() = camera_translation_;
     visual_tools_->publishAxis(camera_pose_);
 
-
-
     // display test scene
     visual_tools_->publishAxis(Eigen::Affine3d::Identity());
-    // displayHomeOfficeScene();
+    displayHomeOfficeScene();
 
-    // set up test cuboid for filtering
+    // set up test cuboid for filtering (area above my desk)
     bin_pose_ = Eigen::Affine3d::Identity();
-    bin_depth_ = 0.5;
-    bin_width_ = 0.5;
-    bin_height_ = 0.5;
-    bin_pose_.translation() += Eigen::Vector3d(2.0,0.3,1.25);
+    bin_depth_ = 25.25 * 0.0254; // 1 inch padding
+    bin_width_ = 35 * 0.0254; // 1 inch padding
+    bin_height_ = 1.0;
+    bin_pose_.translation() += Eigen::Vector3d(-26.25 / 2.0 * 0.0254, 0 , 30.5 * 0.0254 + 0.5 );
     visual_tools_->publishCuboid(bin_pose_, bin_depth_, bin_width_, bin_height_, 
                                  rviz_visual_tools::TRANSLUCENT);
 
@@ -101,6 +101,7 @@ public:
     std::cout << "r\tAdjust Roll (rotation about X)" << std::endl;
     std::cout << "p\tAdjust Pitch (rotation about Y)" << std::endl;
     std::cout << "w\tAdjust Yaw (rotation about Z)" << std::endl;
+    std::cout << "e\tWrite transform values to file" << std::endl;
 
     ros::Rate rate(40.0);
     while (nh_.ok())
@@ -126,8 +127,6 @@ public:
 
   void processPointCloud(const sensor_msgs::PointCloud2ConstPtr& msg)
   {
-    ROS_DEBUG_STREAM_NAMED("PC_filter.process","processing cloud");
-
     // turn message into point cloud
     pcl::PointCloud<pcl::PointXYZRGB> cloud;
     pcl::fromROSMsg(*msg, cloud);
@@ -146,7 +145,7 @@ public:
     // create new output cloud and place to save filtered results
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr bin_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
-    // Transform point cloud to origin
+    // Transform point cloud to bin CS
     pcl::transformPointCloud(*aligned_cloud, *bin_cloud, bin_pose_.inverse());
 
     // Filter based on bounding box
@@ -168,7 +167,9 @@ public:
     pass_z.setFilterLimits(-bin_height_ / 2.0, bin_height_ / 2.0);
     pass_z.filter(*bin_cloud);
 
-
+    // Transform point cloud back to world CS
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr bin_cloud_final(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::transformPointCloud(*bin_cloud, *bin_cloud_final, bin_pose_);
 
     // publish pointcloud of bin
     if (bin_cloud->points.size() == 0)
@@ -176,21 +177,21 @@ public:
       ROS_WARN_STREAM_NAMED("PC_filter.process","0 points left after filtering");
     }
     
-    bin_cloud_pub_.publish(bin_cloud);
+    bin_cloud_pub_.publish(bin_cloud_final);
   }
-
-  
-
 
   void keyboardCallback(const keyboard::Key::ConstPtr& msg)
   {
     int entry = msg->code;
     double fine = 0.001;
     double coarse = 0.01;
-    delta_ = coarse;
 
     switch(entry)
     {
+      case 101:
+        std::cout << "Writing transformation to file..." << std::endl;
+        writeTransformToFile();
+        break;
       case 99: // c (coarse delta)
         std::cout << "Delta = coarse (0.010)" << std::endl;
         delta_ = coarse;
@@ -264,9 +265,25 @@ public:
         // don't do anything
         break;
     }
-    
-    ROS_DEBUG_STREAM_NAMED("PC_filter.update","translation = \n" << camera_translation_);
-    ROS_DEBUG_STREAM_NAMED("PC_filter.update","rotation = \n" << camera_rotation_);
+  }
+
+  void writeTransformToFile()
+  {
+    std::ofstream file ("camera_transform.txt", std::ios::app);
+
+    if (!file.is_open())
+      ROS_ERROR_STREAM_NAMED("PC_filter.write","output file could not be opened");
+    else
+    {
+      ROS_INFO_STREAM_NAMED("PC_filter.write","Camera translation = \n " << camera_translation_);
+      ROS_INFO_STREAM_NAMED("PC_filter.write","Camera rotations = \n" << camera_rotation_);
+      for (std::size_t i = 0; i < 3; i++)
+        file << camera_translation_[i] << "\t ";
+      for (std::size_t i = 0; i < 3; i++)
+        file << camera_rotation_[i] << "\t";
+      file << std::endl;
+    }
+    file.close();
 
   }
 
@@ -279,7 +296,6 @@ public:
     // variables for publishing objects
     Eigen::Affine3d object_pose = Eigen::Affine3d::Identity();
     double depth, width, height, radius;
-    visual_tools_->publishAxis(object_pose);
 
     // convert units (yes... they're in inches :)
     double in2m = 0.0254;
@@ -289,23 +305,23 @@ public:
     width = (1.25 + 1.5 + 36) * in2m + 1;
     height = 76 * in2m;
     object_pose.translation() = Eigen::Vector3d(depth/2.0, 0, height/2.0);
-    visual_tools_->publishCuboid(object_pose, depth, width, height, rviz_visual_tools::TRANSLUCENT);
+    visual_tools_->publishCuboid(object_pose, depth, width, height, rviz_visual_tools::TRANSLUCENT_DARK);
 
     // Display side walls
     depth = (28.0 + 3.0/8.0) * in2m;
     width = 0.5;
     object_pose.translation() = Eigen::Vector3d(-depth/2.0, width/2.0 + (36.0/2.0 + 1.25) * in2m, height/2.0);
-    visual_tools_->publishCuboid(object_pose, depth, width, height, rviz_visual_tools::TRANSLUCENT);
+    visual_tools_->publishCuboid(object_pose, depth, width, height, rviz_visual_tools::TRANSLUCENT_DARK);
     
     object_pose.translation() = Eigen::Vector3d(-depth/2.0, -width/2.0 - (36.0/2.0 + 1.5) * in2m, height/2.0);
-    visual_tools_->publishCuboid(object_pose, depth, width, height, rviz_visual_tools::TRANSLUCENT);
+    visual_tools_->publishCuboid(object_pose, depth, width, height, rviz_visual_tools::TRANSLUCENT_DARK);
 
     // Display desk
     depth = 26.25 * in2m;
     width = 36 * in2m;
     height = 30.5 * in2m;
     object_pose.translation() = Eigen::Vector3d(-depth/2.0, 0, height/2.0);
-    visual_tools_->publishCuboid(object_pose, depth, width, height, rviz_visual_tools::TRANSLUCENT);
+    visual_tools_->publishCuboid(object_pose, depth, width, height, rviz_visual_tools::TRANSLUCENT_DARK);
 
     // Display Tripod
     depth = 54 * in2m;
@@ -313,7 +329,7 @@ public:
     height = 41 * in2m;
     radius = 2 * in2m;
     object_pose.translation() = Eigen::Vector3d(-depth, 0, height/2.0);
-    visual_tools_->publishCylinder(object_pose, rviz_visual_tools::TRANSLUCENT, height, radius);
+    visual_tools_->publishCylinder(object_pose, rviz_visual_tools::TRANSLUCENT_DARK, height, radius);
 
     // publish xtion camera
     std::string mesh_path = ros::package::getPath("jacob_description");
@@ -321,14 +337,12 @@ public:
       * Eigen::AngleAxisd(1.5708, Eigen::Vector3d::UnitY());
     object_pose.translation() = Eigen::Vector3d(-depth + 0.018, 0.0235, height + 0.018);
     visual_tools_->publishMesh(object_pose, "file://" + mesh_path + "/meshes/xtion.stl", 
-                               rviz_visual_tools::TRANSLUCENT);
+                               rviz_visual_tools::TRANSLUCENT_DARK);
 
     // publish everything
     visual_tools_->triggerBatchPublishAndDisable();
     ros::Duration(0.001).sleep();
     ROS_DEBUG_STREAM_NAMED("PC_filter.officeScene","Done loading home office scene");
-
-
   }
 
   void publishCameraTransform()
