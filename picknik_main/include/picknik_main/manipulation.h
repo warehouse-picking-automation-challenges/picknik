@@ -30,6 +30,7 @@
 // MoveIt
 #include <ompl_visual_tools/ompl_visual_tools.h>
 #include <moveit/kinematic_constraints/utils.h>
+#include <moveit/trajectory_processing/iterative_time_parameterization.h>
 
 // OMPL
 #include <ompl/tools/experience/ExperienceSetup.h>
@@ -38,6 +39,12 @@
 #include <moveit_grasps/grasp_generator.h>
 #include <moveit_grasps/grasp_data.h>
 #include <moveit_grasps/grasp_filter.h>
+
+// TODO hide this dep
+// namespace trajectory_processing
+// {
+// MOVEIT_CLASS_FORWARD(IterativeParabolicTimeParameterization);
+// }
 
 namespace planning_pipeline
 {

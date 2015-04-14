@@ -531,7 +531,7 @@ bool APCManager::trainExperienceDatabase()
   // Create learning pipeline for training the experience database
   bool use_experience = false;
   learning_.reset(new LearningPipeline(verbose_, visuals_,
-  planning_scene_monitor_, plan_execution_,
+  planning_scene_monitor_, 
   shelf_, use_experience));
 
   ROS_INFO_STREAM_NAMED("apc_manager","Training experience database");
@@ -1524,12 +1524,12 @@ bool APCManager::loadPlanningSceneMonitor()
   int counter = 0;
   while( !planning_scene_monitor_->getStateMonitor()->haveCompleteState() && ros::ok() )
   {
-    ROS_INFO_STREAM_NAMED("apc_manager","Waiting for complete state...");
+    ROS_INFO_STREAM_THROTTLE_NAMED(1, "apc_manager","Waiting for complete state from topic " << joint_state_topic);
     ros::Duration(0.1).sleep();
     ros::spinOnce();
 
     // Show unpublished joints
-    if( counter > 10 )
+    if( counter % 10 == 0)
     {
       planning_scene_monitor_->getStateMonitor()->haveCompleteState( missing_joints );
       for(int i = 0; i < missing_joints.size(); ++i)

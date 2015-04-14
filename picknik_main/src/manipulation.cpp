@@ -21,6 +21,7 @@
 #include <moveit/collision_detection/world.h>
 #include <moveit/planning_pipeline/planning_pipeline.h>
 #include <moveit/robot_state/conversions.h>
+#include <moveit/trajectory_processing/iterative_time_parameterization.h>
 
 // OMPL
 #include <ompl/tools/lightning/Lightning.h>
@@ -685,6 +686,7 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajec
   {
     moveit::core::robotStateToStream(robot_trajectory->getWayPoint(i), std::cout, false);
   }
+  std::cout << "-------------------------------------------------------" << std::endl;
 
   // For each set of points (A,B) in the original trajectory
   for (std::size_t i = 0; i < robot_trajectory->getWayPointCount() - 1; ++i)
@@ -700,7 +702,7 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajec
       robot_trajectory->getWayPoint(i).interpolate(robot_trajectory->getWayPoint(i+1), t, *interpolated_state);
       // Add to trajectory
       new_robot_trajectory->addSuffixWayPoint(interpolated_state, dummy_dt);
-      std::cout << "inserting " << t << " at " << new_robot_trajectory->getWayPointCount() << std::endl;
+      //std::cout << "inserting " << t << " at " << new_robot_trajectory->getWayPointCount() << std::endl;
     }
   }
 
@@ -714,7 +716,7 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajec
   }
 
   std::size_t modified_num_waypoints = new_robot_trajectory->getWayPointCount();
-  ROS_WARN_STREAM_NAMED("manipulation","Interpolated trajectory from " << original_num_waypoints
+  ROS_INFO_STREAM_NAMED("manipulation","Interpolated trajectory from " << original_num_waypoints
                         << " to " << modified_num_waypoints);
 
   // Copy back to original datastructure
@@ -1682,15 +1684,14 @@ bool Manipulation::orderPublisher(WorkOrder& order)
 bool Manipulation::statesEqual(const moveit::core::RobotState &s1, const moveit::core::RobotState &s2,
                                const robot_model::JointModelGroup* arm_jmg)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","statesEqual()");
   static const double STATES_EQUAL_THRESHOLD = 0.01;
 
-  double s1_vars[arm_jmg->getActiveJointModels().size()];
-  double s2_vars[arm_jmg->getActiveJointModels().size()];
+  double s1_vars[arm_jmg->getVariableCount()];
+  double s2_vars[arm_jmg->getVariableCount()];
   s1.copyJointGroupPositions(arm_jmg, s1_vars);
   s2.copyJointGroupPositions(arm_jmg, s2_vars);
 
-  for (std::size_t i = 0; i < arm_jmg->getActiveJointModels().size(); ++i)
+  for (std::size_t i = 0; i < arm_jmg->getVariableCount(); ++i)
   {
     //std::cout << "Diff of " << i << " - " << fabs(s1_vars[i] - s2_vars[i]) << std::endl;
     if ( fabs(s1_vars[i] - s2_vars[i]) > STATES_EQUAL_THRESHOLD )

@@ -35,7 +35,7 @@
 /* Author: Ioan Sucan, Dave Coleman */
 
 #include <boost/math/constants/constants.hpp>
-#include <moveit/trajectory_processing/trajectory_tools.h>
+//#include <moveit/trajectory_processing/trajectory_tools.h>
 #include <moveit/robot_state/conversions.h>
 #include <picknik_main/fix_state_bounds.h>
 

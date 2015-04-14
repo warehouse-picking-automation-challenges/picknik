@@ -164,6 +164,15 @@ target_link_libraries(perception_interface
   ${Boost_LIBRARIES}
 )
 
+# execution interface library
+add_library(execution_interface
+  src/execution_interface.cpp
+)
+target_link_libraries(execution_interface
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
 # Manipulation pipeline library
 add_library(manipulation
   src/manipulation.cpp
@@ -172,6 +181,7 @@ add_dependencies(manipulation picknik_main_generate_messages_cpp)
 target_link_libraries(manipulation
   visuals
   manipulation_data
+  execution_interface
   product_simulator
   shelf
   fix_state_bounds
@@ -198,6 +208,7 @@ target_link_libraries(apc_manager
   amazon_json_parser
   manipulation
   perception_interface
+  execution_interface
   planning_scene_manager
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
