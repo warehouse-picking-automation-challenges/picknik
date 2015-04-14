@@ -636,13 +636,15 @@ bool APCManager::testInAndOut()
   bool show_products = false;
   planning_scene_manager_->displayEmptyShelf();
 
-  double approach_distance_desired = 0.75;
+  double approach_distance_desired = 1.0;
 
   // Test
   manipulation_->statusPublisher("Testing in and out calculations");
   std::size_t i = 1;
   while (ros::ok())
   {
+    visuals_->visual_tools_->deleteAllMarkers();
+
     std::cout << std::endl << std::endl;
     if (i % 2 == 0)
     {

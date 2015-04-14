@@ -11,7 +11,7 @@
 main_velocity_scaling_factor: 0.5 # during planning
 approach_velocity_scaling_factor: 0.2
 lift_velocity_scaling_factor: 0.2
-retreat_velocity_scaling_factor: 0.5
+retreat_velocity_scaling_factor: 0.4
 calibration_velocity_scaling_factor: 0.3
 
 # Sleep timers
@@ -32,7 +32,7 @@ left_arm_name: manipulator_DISABLED
 both_arms_name: manipulator_DISABLED
 
 # Calibration
-world_to_shelf_transform: [0.52, -0.4365, 0.0, 0.0, 0.0, 0.0]  # IDEAL
+world_to_shelf_transform: [0.51, -0.4365, 0.01, 0.0, 0.0, 0.0]  # IDEAL
 
 # Topics
 joint_state_topic: /joint_states

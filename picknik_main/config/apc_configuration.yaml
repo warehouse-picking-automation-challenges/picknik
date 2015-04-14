@@ -29,7 +29,7 @@ approach_distance_desired: 1
 retreat_distance_desired: 0.5
 lift_distance_desired: 0.03
 place_goal_down_distance_desired: 0.03
-jump_threshold: 5
+jump_threshold: 10
 
 # Safety
 collision_wall_safety_margin: 0.01 # 0.02

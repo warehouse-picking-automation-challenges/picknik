@@ -6,13 +6,13 @@ Panels:
       Expanded:
         - /Grid1/Offset1
         - /Amazon Markers1/Namespaces1
-        - /Amazon Trajectory Markers1
         - /Trajectory1
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
         - /TF1/Frames1
+        - /RobotModel1/Links1
         - /DepthCloud1/Auto Size1
-      Splitter Ratio: 0.603704
+      Splitter Ratio: 0.748603
     Tree Height: 822
   - Class: rviz/Help
     Name: Help
@@ -569,17 +569,17 @@ Visualization Manager:
       Marker Topic: /picknik_main/grasping_markers
       Name: Amazon Grasp Markers
       Namespaces:
-        Arrow: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /ompl_experience_database
@@ -711,7 +711,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-      Loop Animation: true
+      Loop Animation: false
       Name: Trajectory
       Robot Alpha: 0.5
       Robot Description: robot_description
@@ -1072,22 +1072,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.06858
+      Distance: 6.38627
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.0407
-        Y: 1.22375
-        Z: 2.62261e-06
+        X: 2.43818
+        Y: 1.25864
+        Z: 3.93391e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.375399
+      Pitch: 0.225399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 4.10542
+      Yaw: 3.81542
     Saved: ~
 Window Geometry:
   Displays:
@@ -1103,5 +1103,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1194
-  X: 1744
+  X: 1781
   Y: 14

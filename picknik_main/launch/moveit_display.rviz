@@ -5,7 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Grid1/Offset1
-        - /Amazon Shelf Markers1/Namespaces1
+        - /Amazon Detailed Markers1/Namespaces1
       Splitter Ratio: 0.666041
     Tree Height: 933
   - Class: rviz/Help
@@ -46,7 +46,7 @@ Visualization Manager:
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /picknik_main/highres_markers
-      Name: Amazon Shelf Markers
+      Name: Amazon Detailed Markers
       Namespaces:
         Axis: true
         Cuboid: true
@@ -193,6 +193,14 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /picknik_main/trajectory_markers
+      Name: Amazon Trajectory Markers
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48

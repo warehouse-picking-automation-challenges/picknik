@@ -671,8 +671,13 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajec
 
   robot_trajectory::RobotTrajectoryPtr new_robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_,
                                                                                                   robot_trajectory->getGroup()));
-
   std::size_t original_num_waypoints = robot_trajectory->getWayPointCount();
+
+  // Debug
+  for (std::size_t i = 0; i < robot_trajectory->getWayPointCount(); ++i)
+  {
+    moveit::core::robotStateToStream(robot_trajectory->getWayPoint(i), std::cout, false);
+  }
 
   // For each set of points (A,B) in the original trajectory
   for (std::size_t i = 0; i < robot_trajectory->getWayPointCount() - 1; ++i)
@@ -694,6 +699,12 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajec
 
   // Add final waypoint
   new_robot_trajectory->addSuffixWayPoint(robot_trajectory->getLastWayPoint(), dummy_dt);
+
+  // Debug
+  for (std::size_t i = 0; i < new_robot_trajectory->getWayPointCount(); ++i)
+  {
+    moveit::core::robotStateToStream(new_robot_trajectory->getWayPoint(i), std::cout, false);
+  }
 
   std::size_t modified_num_waypoints = new_robot_trajectory->getWayPointCount();
   ROS_WARN_STREAM_NAMED("manipulation","Interpolated trajectory from " << original_num_waypoints
