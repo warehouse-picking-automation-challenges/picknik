@@ -5,11 +5,15 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Grid1/Offset1
+        - /Robot State1
+        - /Planning Start State1
+        - /Planning Goal State1
         - /Amazon Markers1/Namespaces1
         - /Trajectory1
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
         - /TF1/Frames1
+        - /RobotModel1
         - /RobotModel1/Links1
         - /DepthCloud1/Auto Size1
       Splitter Ratio: 0.748603
@@ -156,6 +160,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
@@ -171,7 +176,7 @@ Visualization Manager:
       Visual Enabled: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
-      Collision Enabled: false
+      Collision Enabled: true
       Enabled: true
       Links:
         All Links Enabled: true
@@ -281,6 +286,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
@@ -296,7 +302,7 @@ Visualization Manager:
       Visual Enabled: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
-      Collision Enabled: false
+      Collision Enabled: true
       Enabled: true
       Links:
         All Links Enabled: true
@@ -406,6 +412,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
@@ -531,6 +538,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
@@ -707,6 +715,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
@@ -845,6 +854,7 @@ Visualization Manager:
             Alpha: 1
             Show Axes: false
             Show Trail: false
+            Value: true
           xtion:
             Alpha: 1
             Show Axes: false
@@ -1009,6 +1019,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
@@ -1073,22 +1084,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 2.52159
+      Distance: 2.94181
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.304064
-        Y: 0.014713
-        Z: 3.57628e-06
+        X: 0.740201
+        Y: 0.180641
+        Z: 1.90735e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.000399459
+      Pitch: 0.470399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 4.55727
+      Yaw: 4.03227
     Saved: ~
 Window Geometry:
   Displays:
@@ -1104,5 +1115,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1194
-  X: 1781
+  X: 1771
   Y: 14

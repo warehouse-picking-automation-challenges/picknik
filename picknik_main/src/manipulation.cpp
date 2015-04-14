@@ -474,11 +474,11 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   // Check validity of start and goal
   if (check_validity && !checkCollisionAndBounds(start, goal))
   {
-    ROS_ERROR_STREAM_NAMED("manipulation","Potential issue with start and goal state, but perhaps this should not fail in the future");
+    ROS_ERROR_STREAM_NAMED("manipulation.move","Potential issue with start and goal state, but perhaps this should not fail in the future");
     return false;
   }
   else if (!check_validity)
-    ROS_WARN_STREAM_NAMED("manipulation","Start/goal state collision checking for move() was disabled");
+    ROS_WARN_STREAM_NAMED("manipulation.move","Start/goal state collision checking for move() was disabled");
 
   // Visualize start and goal
   if (verbose)
@@ -673,6 +673,13 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajec
                                                                                                   robot_trajectory->getGroup()));
   std::size_t original_num_waypoints = robot_trajectory->getWayPointCount();
 
+  // Error check
+  if (robot_trajectory->getWayPointCount() < 2)
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Unable to interpolate between less than two states");
+    return false;
+  }
+
   // Debug
   for (std::size_t i = 0; i < robot_trajectory->getWayPointCount(); ++i)
   {
@@ -790,8 +797,9 @@ bool Manipulation::executeState(const moveit::core::RobotStatePtr goal_state, co
   //   current_state_->interpolate(*goal_state, t, *interpolated_state);
   //   robot_state_trajectory.push_back(interpolated_state);
   // }
-  // // Add goal state
-  // robot_state_trajectory.push_back(goal_state);
+
+  // Add goal state
+  robot_state_trajectory.push_back(goal_state);
 
   // Get trajectory message
   moveit_msgs::RobotTrajectory trajectory_msg;
@@ -1958,8 +1966,6 @@ bool Manipulation::checkCollisionAndBounds(const moveit::core::RobotStatePtr &st
                                            const moveit::core::RobotStatePtr &goal_state,
                                            bool verbose)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","checkCollisionAndBounds()");
-
   bool result = true;
 
   // Check if satisfies bounds  --------------------------------------------------------
@@ -1992,7 +1998,7 @@ bool Manipulation::checkCollisionAndBounds(const moveit::core::RobotStatePtr &st
     {
       if (verbose)
       {
-        ROS_WARN_STREAM_NAMED("manipulation","Start state is colliding");
+        ROS_WARN_STREAM_NAMED("manipulation.checkCollisionAndBounds","Start state is colliding");
         // Show collisions
         visuals_->visual_tools_->publishContactPoints(*start_state, planning_scene_monitor_->getPlanningScene().get());
         visuals_->visual_tools_->publishRobotState(*start_state, rvt::RED);
@@ -2009,7 +2015,7 @@ bool Manipulation::checkCollisionAndBounds(const moveit::core::RobotStatePtr &st
       {
         if (verbose)
         {
-          ROS_WARN_STREAM_NAMED("manipulation","Goal state is colliding");
+          ROS_WARN_STREAM_NAMED("manipulation.checkCollisionAndBounds","Goal state is colliding");
           // Show collisions
           visuals_->visual_tools_->publishContactPoints(*goal_state, planning_scene_monitor_->getPlanningScene().get());
           visuals_->visual_tools_->publishRobotState(*goal_state, rvt::RED);

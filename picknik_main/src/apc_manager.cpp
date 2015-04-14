@@ -366,7 +366,8 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
       case 6: manipulation_->statusPublisher("Moving to pre-grasp position");
 
         // Set planning scene
-        planning_scene_manager_->displayShelfAsWall();
+        // TODO: add this back but sometimes do not if the pregrasp is so close that it would be in collision with wall
+        //planning_scene_manager_->displayShelfAsWall();
 
         current_state = manipulation_->getCurrentState();
         manipulation_->setStateWithOpenEE(true, current_state);
@@ -1385,7 +1386,7 @@ bool APCManager::perceiveObjectFake(WorkOrder work_order, bool verbose)
 
   Eigen::Affine3d fake_centroid = Eigen::Affine3d::Identity();
   fake_centroid.translation().y() = 0.1;
-  fake_centroid.translation().x() = 0.1;
+  fake_centroid.translation().x() = 0.15;
   fake_centroid.translation().z() = 0.1;
   fake_centroid = fake_centroid
     * Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
@@ -1578,7 +1579,8 @@ bool APCManager::attachProduct(ProductObjectPtr product, const robot_model::Join
   visuals_->visual_tools_->attachCO(product->getCollisionName(), grasp_datas_[arm_jmg]->parent_link_->getName());
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
 
-  ROS_WARN_STREAM_NAMED("apc_manager","Attaced to link " << grasp_datas_[arm_jmg]->parent_link_->getName() << " product "
+  std::cout << std::endl;
+  ROS_WARN_STREAM_NAMED("apc_manager","Attached to link " << grasp_datas_[arm_jmg]->parent_link_->getName() << " product "
                         << product->getCollisionName());
 
   std::vector<const moveit::core::AttachedBody*> attached_bodies;
