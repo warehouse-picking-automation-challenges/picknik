@@ -629,6 +629,48 @@ bool APCManager::testUpAndDown()
   return true;
 }
 
+// Mode 20
+bool APCManager::testInAndOut()
+{
+  // Set planning scene
+  bool show_products = false;
+  planning_scene_manager_->displayEmptyShelf();
+
+  double approach_distance_desired = 0.75;
+
+  // Test
+  manipulation_->statusPublisher("Testing in and out calculations");
+  std::size_t i = 1;
+  while (ros::ok())
+  {
+    std::cout << std::endl << std::endl;
+    if (i % 2 == 0)
+    {
+      std::cout << "Moving in --------------------------------------" << std::endl;
+      if (!manipulation_->executeRetreatPath(config_->right_arm_, approach_distance_desired, false))
+        return false;
+      if (config_->dual_arm_)
+        if (!manipulation_->executeRetreatPath(config_->left_arm_, approach_distance_desired, false))
+          return false;
+      ros::Duration(1.0).sleep();
+    }
+    else
+    {
+      std::cout << "Moving out ------------------------------------" << std::endl;
+      if (!manipulation_->executeRetreatPath(config_->right_arm_, approach_distance_desired, true))
+        return false;
+      if (config_->dual_arm_)
+        if (!manipulation_->executeRetreatPath(config_->left_arm_, approach_distance_desired, true))
+          return false;
+      ros::Duration(1.0).sleep();
+    }
+    ++i;
+  }
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Done testing in and out");
+  return true;
+}
+
 // Mode 7
 bool APCManager::testShelfLocation()
 {

@@ -117,6 +117,12 @@ public:
   bool testUpAndDown();
 
   /**
+   * \brief Move hand in and out of bin from whereever it currently is
+   * \return true on success
+   */
+  bool testInAndOut();
+  
+  /**
    * \brief Script for moving arms to locations of corner of shelf
    * \return true on success
    */

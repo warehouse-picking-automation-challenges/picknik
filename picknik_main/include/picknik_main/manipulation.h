@@ -132,15 +132,23 @@ bool move(const moveit::core::RobotStatePtr& start, const moveit::core::RobotSta
             bool verbose, bool execute_trajectory = true, bool check_validity = true);
 
 /**
- * \brief Interpolate
+ * \brief Helper for move() command to allow easy re-planning
  * \return true on success
  */
-bool interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajectory, const double& discretization);
+bool plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
+            const robot_model::JointModelGroup* arm_jmg, double velocity_scaling_factor, bool verbose,
+            moveit_msgs::RobotTrajectory& trajectory_msg);
 
-/**
- * \brief Get planning debug info
- * \return string describing result
- */
+  /**
+   * \brief Interpolate
+   * \return true on success
+   */
+  bool interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajectory, const double& discretization);
+
+  /**
+   * \brief Get planning debug info
+   * \return string describing result
+   */
   std::string getActionResultString(const moveit_msgs::MoveItErrorCodes &error_code, bool planned_trajectory_empty);
 
   /**
@@ -183,7 +191,7 @@ bool interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajectory, const do
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_approach_distance = 0.25, bool retreat = true,
+  bool executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_retreat_distance = 0.25, bool retreat = true,
                           bool ignore_collision = false);
 
   /**

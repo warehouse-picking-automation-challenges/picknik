@@ -82,6 +82,7 @@ public:
   double retreat_distance_desired_;
   double lift_distance_desired_;
   double place_goal_down_distance_desired_;
+  double jump_threshold_;
 
   // Robot semantics
   std::string start_pose_; // where to move robot to initially. should be for both arms if applicable

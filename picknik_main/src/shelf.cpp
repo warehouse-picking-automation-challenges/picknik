@@ -592,12 +592,6 @@ bool ShelfObject::createCollisionShelfDetailed()
   // Publish mesh
   if (!visuals_->visual_tools_->publishCollisionMesh(high_res_pose, collision_object_name_, high_res_mesh_path_, color_))
     return false;
-
-  // Add products to shelves
-  for (BinObjectMap::const_iterator bin_it = bins_.begin(); bin_it != bins_.end(); bin_it++)
-  {
-    bin_it->second->createCollisionBodiesProducts(bottom_right_);
-  }
 }
 
 BinObjectMap& ShelfObject::getBins()

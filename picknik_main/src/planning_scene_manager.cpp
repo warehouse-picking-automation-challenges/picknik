@@ -59,14 +59,34 @@ PlanningSceneManager::PlanningSceneManager(bool verbose, VisualsPtr visuals, She
   ROS_INFO_STREAM_NAMED("planning_scene_manager","PlanningSceneManager Ready.");
 }
 
+bool PlanningSceneManager::displayEmptyShelf()
+{
+  if (mode_ == EMPTY_SHELF)
+  {
+    return true;
+  }
+  ROS_DEBUG_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE empty_shelf");
+  mode_ = EMPTY_SHELF;
+
+  // Clear all old collision objects
+  visuals_->visual_tools_->removeAllCollisionObjects();
+
+  // Create new scene
+  bool just_frame = true;
+  bool show_products = false;
+  shelf_->createCollisionBodies("", just_frame, show_products); // only show the frame
+
+  // Output planning scene
+  visuals_->visual_tools_->triggerPlanningSceneUpdate();
+}
+
 bool PlanningSceneManager::displayShelfWithOpenBins()
 {
   if (mode_ == ALL_OPEN_BINS)
   {
-    //ROS_WARN_STREAM_NAMED("planning_scene_manager","Skipped showing planning scene because already in corret mode");
     return true;
   }
-  ROS_WARN_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE all_open_bins");
+  ROS_DEBUG_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE all_open_bins");
   mode_ = ALL_OPEN_BINS;
 
   // Clear all old collision objects
@@ -74,8 +94,8 @@ bool PlanningSceneManager::displayShelfWithOpenBins()
 
   // Create new scene
   bool just_frame = false;
-  bool show_all_products = true;
-  shelf_->createCollisionBodies("", just_frame, show_all_products); // only show the frame
+  bool show_products = true;
+  shelf_->createCollisionBodies("", just_frame, show_products); // only show the frame
 
   // Output planning scene
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
@@ -87,10 +107,9 @@ bool PlanningSceneManager::displayShelfAsWall()
 {
   if (mode_ == ONLY_COLLISION_WALL)
   {
-    //ROS_WARN_STREAM_NAMED("planning_scene_manager","Skipped showing planning scene because already in corret mode");
     return true;
   }
-  ROS_WARN_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE only_collision_wall");
+  ROS_DEBUG_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE only_collision_wall");
   mode_ = ONLY_COLLISION_WALL;
 
   // Clear all old collision objects
@@ -112,10 +131,9 @@ bool PlanningSceneManager::displayShelfOnlyBin( const std::string& bin_name )
 {
   if (mode_ == FOCUSED_ON_BIN && focused_bin_ == bin_name)
   {
-    //ROS_WARN_STREAM_NAMED("planning_scene_manager","Skipped showing planning scene because already in corret mode");
     return true;
   }
-  ROS_WARN_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE focused_on_bin");
+  ROS_DEBUG_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE focused_on_bin");
   mode_ = FOCUSED_ON_BIN;
   focused_bin_ = bin_name;
 
@@ -125,7 +143,7 @@ bool PlanningSceneManager::displayShelfOnlyBin( const std::string& bin_name )
   // Create new scene
   bool only_show_shelf_frame = false;
   bool show_all_products = false;
-  ROS_INFO_STREAM_NAMED("apc_manager","Showing planning scene shelf with focus on bin " << bin_name);
+  ROS_DEBUG_STREAM_NAMED("apc_manager","Showing planning scene shelf with focus on bin " << bin_name);
 
   shelf_->createCollisionBodies(bin_name, only_show_shelf_frame, show_all_products);
 

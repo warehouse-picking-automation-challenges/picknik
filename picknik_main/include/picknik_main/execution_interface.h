@@ -63,7 +63,7 @@ public:
    */
   ExecutionInterface(bool verbose, RemoteControlPtr remote_control, VisualsPtr visuals, moveit_grasps::GraspDatas grasp_datas,
                      planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor, 
-                     ManipulationDataPtr config, const std::string& package_path)
+                     ManipulationDataPtr config, const std::string& package_path, moveit::core::RobotStatePtr current_state)
     : verbose_(verbose)
     , remote_control_(remote_control)
     , visuals_(visuals)
@@ -71,6 +71,7 @@ public:
     , planning_scene_monitor_(planning_scene_monitor)
     , config_(config)
     , package_path_(package_path)
+    , current_state_(current_state)
   {
     // Check that controllers are ready
     zaber_list_controllers_client_ = nh_.serviceClient<controller_manager_msgs::ListControllers>("/jacob/zaber/controller_manager/list_controllers");
@@ -84,10 +85,11 @@ public:
     ROS_INFO_STREAM_NAMED("execution_interface","Executing trajectory with " << trajectory_msg.joint_trajectory.points.size() << " waypoints");
 
     // Remove acceleration command, not to be used with Baxter
-    for (std::size_t i = 0; i < trajectory_msg.joint_trajectory.points.size(); ++i)
-    {
-      trajectory_msg.joint_trajectory.points[i].accelerations.clear();
-    }
+    if (false)
+      for (std::size_t i = 0; i < trajectory_msg.joint_trajectory.points.size(); ++i)
+      {
+        trajectory_msg.joint_trajectory.points[i].accelerations.clear();
+      }
 
     // Debug
     ROS_DEBUG_STREAM_NAMED("execution_interface.trajectory","Publishing:\n" << trajectory_msg);
@@ -104,13 +106,20 @@ public:
       }
     }
 
-    // Visualize the path
-    if (true)
+    // Visualize the hand/wrist path in Rviz
+    if (trajectory_msg.joint_trajectory.points.size() > 1)
     {
-      //visuals_->goal_state_->deleteAllMarkers();
+      visuals_->goal_state_->deleteAllMarkers();
       visuals_->goal_state_->publishTrajectoryLine(trajectory_msg, grasp_datas_[config_->right_arm_]->parent_link_,
                                                    config_->right_arm_, rvt::LIME_GREEN);
     }
+    else
+      ROS_WARN_STREAM_NAMED("execution_interface","Not visualizing path because trajectory only has " 
+                            << trajectory_msg.joint_trajectory.points.size() << " points");
+
+    // Visualize trajectory in Rviz
+    bool wait_for_trajetory = false;
+    visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, getCurrentState(), wait_for_trajetory);
 
     // Create trajectory execution manager
     if( !trajectory_execution_manager_ )
@@ -236,7 +245,7 @@ public:
         found_main_controller = true;
         if (service.response.controller[i].state != "running")
         {
-          ROS_WARN_STREAM_THROTTLED_NAMED("execution_interface",2.0,"Controller for " << hardware_name << " is in manual mode");
+          ROS_WARN_STREAM_THROTTLE_NAMED(2, "execution_interface","Controller for " << hardware_name << " is in manual mode");
           return false;
         }
       }
@@ -245,7 +254,7 @@ public:
         found_ee_controller = true;
         if (service.response.controller[i].state != "running")
         {
-          ROS_WARN_STREAM_THROTTLED_NAMED("execution_interface",2.0,"Controller for " << hardware_name << " is in manual mode");
+          ROS_WARN_STREAM_THROTTLE_NAMED(2, "execution_interface","Controller for " << hardware_name << " is in manual mode");
           return false;
         }
       }
@@ -253,12 +262,12 @@ public:
 
     if (has_ee && !found_ee_controller)
     {
-      ROS_ERROR_STREAM_THROTTLED_NAMED("execution_interface",2.0,"No end effector controller found for " << hardware_name);
+      ROS_ERROR_STREAM_THROTTLE_NAMED(2, "execution_interface","No end effector controller found for " << hardware_name);
       return false;
     }
     if (!found_main_controller)
     {
-      ROS_ERROR_STREAM_THROTTLED_NAMED("execution_interface",2.0,"No main controller found for " << hardware_name);
+      ROS_ERROR_STREAM_THROTTLE_NAMED(2, "execution_interface","No main controller found for " << hardware_name);
       return false;
     }
     
@@ -267,8 +276,6 @@ public:
 
   bool saveTrajectory(const moveit_msgs::RobotTrajectory &trajectory_msg, const std::string &file_name)
   {
-    ROS_DEBUG_STREAM_NAMED("execution_interface.superdebug","saveTrajectory()");
-
     const trajectory_msgs::JointTrajectory &joint_trajectory = trajectory_msg.joint_trajectory;
 
     // Error check
@@ -353,6 +360,13 @@ public:
     return true;
   }
 
+  moveit::core::RobotStatePtr getCurrentState()
+  {
+    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
+    (*current_state_) = scene->getCurrentState();
+    return current_state_;
+  }
+
 private:
 
   // A shared node handle
@@ -381,6 +395,9 @@ private:
   // Check which controllers are loaded
   ros::ServiceClient zaber_list_controllers_client_;
   ros::ServiceClient kinova_list_controllers_client_;
+
+  // Allocated memory for robot state
+  moveit::core::RobotStatePtr current_state_;
 
 }; // end class
 

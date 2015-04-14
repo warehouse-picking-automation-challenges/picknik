@@ -3,7 +3,7 @@ clc
 format long g
 clf
 
-%while 1
+while 1
     sampled_data = csvread('trajectory.csv',1,0);
     use_acceleration = 0;
     %assign columns into seperate variable names - this is made quickly using the
@@ -50,8 +50,8 @@ clf
                 'Joint 4 Pos',...
                 'Joint 5 Pos',...
                 'Joint 6 Pos',...
-                'Joint 7 Pos',...
-                'Location','northwest')
+                'Joint 7 Pos',..
+                'Loation')
 
         title('Position Trajectory')
     else
@@ -72,11 +72,10 @@ clf
                 'Joint 4 vel',...
                 'Joint 5 vel',...
                 'Joint 6 vel',...
-                'Joint 7 vel',...
-                'Location','northwest')
+                'Joint 7 vel')
 
         title('Velocity Trajectory')
     end
     
     pause(1)
-%end
+end

@@ -66,6 +66,7 @@ rvt::getDoubleParameter(parent_name, nh_, "approach_distance_desired", approach_
 rvt::getDoubleParameter(parent_name, nh_, "retreat_distance_desired", retreat_distance_desired_);
 rvt::getDoubleParameter(parent_name, nh_, "lift_distance_desired", lift_distance_desired_);
 rvt::getDoubleParameter(parent_name, nh_, "place_goal_down_distance_desired", place_goal_down_distance_desired_);
+rvt::getDoubleParameter(parent_name, nh_, "jump_threshold", jump_threshold_);
 
 // Load perception variables
 rvt::getDoubleParameter(parent_name, nh_, "camera/x_translation_from_bin", camera_x_translation_from_bin_);

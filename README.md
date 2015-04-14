@@ -409,6 +409,8 @@ Button Mapings
 		17. Test joint limits
 		18. Test requesting preception results
 		19. Train experience database mode / workspace analysis
+
+        20. GO in and out of bin
 		
 	jump_to - which step in the manipulation pipeline to start on
 	  Steps: NOT CORRECT ANYMORE

@@ -103,8 +103,8 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   grasp_filter_.reset(new moveit_grasps::GraspFilter(current_state_, visuals_->start_state_) );
 
   // Load execution interface
-  execution_interface_.reset( new ExecutionInterface(verbose_, remote_control_, visuals_, grasp_datas_, planning_scene_monitor_, 
-                                                     config_, package_path_) );
+  execution_interface_.reset( new ExecutionInterface(verbose_, remote_control_, visuals_, grasp_datas_, planning_scene_monitor_,
+                                                     config_, package_path_, current_state_) );
 
   // Done
   ROS_INFO_STREAM_NAMED("manipulation","Manipulation Ready.");
@@ -270,10 +270,6 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
     ROS_ERROR_STREAM_NAMED("manipultion","Unable to plan");
     return false;
   }
-
-  // Visualize trajectory in Rviz display
-  bool wait_for_trajetory = false;
-  visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, current_state_, wait_for_trajetory);
 
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
@@ -498,6 +494,81 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
     return true;
   }
 
+  // Do motion plan
+  moveit_msgs::RobotTrajectory trajectory_msg;
+  std::size_t plan_attempts = 0;
+  while (ros::ok())
+  {
+    if (plan(start, goal, arm_jmg, velocity_scaling_factor, verbose, trajectory_msg))
+    {
+      // Plan succeeded
+      break;
+    }
+    plan_attempts++;
+    if (plan_attempts > 5)
+    {
+      ROS_ERROR_STREAM_NAMED("manipulation","Max number of plan attempts reached, giving up");
+      return false;
+    }
+    ROS_WARN_STREAM_NAMED("manipulation","Previous plan attempt failed, trying again");
+  }
+
+  // Hack: do not allow a two point trajectory to be executed because there is no velcity?
+  if (trajectory_msg.joint_trajectory.points.size() < 3)
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Trajectory only has " << trajectory_msg.joint_trajectory.points.size() << " points");
+
+    if (trajectory_msg.joint_trajectory.points.size() == 2)
+    {
+      // Remove previous parameterization
+      for (std::size_t i = 0; i < trajectory_msg.joint_trajectory.points.size(); ++i)
+      {
+        trajectory_msg.joint_trajectory.points[i].velocities.clear();
+        trajectory_msg.joint_trajectory.points[i].accelerations.clear();
+      }
+
+      // Add more waypoints
+      robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, arm_jmg));
+      robot_trajectory->setRobotTrajectoryMsg(*current_state_, trajectory_msg);
+
+      // Interpolate
+      double discretization = 0.25;
+      interpolate(robot_trajectory, discretization);
+
+      // Convert trajectory back to a message
+      robot_trajectory->getRobotTrajectoryMsg(trajectory_msg);
+
+      std::cout << "BEFORE PARAM: \n" << trajectory_msg << std::endl;
+
+      // Perform iterative parabolic smoothing
+      iterative_smoother_.computeTimeStamps( *robot_trajectory, config_->main_velocity_scaling_factor_ );
+
+      // Convert trajectory back to a message
+      robot_trajectory->getRobotTrajectoryMsg(trajectory_msg);
+    }
+  }
+
+  // Execute trajectory
+  if (execute_trajectory)
+  {
+    if( !execution_interface_->executeTrajectory(trajectory_msg) )
+    {
+      ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
+      return false;
+    }
+  }
+  else
+  {
+    ROS_WARN_STREAM_NAMED("manipulation","Execute trajectory currently disabled by user");
+  }
+
+  return true;
+}
+
+bool Manipulation::plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
+                        const robot_model::JointModelGroup* arm_jmg, double velocity_scaling_factor, bool verbose,
+                        moveit_msgs::RobotTrajectory& trajectory_msg)
+{
   // Create motion planning request
   planning_interface::MotionPlanRequest req;
   planning_interface::MotionPlanResponse res;
@@ -532,7 +603,6 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   req.workspace_parameters.max_corner.x = start->getVariablePosition("virtual_joint/trans_x") + workspace_size;
   req.workspace_parameters.max_corner.y = start->getVariablePosition("virtual_joint/trans_y") + workspace_size;
   req.workspace_parameters.max_corner.z = start->getVariablePosition("virtual_joint/trans_z") + workspace_size;
-
   //visuals_->visual_tools_->publishWorkspaceParameters(req.workspace_parameters);
 
   // Call pipeline
@@ -552,74 +622,13 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   moveit_msgs::MotionPlanResponse response;
   response.trajectory = moveit_msgs::RobotTrajectory();
   res.getMessage(response);
+  trajectory_msg = response.trajectory;
 
   // Check that the planning was successful
   bool error = (res.error_code_.val != res.error_code_.SUCCESS);
   if (error)
   {
-    std::string result = getActionResultString(res.error_code_, response.trajectory.joint_trajectory.points.empty());
-    ROS_ERROR_STREAM_NAMED("manipulation","Planning failed:: " << result);
-  }
-
-  // Visualize trajectory in Rviz display
-  bool wait_for_trajetory = false;
-  visuals_->visual_tools_->publishTrajectoryPath(response.trajectory, current_state_, wait_for_trajetory);
-
-  // Focus on execution (unless we are in debug mode)
-  if (!error)
-    visuals_->visual_tools_->hideRobot();
-
-  // Do not execute a bad trajectory
-  if (error)
-    return false;
-
-  // Hack: do not allow a two point trajectory to be executed because there is no velcity?
-  if (response.trajectory.joint_trajectory.points.size() < 3)
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Trajectory only has " << response.trajectory.joint_trajectory.points.size() << " points");
-
-    if (response.trajectory.joint_trajectory.points.size() == 2)
-    {
-      // Remove previous parameterization
-      for (std::size_t i = 0; i < response.trajectory.joint_trajectory.points.size(); ++i)
-      {
-        response.trajectory.joint_trajectory.points[i].velocities.clear();
-        response.trajectory.joint_trajectory.points[i].accelerations.clear();
-      }
-
-      // Add more waypoints
-      robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, arm_jmg));
-      robot_trajectory->setRobotTrajectoryMsg(*current_state_, response.trajectory);
-
-      // Interpolate
-      double discretization = 0.25;
-      interpolate(robot_trajectory, discretization);
-
-      // Convert trajectory back to a message
-      robot_trajectory->getRobotTrajectoryMsg(response.trajectory);
-
-      std::cout << "BEFORE PARAM: \n" << response.trajectory << std::endl;
-
-      // Perform iterative parabolic smoothing
-      iterative_smoother_.computeTimeStamps( *robot_trajectory, config_->main_velocity_scaling_factor_ );
-
-      // Convert trajectory back to a message
-      robot_trajectory->getRobotTrajectoryMsg(response.trajectory);
-    }
-  }
-
-  // Execute trajectory
-  if (execute_trajectory)
-  {
-    if( !execution_interface_->executeTrajectory(response.trajectory) )
-    {
-      ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
-      return false;
-    }
-  }
-  else
-  {
-    ROS_WARN_STREAM_NAMED("manipulation","Execute trajectory currently disabled by user");
+    ROS_ERROR_STREAM_NAMED("manipulation","Planning failed:: " << getActionResultString(res.error_code_, trajectory_msg.joint_trajectory.points.empty()));
   }
 
   // Save Experience Database
@@ -653,11 +662,7 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
     }
   }
 
-  if (error)
-  {
-    return false;
-  }
-  return true;
+  return !error;
 }
 
 bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajectory, const double& discretization)
@@ -683,7 +688,7 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajec
       robot_trajectory->getWayPoint(i).interpolate(robot_trajectory->getWayPoint(i+1), t, *interpolated_state);
       // Add to trajectory
       new_robot_trajectory->addSuffixWayPoint(interpolated_state, dummy_dt);
-      //std::cout << "inserting " << t << " at " << new_robot_trajectory->getWayPointCount() << std::endl;
+      std::cout << "inserting " << t << " at " << new_robot_trajectory->getWayPointCount() << std::endl;
     }
   }
 
@@ -691,7 +696,7 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajec
   new_robot_trajectory->addSuffixWayPoint(robot_trajectory->getLastWayPoint(), dummy_dt);
 
   std::size_t modified_num_waypoints = new_robot_trajectory->getWayPointCount();
-  ROS_INFO_STREAM_NAMED("manipulation","Interpolated trajectory from " << original_num_waypoints
+  ROS_WARN_STREAM_NAMED("manipulation","Interpolated trajectory from " << original_num_waypoints
                         << " to " << modified_num_waypoints);
 
   // Copy back to original datastructure
@@ -766,15 +771,16 @@ bool Manipulation::executeState(const moveit::core::RobotStatePtr goal_state, co
   robot_state_trajectory.push_back(current_state_);
 
   // Create an interpolated trajectory between states
-  double resolution = 0.1;
-  for (double t = 0; t < 1; t += resolution)
-  {
-    moveit::core::RobotStatePtr interpolated_state = moveit::core::RobotStatePtr(new moveit::core::RobotState(*current_state_));
-    current_state_->interpolate(*goal_state, t, *interpolated_state);
-    robot_state_trajectory.push_back(interpolated_state);
-  }
-  // Add goal state
-  robot_state_trajectory.push_back(goal_state);
+  // THIS IS DONE IN convertRobotStatesToTrajectory
+  // double resolution = 0.1;
+  // for (double t = 0; t < 1; t += resolution)
+  // {
+  //   moveit::core::RobotStatePtr interpolated_state = moveit::core::RobotStatePtr(new moveit::core::RobotState(*current_state_));
+  //   current_state_->interpolate(*goal_state, t, *interpolated_state);
+  //   robot_state_trajectory.push_back(interpolated_state);
+  // }
+  // // Add goal state
+  // robot_state_trajectory.push_back(goal_state);
 
   // Get trajectory message
   moveit_msgs::RobotTrajectory trajectory_msg;
@@ -783,10 +789,6 @@ bool Manipulation::executeState(const moveit::core::RobotStatePtr goal_state, co
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
     return false;
   }
-
-  // Visualize trajectory in Rviz display
-  bool wait_for_trajetory = false;
-  visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, current_state_, wait_for_trajetory);
 
   // Execute
   if( !execution_interface_->executeTrajectory(trajectory_msg) )
@@ -807,7 +809,6 @@ bool Manipulation::generateApproachPath(moveit_grasps::GraspCandidatePtr chosen,
 
   ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","finger_to_palm_depth: " << chosen->grasp_data_->finger_to_palm_depth_);
   ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","approach_distance_desired: " << config_->approach_distance_desired_);
-  ROS_WARN_STREAM_NAMED("temp","fake desired distance");
   double desired_approach_distance = chosen->grasp_data_->finger_to_palm_depth_ + config_->approach_distance_desired_;
 
   Eigen::Vector3d approach_direction = grasp_generator_->getPreGraspDirection(chosen->grasp_,
@@ -884,7 +885,7 @@ bool Manipulation::executeHorizontalPath(const moveit::core::JointModelGroup *ar
   return true;
 }
 
-bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_approach_distance, bool retreat,
+bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_retreat_distance, bool retreat,
                                       bool ignore_collision)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeRetreatPath()");
@@ -894,7 +895,7 @@ bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_j
   approach_direction << (retreat ? -1 : 1), 0, 0; // backwards towards robot body
   bool reverse_path = false;
 
-  if (!executeCartesianPath(arm_jmg, approach_direction, desired_approach_distance, config_->retreat_velocity_scaling_factor_,
+  if (!executeCartesianPath(arm_jmg, approach_direction, desired_retreat_distance, config_->retreat_velocity_scaling_factor_,
                             reverse_path, ignore_collision))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute retreat path");
@@ -927,10 +928,6 @@ bool Manipulation::executeCartesianPath(const moveit::core::JointModelGroup *arm
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
     return false;
   }
-
-  // Visualize trajectory in Rviz display
-  bool wait_for_trajetory = false;
-  visuals_->visual_tools_->publishTrajectoryPath(cartesian_trajectory_msg, current_state_, wait_for_trajetory);
 
   // Execute
   if( !execution_interface_->executeTrajectory(cartesian_trajectory_msg, ignore_collision) )
@@ -1011,7 +1008,7 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
   }
 
   // Jump threshold for preventing consequtive joint values from 'jumping' by a large amount in joint space
-  double jump_threshold = 0.0; // disabled
+  double jump_threshold = config_->jump_threshold_; // aka jump factor
 
   bool collision_checking_verbose = false;
 
@@ -1266,7 +1263,7 @@ bool Manipulation::convertRobotStatesToTrajectory(const std::vector<moveit::core
   robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, jmg));
 
   // -----------------------------------------------------------------------------------------------
-  // Convert o RobotTrajectory datatype
+  // Convert to RobotTrajectory datatype
   for (std::size_t k = 0 ; k < robot_state_trajectory.size() ; ++k)
   {
     double duration_from_previous = 1; // this is overwritten and unimportant
@@ -1400,10 +1397,6 @@ bool Manipulation::openEndEffectorWithVelocity(bool open, const robot_model::Joi
   // Convert trajectory to a message
   moveit_msgs::RobotTrajectory trajectory_msg;
   ee_trajectory->getRobotTrajectoryMsg(trajectory_msg);
-
-  // Visualize trajectory in Rviz display
-  bool wait_for_trajetory = false;
-  visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, current_state_, wait_for_trajetory);
 
   // Execute trajectory
   if( !execution_interface_->executeTrajectory(trajectory_msg) )

@@ -58,7 +58,8 @@ enum SceneModes {
   NOT_LOADED,
   ALL_OPEN_BINS,
   FOCUSED_ON_BIN,
-  ONLY_COLLISION_WALL
+  ONLY_COLLISION_WALL,
+  EMPTY_SHELF
 };
 
 
@@ -71,6 +72,12 @@ public:
    * \param verbose - run in debug mode
    */
   PlanningSceneManager(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf);
+
+  /**
+   * \brief Show shelf with no products
+   * \return true on success
+   */
+  bool displayEmptyShelf();
 
   /**
    * \brief Show shelf with all bins enabled

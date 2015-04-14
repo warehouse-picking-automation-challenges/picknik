@@ -235,6 +235,10 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Train experience database mode");
       manager.trainExperienceDatabase();
       break;
+    case 20:
+      ROS_INFO_STREAM_NAMED("main","Going in and out of bin");
+      manager.testInAndOut();
+      break;
 
     default:
       ROS_WARN_STREAM_NAMED("main","Unkown mode: " << mode);
