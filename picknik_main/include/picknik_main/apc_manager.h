@@ -293,6 +293,12 @@ public:
    */
   bool allowCollisions();
 
+  /**
+   * \brief Attach a product to an arm for planning
+   * \return true on success
+   */
+  bool attachProduct(ProductObjectPtr product, const robot_model::JointModelGroup* arm_jmg);
+
 private:
 
   // A shared node handle

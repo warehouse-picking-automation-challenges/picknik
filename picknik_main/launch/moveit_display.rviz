@@ -6,8 +6,10 @@ Panels:
       Expanded:
         - /Grid1/Offset1
         - /Amazon Detailed Markers1/Namespaces1
+        - /Amazon Trajectory Markers1
+        - /Amazon Trajectory Markers1/Namespaces1
       Splitter Ratio: 0.666041
-    Tree Height: 933
+    Tree Height: 437
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -48,26 +50,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/highres_markers
       Name: Amazon Detailed Markers
       Namespaces:
-        Axis: true
-        Cuboid: true
-        Line: true
-        Shelf: true
-        goal_bin_49: true
-        product_cheezit_big_original_58: true
-        product_cheezit_big_original_61: true
-        product_crayola_64_ct_57: true
-        product_expo_dry_erase_board_eraser_55: true
-        product_expo_dry_erase_board_eraser_59: true
-        product_expo_dry_erase_board_eraser_60: true
-        product_expo_dry_erase_board_eraser_62: true
-        product_feline_greenies_dental_treats_67: true
-        product_first_years_take_and_toss_straw_cup_64: true
-        product_first_years_take_and_toss_straw_cup_69: true
-        product_highland_6539_self_stick_notes_63: true
-        product_mommys_helper_outlet_plugs_68: true
-        product_munchkin_white_hot_duck_bath_toy_65: true
-        product_oreo_mega_stuf_56: true
-        product_sharpie_accent_tank_style_highlighters_66: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -216,22 +199,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.76221
+      Distance: 3.39897
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.774556
-        Y: 0.44662
-        Z: -7.15253e-07
+        X: 1.50877
+        Y: 1.14634
+        Z: -1.43051e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.600399
+      Pitch: 0.4504
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.98675
+      Yaw: 3.91674
     Saved: ~
 Window Geometry:
   Displays:
@@ -241,7 +224,7 @@ Window Geometry:
     collapsed: false
   Hide Left Dock: true
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd00000001000000000000015a000003e6fc0200000009fb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c0061007900730000000000000003e6000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a0056006900650077007300000002c80000013a000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e0067010000026d000001950000000000000000000002d1000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000001000000000000010f000003e6fc0200000009fb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c0061007900730000000000000003e6000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a0056006900650077007300000002c80000013a000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e0067010000026d000001950000000000000000000002d1000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
   Views:
     collapsed: false
   Width: 721

@@ -550,6 +550,7 @@ Visualization Manager:
       Name: Amazon Markers
       Namespaces:
         Axis: true
+        Collision: true
         Line: true
         Sphere: true
         Text: true
@@ -711,7 +712,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-      Loop Animation: false
+      Loop Animation: true
       Name: Trajectory
       Robot Alpha: 0.5
       Robot Description: robot_description
@@ -1072,22 +1073,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 6.38627
+      Distance: 2.52159
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.43818
-        Y: 1.25864
-        Z: 3.93391e-06
+        X: 0.304064
+        Y: 0.014713
+        Z: 3.57628e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.225399
+      Pitch: 0.000399459
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.81542
+      Yaw: 4.55727
     Saved: ~
 Window Geometry:
   Displays:

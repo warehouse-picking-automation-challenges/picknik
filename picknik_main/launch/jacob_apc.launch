@@ -17,7 +17,7 @@
   <arg name="auto" default="0" />
   <arg name="verbose" default="1" />
   <arg name="use_experience" default="0" />
-  <arg name="order" default="$(find picknik_main)/orders/simple.json" />
+  <arg name="order" default="$(find picknik_main)/orders/cheezits.json" />
   <arg name="order_start" default="0" />
   <arg name="num_orders" default="0" />
   <arg name="bin_id" default="0" />

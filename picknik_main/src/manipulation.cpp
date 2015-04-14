@@ -1492,7 +1492,7 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
     ROS_WARN_STREAM_NAMED("manipulation","Did not find any world objects in collision. Attempting to move home");
     bool check_validity = false;
     ROS_WARN_STREAM_NAMED("manipulation","DISABLED MOVE TO START POSITION TEMP");
-    return false; //parent_->moveToStartPosition(NULL, check_validity);
+    return moveToStartPosition(NULL, check_validity);
   }
 
   ROS_INFO_STREAM_NAMED("manipulation","World object " << colliding_world_object << " in collision");
@@ -1594,6 +1594,14 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
 
 
   return true;
+}
+
+bool Manipulation::moveToStartPosition(const robot_model::JointModelGroup* arm_jmg, bool check_validity)
+{
+  // Choose which planning group to use
+  if (arm_jmg == NULL)
+    arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  return moveToPose(arm_jmg, config_->start_pose_, config_->main_velocity_scaling_factor_, check_validity);
 }
 
 bool Manipulation::allowFingerTouch(const std::string& object_name, const robot_model::JointModelGroup* arm_jmg)

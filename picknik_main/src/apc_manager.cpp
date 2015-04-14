@@ -422,21 +422,22 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         }
 
         // Attach collision object
-        visuals_->visual_tools_->attachCO(work_order.product_->getCollisionName(), grasp_datas_[arm_jmg]->parent_link_->getName());
+        if (!attachProduct(work_order.product_, arm_jmg))
+          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to attach collision object");
 
         ROS_INFO_STREAM_NAMED("apc_manager","Waiting " << config_->wait_after_grasp_ << " seconds after grasping");
-
         ros::Duration(config_->wait_after_grasp_).sleep();
+
         break;
 
         // #################################################################################################################
       case 9: manipulation_->statusPublisher("Lifting product UP slightly");
 
         // Set planning scene
-        planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
+        //planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
         // Clear all collision objects
-        visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
+        //visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
 
         if (!manipulation_->executeVerticlePath(arm_jmg, config_->lift_distance_desired_))
         {
@@ -449,7 +450,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
       case 10: manipulation_->statusPublisher("Moving BACK to pre-grasp position (retreat path)");
 
         // Set planning scene
-        planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
+        //planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
         // Retreat backwards
         if (!manipulation_->executeRetreatPath(arm_jmg, config_->retreat_distance_desired_))
@@ -463,9 +464,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
       case 11: manipulation_->statusPublisher("Placing product in bin");
 
         // Set planning scene
-        planning_scene_manager_->displayShelfAsWall();
-
-        planning_scene_manager_->displayShelfAsWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
+        //planning_scene_manager_->displayShelfAsWall();
 
         if (!placeObjectInGoalBin(arm_jmg))
         {
@@ -1397,7 +1396,6 @@ bool APCManager::perceiveObjectFake(WorkOrder work_order, bool verbose)
   product->visualize(world_to_bin);
   product->createCollisionBodies(world_to_bin);
 
-
   return true;
 }
 
@@ -1435,10 +1433,7 @@ bool APCManager::liftFromGoalBin(const robot_model::JointModelGroup* arm_jmg)
 
 bool APCManager::moveToStartPosition(const robot_model::JointModelGroup* arm_jmg, bool check_validity)
 {
-  // Choose which planning group to use
-  if (arm_jmg == NULL)
-    arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
-  return manipulation_->moveToPose(arm_jmg, config_->start_pose_, config_->main_velocity_scaling_factor_, check_validity);
+  return manipulation_->moveToStartPosition(arm_jmg, check_validity);
 }
 
 bool APCManager::moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg)
@@ -1577,5 +1572,25 @@ bool APCManager::allowCollisions()
 
   return true;
 }
+
+bool APCManager::attachProduct(ProductObjectPtr product, const robot_model::JointModelGroup* arm_jmg)
+{
+  visuals_->visual_tools_->attachCO(product->getCollisionName(), grasp_datas_[arm_jmg]->parent_link_->getName());
+  visuals_->visual_tools_->triggerPlanningSceneUpdate();
+
+  ROS_WARN_STREAM_NAMED("apc_manager","Attaced to link " << grasp_datas_[arm_jmg]->parent_link_->getName() << " product "
+                        << product->getCollisionName());
+
+  std::vector<const moveit::core::AttachedBody*> attached_bodies;
+  manipulation_->getCurrentState()->getAttachedBodies(attached_bodies);
+
+  for (std::size_t i = 0; i < attached_bodies.size(); ++i)
+  {
+    std::cout << "attached body: " << attached_bodies[i]->getName() << std::endl;
+  }
+
+  return true;
+}
+
 
 } // end namespace

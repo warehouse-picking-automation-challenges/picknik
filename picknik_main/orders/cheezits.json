@@ -1,0 +1,105 @@
+{
+    "bin_contents":
+    {
+	"bin_A":
+	[
+	    "cheezit_big_original"
+	],
+	"bin_B":
+	[
+	    "cheezit_big_original"
+	],
+	"bin_C":
+	[
+	    "cheezit_big_original"
+	],
+	"bin_D":
+	[
+	    "cheezit_big_original"
+	],
+	"bin_E":
+	[
+	    "cheezit_big_original"
+	],
+	"bin_F":
+	[
+	    "cheezit_big_original"
+	],
+	"bin_G":
+	[
+	    "cheezit_big_original"
+	],
+	"bin_H":
+	[
+	    "cheezit_big_original"
+	],
+	"bin_I":
+	[
+	    "cheezit_big_original"
+	],
+	"bin_J":
+	[
+	    "cheezit_big_original"
+	],
+	"bin_K":
+	[
+	    "cheezit_big_original"
+	],
+	"bin_L":
+	[
+	    "cheezit_big_original"
+	]
+    },
+
+    "work_order":
+    [
+	{
+	    "bin": "bin_A",
+	    "item": "cheezit_big_original"
+	},
+	{
+	    "bin": "bin_B",
+	    "item": "cheezit_big_original"
+	},
+	{
+	    "bin": "bin_C",
+	    "item": "cheezit_big_original"
+	},
+	{
+	    "bin": "bin_D",
+	    "item": "cheezit_big_original"
+	},
+	{
+	    "bin": "bin_E",
+	    "item": "cheezit_big_original"
+	},
+	{
+	    "bin": "bin_F",
+	    "item": "cheezit_big_original"
+	},
+	{
+	    "bin": "bin_G",
+	    "item": "cheezit_big_original"
+	},
+	{
+	    "bin": "bin_H",
+	    "item": "cheezit_big_original"
+	},
+	{
+	    "bin": "bin_I",
+	    "item": "cheezit_big_original"
+	},
+	{
+	    "bin": "bin_J",
+	    "item": "cheezit_big_original"
+	},
+	{
+	    "bin": "bin_K",
+	    "item": "cheezit_big_original"
+	},
+	{
+	    "bin": "bin_L",
+	    "item": "cheezit_big_original"
+	}
+    ]
+}

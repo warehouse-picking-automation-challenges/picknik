@@ -306,6 +306,13 @@ bool plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotSta
   bool saveTrajectory(const moveit_msgs::RobotTrajectory &trajectory_msg, const std::string &file_name);
 
   /**
+   * \brief Move both arms to their start location
+   * \param optionally specify which arm to use
+   * \return true on success
+   */
+  bool moveToStartPosition(const robot_model::JointModelGroup* arm_jmg = NULL, bool check_validity = true);
+
+  /**
    * \brief Prevent a product from colliding with the fingers
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
