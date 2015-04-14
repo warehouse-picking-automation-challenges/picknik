@@ -48,13 +48,29 @@ private:
   ros::Publisher bin_cloud_pub_;
 
   double bin_depth_, bin_width_, bin_height_;
-  Eigen::Affine3d bin_pose_, camera_pose_;
 
+  double bbox_depth_, bbox_width_, bbox_height_;
+  bool get_bbox_;
+  std::size_t bbox_frames_;
+  Eigen::Matrix3d bbox_rotation_;
+  Eigen::Vector3d bbox_translation_;
+  Eigen::Affine3d bbox_pose_;
+
+  Eigen::Affine3d bin_pose_, camera_pose_;
+  bool home_;
   
 public:
 
   SimplePointCloudFilterTest()
   {
+    // run home or shelf sim?
+    home_ = false;
+    get_bbox_ = false;
+    bbox_frames_ = 0;
+    bbox_rotation_ = Eigen::Matrix3d::Zero();
+    bbox_translation_ = Eigen::Vector3d::Zero();
+    bbox_pose_ = Eigen::Affine3d::Identity();
+
     ROS_DEBUG_STREAM_NAMED("PC_filter.constructor","setting up rviz...");
     visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base", "/rviz_visual_tools"));
     visual_tools_->deleteAllMarkers();
@@ -74,8 +90,18 @@ public:
 
     // set initial camera transform
     delta_ = 0.010;
-    camera_translation_ = Eigen::Vector3d(-1.459, 0.09, 1.0844);
-    camera_rotation_ = Eigen::Vector3d(0.01, -0.009, 0.07);
+
+    if (home_)
+    {
+      camera_translation_ = Eigen::Vector3d(-1.459, 0.09, 1.0844);
+      camera_rotation_ = Eigen::Vector3d(0.01, -0.009, 0.07);
+    }
+    else
+    {
+      //-0.527   0.079   1.491   0.01   0.041   -0.009
+      camera_translation_ = Eigen::Vector3d(-0.527, 0.079, 1.491);
+      camera_rotation_ = Eigen::Vector3d(0.01, 0.041, -0.009);
+    }
     camera_pose_ = Eigen::Affine3d::Identity();
     camera_pose_ *= Eigen::AngleAxisd(camera_rotation_[0],Eigen::Vector3d::UnitX())
       * Eigen::AngleAxisd(camera_rotation_[1],Eigen::Vector3d::UnitY())
@@ -85,21 +111,41 @@ public:
 
     // display test scene
     visual_tools_->publishAxis(Eigen::Affine3d::Identity());
-    displayHomeOfficeScene();
 
-    // set up test cuboid for filtering (area above my desk)
-    bin_pose_ = Eigen::Affine3d::Identity();
-    bin_depth_ = 25.25 * 0.0254; // 1 inch padding
-    bin_width_ = 35 * 0.0254; // 1 inch padding
-    bin_height_ = 1.0;
-    bin_pose_.translation() += Eigen::Vector3d(-26.25 / 2.0 * 0.0254, 0 , 30.5 * 0.0254 + 0.5 );
-    visual_tools_->publishCuboid(bin_pose_, bin_depth_, bin_width_, bin_height_, 
-                                 rviz_visual_tools::TRANSLUCENT);
+    if (home_)
+    {
+      displayHomeOfficeScene();
+
+      // set up test cuboid for filtering (area above my desk)
+      bin_pose_ = Eigen::Affine3d::Identity();
+      bin_depth_ = 25.25 * 0.0254; // 1 inch padding
+      bin_width_ = 35 * 0.0254; // 1 inch padding
+      bin_height_ = 1.0;
+      bin_pose_.translation() += Eigen::Vector3d(-26.25 / 2.0 * 0.0254, 0 , 30.5 * 0.0254 + 0.5 );
+      visual_tools_->publishCuboid(bin_pose_, bin_depth_, bin_width_, bin_height_, rviz_visual_tools::TRANSLUCENT);
+    }
+    else
+    {
+      displaySimpleShelfScene();
+
+      // set up test cuboid for filtering bin
+      bin_pose_ = Eigen::Affine3d::Identity();
+      double padding = 0.01;
+      bin_depth_ = 0.40 - padding;
+      bin_width_ = 0.30 - padding;
+      bin_height_ = 0.19 - padding;
+      bin_pose_.translation() += Eigen::Vector3d(bin_depth_ / 2.0 + 0.015, // 0.015 for lip on front of shelf
+                                                 0, 
+                                                 1.29 + 0.19 / 2.0); // doesn't account for sloped bottom of shelf
+      visual_tools_->publishCuboid(bin_pose_, bin_depth_, bin_width_, bin_height_, rviz_visual_tools::TRANSLUCENT);
+    }
 
     // Print menu for manual alignment of point cloud
     std::cout << "Manual alignment of camera to world CS:" << std::endl;
     std::cout << "=======================================" << std::endl;
     std::cout << "\nChoose Mode:" << std::endl;
+    std::cout << "s\tStart bounding box tracking" << std::endl;
+    std::cout << "b\tDisplay bounding box" << std::endl;
     std::cout << "x\tAdjust X translation" << std::endl;
     std::cout << "y\tAdjust Y translation" << std::endl;
     std::cout << "z\tAdjust Z translation" << std::endl;    
@@ -114,6 +160,50 @@ public:
       publishCameraTransform();
       rate.sleep();
     }
+
+  }
+
+  void getBoundingBox()
+  {
+    // if (bbox_frames_ < 25)
+    // {
+    //  ROS_WARN_STREAM_NAMED("PC_filter.getBBox","Not enough frames captured..." << bbox_frames_);
+    //  return;
+    // }
+    
+    ROS_DEBUG_STREAM_NAMED("PC_filter.getBBox","bbox size  = " 
+                           << bbox_depth_ << ", " << bbox_width_ << ", " << bbox_height_);
+    ROS_DEBUG_STREAM_NAMED("PC_filter.getBBox","bbox_translation_ =\n" << bbox_translation_ );
+    ROS_DEBUG_STREAM_NAMED("PC_filter.getBBox","bbox_rotation_ =\n" << bbox_rotation_ );
+
+    // bbox_depth_ /= bbox_frames_;
+    // bbox_width_ /= bbox_frames_;
+    // bbox_height_ /= bbox_frames_;
+    // bbox_rotation_ /= bbox_frames_;
+    // bbox_translation_ /= bbox_frames_;
+
+    bbox_pose_.matrix().block(0,0,3,3) << bbox_rotation_;
+    bbox_pose_.translation() = bbox_translation_;
+    
+    ROS_DEBUG_STREAM_NAMED("PC_filter.getBBox","bbox_frames_ = " << bbox_frames_);
+    ROS_DEBUG_STREAM_NAMED("PC_filter.getBBox","bbox size  = " 
+                           << bbox_depth_ << ", " << bbox_width_ << ", " << bbox_height_);
+    ROS_DEBUG_STREAM_NAMED("PC_filter.getBBox","bbox_translation_ =\n" << bbox_translation_ );
+    ROS_DEBUG_STREAM_NAMED("PC_filter.getBBox","bbox_rotation_ =\n" << bbox_rotation_ );
+    ROS_DEBUG_STREAM_NAMED("PC_filter.getBBox","bbox_pose_.rotation() = \n" << bbox_pose_.rotation());
+    ROS_DEBUG_STREAM_NAMED("PC_filter.getBBox","bbox_pose_.translation() = \n" << bbox_pose_.translation());
+    
+    visual_tools_->publishWireframeCuboid(bbox_pose_, bbox_depth_, bbox_width_, bbox_height_, 
+                                          rviz_visual_tools::LIME_GREEN);
+
+    get_bbox_ = false;
+    bbox_frames_ = 0;
+    bbox_pose_ = Eigen::Affine3d::Identity();
+    bbox_translation_ = Eigen::Vector3d::Zero();
+    bbox_rotation_ = Eigen::Matrix3d::Zero();
+    bbox_depth_ = 0;
+    bbox_width_ = 0;
+    bbox_height_ = 0;
 
   }
 
@@ -204,10 +294,27 @@ public:
     
     bin_cloud_pub_.publish(bin_cloud_final);
 
-    // display bounding box
-    double depth, width, height;
-    Eigen::Affine3d cuboid_pose;
-    bool bbox = getBoundingBox(bin_cloud_final, cuboid_pose, depth, width, height);
+    if (get_bbox_)
+    {
+      // get info for averaging bounding box
+      // TODO: should average over frames, but getBB function doesn't return same pose every time, so d, w, h
+      // get mixed up.
+      double depth, width, height;
+      Eigen::Affine3d cuboid_pose = Eigen::Affine3d::Identity();
+      bool bbox = getBoundingBox(bin_cloud_final, cuboid_pose, depth, width, height);
+      bbox_depth_ = depth;
+      bbox_width_ = width;
+      bbox_height_ = height;
+      bbox_rotation_ = cuboid_pose.rotation();
+      bbox_translation_ = cuboid_pose.translation();
+      
+      ROS_DEBUG_STREAM_NAMED("PC_filter","frames = " << bbox_frames_);
+      ROS_DEBUG_STREAM_NAMED("PC_filter","size = " << bbox_depth_ << ", " << bbox_width_ << ", " << bbox_height_);
+      ROS_DEBUG_STREAM_NAMED("PC_filter","rotation = \n" << bbox_rotation_);
+      ROS_DEBUG_STREAM_NAMED("PC_filter","translation = \n" << bbox_translation_);
+
+      bbox_frames_++;
+    }
   }
 
   void keyboardCallback(const keyboard::Key::ConstPtr& msg)
@@ -218,7 +325,11 @@ public:
 
     switch(entry)
     {
-      case 101:
+      case 98: // b
+        std::cout << "Estimating bounding box for point cloud..." << std::endl;
+        getBoundingBox();
+        break;
+      case 101: // e
         std::cout << "Writing transformation to file..." << std::endl;
         writeTransformToFile();
         break;
@@ -245,6 +356,9 @@ public:
       case 114: // r (roll)
         std::cout << "Press +/- to adjust roll angle" << std::endl;
         mode_ = 4;
+        break;
+      case 115: // s (start bounding box tracking)
+        get_bbox_=true;
         break;
       case 112: // p (pitch)
         std::cout << "Press +/- to adjust pitch angle" << std::endl;
@@ -315,6 +429,28 @@ public:
     }
     file.close();
 
+  }
+
+  void displaySimpleShelfScene()
+  {
+    ROS_DEBUG_STREAM_NAMED("PC_filter.shelfScene","Loading simple shelf scene...");
+    visual_tools_->enableBatchPublishing(true);
+
+    // variables for publishing objects
+    Eigen::Affine3d object_pose = Eigen::Affine3d::Identity();
+    double depth, width, height, radius;
+
+    // publish basic shelf
+    depth = 0.87;
+    width = 0.87;
+    height = 1.79;
+    object_pose.translation() = Eigen::Vector3d(depth / 2.0, 0, height / 2.0);
+    visual_tools_->publishCuboid(object_pose, depth, width, height, rviz_visual_tools::TRANSLUCENT_DARK);
+
+    // publish everything
+    visual_tools_->triggerBatchPublishAndDisable();
+    ros::Duration(0.001).sleep();
+    ROS_DEBUG_STREAM_NAMED("PC_filter.shelfScene","Done loading home office scene");
   }
 
   void displayHomeOfficeScene()
@@ -399,7 +535,7 @@ public:
                       double& depth, double& width, double& height)
   {
     int num_vertices = cloud->points.size();
-    ROS_DEBUG_STREAM_NAMED("PC_filter.bbox","num triangles = " << cloud->points.size());
+    ROS_DEBUG_STREAM_NAMED("PC_filter.bbox","num points = " << cloud->points.size());
 
     // calculate centroid and moments of inertia
     // NOTE: Assimp adds verticies to imported meshes, which is not accounted for in the MOI and CG calculations
@@ -431,7 +567,7 @@ public:
     }
     ROS_DEBUG_STREAM_NAMED("PC_filter.bbox","centroid = \n" << centroid);
 
-    visual_tools_->publishSphere(centroid, rviz_visual_tools::PINK, 0.01);
+    //visual_tools_->publishSphere(centroid, rviz_visual_tools::PINK, 0.01);
 
     // Solve for principle axes of inertia
     Eigen::Matrix3d inertia_axis_aligned;
@@ -501,9 +637,9 @@ public:
     p[5] << max(0), min(1), max(2);
     p[6] << min(0), max(1), max(2);
     p[7] << max(0), max(1), max(2);
-
-    for (int i = 0; i < 8; i++)
-      visual_tools_->publishSphere(world_to_mesh_transform * p[i],rviz_visual_tools::YELLOW,0.01);
+    
+    // for (int i = 0; i < 8; i++)
+    //   visual_tools_->publishSphere(world_to_mesh_transform * p[i],rviz_visual_tools::YELLOW,0.01);
 
     depth = max(0) - min(0);
     width = max(1) - min(1);
@@ -516,9 +652,9 @@ public:
     cuboid_pose = world_to_mesh_transform;
     cuboid_pose.translation() = world_to_mesh_transform * translation;
 
-    visual_tools_->publishCuboid(visual_tools_->convertPose(cuboid_pose),
-                                 depth,width,height,rviz_visual_tools::TRANSLUCENT);
-    visual_tools_->publishAxis(world_to_mesh_transform);
+    // visual_tools_->publishCuboid(visual_tools_->convertPose(cuboid_pose),
+    //                              depth,width,height,rviz_visual_tools::TRANSLUCENT);
+    // visual_tools_->publishAxis(world_to_mesh_transform);
 
     return true;
   }
