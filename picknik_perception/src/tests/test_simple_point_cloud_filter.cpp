@@ -19,6 +19,10 @@
 
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
+#include <pcl/filters/passthrough.h>
+
+
+#include <boost/shared_ptr.hpp>
 
 namespace picknik_perception
 {
@@ -35,7 +39,12 @@ private:
   tf::TransformListener tf_listener_;
 
   ros::Publisher aligned_cloud_pub_;
+  ros::Publisher bin_cloud_pub_;
 
+  double bin_depth_, bin_width_, bin_height_;
+  Eigen::Affine3d bin_pose_, camera_pose_;
+
+  
 public:
 
   SimplePointCloudFilterTest()
@@ -53,15 +62,34 @@ public:
     ros::Subscriber pc_sub = 
       nh_.subscribe("/camera/depth_registered/points", 1, &SimplePointCloudFilterTest::pointCloudCallback, this);
 
-    // publish aligned point cloud
+    // publish aligned point cloud and bin point cloud
     aligned_cloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("aligned_cloud",1);
+    bin_cloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("bin_cloud",1);
 
     // set initial camera transform
-    camera_translation_ = Eigen::Vector3d(-1.533, 0.0, 1.076);
+    camera_translation_ = Eigen::Vector3d(0.0, 0.0, 1.23);
     camera_rotation_ = Eigen::Vector3d(0.0, 0.0, 0.0);
+    camera_pose_ = Eigen::Affine3d::Identity();
+    camera_pose_ *= Eigen::AngleAxisd(camera_rotation_[0],Eigen::Vector3d::UnitX())
+      * Eigen::AngleAxisd(camera_rotation_[1],Eigen::Vector3d::UnitY())
+      * Eigen::AngleAxisd(camera_rotation_[2],Eigen::Vector3d::UnitZ());
+    camera_pose_.translation() = camera_translation_;
+    visual_tools_->publishAxis(camera_pose_);
+
+
 
     // display test scene
-    displayHomeOfficeScene();
+    visual_tools_->publishAxis(Eigen::Affine3d::Identity());
+    // displayHomeOfficeScene();
+
+    // set up test cuboid for filtering
+    bin_pose_ = Eigen::Affine3d::Identity();
+    bin_depth_ = 0.5;
+    bin_width_ = 0.5;
+    bin_height_ = 0.5;
+    bin_pose_.translation() += Eigen::Vector3d(2.0,0.3,1.25);
+    visual_tools_->publishCuboid(bin_pose_, bin_depth_, bin_width_, bin_height_, 
+                                 rviz_visual_tools::TRANSLUCENT);
 
     // Print menu for manual alignment of point cloud
     std::cout << "Manual alignment of camera to world CS:" << std::endl;
@@ -93,27 +121,65 @@ public:
 
     processing_ = true;
     processPointCloud(msg);
-
     processing_ = false;
-
   }
 
   void processPointCloud(const sensor_msgs::PointCloud2ConstPtr& msg)
   {
     ROS_DEBUG_STREAM_NAMED("PC_filter.process","processing cloud");
 
+    // turn message into point cloud
     pcl::PointCloud<pcl::PointXYZRGB> cloud;
     pcl::fromROSMsg(*msg, cloud);
 
+    // publish aligned point cloud
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr aligned_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
     if (!pcl_ros::transformPointCloud("world", cloud, *aligned_cloud, tf_listener_))
     {
       ROS_ERROR_STREAM_NAMED("PC_filter.process","Error converting to desired frame");
+    }  
+    aligned_cloud_pub_.publish(aligned_cloud);
+
+    /***** get point cloud that lies in region_of_interest *****/
+    // (from Dave's baxter_experimental/flex_perception.cpp)
+   
+    // create new output cloud and place to save filtered results
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr bin_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+
+    // Transform point cloud to origin
+    pcl::transformPointCloud(*aligned_cloud, *bin_cloud, bin_pose_.inverse());
+
+    // Filter based on bounding box
+    pcl::PassThrough<pcl::PointXYZRGB> pass_x;
+    pass_x.setInputCloud(bin_cloud);
+    pass_x.setFilterFieldName("x");
+    pass_x.setFilterLimits(-bin_depth_ / 2.0, bin_depth_ / 2.0);
+    pass_x.filter(*bin_cloud);
+
+    pcl::PassThrough<pcl::PointXYZRGB> pass_y;
+    pass_y.setInputCloud(bin_cloud);
+    pass_y.setFilterFieldName("y");
+    pass_y.setFilterLimits(-bin_width_ / 2.0, bin_width_ / 2.0);
+    pass_y.filter(*bin_cloud);
+
+    pcl::PassThrough<pcl::PointXYZRGB> pass_z;
+    pass_z.setInputCloud(bin_cloud);
+    pass_z.setFilterFieldName("z");
+    pass_z.setFilterLimits(-bin_height_ / 2.0, bin_height_ / 2.0);
+    pass_z.filter(*bin_cloud);
+
+
+
+    // publish pointcloud of bin
+    if (bin_cloud->points.size() == 0)
+    {
+      ROS_WARN_STREAM_NAMED("PC_filter.process","0 points left after filtering");
     }
     
-    
-    aligned_cloud_pub_.publish(aligned_cloud);
+    bin_cloud_pub_.publish(bin_cloud);
   }
+
+  
 
 
   void keyboardCallback(const keyboard::Key::ConstPtr& msg)
