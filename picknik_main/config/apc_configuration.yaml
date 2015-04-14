@@ -2,13 +2,19 @@
 shelf_width: 0.873
 shelf_height: 2.37
 shelf_depth: 0.875
-shelf_wall_width: 0.01
+shelf_wall_width: 0.032
+shelf_inner_wall_width: 0.006
+shelf_surface_thickness: 0.02
 
 # Bin parameters
 first_bin_from_bottom: 0.81 # If at correct competition height
 first_bin_from_right: 0.025
-bin_width: 0.250825
-bin_middle_width: 0.2921
+#bin_width: 0.250825 # measured
+#bin_middle_width: 0.2921 #measures
+
+bin_right_width: 0.236
+bin_middle_width: 0.299
+bin_left_width: 0.264
 
 bin_short_height: 0.2286
 bin_tall_height: 0.2667
@@ -18,27 +24,23 @@ bin_top_margin: 0.01
 bin_left_margin: 0.01
 num_bins: 12.0
 
-# Execution Speed
-main_velocity_scaling_factor: 0.5 # during planning
-approach_velocity_scaling_factor: 0.25
-lift_velocity_scaling_factor: 0.5
-retreat_velocity_scaling_factor: 0.8
+# Cartesian path config
+approach_distance_desired: 1
+retreat_distance_desired: 0.5
+lift_distance_desired: 0.03
+place_goal_down_distance_desired: 0.03
+jump_threshold: 10
 
-# Movement config
-approach_distance_desired: 0.1; # amount beyond min distance
+# Safety
+collision_wall_safety_margin: 0.01 # 0.02
 
 # Sleep timers
-wait_before_grasp: 0.1
-wait_after_grasp: 0.1
-
-# Goal bin
-goal_bin_x: -0.64
-goal_bin_y: 0.65
-goal_bin_z: 0.28
+wait_before_grasp: 1.0
+wait_after_grasp: 1.0
 
 # Perception Data
 camera:
-  x_translation_from_bin: -0.9 # meters
+  x_translation_from_bin: -0.5 # meters
   y_translation_from_bin: 0.0 # negative is right looking at shelf
   z_translation_from_bin: -0.1 # negative is down
   x_rotation_from_standard_grasp: 0 #-0.2  # radians
@@ -46,6 +48,7 @@ camera:
   z_rotation_from_standard_grasp: 0  # radians
   lift_distance: 0.05
   left_distance: 0.05
+  camera_frame_display_scale: 0.0005
 
 # Test data
 test:

@@ -7,7 +7,7 @@
     ],
     "bin_B":
     [
-      "cheezit_big_original"
+      "oreo_mega_stuf"
     ],
     "bin_C":
     [
@@ -15,7 +15,7 @@
     ],
     "bin_D":
     [
-      "oreo_mega_stuff"
+      "cheezit_big_original"
     ],
     "bin_E":
     [
@@ -23,7 +23,7 @@
     ],
     "bin_F":
     [
-      "feline_greenies_dental_treats"
+      "cheezit_big_original"
     ],
     "bin_G":
     [
@@ -54,8 +54,8 @@
   "work_order":
   [
     {
-      "bin": "bin_D",
-      "item": "oreo_mega_stuff"
+      "bin": "bin_F",
+      "item": "cheezit_big_original"	
     },
     {
       "bin": "bin_G",

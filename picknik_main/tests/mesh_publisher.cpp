@@ -135,7 +135,7 @@ public:
     visual_tools_->publishText(text_pose, collision_name, rvt::WHITE, rvt::SMALL, false);
 
     // Show Product Axis
-    visual_tools_->publishAxis(pose);
+    //visual_tools_->publishAxis(pose);
 
     // Files
     fs::path display_file_name("recommended.dae");

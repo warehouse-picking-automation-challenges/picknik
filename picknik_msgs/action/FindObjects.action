@@ -18,18 +18,8 @@ geometry_msgs/Pose camera_pose
 # If the camera angle was bad or some other failure, return false
 bool succeeded
 
-# The pose in some frame with units radians/meters
-geometry_msgs/Pose desired_object_pose
-
-# Sometimes, you can only provide a bounding box/shape, even in 3d
-# This is in the pose frame
-shape_msgs/Mesh bounding_mesh
-
-# The poses of all the objects expected in the scene,
-geometry_msgs/Pose[] expected_objects_poses
-
-# Value between 0 and 1 for each expected object's confidence of its pose
-float32[] expected_object_confidence
+# Array of found objects
+FoundObject[] found_objects
 
 ---
 # FEEDBACK ==================================================

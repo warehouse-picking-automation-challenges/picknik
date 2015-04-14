@@ -11,16 +11,20 @@
   <arg unless="$(arg debug)" name="launch_prefix" value="" />
   <arg     if="$(arg debug)" name="launch_prefix" 
 	   value="gdb -x $(find picknik_main)/launch/debug_settings.gdb --ex run --args" />
+<!--	   value="valgrind - -leak-check=full" /> -->
 
   <!-- Command line arguments -->
   <arg name="mode" default="1" />
+  <arg name="auto" default="0" />
   <arg name="verbose" default="1" />
-  <arg name="use_experience" default="1" />
+  <arg name="use_experience" default="0" />
   <arg name="order" default="$(find picknik_main)/orders/simple.json" />
   <arg name="order_start" default="0" />
   <arg name="num_orders" default="0" />
+  <arg name="bin_id" default="0" />
   <arg name="jump_to" default="0" />
   <arg name="show_database" default="0" />
+  <arg name="fake_execution" default="false"/>
 
   <!-- Ignore for now -->
   <arg name="saving_enabled" default="1" />
@@ -41,33 +45,39 @@
 
   <!-- Launch controller manager in this namespace -->
   <include ns="picknik_main" file="$(find baxter_moveit_config)/launch/trajectory_execution.launch.xml">
-    <arg name="moveit_controller_manager" value="baxter" /> 
     <arg name="moveit_manage_controllers" value="true" />
+    <arg name="moveit_controller_manager" value="baxter" unless="$(arg fake_execution)"/>
+    <arg name="moveit_controller_manager" value="fake" if="$(arg fake_execution)"/>
   </include>
 
   <!-- Main process -->
   <node name="picknik_main" pkg="picknik_main" type="main" respawn="false" 
 	launch-prefix="$(arg launch_prefix)" output="screen" 
-	args="--mode $(arg mode) --verbose $(arg verbose) --order $(arg order) --order_start $(arg order_start) 
-	      --jump_to $(arg jump_to) --num_orders $(arg num_orders) 
+	args="--mode $(arg mode) --auto $(arg auto) --verbose $(arg verbose) --order $(arg order) 
+	      --order_start $(arg order_start) --jump_to $(arg jump_to) --num_orders $(arg num_orders) 	      
+	      --bin_id $(arg bin_id)
 	      --show_database $(arg show_database) --use_experience $(arg use_experience)">
 
-    <!-- Settings of robot -->
+    <!-- Robot-specific settings -->
+    <rosparam command="load" file="$(find picknik_main)/config/apc_baxter.yaml"/>
     <rosparam command="load" file="$(find baxter_moveit_config)/config/kinematics.yaml"/>
-    <rosparam command="load" file="$(find moveit_grasps)/config/baxter_grasp_data.yaml"/>
+    <rosparam command="load" file="$(find moveit_grasps)/config_robot/baxter_grasp_data.yaml"/>
+
+    <!-- Grasp Settings -->
+    <rosparam command="load" file="$(find moveit_grasps)/config/grasp_debug_level.yaml"/>    
+    <rosparam command="load" file="$(find moveit_grasps)/config/grasp_default_parameters.yaml"/>    
 
     <!-- Settings of Amazon competition -->
     <rosparam command="load" file="$(find picknik_main)/config/apc_configuration.yaml"/>
 
-    <!-- Robot-specific settings -->
-    <rosparam command="load" file="$(find picknik_main)/config/baxter_apc.yaml"/>
+    <!-- Camera settings -->
+    <rosparam command="load" file="$(find picknik_main)/config/camera_intrinsics.yaml"/>    
 
     <!-- Only used by Thunder, read within moveit_ompl -->
     <param name="use_scratch"     if="$(arg use_scratch)" value="true"/>
     <param name="use_scratch" unless="$(arg use_scratch)" value="false"/>
     <param name="saving_enabled"     if="$(arg saving_enabled)" value="true"/>
     <param name="saving_enabled" unless="$(arg saving_enabled)" value="false"/>
-
   </node>
 
 </launch>

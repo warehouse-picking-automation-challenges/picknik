@@ -7,22 +7,171 @@
  - [Timeline](https://docs.google.com/spreadsheets/d/1GG_j6BVir-J8VGwbU8RWDHA8kD8ZSeXrtlLtW9N851o/edit?usp=sharing)
  - [Item Data](https://docs.google.com/spreadsheets/d/1e0Fousz9TUxf9YHeVfnaKVgf06Z0WC50blMGBWJ9cp8/edit#gid=2088756835)
 
-## Install
+## Install Manipulation Pipeline
 
-Dave occasionally releases a new zip file with a lot of custom ROS code, that can be built into one workspace. Download the latest zip (~700MB) from here:
+Dave occasionally releases a new zip file with a lot of custom ROS code, that can be built into one workspace. Download the latest zip (~710MB) from here:
 
     Directory: http://picknik.io/secure
     User: picknik
     Password: sfd798asfiahfl89o7df980791324jhkls
 
-Unzip the file and put into a catkin workspace. Build using catkin_tools.
+Unzip the file and build
 
-![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/baxter_apc_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
+    unzip ws_picknik.zip
+	cd ws_picknik
+	rosdep install -y --from-paths src --ignore-src --rosdistro indigo
+	catkin build
 
-Also, to reduce debug output add the following to your bashrc:
+To run simulation on your computer, add to your bashrc:
+
+    export ROS_MASTER_URI=http://localhost:11311
+    export ROS_IP=`hostname -I`
+
+To run from someone else's roscore, add to your bashrc:
+
+    export ROS_MASTER_URI=http://THEIR_IP_ADRESS:11311
+    export ROS_IP=`hostname -I`
+
+Also, to reduce debug output, add to your bashrc:
 
     export ROSCONSOLE_CONFIG_FILE=~/ws_picknik/src/picknik/rosconsole.yaml
     export ROSCONSOLE_FORMAT='${severity} ${logger}: ${message}'
+
+## Install Perception Pipeline
+
+## Install dependencies for node:
+
+NOTE: WE NO LONGER NEED NODE
+
+   1, install zmq
+   
+       sudo apt-get install libzmq3-dev
+
+   2, install gui version of cmake
+   
+       sudo apt-get install cmake-curses-gui
+
+   3, add cpp binders for zmq
+   
+       git clone git@github.com:zeromq/zmqpp.git
+
+   4, install protobuf
+   
+       https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gzinstall 
+       run ./configure
+       make -j3
+       sudo make install all
+
+       By default, the upper command will install the lib to /usr/local/lib/proto*, make sure all the protobuf libraries files is in /usr/lib/proto*. so you probability need to do
+	   cp /usr/local/lib/proto* /usr/lib/
+
+Configurations
+
+   1, disable pangolin_video
+	
+       ccmake .
+       set BUILD_PANGOLIN_GUI to OFF
+	   
+   2, go to the CMakeList.txt file under HAL/Applications comment out everything expect for SensorViewer
+
+Compile:
+
+   now you should be able to compile CoreDev by:
+   
+	cmake .
+    make
+	
+### Install kangaroo:
+
+    git clone git@github.com:arpg/Kangaroo.git
+	cd kangaroo
+	mkdir build
+    cd build
+	ccmake ..
+	make -j
+	
+Notice: you may have some errors when building the examples, this is because we disabled the pangolin::video function before. just ignore it by now.
+
+### Install wallaby:
+
+	install cudpp
+	git clone git@github.com:cudpp/cudpp.git
+	git submodule init
+	git submodule update
+	mkdir build
+	cd build
+	cmake ..
+	make -j4
+
+	now copy the following header files..
+	cp /cudpp/cudpp/include/cudpp_config.h /usr/local/include/
+	cp /cudpp/cudpp/include/cudpp_hash.h /usr/local/include/
+
+	change permission from root to the user
+	sudo chown -R robot cudpp_config.h
+	sudo chown -R robot cudpp_hash.h
+
+	install libglm
+	sudo apt-get install libglm-dev
+
+	compile wallaby
+	cd/wallaby
+	mkdir build
+	cmake ..
+	make -j4
+
+### Install DDTR
+
+	git init submodule
+	git update submodule
+	mkdir build
+	cd build
+	cmake ..
+	make -j4
+
+### Install Camera
+
+    sudo apt-get install libavcodec-dev libudev-dev
+
+    git clone https://github.com/arpg/Sophus.git
+    cd ~/Sophus/
+    mkdir build
+    cd build
+    cmake ..
+    make -j4
+
+    git clone https://github.com/arpg/miniglog.git
+    cd miniglog/
+    mkdir build
+    cd build
+    cmake ..
+    make -j4
+
+    git clone https://github.com/arpg/Pangolin
+    cd Pangolin
+    mkdir build
+    cd build
+    cmake ..
+    make -j4	
+
+	git clone https://github.com/arpg/HAL.git
+    cd HAL/
+	git co -b ros_bridge origin/features/ros_bridge 
+    mkdir build
+    cd HAL/build
+    ccmake ..
+    make -j4
+
+### Test Camera
+
+     cd /home/dave/ros/HAL/build/Applications/SensorViewer
+    ./SensorViewer -cam ros:[topics=/camera/image/rgb_raw]//
+    ./SensorViewer -cam ros:[topics=/camera/image/rgb_raw+/camera/image/depth_raw]//
+    ./SensorViewer -cam convert:[fmt=MONO8]//ros:[topics=/camera/image/rgb_raw+/camera/image/depth_raw]//
+    
+## Architecture
+
+![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/picknik_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
 
 ## Run
 
@@ -59,7 +208,7 @@ order.
 
 The expected score for each object is the product of the probability
 of grasping it correctly (tweak them in
-`baxter_apc_main/orders/items_data.csv`) times the score for doing it
+`picknik_main/orders/items_data.csv`) times the score for doing it
 right (depends on the number of objects in the bin). Then, if there're
 multiple objects in the bin, we remove the product of the number of
 objects in the bin times the probablity of removing an object we
@@ -76,7 +225,9 @@ Its help documentation:
     optional arguments:
       -h, --help       show this help message and exit
 
-### Turn on Yale Controller
+### Start Yale Controller
+
+If needed.
 
     roslaunch open_hand_controller controller_manager.launch
 
@@ -88,34 +239,70 @@ Check to make sure you have ``dialout`` group
 
     sudo adduser second_user dialout
 
+## Start Realsense Camera
+
+Start driver on computer where USB3 camera is plugged in
+
+    roslaunch realsense_camera realsense_camera.launch
+
+Testing
+
+    rosrun image_view image_view image:=/camera/image/rgb_raw
+
+## Start Primesense Camera
+
+    roslaunch openni_launch openni.launch depth_registration:=true
+
 ## Start Robots
 
 ### Simulation of BAXTER
 
+Start roscore:
+
+    roscore &
+	
 Start fake controllers
 
     roslaunch baxter_control baxter_visualization.launch
 
-Rviz Visualizers of robot states and debug markers in differnet windows
+Rviz Visualizers of robot states and debug markers 
 
-    roslaunch picknik_main moveit_display_rviz.launch jacob:=false
-    roslaunch picknik_main moveit_rviz.launch jacob:=false
+    roslaunch picknik_main rviz.launch jacob:=false
+
+Run the fake object recognition server: (or real one if you have Lu Ma skillz)
+
+	roslaunch picknik_main fake_perception_server.launch
+
+A transform of the camera is needed
+
+    roslaunch picknik_main camera_calibration.launch jacob:=false
 
 Run APC Manager (main program) for BAXTER
 
-    roslaunch picknik_main baxter_apc.launch mode:=1
+    roslaunch picknik_main baxter_apc.launch mode:=1 fake_execution:=true
 	
 ### Setup Hardware of BAXTER
+
+Enable Baxter:
+
+    rostopic pub -1 /robot/set_super_enable std_msgs/Bool True	
 
 Use Rethink's controllers
 
     roslaunch baxter_control baxter_hardware_rethink.launch
 
-Rviz Visualizers of robot states and debug markers in differnet windows
+Rviz Visualizers of robot states and debug markers 
 
-    roslaunch picknik_main moveit_display_rviz.launch jacob:=false
-    roslaunch picknik_main moveit_rviz.launch jacob:=false
+    roslaunch picknik_main rviz.launch jacob:=false
 
+Run the fake object recognition server: (or real one if you have Lu Ma skillz)
+
+	roslaunch picknik_main fake_perception_server.launch
+
+A transform of the camera is needed
+
+    roslaunch picknik_main camera_calibration.launch jacob:=false
+	
 Run APC Manager (main program) for BAXTER
 
     roslaunch picknik_main baxter_apc.launch mode:=1
@@ -128,59 +315,103 @@ Start roscore:
 
 Start this separate to speed up launching:
 
-    roslaunch jacob_control jacob_sim_hardware.launch
+    roslaunch jacob_control jacob_simulation.launch
 
-Rviz Visualizers of robot states and debug markers in differnet windows
+Rviz Visualizers of robot states and debug markers 
 
-    roslaunch picknik_main moveit_display_rviz.launch 
-    roslaunch picknik_main moveit_rviz.launch
+    roslaunch picknik_main rviz.launch
+
+Run the fake object recognition server: (or real one if you have Lu Ma skillz)
+
+	roslaunch picknik_main fake_perception_server.launch
+
+A transform of the camera is needed
+
+    roslaunch picknik_main camera_calibration.launch 
 
 Run APC Manager (main program) for JACOB in simulation
 
 	roslaunch picknik_main jacob_apc.launch fake_execution:=true
 
-### Setup Hardware of JACOB
+### Setup HARDWARE of Jacob
 
 Start roscore:
 
     roscore &
+
+Start controller: WARNING - **THIS STARTS THE CALIBRATION ROUTINE AND WILL MOVE ROBOT INTO POSSIBLE COLLISION WITH GANTRY!!**
+
+	roslaunch jacob_control jacob_hardware.launch
+
+Rviz Visualizers of robot states and debug markers
+
+    roslaunch picknik_main rviz.launch
 	
-Rviz Visualizers of robot states and debug markers in differnet windows (different windows)
+Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
-    roslaunch picknik_main moveit_display_rviz.launch
-    roslaunch picknik_main moveit_rviz.launch
-	
-Plugin in robot then choose one of the 2 control methods:
+	roslaunch picknik_main fake_perception_server.launch
 
-	roslaunch jacob_control jacob_control_old.launch  # uses velocity+position trajectory controller
-	roslaunch jacob_control jacob_control.launch      # experimental ros_control method
+A transform of the camera is needed
 
-Note: to switch between control methods you must edit several files:
-
-    rosed jacob_moveit_config moveit_controllers.yaml
-	rosed picknik_main jacob_apc.yaml
+    roslaunch picknik_main camera_calibration.launch 
 
 Run APC Manager (main program) for JACOB on hardware
 
 	roslaunch picknik_main jacob_apc.launch mode:=1
+
+### ROS Video Integration
+
+    rosrun image_view image_view image:=/camera/image/rgb_raw
+
+### Jaco Joystick Control
+
+Button Mapings
+
+    1 - Next (not implemented in ros_control yet)
+	2 - Disable actuators (0 PID gains)
+	3 - Disable control (turn off PC controller)
+
+### XBox Joystick Control
+
+Button Mapings
+
+    A - Next Step in Manipulation Pipeline
+	B - Motion Stop (switch controllers to manual mode)
+	Y - Stop Manipulation Pipeline
+	X - Motion start (switch controllers to trajectory mode)
+	Back - Go home
+	Xbox Button - AUTO
+	RB - Calibrate gantry (home it)
+	Up/Down Axis Stick Left - manually move gantry
 
 ### PickNik Main Optional Arguments:
 
     mode - what program to run inside the apc_manager, defaults to 1
 	  Available Modes:
 	    1. Actual APC contest mode
-		2. Train experience database mode / workspace analysis
-		3. Test open close end effectors
-		4. Only load JSON and visualize shelf
-		5. Raise the roof (go up and down)
-		6. Verify shelf location
-		7. Get the current pose of the robot for the SRDF
-		8. Go to goal bin pose
-		9. Check if current state is in collision
-		10. Plan to random valid locations
-		11. Move camera to each bin location
-		12. Test camera calibration
-		13. Test joint limits
+		2. GO home
+		3. GO goal bin
+		4. GO each bin location and request ObjectRecognitionServer
+		5. GO up and down with arms
+		6. GO to random valid locations
+		7. GO to verify shelf locaiton
+		8. Open close end effectors
+		
+		9. Playback calibration trajectory
+		10. Record a calibration trajectory
+		11. Record a bin observing trajectory
+		12. Playback bin observing trajectory (perceive)
+
+        13. Visualize shelf
+		14. SRDF: Get the current pose of the robot for the SRDF
+		15. Check if current state is in collision
+		16. Test grasp generator abilities and score results
+		17. Test joint limits
+		18. Test requesting preception results
+		19. Train experience database mode / workspace analysis
+
+        20. GO in and out of bin
+		
 	jump_to - which step in the manipulation pipeline to start on
 	  Steps: NOT CORRECT ANYMORE
 	    0. Move to initial position
@@ -229,62 +460,18 @@ Load meshes
 
     rosrun picknik_main mesh_publisher
 
-### Random Planning
+## Debugging Tools
 
-Has Baxter choose random poses with both arms and plan to them.
+### Record CSV Files of Controller Data
 
- - Visualization: UNTESTED
- - Hardware: UNTESTED
+    rosrun ros_control_boilerplate controller_state_to_csv /home/dave/ros/combined_analysis/jaco_trajectory_1.csv /jacob/kinova/velocity_trajectory_controller/state
+	rosrun ros_control_boilerplate controller_state_to_csv /home/dave/ros/combined_analysis/gantry_trajectory_1.csv /jacob/zaber/velocity_trajectory_controller/state
 
-Start fake controllers
 
-    roslaunch baxter_control baxter_visualization.launch
+### See Kinova USB Hub
 
-Rviz Visualizer
+    lsusb -t | grep ftdi
 
-    roslaunch picknik_main moveit_rviz.launch
+## See Gantry USB Device
 
-Planner
-
-    roslaunch baxter_moveit_scripts random_planning.launch
-
-### End Effector Test
-
-Open and closes both end effectors
-
- - Visualization: Working Jan 30
- - Hardware: UNTESTED
-
-Start fake controllers
-
-    roslaunch baxter_control baxter_visualization.launch
-
-Rviz Visualizer
-
-    roslaunch picknik_main moveit_rviz.launch
-
-Load meshes
-
-    roslaunch baxter_moveit_scripts gripper_open_close.launch arm:=right
-
-Notes: make sure you have a Robot STATE display added in Rviz.
-
-### Grasp Generator
-
-TODO
-
-## Collaboration Notes
-
-This just helps Dave know what to pull from when updating.
-
-### Repos Andy commits to:
-
-- cu_amazon
-- open_hand_controller
-- baxter_common
-- baxter_ssh
-
-### Repos Jorge commits to:
-
-- cu_amazon
-- ?
+    ll /dev/zaber_vert

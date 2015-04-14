@@ -26,27 +26,32 @@ int main(int argc, char** argv)
   std::cout << std::endl;
 
   // Allow the action server to recieve and send ros messages
-  ros::AsyncSpinner spinner(2);
+  ros::AsyncSpinner spinner(4);
   spinner.start();
+
+  // Random
+  srand (time(NULL));
 
   // Command line arguments
   std::size_t mode = 1;
   std::size_t order_start = 0;
   std::size_t jump_to = 0;
   std::size_t num_orders = 0;
+  std::size_t bin_id = 0;
   bool verbose = false;
   bool use_experience = true;
   bool show_database = false;
   bool autonomous = false;
-  std::string order_fp;
+  std::string order_file;
 
   // Parse command line arguments
   for (std::size_t i = 0; i < argc; ++i)
   {
     if (strcmp(argv[i], "--verbose") == 0)
     {
-      ROS_DEBUG_STREAM_NAMED("main","Running in VERBOSE mode (slower)");
-      verbose = true;
+      ++i;
+      verbose = atoi(argv[i]);
+      ROS_DEBUG_STREAM_NAMED("main","Running in verbose mode: " << verbose);
       continue;
     }
 
@@ -57,8 +62,8 @@ int main(int argc, char** argv)
         ROS_ERROR_STREAM_NAMED("main", "Remember to tell us where's the json order, aborting");
         return 1;
       }
-      order_fp = argv[i];
-      ROS_DEBUG_STREAM_NAMED("main","Using order file " << order_fp);
+      order_file = argv[i];
+      ROS_DEBUG_STREAM_NAMED("main","Using order file " << order_file);
       continue;
     }
 
@@ -113,89 +118,137 @@ int main(int argc, char** argv)
       ROS_DEBUG_STREAM_NAMED("main","Number of products to process for the order: " << num_orders);
       continue;
     }
+    if( std::string(argv[i]).compare("--bin_id") == 0 )
+    {
+      ++i;
+      bin_id = atoi(argv[i]);
+      ROS_DEBUG_STREAM_NAMED("main","Focusing on bin index: " << bin_id);
+      continue;
+    }
   }
 
-  if (order_fp.empty())
+  if (order_file.empty())
   {
     ROS_ERROR_STREAM_NAMED("main","No order json file passed in as argument, aborting.");
     return 1; // error
   }
 
-  picknik_main::APCManager manager(verbose, order_fp, use_experience, show_database);
+  picknik_main::APCManager manager(verbose, order_file, use_experience, show_database, autonomous);
+
+  std::cout << std::endl;
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
 
   switch (mode)
   {
     case 1:
+      if (!manager.checkSystemReady()) return 0;;
       ROS_INFO_STREAM_NAMED("main","Run actual Amazon Picking Challenge mode");
-      manager.runOrder(order_start, jump_to, num_orders, autonomous);
+      manager.runOrder(order_start, jump_to, num_orders);
       break;
     case 2:
-      ROS_INFO_STREAM_NAMED("main","Train experience database mode");
-      manager.trainExperienceDatabase();
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Go to home position");
+      manager.testGoHome();
       break;
     case 3:
-      ROS_INFO_STREAM_NAMED("main","Test end effectors mode");
-      manager.testEndEffectors();
-      break;
-    case 4:
-      ROS_INFO_STREAM_NAMED("main","Only visualizing shelf... ready to shutdown.");
-      ros::spin();
-      break;
-    case 5:
-       ROS_INFO_STREAM_NAMED("main","Raise the roof (go up and down)");
-       manager.testUpAndDown();
-       break;
-    case 6:
-      ROS_INFO_STREAM_NAMED("main","Verify shelf location");
-      manager.testShelfLocation();
-      break;
-    case 7:
-      ROS_INFO_STREAM_NAMED("main","Get SRDF pose");
-      manager.getPose();
-      break;
-    case 8:
+      if (!manager.checkSystemReady()) return 0;;
       ROS_INFO_STREAM_NAMED("main","Going to goal_bin place pose");
       manager.testGoalBinPose();
       break;
+    case 4:
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Moving camera to each bin location");      
+      manager.testCameraPositions();
+      break;
+    case 5:
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Raise the roof (go up and down)");
+      manager.testUpAndDown();
+      break;      
+    case 6:
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Plan to random valid locations");
+      manager.testRandomValidMotions();
+      break;
+    case 7:
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Verify shelf location");
+      manager.testShelfLocation();
+      break;
+    case 8:
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Test end effectors mode");
+      manager.testEndEffectors();
+      break;
+
     case 9:
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Playback trajectory for calibration");
+      manager.calibrateCamera();
+      break;
+    case 10:
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Recording a trajectory for calibration");
+      manager.recordCalibrationTrajectory();
+      break;
+    case 11:
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Recording bin observing trajectory");
+      manager.recordBinWithCamera(bin_id);
+      break;
+    case 12:
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Playing back bin observing trajectory");
+      manager.perceiveBinWithCamera(bin_id);
+      break;
+
+    case 13:
+      ROS_INFO_STREAM_NAMED("main","Only visualizing shelf... ready to shutdown.");
+      manager.testVisualizeShelf();
+      ros::spin();
+      break;
+    case 14:
+      ROS_INFO_STREAM_NAMED("main","Get SRDF pose");
+      manager.getSRDFPose();
+      break;
+    case 15:
       ROS_INFO_STREAM_NAMED("main","Check if current state is in collision");
       manager.testInCollision();
       ros::Duration(5.0).sleep();
       break;
-    case 10:
-      ROS_INFO_STREAM_NAMED("main","Plan to random valid locations");
-      manager.testRandomValidMotions();
+    case 16:
+      ROS_INFO_STREAM_NAMED("main","Testing grasp generator abilities and scoring results");
+      manager.testGraspGenerator();
       break;
-    case 11:
-      ROS_INFO_STREAM_NAMED("main","Moving to camera positions");
-      manager.testCameraPositions();
-      break;
-    case 12:
-      ROS_INFO_STREAM_NAMED("main","Test camera calibration");
-      manager.testCalibration();
-      break;
-    case 13:
+    case 17:
+      if (!manager.checkSystemReady()) return 0;;
       ROS_INFO_STREAM_NAMED("main","Test joint limits");
       manager.testJointLimits();
       break;
-    // case 12:
-    //   ROS_INFO_STREAM_NAMED("main","");
-    //   break;
-    // case 12:
-    //   ROS_INFO_STREAM_NAMED("main","");
-    //   break;
-    // case 12:
-    //   ROS_INFO_STREAM_NAMED("main","");
-    //   break;
-    // case 12:
-    //   ROS_INFO_STREAM_NAMED("main","");
-    //   break;
+    case 18:
+      if (!manager.checkSystemReady()) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Requesting perception test");
+      manager.testPerceptionComm();
+      break;
+    case 19:
+      ROS_INFO_STREAM_NAMED("main","Train experience database mode");
+      manager.trainExperienceDatabase();
+      break;
+    case 20:
+      ROS_INFO_STREAM_NAMED("main","Going in and out of bin");
+      manager.testInAndOut();
+      break;
+
     default:
       ROS_WARN_STREAM_NAMED("main","Unkown mode: " << mode);
   }
 
   // Shutdown
+  std::cout << std::endl << std::endl << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
   ROS_INFO_STREAM_NAMED("main", "Shutting down.");
+  std::cout << std::endl << std::endl << std::endl;
   ros::shutdown();
 
   return 0;

@@ -1,0 +1,26 @@
+<launch>
+
+  <arg name="debug" default="false" />
+  <arg unless="$(arg debug)" name="launch_prefix" value="" />
+  <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
+
+  <!-- Choose whether to launch Baxter or Jacob -->
+  <arg name="jacob" default="true" />
+  <include file="$(find jacob_moveit_config)/launch/planning_context.launch" if="$(arg jacob)">
+    <arg name="load_robot_description" value="true"/>
+  </include>
+  <include file="$(find baxter_moveit_config)/launch/planning_context.launch" unless="$(arg jacob)">
+    <arg name="load_robot_description" value="true"/>
+  </include>
+
+  <!-- Collision World -->
+  <node name="$(anon rviz)" launch-prefix="$(arg launch_prefix)" pkg="rviz" type="rviz" respawn="false"
+	args="-d $(find picknik_main)/launch/moveit.rviz" output="screen">
+  </node>
+
+  <!-- High Resolution World -->
+  <node name="$(anon rviz_display)" launch-prefix="$(arg launch_prefix)" pkg="rviz" type="rviz" respawn="false"
+	args="-d $(find picknik_main)/launch/moveit_display.rviz" output="screen">
+  </node>
+
+</launch>

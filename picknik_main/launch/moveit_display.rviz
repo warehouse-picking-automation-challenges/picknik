@@ -5,10 +5,11 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Grid1/Offset1
-        - /Amazon Shelf Markers1/Namespaces1
-        - /RobotModel1/Links1/root1
+        - /Amazon Detailed Markers1/Namespaces1
+        - /Amazon Trajectory Markers1
+        - /Amazon Trajectory Markers1/Namespaces1
       Splitter Ratio: 0.666041
-    Tree Height: 933
+    Tree Height: 437
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -46,13 +47,10 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /amazon_shelf_markers_display
-      Name: Amazon Shelf Markers
+      Marker Topic: /picknik_main/highres_markers
+      Name: Amazon Detailed Markers
       Namespaces:
-        Cylinder: true
-        Rectangle: true
-        Shelf: true
-        mesh: true
+        {}
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -65,10 +63,35 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        jaco2_api_origin:
+        arm_mount:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
+        base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gantry:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gantry_plate:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_end_effector:
           Alpha: 1
           Show Axes: false
@@ -108,7 +131,17 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_link_finger_1_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_link_finger_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_2_tip:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -118,14 +151,23 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_link_finger_3_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_link_hand:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        root:
+        jaco2_wrist:
           Alpha: 1
-          Show Axes: true
+          Show Axes: false
+          Show Trail: false
+        xtion:
+          Alpha: 1
+          Show Axes: false
           Show Trail: false
           Value: true
       Name: RobotModel
@@ -134,6 +176,14 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /picknik_main/trajectory_markers
+      Name: Amazon Trajectory Markers
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -149,22 +199,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.06717
+      Distance: 3.39897
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.888049
-        Y: -0.243571
-        Z: -1.07288e-06
+        X: 1.50877
+        Y: 1.14634
+        Z: -1.43051e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.370399
+      Pitch: 0.4504
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 2.47172
+      Yaw: 3.91674
     Saved: ~
 Window Geometry:
   Displays:
@@ -174,9 +224,9 @@ Window Geometry:
     collapsed: false
   Hide Left Dock: true
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd00000001000000000000015a000003e6fc0200000009fb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c0061007900730000000000000003e6000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a0056006900650077007300000002c80000013a000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e0067010000026d000001950000000000000000000002ec000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000001000000000000010f000003e6fc0200000009fb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c0061007900730000000000000003e6000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a0056006900650077007300000002c80000013a000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e0067010000026d000001950000000000000000000002d1000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
   Views:
     collapsed: false
-  Width: 748
-  X: 773
+  Width: 721
+  X: 1058
   Y: 14

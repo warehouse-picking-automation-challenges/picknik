@@ -17,9 +17,10 @@
   <arg name="auto" default="0" />
   <arg name="verbose" default="1" />
   <arg name="use_experience" default="0" />
-  <arg name="order" default="$(find picknik_main)/orders/simple.json" />
+  <arg name="order" default="$(find picknik_main)/orders/cheezits.json" />
   <arg name="order_start" default="0" />
   <arg name="num_orders" default="0" />
+  <arg name="bin_id" default="0" />
   <arg name="jump_to" default="0" />
   <arg name="show_database" default="0" />
   <arg name="fake_execution" default="false"/>
@@ -35,9 +36,9 @@
   </include>
 
   <!-- Sensors Functionality -->
-  <!--include ns="picknik_main" file="$(find jacob_moveit_config)/launch/sensor_manager.launch.xml" >
-    <arg name="moveit_sensor_manager" value="JACOB" /> 
-  </include-->
+  <!-- <include ns="picknik_main" file="$(find jacob_moveit_config)/launch/sensor_manager.launch.xml" > -->
+  <!--   <arg name="moveit_sensor_manager" value="JACOB" />  -->
+  <!-- </include> -->
 
   <arg name="allow_trajectory_execution" default="true"/>
 
@@ -53,20 +54,23 @@
 	launch-prefix="$(arg launch_prefix)" output="screen" 
 	args="--mode $(arg mode) --auto $(arg auto) --verbose $(arg verbose) --order $(arg order) 
 	      --order_start $(arg order_start) --jump_to $(arg jump_to) --num_orders $(arg num_orders) 
+	      --bin_id $(arg bin_id)
 	      --show_database $(arg show_database) --use_experience $(arg use_experience)">
 
-    <remap from="/picknik_main/fake_controller_joint_states" to="/robot/joint_states" if="$(arg fake_execution)"/>
-    <!--remap to="/jaco2/joint_states" from="/robot/joint_states" unless="$(arg fake_execution)"/-->
-
-    <!-- Settings of robot -->
+    <!-- Robot-specific settings -->
+    <rosparam command="load" file="$(find picknik_main)/config/apc_jacob.yaml"/>
     <rosparam command="load" file="$(find jacob_moveit_config)/config/kinematics.yaml"/>
-    <rosparam command="load" file="$(find moveit_grasps)/config/jacob_grasp_data.yaml"/>
+    <rosparam command="load" file="$(find moveit_grasps)/config_robot/jacob_grasp_data.yaml"/>
+
+    <!-- Grasp Settings -->
+    <rosparam command="load" file="$(find moveit_grasps)/config/grasp_debug_level.yaml"/>    
+    <rosparam command="load" file="$(find moveit_grasps)/config/grasp_default_parameters.yaml"/>
 
     <!-- Settings of Amazon competition -->
     <rosparam command="load" file="$(find picknik_main)/config/apc_configuration.yaml"/>
 
-    <!-- Robot-specific settings -->
-    <rosparam command="load" file="$(find picknik_main)/config/jacob_apc.yaml"/>
+    <!-- Camera settings -->
+    <rosparam command="load" file="$(find picknik_main)/config/camera_intrinsics.yaml"/>
 
     <!-- Only used by Thunder, read within moveit_ompl -->
     <param name="use_scratch"     if="$(arg use_scratch)" value="true"/>

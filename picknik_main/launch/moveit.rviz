@@ -5,13 +5,19 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Grid1/Offset1
+        - /Robot State1
+        - /Planning Start State1
+        - /Planning Goal State1
+        - /Amazon Markers1/Namespaces1
         - /Trajectory1
-        - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
         - /TF1/Frames1
-      Splitter Ratio: 0.833992
-    Tree Height: 826
+        - /RobotModel1
+        - /RobotModel1/Links1
+        - /DepthCloud1/Auto Size1
+      Splitter Ratio: 0.748603
+    Tree Height: 822
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -52,10 +58,20 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        arm_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        camera_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         frame:
           Alpha: 1
           Show Axes: false
@@ -110,12 +126,27 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_link_finger_1_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_link_finger_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_link_finger_2_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_link_finger_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_3_tip:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -129,6 +160,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
@@ -145,17 +177,27 @@ Visualization Manager:
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: true
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        arm_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        camera_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         frame:
           Alpha: 1
           Show Axes: false
@@ -210,12 +252,27 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_link_finger_1_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_link_finger_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_link_finger_2_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_link_finger_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_3_tip:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -229,6 +286,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
@@ -240,7 +298,7 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_start_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
       Visual Enabled: false
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
@@ -252,10 +310,20 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        arm_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        camera_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         frame:
           Alpha: 1
           Show Axes: false
@@ -310,12 +378,27 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_link_finger_1_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_link_finger_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_link_finger_2_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_link_finger_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_3_tip:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -329,6 +412,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
@@ -352,10 +436,20 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        arm_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        camera_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         frame:
           Alpha: 1
           Show Axes: false
@@ -410,12 +504,27 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_link_finger_1_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_link_finger_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_link_finger_2_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_link_finger_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_3_tip:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -429,6 +538,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
@@ -447,15 +557,34 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Markers
       Namespaces:
+        Axis: true
         Collision: true
-        Cylinder: true
+        Line: true
+        Sphere: true
         Text: true
+        goal_bin: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
       Enabled: false
-      Marker Topic: /amazon_shelf_markers_display
+      Marker Topic: /picknik_main/highres_markers
       Name: Amazon Markers Detailed
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /picknik_main/grasping_markers
+      Name: Amazon Grasp Markers
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: false
+      Marker Topic: /picknik_main/trajectory_markers
+      Name: Amazon Trajectory Markers
       Namespaces:
         {}
       Queue Size: 100
@@ -476,14 +605,6 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
-    - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /move_group/display_grasp_markers
-      Name: MoveIt Grasps
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
     - Class: moveit_rviz_plugin/Trajectory
       Enabled: true
       Links:
@@ -492,10 +613,20 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        arm_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        camera_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         frame:
           Alpha: 1
           Show Axes: false
@@ -550,12 +681,27 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_link_finger_1_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_link_finger_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        jaco2_link_finger_2_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         jaco2_link_finger_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_3_tip:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -569,17 +715,18 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+          Value: true
         xtion:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-      Loop Animation: false
+      Loop Animation: true
       Name: Trajectory
       Robot Alpha: 0.5
       Robot Description: robot_description
-      Show Robot Collision: false
-      Show Robot Visual: true
+      Show Robot Collision: true
+      Show Robot Visual: false
       Show Trail: false
       State Display Time: REALTIME
       Trajectory Topic: /picknik_main/display_trajectory
@@ -591,10 +738,10 @@ Visualization Manager:
       Planning Scene Topic: /picknik_main/picknik_planning_scene
       Robot Description: robot_description
       Scene Geometry:
-        Scene Alpha: 0.9
-        Scene Color: 50; 230; 50
+        Scene Alpha: 1
+        Scene Color: 255; 170; 0
         Scene Display Time: 0.2
-        Show Scene Geometry: false
+        Show Scene Geometry: true
         Voxel Coloring: Z-Axis
         Voxel Rendering: Occupied Voxels
       Scene Robot:
@@ -605,10 +752,20 @@ Visualization Manager:
           Expand Link Details: false
           Expand Tree: false
           Link Tree Style: Links in Alphabetic Order
+          arm_mount:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
           base:
             Alpha: 1
             Show Axes: false
             Show Trail: false
+          camera_mount:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
           frame:
             Alpha: 1
             Show Axes: false
@@ -663,12 +820,27 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          jaco2_link_finger_1_tip:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
           jaco2_link_finger_2:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
+          jaco2_link_finger_2_tip:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
           jaco2_link_finger_3:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          jaco2_link_finger_3_tip:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -682,13 +854,14 @@ Visualization Manager:
             Alpha: 1
             Show Axes: false
             Show Trail: false
+            Value: true
           xtion:
             Alpha: 1
             Show Axes: false
             Show Trail: false
             Value: true
         Robot Alpha: 0.5
-        Show Robot Collision: true
+        Show Robot Collision: false
         Show Robot Visual: false
       Value: true
     - Class: rviz/TF
@@ -696,21 +869,205 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-      Marker Scale: 1
+      Marker Scale: 0.5
       Name: TF
-      Show Arrows: true
+      Show Arrows: false
       Show Axes: true
       Show Names: true
       Tree:
         {}
       Update Interval: 0
       Value: false
-    - Class: rviz/Axes
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 2.50994
+        Min Value: 1.11181
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: AxisColor
+      Decay Time: 0
       Enabled: false
-      Length: 0.5
-      Name: Axes
-      Radius: 0.05
-      Reference Frame: world
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: PointCloud2
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 1
+      Size (m): 0.01
+      Style: Points
+      Topic: /camera/depth/points
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: false
+    - Alpha: 1
+      Class: rviz/RobotModel
+      Collision Enabled: false
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        arm_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        camera_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gantry:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gantry_plate:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_end_effector:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        jaco2_link_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_1_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_2_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_3_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_hand:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_wrist:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        xtion:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+      Name: RobotModel
+      Robot Description: robot_description
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Alpha: 1
+      Auto Size:
+        Auto Size Factor: 1
+        Value: true
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/DepthCloud
+      Color: 255; 255; 255
+      Color Image Topic: /camera/image/rgb_raw
+      Color Transformer: RGB8
+      Color Transport Hint: raw
+      Decay Time: 0
+      Depth Map Topic: /camera/image/depth_raw
+      Depth Map Transport Hint: raw
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: DepthCloud
+      Occlusion Compensation:
+        Occlusion Time-Out: 30
+        Value: false
+      Position Transformer: ""
+      Queue Size: 5
+      Selectable: true
+      Size (Pixels): 3
+      Style: Flat Squares
+      Topic Filter: true
+      Use Fixed Frame: true
+      Use rainbow: true
       Value: false
   Enabled: true
   Global Options:
@@ -727,22 +1084,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.3962
+      Distance: 2.94181
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.561984
-        Y: -0.187893
-        Z: 1.43051e-06
+        X: 0.740201
+        Y: 0.180641
+        Z: 1.90735e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.8204
+      Pitch: 0.470399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.39546
+      Yaw: 4.03227
     Saved: ~
 Window Geometry:
   Displays:
@@ -754,9 +1111,9 @@ Window Geometry:
   Hide Right Dock: false
   PickNik:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd000000010000000000000178000003e6fc020000000cfb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c00610079007301000000000000037b000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000145000000cb000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000230000001b60000000000000000fb0000000c00540065006c0065006f00700000000331000000b50000000000000000fb0000000e005000690063006b004e0069006b0100000381000000650000004300fffffffb0000000c00430061006d00650072006100000003d00000001600000000000000000000030c000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000010000000000000178000003e6fc020000000dfb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c006100790073010000000000000377000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000145000000cb000000b000fffffffb0000000c00430061006d0065007200610000000369000000160000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000230000001b60000000000000000fb0000000c00540065006c0065006f00700000000331000000b50000000000000000fb0000000e005000690063006b004e0069006b010000037d000000690000004300fffffffb0000000c00430061006d00650072006100000003d0000000160000000000000000fb0000000c00430061006d00650072006101000002d60000011000000000000000000000032c000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
   Views:
     collapsed: false
-  Width: 1162
-  X: 1519
+  Width: 1194
+  X: 1771
   Y: 14

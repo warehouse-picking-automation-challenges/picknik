@@ -1,2 +1,5 @@
 # ignore blender files
 *.blend
+
+CATKIN_IGNORE
+*.csv

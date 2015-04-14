@@ -22,7 +22,10 @@
 #include <picknik_main/manipulation.h>
 //#include <picknik_main/learning_pipeline.h>
 #include <picknik_main/visuals.h>
+#include <picknik_main/planning_scene_manager.h>
 #include <picknik_main/manipulation_data.h>
+#include <picknik_main/perception_interface.h>
+#include <picknik_main/remote_control.h>
 
 // Picknik Msgs
 #include <picknik_msgs/FindObjectsAction.h>
@@ -30,9 +33,6 @@
 // ROS
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
-#include <std_msgs/Bool.h>
-#include <actionlib/client/simple_action_client.h>
-#include <actionlib/client/terminal_state.h>
 
 // MoveIt!
 #include <moveit_msgs/GetPlanningScene.h>
@@ -57,14 +57,9 @@ public:
    * \param order_file_path
    * \param Use an experience database in planning
    * \param Show the experience database after each plan
+   * \param autonomous - whether it should pause for human input
    */
-  APCManager(bool verbose, std::string order_file_path, bool use_experience, bool show_database);
-
-  /**
-   * \brief Destructor
-   */
-  ~APCManager()
-  {}
+  APCManager(bool verbose, std::string order_file_path, bool use_experience, bool show_database, bool autonomous = false);
 
   /**
    * \brief Check if all communication is properly active
@@ -77,28 +72,17 @@ public:
    * \param shelf to focus on. rest of shelves will be disabled
    * \return true on success
    */
-  bool setupPlanningScene( const std::string& bin_name );
-
-  /**
-   * \brief Remote control from Rviz
-   */
-  void remoteNextCallback(const std_msgs::Bool::ConstPtr& msg);
-
-  /**
-   * \brief Remote control from Rviz
-   */
-  void remoteRunCallback(const std_msgs::Bool::ConstPtr& msg);
+  bool focusSceneOnBin( const std::string& bin_name );
 
   /**
    * \brief Main program runner
    * \param Which product in the order to skip ahead to
    * \param jump_to - which step in manipulation to start at
    * \param num_orders - how many products to pick from the order, 0 = all
-   * \param autonomous - whether it should pause for human input
    * \return true on success
    */
   bool runOrder(std::size_t order_start = 0, std::size_t jump_to = 0,
-                std::size_t num_orders = 0, bool autonomous = false);
+                std::size_t num_orders = 0);
 
 
   /**
@@ -106,59 +90,6 @@ public:
    * \return true on success
    */
   bool graspObjectPipeline(WorkOrder order, bool verbose, std::size_t jump_to = 0);
-
-  /**
-   * \brief Move camera to in front of bin
-   * \return true on success
-   */
-  bool moveCameraToBin(BinObjectPtr bin);
-
-  /**
-   * \brief Run calibration routine
-   * \return true on success
-   */
-  bool calibrateCamera();
-
-  /**
-   * \brief Get the pose of a requested object
-   * \param object_pose
-   * \param order - desired object
-   * \return true on success
-   */
-  bool getObjectPose(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose);
-  bool getObjectPoseFake(Eigen::Affine3d& object_pose, WorkOrder order, bool verbose);
-
-  /**
-   * \brief Move camera around to get good view of bin
-   * \return true on success
-   */
-  bool perturbCamera(BinObjectPtr bin);
-
-  /**
-   * \brief Wait until user presses a button
-   * \return true on success
-   */
-  bool waitForNextStep();
-
-  /**
-   * \brief Choose which arm to use for a particular task
-   * \return joint model group of arm to use in manip
-   */
-  const robot_model::JointModelGroup* chooseArm(const Eigen::Affine3d& object_pose);
-
-  /**
-   * \brief Move both arms to their start location
-   * \param optionally specify which arm to use
-   * \return true on success
-   */
-  bool moveToStartPosition(const robot_model::JointModelGroup* arm_jmg = NULL);
-
-  /**
-   * \brief Move to location to get rid of product
-   * \param optionally specify which arm to use
-   * \return true on success
-   */
-  bool moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg = NULL);
 
   /**
    * \brief Generate a discretized array of possible pre-grasps and save into experience database
@@ -174,11 +105,23 @@ public:
   bool testEndEffectors();
 
   /**
+   * \brief Test switching planning scene modes
+   * \return true on success
+   */
+  bool testVisualizeShelf();
+
+  /**
    * \brief Simple script to move hand up and down on z axis from whereever it currently is
    * \return true on success
    */
   bool testUpAndDown();
 
+  /**
+   * \brief Move hand in and out of bin from whereever it currently is
+   * \return true on success
+   */
+  bool testInAndOut();
+  
   /**
    * \brief Script for moving arms to locations of corner of shelf
    * \return true on success
@@ -213,7 +156,7 @@ public:
    * \brief Test moving the camera around for calibration
    * \return true on success
    */
-  bool testCalibration();
+  bool calibrateCamera();
 
   /**
    * \brief Test moving joints to extreme limits
@@ -222,21 +165,108 @@ public:
   bool testJointLimits();
 
   /**
+   * \brief Send arm(s) to home position
+   * \return true on success
+   */
+  bool testGoHome();
+
+  /**
    * \brief Get the XML of a SDF pose of joints
    * \return true on success
    */
-  bool getPose();
+  bool getSRDFPose();
+
+  /**
+   * \brief Test grasp generator abilities and score results
+   * \return true on success
+   */
+  bool testGraspGenerator();
+
+  /**
+   * \brief Requesting perception test
+   * \return true on success
+   */
+  bool testPerceptionComm();
+
+  /**
+   * \brief Given an id of a bin (starting at 0=A) record the trajectory of a camera observing it
+   * \return true on success
+   */
+  bool recordBinWithCamera(std::size_t bin_id);
+
+  /**
+   * \brief Given an id of a bin (starting at 0=A) playback the trajectory of a camera observing it
+   * \return true on success
+   */
+  bool perceiveBinWithCamera(std::size_t bin_id);
+
+  /**
+   * \brief Move camera around a bin by playing back a file
+   * \param bin
+   * \return true on success
+   */
+  bool perceiveBinWithCamera(BinObjectPtr bin);
+
+  /**
+   * \brief Record camera moving around a bin
+   * \param bin
+   * \return true on success
+   */
+  bool recordBinWithCamera(BinObjectPtr bin);
+
+  /**
+   * \brief Record a trajectory for calibration
+   * \return true on success
+   */
+  bool recordCalibrationTrajectory();
+
+  /**
+   * \brief Get the pose of a requested object
+   * \param global_object_pose
+   * \param order - desired object
+   * \return true on success
+   */
+  bool perceiveObject(WorkOrder work_order, bool verbose);
+  bool perceiveObjectFake(WorkOrder work_order, bool verbose);
+
+  /**
+   * \brief Move object into the goal bin
+   * \return true on success
+   */
+  bool placeObjectInGoalBin(const robot_model::JointModelGroup* arm_jmg);
+
+  /**
+   * \brief Lift from goal bin
+   * \return true on success
+   */
+  bool liftFromGoalBin(const robot_model::JointModelGroup* arm_jmg);
+
+  /**
+   * \brief Move both arms to their start location
+   * \param optionally specify which arm to use
+   * \return true on success
+   */
+  bool moveToStartPosition(const robot_model::JointModelGroup* arm_jmg = NULL, bool check_validity = true);
+
+  /**
+   * \brief Move to location to get rid of product
+   * \param optionally specify which arm to use
+   * \return true on success
+   */
+  bool moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg = NULL);
+
+  /**
+   * \brief Load single product, one per shelf, for testing
+   * \param product_name
+   * \return true on success
+   */
+  bool loadShelfWithOnlyOneProduct(const std::string& product_name);
 
   /**
    * \brief Load shelf contents
    * \return true on success
    */
   bool loadShelfContents(std::string order_file_path);
-
-  /**
-   * \brief Show detailed shelf
-   */
-  bool visualizeShelf();
 
   /**
    * \brief Connect to the MoveIt! planning scene messages
@@ -249,27 +279,25 @@ public:
   void publishCurrentState();
 
   /**
-   * \brief Step to next step
-   * \return true on success
-   */
-  bool setReadyForNextStep();
-
-  /**
-   * \brief Enable autonomous mode
-   */
-  void setAutonomous(bool autonomous = true);
-
-  /**
-   * \brief Get the autonomous mode
-   * \return true if is in autonomous mode
-   */
-  bool getAutonomous();
-
-  /**
    * \brief Allow other nodes such as rviz to request the entire planning scene
    */
   bool getPlanningSceneService(moveit_msgs::GetPlanningScene::Request &req, moveit_msgs::GetPlanningScene::Response &res);
 
+  /**
+   * \brief Get remote control functionality
+   */
+  RemoteControlPtr getRemoteControl();
+
+  /**
+   * \brief Disable collision checking for certain pairs
+   */
+  bool allowCollisions();
+
+  /**
+   * \brief Attach a product to an arm for planning
+   * \return true on success
+   */
+  bool attachProduct(ProductObjectPtr product, const robot_model::JointModelGroup* arm_jmg);
 
 private:
 
@@ -283,6 +311,7 @@ private:
 
   // For visualizing things in rviz
   VisualsPtr visuals_;
+  PlanningSceneManagerPtr planning_scene_manager_;
 
   // Core MoveIt components
   robot_model_loader::RobotModelLoaderPtr robot_model_loader_;
@@ -293,31 +322,27 @@ private:
   // Properties
   ShelfObjectPtr shelf_;
   WorkOrders orders_;
+
+  // File path to ROS package on drive
   std::string package_path_;
+  
+  // Remote control for dealing with GUIs
+  RemoteControlPtr remote_control_;
 
   // Main worker
   ManipulationPtr manipulation_;
 
+  // Perception interface
+  PerceptionInterfacePtr perception_interface_;
+
   // Helper classes
   //LearningPipelinePtr learning_;
-
-  // Remote control
-  ros::Subscriber remote_next_control_;
-  ros::Subscriber remote_run_control_;
 
   // Robot-sepcific data for the APC
   ManipulationDataPtr config_;
 
   // Robot-specific data for generating grasps
-  GraspDatas grasp_datas_;
-
-  // Remote control
-  bool autonomous_;
-  bool next_step_ready_;
-  bool is_waiting_;
-
-  // Perception pipeline communication
-  actionlib::SimpleActionClient<picknik_msgs::FindObjectsAction> find_objects_action_;
+  moveit_grasps::GraspDatas grasp_datas_;
 
   // Perception
   bool fake_perception_;

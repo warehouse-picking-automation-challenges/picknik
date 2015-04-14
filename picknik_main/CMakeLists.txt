@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   ompl_visual_tools
   cmake_modules
   picknik_msgs
+  controller_manager_msgs
 )
 
 find_package(Eigen REQUIRED)
@@ -22,6 +23,7 @@ catkin_package(
     moveit_visual_tools
     moveit_ompl
     picknik_msgs
+    controller_manager_msgs
   DEPENDS
     Eigen
   INCLUDE_DIRS 
@@ -31,7 +33,8 @@ catkin_package(
     jsoncpp
     amazon_json_parser
     shelf
-    manipulation
+    fix_state_bounds
+    manipulation    
     #learning_pipeline
     visuals
     ${OMPL_LIBRARIES}
@@ -61,6 +64,15 @@ target_link_libraries(visuals
   ${Boost_LIBRARIES}
 )
 
+# Manipulation Data Library
+add_library(manipulation_data
+  src/manipulation_data.cpp
+)
+target_link_libraries(manipulation_data
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
 # JSON Parser Library
 add_library(jsoncpp
   src/json/jsoncpp.cpp
@@ -81,12 +93,82 @@ target_link_libraries(amazon_json_parser
   ${Boost_LIBRARIES}
 )
 
+# Planning Scene Library
+add_library(planning_scene_manager
+  src/planning_scene_manager.cpp
+)
+target_link_libraries(planning_scene_manager
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
+# Remote_control library
+add_library(remote_control
+  src/remote_control.cpp
+)
+target_link_libraries(remote_control
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
+# Collision_object library
+add_library(collision_object
+  src/collision_object.cpp
+)
+target_link_libraries(collision_object
+  visuals  
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
 # Shelf library
 add_library(shelf
   src/shelf.cpp
 )
 target_link_libraries(shelf
   visuals
+  collision_object
+  manipulation_data
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
+# Fix_state_bounds library
+add_library(fix_state_bounds
+  src/fix_state_bounds.cpp
+)
+target_link_libraries(fix_state_bounds
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
+# Product_simulator library
+add_library(product_simulator
+  src/product_simulator.cpp
+)
+target_link_libraries(product_simulator
+  visuals
+  shelf
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
+# perception_interface library
+add_library(perception_interface
+  src/perception_interface.cpp
+)
+target_link_libraries(perception_interface
+  visuals
+  shelf
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
+# execution interface library
+add_library(execution_interface
+  src/execution_interface.cpp
+)
+target_link_libraries(execution_interface
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
@@ -98,6 +180,12 @@ add_library(manipulation
 add_dependencies(manipulation picknik_main_generate_messages_cpp)
 target_link_libraries(manipulation
   visuals
+  manipulation_data
+  execution_interface
+  product_simulator
+  shelf
+  fix_state_bounds
+  remote_control  
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
@@ -117,11 +205,11 @@ add_library(apc_manager
   src/apc_manager.cpp
 )
 target_link_libraries(apc_manager
-  visuals
-  shelf
   amazon_json_parser
   manipulation
-  # learning_pipeline
+  perception_interface
+  execution_interface
+  planning_scene_manager
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
@@ -132,6 +220,13 @@ target_link_libraries(main
   amazon_json_parser
   apc_manager
   visuals
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
+# Demo code
+add_executable(fake_perception_server src/fake_perception_server.cpp)
+target_link_libraries(fake_perception_server 
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
