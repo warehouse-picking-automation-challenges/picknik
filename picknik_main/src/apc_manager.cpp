@@ -149,6 +149,7 @@ bool APCManager::checkSystemReady()
   const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Check robot state valid
+  //planning_scene_manager_->displayEmptyShelf(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
   planning_scene_manager_->displayShelfAsWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
   while (ros::ok() && !manipulation_->fixCurrentCollisionAndBounds(arm_jmg))
   {
@@ -190,8 +191,9 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to,
 
     if (!graspObjectPipeline(orders_[i], verbose_, jump_to))
     {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Shutting down for debug purposes only (it could continue on)");
-      return false;
+      ROS_WARN_STREAM_NAMED("apc_manager","An error occured in last product order, but we are continuing on");
+      //ROS_ERROR_STREAM_NAMED("apc_manager","Shutting down for debug purposes only (it could continue on)");
+      //return false;
     }
 
     // Reset markers for next loop
@@ -1385,9 +1387,9 @@ bool APCManager::perceiveObjectFake(WorkOrder work_order, bool verbose)
   const Eigen::Affine3d& world_to_bin = picknik_main::transform(bin->getBottomRight(), shelf_->getBottomRight());
 
   Eigen::Affine3d fake_centroid = Eigen::Affine3d::Identity();
-  fake_centroid.translation().y() = 0.1;
-  fake_centroid.translation().x() = 0.15;
-  fake_centroid.translation().z() = 0.1;
+  fake_centroid.translation().y() = 0.12;
+  fake_centroid.translation().x() = 0.1;
+  fake_centroid.translation().z() = 0.08;
   fake_centroid = fake_centroid
     * Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
     * Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitY());

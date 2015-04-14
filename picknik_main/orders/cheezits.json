@@ -3,51 +3,51 @@
     {
 	"bin_A":
 	[
-	    "cheezit_big_original"
+	    "crayola_64_ct"
 	],
 	"bin_B":
 	[
-	    "cheezit_big_original"
+	    "crayola_64_ct"
 	],
 	"bin_C":
 	[
-	    "cheezit_big_original"
+	    "crayola_64_ct"
 	],
 	"bin_D":
 	[
-	    "cheezit_big_original"
+	    "crayola_64_ct"
 	],
 	"bin_E":
 	[
-	    "cheezit_big_original"
+	    "crayola_64_ct"
 	],
 	"bin_F":
 	[
-	    "cheezit_big_original"
+	    "crayola_64_ct"
 	],
 	"bin_G":
 	[
-	    "cheezit_big_original"
+	    "crayola_64_ct"
 	],
 	"bin_H":
 	[
-	    "cheezit_big_original"
+	    "crayola_64_ct"
 	],
 	"bin_I":
 	[
-	    "cheezit_big_original"
+	    "crayola_64_ct"
 	],
 	"bin_J":
 	[
-	    "cheezit_big_original"
+	    "crayola_64_ct"
 	],
 	"bin_K":
 	[
-	    "cheezit_big_original"
+	    "crayola_64_ct"
 	],
 	"bin_L":
 	[
-	    "cheezit_big_original"
+	    "crayola_64_ct"
 	]
     },
 
@@ -55,51 +55,51 @@
     [
 	{
 	    "bin": "bin_A",
-	    "item": "cheezit_big_original"
+	    "item": "crayola_64_ct"
 	},
 	{
 	    "bin": "bin_B",
-	    "item": "cheezit_big_original"
+	    "item": "crayola_64_ct"
 	},
 	{
 	    "bin": "bin_C",
-	    "item": "cheezit_big_original"
+	    "item": "crayola_64_ct"
 	},
 	{
 	    "bin": "bin_D",
-	    "item": "cheezit_big_original"
+	    "item": "crayola_64_ct"
 	},
 	{
 	    "bin": "bin_E",
-	    "item": "cheezit_big_original"
+	    "item": "crayola_64_ct"
 	},
 	{
 	    "bin": "bin_F",
-	    "item": "cheezit_big_original"
+	    "item": "crayola_64_ct"
 	},
 	{
 	    "bin": "bin_G",
-	    "item": "cheezit_big_original"
+	    "item": "crayola_64_ct"
 	},
 	{
 	    "bin": "bin_H",
-	    "item": "cheezit_big_original"
+	    "item": "crayola_64_ct"
 	},
 	{
 	    "bin": "bin_I",
-	    "item": "cheezit_big_original"
+	    "item": "crayola_64_ct"
 	},
 	{
 	    "bin": "bin_J",
-	    "item": "cheezit_big_original"
+	    "item": "crayola_64_ct"
 	},
 	{
 	    "bin": "bin_K",
-	    "item": "cheezit_big_original"
+	    "item": "crayola_64_ct"
 	},
 	{
 	    "bin": "bin_L",
-	    "item": "cheezit_big_original"
+	    "item": "crayola_64_ct"
 	}
     ]
 }

@@ -111,16 +111,34 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
   visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, getCurrentState(), wait_for_trajetory);
 
   // Debug: check for errors in trajectory
-  static const double MAX_TIME_STEP_SEC = 2.0;
+  static const double MAX_TIME_STEP_SEC = 4.0;
   ros::Duration max_time_step(MAX_TIME_STEP_SEC);
+  static const double WARN_TIME_STEP_SEC = 2.0;
+  ros::Duration warn_time_step(WARN_TIME_STEP_SEC);
+  ros::Duration diff;
   for (std::size_t i = 0; i < trajectory.points.size() - 1; ++i)
   {
-    if (trajectory.points[i+1].time_from_start - trajectory.points[i].time_from_start > max_time_step)
+    diff = (trajectory.points[i+1].time_from_start - trajectory.points[i].time_from_start);
+    if (diff > max_time_step)
     {
       ROS_ERROR_STREAM_NAMED("execution_interface","Max time step between points exceeded, likely because of wrap around/IK bug. Point " << i);
       std::cout << "First time: " << trajectory.points[i].time_from_start.toSec() << std::endl;
       std::cout << "Next time: " << trajectory.points[i+1].time_from_start.toSec() << std::endl;
+      std::cout << "Diff time: " << diff.toSec() << std::endl;
+      std::cout << "-------------------------------------------------------" << std::endl;
+      std::cout << std::endl;
+      std::cout << std::endl;
       return false;
+    }
+    else if (diff > warn_time_step)
+    {
+      ROS_WARN_STREAM_NAMED("execution_interface","Warn time step between points exceeded, likely because of wrap around/IK bug. Point " << i);
+      std::cout << "First time: " << trajectory.points[i].time_from_start.toSec() << std::endl;
+      std::cout << "Next time: " << trajectory.points[i+1].time_from_start.toSec() << std::endl;
+      std::cout << "Diff time: " << diff.toSec() << std::endl;
+      std::cout << "-------------------------------------------------------" << std::endl;
+      std::cout << std::endl;
+      std::cout << std::endl;
     }
   }
 
