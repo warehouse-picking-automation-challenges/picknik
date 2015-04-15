@@ -119,7 +119,7 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
   // Debug: check for errors in trajectory
   static const double MAX_TIME_STEP_SEC = 4.0;
   ros::Duration max_time_step(MAX_TIME_STEP_SEC);
-  static const double WARN_TIME_STEP_SEC = 2.0;
+  static const double WARN_TIME_STEP_SEC = 3.0;
   ros::Duration warn_time_step(WARN_TIME_STEP_SEC);
   ros::Duration diff;
   for (std::size_t i = 0; i < trajectory.points.size() - 1; ++i)
