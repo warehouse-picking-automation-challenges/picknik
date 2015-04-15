@@ -62,8 +62,8 @@ NOTE: WE NO LONGER NEED NODE
        make -j3
        sudo make install all
 
-       By default, the upper command will install the lib to /usr/local/lib/proto*, make sure all the protobuf libraries files is in /usr/lib/proto*. so you probability need to do
-	   cp /usr/local/lib/proto* /usr/lib/
+By default, the upper command will install the lib to `/usr/local/lib/proto*`, make sure all the protobuf libraries files is in `/usr/lib/proto*`. so you probability need to do
+	   `cp /usr/local/lib/proto* /usr/lib/`
 
 Configurations
 
