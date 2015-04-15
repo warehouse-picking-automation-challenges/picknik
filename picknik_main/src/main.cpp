@@ -43,6 +43,7 @@ int main(int argc, char** argv)
   bool fake_execution = true;
   bool show_database = false;
   bool autonomous = false;
+  bool full_autonomous = false;
   std::string order_file;
 
   // Parse command line arguments
@@ -73,6 +74,14 @@ int main(int argc, char** argv)
       ++i;
       autonomous = atoi(argv[i]);
       ROS_DEBUG_STREAM_NAMED("main","Using autonomous: " << autonomous);
+      continue;
+    }
+
+    if( std::string(argv[i]).compare("--full_auto") == 0 )
+    {
+      ++i;
+      full_autonomous = atoi(argv[i]);
+      ROS_DEBUG_STREAM_NAMED("main","Using full_autonomous: " << full_autonomous);
       continue;
     }
 
@@ -142,7 +151,7 @@ int main(int argc, char** argv)
     return 1; // error
   }
 
-  picknik_main::APCManager manager(verbose, order_file, use_experience, show_database, autonomous);
+  picknik_main::APCManager manager(verbose, order_file, use_experience, show_database, autonomous, full_autonomous);
 
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
@@ -169,7 +178,7 @@ int main(int argc, char** argv)
       manager.testCameraPositions();
       break;
     case 5:
-      if (!manager.checkSystemReady()) return 0;;
+      //if (!manager.checkSystemReady()) return 0;;
       ROS_INFO_STREAM_NAMED("main","Raise the roof (go up and down)");
       manager.testUpAndDown();
       break;      

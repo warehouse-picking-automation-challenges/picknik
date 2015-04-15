@@ -29,7 +29,8 @@
 namespace picknik_main
 {
 
-APCManager::APCManager(bool verbose, std::string order_file_path, bool use_experience, bool show_database, bool autonomous)
+APCManager::APCManager(bool verbose, std::string order_file_path, bool use_experience, bool show_database, bool autonomous,
+                       bool full_autonomous)
   : nh_private_("~")
   , verbose_(verbose)
   , fake_perception_(false)
@@ -78,6 +79,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   // Load the remote control for dealing with GUIs
   remote_control_.reset(new RemoteControl(verbose, nh_private_, this));
   remote_control_->setAutonomous(autonomous);
+  remote_control_->setFullAutonomous(full_autonomous);
 
   // Load manipulation data for our robot
   config_.reset(new ManipulationData());
@@ -173,7 +175,6 @@ bool APCManager::checkSystemReady()
 
   ROS_INFO_STREAM_NAMED("apc_manager","System ready check COMPLETE");
   std::cout << "-------------------------------------------------------" << std::endl;
-  std::cout << std::endl;
   return true;
 }
 
@@ -199,9 +200,9 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to,
 
     if (!graspObjectPipeline(orders_[i], verbose_, jump_to))
     {
-      ROS_WARN_STREAM_NAMED("apc_manager","An error occured in last product order, but we are continuing on");
-      //ROS_ERROR_STREAM_NAMED("apc_manager","Shutting down for debug purposes only (it could continue on)");
-      //return false;
+      //ROS_WARN_STREAM_NAMED("apc_manager","An error occured in last product order, but we are continuing on");
+      ROS_ERROR_STREAM_NAMED("apc_manager","Shutting down for debug purposes only (it could continue on)");
+      return false;
     }
 
     // Reset markers for next loop
@@ -364,7 +365,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         }
 
         // Visualize trajectory in Rviz display
-        visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, current_state, wait_for_trajetory);
+        //visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, current_state, wait_for_trajetory);
 
         break;
 
@@ -394,10 +395,6 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // #################################################################################################################
       case 7: manipulation_->statusPublisher("Cartesian move to the-grasp position");
 
-        // DEBUG temp
-        remote_control_->setAutonomous(false);
-        remote_control_->setFullAutonomous(false);
-
         // Set planning scene
         planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
@@ -410,7 +407,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
 
         // Visualize trajectory in Rviz display
         current_state = manipulation_->getCurrentState();
-        visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, current_state, wait_for_trajetory);
+        //visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, current_state, wait_for_trajetory);
 
         // Run
         if( !manipulation_->getExecutionInterface()->executeTrajectory(approach_trajectory_msg) )
@@ -450,6 +447,10 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // #################################################################################################################
       case 9: manipulation_->statusPublisher("Lifting product UP slightly");
 
+        // DEBUG temp
+        remote_control_->setAutonomous(false);
+        remote_control_->setFullAutonomous(false);
+
         // Set planning scene
         //planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
@@ -459,9 +460,9 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         if (!manipulation_->executeVerticlePath(arm_jmg, config_->lift_distance_desired_))
         {
           ROS_WARN_STREAM_NAMED("apc_manager","Unable to execute retrieval path after grasping");
-          //return false;
-          fallback_to_motion_planning = true;
-          ROS_INFO_STREAM_NAMED("apc_manager","Skipping the reverse out and falling back to motion planning");
+          return false;
+          //fallback_to_motion_planning = true;
+          //ROS_INFO_STREAM_NAMED("apc_manager","Skipping the reverse out and falling back to motion planning");
         }
         break;
 
@@ -486,11 +487,11 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Set planning scene
         //planning_scene_manager_->displayShelfAsWall();
 
-        if (!placeObjectInGoalBin(arm_jmg))
-        {
-          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move object to goal bin");
-          return false;
-        }
+        // if (!placeObjectInGoalBin(arm_jmg))
+        // {
+        //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move object to goal bin");
+        //   return false;
+        // }
 
         break;
 
@@ -498,19 +499,19 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
       case 12: manipulation_->statusPublisher("Releasing product");
 
         // Set planning scene
-        planning_scene_manager_->displayShelfAsWall();
+        // planning_scene_manager_->displayShelfAsWall();
 
-        if (!manipulation_->openEndEffectorWithVelocity(true, arm_jmg))
-        {
-          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
-          return false;
-        }
+        // if (!manipulation_->openEndEffectorWithVelocity(true, arm_jmg))
+        // {
+        //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
+        //   return false;
+        // }
 
-        if (!liftFromGoalBin(arm_jmg))
-        {
-          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to lift up from goal bin");
-          return false;
-        }
+        // if (!liftFromGoalBin(arm_jmg))
+        // {
+        //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to lift up from goal bin");
+        //   return false;
+        // }
 
         // Delete from planning scene the product
         shelf_->deleteProduct(work_order.bin_->getName(), work_order.product_->getName());
@@ -618,6 +619,9 @@ bool APCManager::testVisualizeShelf()
 bool APCManager::testUpAndDown()
 {
   double lift_distance_desired = 0.5;
+
+  // Setup planning scene
+  planning_scene_manager_->displayEmptyShelf();
 
   // Test
   manipulation_->statusPublisher("Testing up and down calculations");

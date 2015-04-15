@@ -860,7 +860,8 @@ bool Manipulation::generateApproachPath(moveit_grasps::GraspCandidatePtr chosen,
 
   // Visualize trajectory in Rviz display
   bool wait_for_trajetory = false;
-  visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, current_state_, wait_for_trajetory);
+  ROS_WARN_STREAM_NAMED("manipulation","Enable publishTrajectoryPath in gen approach path");
+  //visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, current_state_, wait_for_trajetory);
 
   // Set the pregrasp to be the first state in the trajectory. Copy value, not pointer
   *pre_grasp_state = *first_state_in_trajectory_;
@@ -1036,13 +1037,16 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
   // Check for kinematic solver
   if( !arm_jmg->canSetStateFromIK( ik_tip_link_model->getName() ) )
     ROS_ERROR_STREAM_NAMED("manipulation","No IK Solver loaded - make sure moveit_config/kinamatics.yaml is loaded in this namespace");
-  
+
   std::size_t attempts = 0;
   static const std::size_t MAX_IK_ATTEMPTS = 10;
   while (attempts < MAX_IK_ATTEMPTS)
   {
     if (attempts > 0)
+    {
+      std::cout << std::endl;
       ROS_INFO_STREAM_NAMED("manipulation","Attempting IK solution, attempts # " << attempts);
+    }
     attempts++;
 
     // Collision check
@@ -1070,36 +1074,55 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
 
     if( path_length == 0 )
     {
-      ROS_ERROR_STREAM_NAMED("manipulation","Failed to computer cartesian path: distance is 0. Displaying collision debug information:");
+      ROS_ERROR_STREAM_NAMED("manipulation","Failed to computer cartesian path: Distance is 0");
 
-      // Recreate collision checker callback
-      // collision_checking_verbose = true;
-      // constraint_fn = boost::bind(&isStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
-      //                             collision_checking_verbose, visuals_, _1, _2, _3);
+      // if (false)
+      // {
+      //   ROS_ERROR_STREAM_NAMED("manipulation","Displaying collision information");
+      //   // Recreate collision checker callback
+      //   collision_checking_verbose = true;
+      //   constraint_fn = boost::bind(&isStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
+      //                               collision_checking_verbose, visuals_, _1, _2, _3);
 
-      // // Re-compute Cartesian Path
-      // path_length = robot_state->computeCartesianPath(arm_jmg,
-      //                                                 robot_state_trajectory,
-      //                                                 ik_tip_link_model,
-      //                                                 approach_direction,
-      //                                                 true,           // direction is in global reference frame
-      //                                                 desired_approach_distance,
-      //                                                 max_step,
-      //                                                 jump_threshold,
-      //                                                 constraint_fn // collision check
-      //                                                 );
+      //   // Re-compute Cartesian Path
+      //   path_length = robot_state->computeCartesianPath(arm_jmg,
+      //                                                   robot_state_trajectory,
+      //                                                   ik_tip_link_model,
+      //                                                   approach_direction,
+      //                                                   true,           // direction is in global reference frame
+      //                                                   desired_approach_distance,
+      //                                                   max_step,
+      //                                                   jump_threshold,
+      //                                                   constraint_fn // collision check
+      //                                                   );
+      // }
     }
     else if ( path_length < desired_approach_distance * 0.5 )
     {
       ROS_WARN_STREAM_NAMED("manipulation","Resuling cartesian path distance is less than half the desired distance");
+
+      if (attempts == 1)
+        ROS_WARN_STREAM_NAMED("manipulation","NOTE: WE GOT IK ON THE FIRST TRY");
+
       break;
     }
     else
     {
       ROS_INFO_STREAM_NAMED("manipulation","Found valid cartesian path");
+
+      if (attempts == 1)
+        ROS_WARN_STREAM_NAMED("manipulation","NOTE: WE GOT IK ON THE FIRST TRY");
+
       break;
     }
-  } // end scoped pointer of locked planning scene
+  } // end while AND scoped pointer of locked planning scene
+
+  // Check if we never found a path
+  if (attempts >= MAX_IK_ATTEMPTS)
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Never found a valid cartesian path, aborting");
+    return false;
+  }
 
   // Reverse the trajectory if neeeded
   if (reverse_trajectory)
@@ -1304,7 +1327,7 @@ bool Manipulation::convertRobotStatesToTrajectory(const std::vector<moveit::core
   }
 
   // Interpolate any path with two few points
-  static const std::size_t MIN_TRAJECTORY_POINTS = 6;
+  static const std::size_t MIN_TRAJECTORY_POINTS = 20;
   if (robot_trajectory->getWayPointCount() < MIN_TRAJECTORY_POINTS)
   {
     ROS_INFO_STREAM_NAMED("manipulation","Interpolating trajectory because two few points (" << robot_trajectory->getWayPointCount() << ")");
@@ -1469,7 +1492,7 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","fixCollidingState()");
 
   // Turn off auto mode
-  remote_control_->setAutonomous(false);
+  //remote_control_->setFullAutonomous(false);
 
   // Open hand to ensure we aren't holding anything anymore
   if (!openEndEffectors(true))
@@ -1520,7 +1543,6 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   {
     ROS_WARN_STREAM_NAMED("manipulation","Did not find any world objects in collision. Attempting to move home");
     bool check_validity = false;
-    ROS_WARN_STREAM_NAMED("manipulation","DISABLED MOVE TO START POSITION TEMP");
     return moveToStartPosition(NULL, check_validity);
   }
 
@@ -1802,7 +1824,8 @@ bool Manipulation::visualizeGrasps(std::vector<moveit_grasps::GraspCandidatePtr>
 
       bool blocking = false;
       double speed = 0.01;
-      visuals_->visual_tools_->publishTrajectoryPath(robot_state_trajectory, arm_jmg, speed, blocking);
+      ROS_WARN_STREAM_NAMED("manipulation","Enable publishTrajectoryPath here");
+      // visuals_->visual_tools_->publishTrajectoryPath(robot_state_trajectory, arm_jmg, speed, blocking);
     }
     std::cout << "grasp_candidates[i]->grasp_.grasp_pose: " << grasp_candidates[i]->grasp_.grasp_pose << std::endl;
     visuals_->visual_tools_->publishZArrow(grasp_candidates[i]->grasp_.grasp_pose, rvt::RED);

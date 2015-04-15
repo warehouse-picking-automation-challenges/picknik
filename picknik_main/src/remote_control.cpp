@@ -108,7 +108,7 @@ void RemoteControl::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
   // 7 - start
   // 8 - power
   if (msg->buttons[8])
-    setAutonomous();
+    setFullAutonomous();
   // 9 - Button stick left
   // 10 - Button stick right
 

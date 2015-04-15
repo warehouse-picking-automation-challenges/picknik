@@ -34,10 +34,6 @@ jump_threshold: 10
 # Safety
 collision_wall_safety_margin: 0.01 # 0.02
 
-# Sleep timers
-wait_before_grasp: 1.0
-wait_after_grasp: 1.0
-
 # Perception Data
 camera:
   x_translation_from_bin: -0.5 # meters

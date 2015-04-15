@@ -9,6 +9,7 @@ Panels:
         - /Planning Start State1
         - /Planning Goal State1
         - /Amazon Markers1/Namespaces1
+        - /Amazon Trajectory Markers1
         - /Trajectory1
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
@@ -559,6 +560,7 @@ Visualization Manager:
       Name: Amazon Markers
       Namespaces:
         Axis: true
+        Collision: true
         Line: true
         Sphere: true
         Text: true
@@ -586,7 +588,8 @@ Visualization Manager:
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
-        {}
+        Path: true
+        Sphere: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -976,22 +979,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.54999
+      Distance: 4.00399
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.35339
-        Y: 0.566882
+        X: 1.58425
+        Y: 1.29613
         Z: 1.90735e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.320399
+      Pitch: 0.335399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.92726
+      Yaw: 3.98726
     Saved: ~
 Window Geometry:
   Displays:
@@ -1007,5 +1010,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1194
-  X: 1909
+  X: 1899
   Y: 14

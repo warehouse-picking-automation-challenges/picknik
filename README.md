@@ -427,7 +427,8 @@ Button Mapings
 		10. Moving BACK to pre-grasp position
 		11. Moving back to INITIAL position
 		12. Releasing product
-	auto - whether to go into autonomous mode, without any human intervention
+	auto - whether to go into auto step mode, but does not allow trajectories to be executed without verification
+	full_auto - whether to go into autonomous mode, without any human intervention even for execution
     order - which json file to use, defaults to orders/simple.json
 	order_start - specify the index of the product to skip to, based on the ordering in the json file
 	num_orders -how many products to pick from the order, 0 = all

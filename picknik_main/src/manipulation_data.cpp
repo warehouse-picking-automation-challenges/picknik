@@ -60,6 +60,18 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model)
   rvt::getDoubleParameter(parent_name, nh_, "lift_velocity_scaling_factor", lift_velocity_scaling_factor_);
   rvt::getDoubleParameter(parent_name, nh_, "retreat_velocity_scaling_factor", retreat_velocity_scaling_factor_);
   rvt::getDoubleParameter(parent_name, nh_, "calibration_velocity_scaling_factor", calibration_velocity_scaling_factor_);
+
+  bool in_simulation = true;
+  if (in_simulation)
+  {
+    ROS_WARN_STREAM_NAMED("manipulation_data","WARNING: IN FULL SPEED SIMULATION MODE!!!");
+    main_velocity_scaling_factor_ = 1.0;
+    approach_velocity_scaling_factor_ = 1.0;
+    lift_velocity_scaling_factor_ = 1.0;
+    retreat_velocity_scaling_factor_ = 1.0;
+    calibration_velocity_scaling_factor_ = 1.0;
+  }
+
   rvt::getDoubleParameter(parent_name, nh_, "wait_before_grasp", wait_before_grasp_);
   rvt::getDoubleParameter(parent_name, nh_, "wait_after_grasp", wait_after_grasp_);
   rvt::getDoubleParameter(parent_name, nh_, "approach_distance_desired", approach_distance_desired_);

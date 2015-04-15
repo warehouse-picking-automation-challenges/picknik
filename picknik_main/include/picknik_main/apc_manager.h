@@ -57,9 +57,11 @@ public:
    * \param order_file_path
    * \param Use an experience database in planning
    * \param Show the experience database after each plan
-   * \param autonomous - whether it should pause for human input
+   * \param autonomous - whether it should pause for human input, except executing trajectories which is always manual
+   * \param full_autonomous - whether it should pause for human input
    */
-  APCManager(bool verbose, std::string order_file_path, bool use_experience, bool show_database, bool autonomous = false);
+  APCManager(bool verbose, std::string order_file_path, bool use_experience, bool show_database, bool autonomous = false,
+             bool full_autonomous = false);
 
   /**
    * \brief Check if all communication is properly active
@@ -121,7 +123,7 @@ public:
    * \return true on success
    */
   bool testInAndOut();
-  
+
   /**
    * \brief Script for moving arms to locations of corner of shelf
    * \return true on success
@@ -325,7 +327,7 @@ private:
 
   // File path to ROS package on drive
   std::string package_path_;
-  
+
   // Remote control for dealing with GUIs
   RemoteControlPtr remote_control_;
 
