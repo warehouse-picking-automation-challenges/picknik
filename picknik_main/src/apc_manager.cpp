@@ -110,11 +110,14 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   // Allow collisions between frame of robot and floor
   allowCollisions();
 
-  ROS_INFO_STREAM_NAMED("apc_manager","APC Manager Ready.");
+  ROS_INFO_STREAM_NAMED("apc_manager","APCManager Ready.");
 }
 
 bool APCManager::checkSystemReady()
 {
+  std::cout << std::endl;
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
   ROS_INFO_STREAM_NAMED("apc_manager","Starting system ready check:");
 
   // Check joint model groups, assuming we are the jaco arm
@@ -168,9 +171,9 @@ bool APCManager::checkSystemReady()
   // Check end effectors calibrated
   // TODO
 
-  ROS_INFO_STREAM_NAMED("apc_manager","checkSystemReady() COMPLETE");
-  std::cout << std::endl;
+  ROS_INFO_STREAM_NAMED("apc_manager","System ready check COMPLETE");
   std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << std::endl;
   return true;
 }
 
@@ -178,8 +181,6 @@ bool APCManager::checkSystemReady()
 bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to,
                           std::size_t num_orders)
 {
-  ROS_INFO_STREAM_NAMED("apc_manager","Starting order ----------------------------");
-
   // Decide how many products to pick
   if (num_orders == 0)
     num_orders = orders_.size();
@@ -187,7 +188,14 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to,
   // Grasps things
   for (std::size_t i = order_start; i < num_orders; ++i)
   {
-    manipulation_->orderPublisher(orders_[i]); // feedback
+    std::cout << std::endl;
+    std::cout << "=======================================================" << std::endl;
+    ROS_INFO_STREAM_NAMED("apc_manager","Starting order " << i);
+    std::cout << "=======================================================" << std::endl;
+
+    // Check every product if system is still ready
+    if (!checkSystemReady()) 
+      return false;
 
     if (!graspObjectPipeline(orders_[i], verbose_, jump_to))
     {
@@ -224,6 +232,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
   moveit::core::RobotStatePtr the_grasp_state(new moveit::core::RobotState(*current_state)); // Allocate robot states
   moveit_msgs::RobotTrajectory approach_trajectory_msg;
   bool wait_for_trajetory = false;
+  bool fallback_to_motion_planning = false;
 
   if (!remote_control_->getAutonomous())
   {
@@ -280,6 +289,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Set planning scene
         planning_scene_manager_->displayShelfWithOpenBins();
 
+        // Open hand
         if (!manipulation_->openEndEffectors(true))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to open end effectors");
@@ -384,6 +394,10 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // #################################################################################################################
       case 7: manipulation_->statusPublisher("Cartesian move to the-grasp position");
 
+        // DEBUG temp
+        remote_control_->setAutonomous(false);
+        remote_control_->setFullAutonomous(false);
+
         // Set planning scene
         planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
@@ -420,8 +434,8 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Close EE
         if (!manipulation_->openEndEffectorWithVelocity(false, arm_jmg))
         {
-          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
-          return false;
+          ROS_WARN_STREAM_NAMED("apc_manager","Unable to close end effector");
+          //return false;
         }
 
         // Attach collision object
@@ -444,8 +458,10 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
 
         if (!manipulation_->executeVerticlePath(arm_jmg, config_->lift_distance_desired_))
         {
-          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute retrieval path after grasping");
-          return false;
+          ROS_WARN_STREAM_NAMED("apc_manager","Unable to execute retrieval path after grasping");
+          //return false;
+          fallback_to_motion_planning = true;
+          ROS_INFO_STREAM_NAMED("apc_manager","Skipping the reverse out and falling back to motion planning");
         }
         break;
 
@@ -456,11 +472,12 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         //planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
         // Retreat backwards
-        if (!manipulation_->executeRetreatPath(arm_jmg, config_->retreat_distance_desired_))
-        {
-          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute retrieval path after grasping");
-          return false;
-        }
+        if (!fallback_to_motion_planning)
+          if (!manipulation_->executeRetreatPath(arm_jmg, config_->retreat_distance_desired_))
+          {
+            ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute retrieval path after grasping");
+            return false;
+          }
         break;
 
         // #################################################################################################################
@@ -1388,7 +1405,7 @@ bool APCManager::perceiveObjectFake(WorkOrder work_order, bool verbose)
 
   Eigen::Affine3d fake_centroid = Eigen::Affine3d::Identity();
   fake_centroid.translation().y() = 0.12;
-  fake_centroid.translation().x() = 0.1;
+  fake_centroid.translation().x() = 0.08;
   fake_centroid.translation().z() = 0.08;
   fake_centroid = fake_centroid
     * Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
@@ -1581,16 +1598,19 @@ bool APCManager::attachProduct(ProductObjectPtr product, const robot_model::Join
   visuals_->visual_tools_->attachCO(product->getCollisionName(), grasp_datas_[arm_jmg]->parent_link_->getName());
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
 
-  std::cout << std::endl;
-  ROS_WARN_STREAM_NAMED("apc_manager","Attached to link " << grasp_datas_[arm_jmg]->parent_link_->getName() << " product "
-                        << product->getCollisionName());
-
-  std::vector<const moveit::core::AttachedBody*> attached_bodies;
-  manipulation_->getCurrentState()->getAttachedBodies(attached_bodies);
-
-  for (std::size_t i = 0; i < attached_bodies.size(); ++i)
+  // Debug
+  if (false)
   {
-    std::cout << "attached body: " << attached_bodies[i]->getName() << std::endl;
+    ROS_WARN_STREAM_NAMED("apc_manager","Attached to link " << grasp_datas_[arm_jmg]->parent_link_->getName() << " product "
+                          << product->getCollisionName());
+
+    std::vector<const moveit::core::AttachedBody*> attached_bodies;
+    manipulation_->getCurrentState()->getAttachedBodies(attached_bodies);
+
+    for (std::size_t i = 0; i < attached_bodies.size(); ++i)
+    {
+      std::cout << "attached body: " << attached_bodies[i]->getName() << std::endl;
+    }
   }
 
   return true;

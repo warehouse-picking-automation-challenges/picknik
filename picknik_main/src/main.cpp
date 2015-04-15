@@ -40,6 +40,7 @@ int main(int argc, char** argv)
   std::size_t bin_id = 0;
   bool verbose = false;
   bool use_experience = true;
+  bool fake_execution = true;
   bool show_database = false;
   bool autonomous = false;
   std::string order_file;
@@ -80,6 +81,14 @@ int main(int argc, char** argv)
       ++i;
       use_experience = atoi(argv[i]);
       ROS_DEBUG_STREAM_NAMED("main","Using experience: " << use_experience);
+      continue;
+    }
+
+    if( std::string(argv[i]).compare("--fake_execution") == 0 )
+    {
+      ++i;
+      fake_execution = atoi(argv[i]);
+      ROS_DEBUG_STREAM_NAMED("main","Fake execution: " << fake_execution);
       continue;
     }
 
@@ -136,13 +145,11 @@ int main(int argc, char** argv)
   picknik_main::APCManager manager(verbose, order_file, use_experience, show_database, autonomous);
 
   std::cout << std::endl;
-  std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
 
   switch (mode)
   {
     case 1:
-      if (!manager.checkSystemReady()) return 0;;
       ROS_INFO_STREAM_NAMED("main","Run actual Amazon Picking Challenge mode");
       manager.runOrder(order_start, jump_to, num_orders);
       break;

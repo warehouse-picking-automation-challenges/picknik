@@ -331,7 +331,7 @@ A transform of the camera is needed
 
 Run APC Manager (main program) for JACOB in simulation
 
-	roslaunch picknik_main jacob_apc.launch fake_execution:=true
+	roslaunch picknik_main jacob_apc.launch fake_execution:=true mode:=1 auto:=1
 
 ### Setup HARDWARE of Jacob
 

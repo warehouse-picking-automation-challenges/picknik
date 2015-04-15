@@ -32,7 +32,7 @@ left_arm_name: manipulator_DISABLED
 both_arms_name: manipulator_DISABLED
 
 # Calibration
-world_to_shelf_transform: [0.51, -0.4365, 0.01, 0.0, 0.0, 0.0]  # IDEAL
+world_to_shelf_transform: [0.5, -0.45, 0.01, 0.0, 0.0, 0.0]  # IDEAL
 
 # Topics
 joint_state_topic: /joint_states

@@ -339,12 +339,6 @@ bool plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotSta
   bool statusPublisher(const std::string &status);
 
   /**
-   * \brief Central Rviz status visualizer for orders
-   * \return true on success
-   */
-  bool orderPublisher(WorkOrder& order);
-
-  /**
    * \brief Helper function for determining if robot is already in desired state
    * \param robotstate to compare to
    * \param robotstate to compare to

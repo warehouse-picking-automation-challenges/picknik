@@ -127,7 +127,7 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
     visuals_->visual_tools_->publishText(world_to_product, "object_pose", rvt::BLACK, rvt::SMALL, false);
   }
 
-  if (verbose)
+  if (verbose && false)
   {
     std::cout << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
@@ -151,7 +151,7 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
   product->setWidth(width);
   product->setHeight(height);
 
-  if (verbose)
+  if (verbose && false)
   {
     std::cout << "After getBoundingingBoxFromMesh(): " << std::endl;
     std::cout << "  Cuboid Pose: "; printTransform(product->getCentroid());
@@ -682,11 +682,11 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajec
   }
 
   // Debug
-  for (std::size_t i = 0; i < robot_trajectory->getWayPointCount(); ++i)
-  {
-    moveit::core::robotStateToStream(robot_trajectory->getWayPoint(i), std::cout, false);
-  }
-  std::cout << "-------------------------------------------------------" << std::endl;
+  // for (std::size_t i = 0; i < robot_trajectory->getWayPointCount(); ++i)
+  // {
+  //   moveit::core::robotStateToStream(robot_trajectory->getWayPoint(i), std::cout, false);
+  // }
+  // std::cout << "-------------------------------------------------------" << std::endl;
 
   // For each set of points (A,B) in the original trajectory
   for (std::size_t i = 0; i < robot_trajectory->getWayPointCount() - 1; ++i)
@@ -710,10 +710,10 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_trajec
   new_robot_trajectory->addSuffixWayPoint(robot_trajectory->getLastWayPoint(), dummy_dt);
 
   // Debug
-  for (std::size_t i = 0; i < new_robot_trajectory->getWayPointCount(); ++i)
-  {
-    moveit::core::robotStateToStream(new_robot_trajectory->getWayPoint(i), std::cout, false);
-  }
+  // for (std::size_t i = 0; i < new_robot_trajectory->getWayPointCount(); ++i)
+  // {
+  //   moveit::core::robotStateToStream(new_robot_trajectory->getWayPoint(i), std::cout, false);
+  // }
 
   std::size_t modified_num_waypoints = new_robot_trajectory->getWayPointCount();
   ROS_INFO_STREAM_NAMED("manipulation","Interpolated trajectory from " << original_num_waypoints
@@ -1036,8 +1036,15 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
   // Check for kinematic solver
   if( !arm_jmg->canSetStateFromIK( ik_tip_link_model->getName() ) )
     ROS_ERROR_STREAM_NAMED("manipulation","No IK Solver loaded - make sure moveit_config/kinamatics.yaml is loaded in this namespace");
-
+  
+  std::size_t attempts = 0;
+  static const std::size_t MAX_IK_ATTEMPTS = 10;
+  while (attempts < MAX_IK_ATTEMPTS)
   {
+    if (attempts > 0)
+      ROS_INFO_STREAM_NAMED("manipulation","Attempting IK solution, attempts # " << attempts);
+    attempts++;
+
     // Collision check
     boost::scoped_ptr<planning_scene_monitor::LockedPlanningSceneRO> ls;
     ls.reset(new planning_scene_monitor::LockedPlanningSceneRO(planning_scene_monitor_));
@@ -1066,26 +1073,31 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
       ROS_ERROR_STREAM_NAMED("manipulation","Failed to computer cartesian path: distance is 0. Displaying collision debug information:");
 
       // Recreate collision checker callback
-      collision_checking_verbose = true;
-      constraint_fn = boost::bind(&isStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
-                                  collision_checking_verbose, visuals_, _1, _2, _3);
+      // collision_checking_verbose = true;
+      // constraint_fn = boost::bind(&isStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
+      //                             collision_checking_verbose, visuals_, _1, _2, _3);
 
-      // Re-compute Cartesian Path
-      path_length = robot_state->computeCartesianPath(arm_jmg,
-                                                      robot_state_trajectory,
-                                                      ik_tip_link_model,
-                                                      approach_direction,
-                                                      true,           // direction is in global reference frame
-                                                      desired_approach_distance,
-                                                      max_step,
-                                                      jump_threshold,
-                                                      constraint_fn // collision check
-                                                      );
-      return false;
+      // // Re-compute Cartesian Path
+      // path_length = robot_state->computeCartesianPath(arm_jmg,
+      //                                                 robot_state_trajectory,
+      //                                                 ik_tip_link_model,
+      //                                                 approach_direction,
+      //                                                 true,           // direction is in global reference frame
+      //                                                 desired_approach_distance,
+      //                                                 max_step,
+      //                                                 jump_threshold,
+      //                                                 constraint_fn // collision check
+      //                                                 );
     }
     else if ( path_length < desired_approach_distance * 0.5 )
     {
       ROS_WARN_STREAM_NAMED("manipulation","Resuling cartesian path distance is less than half the desired distance");
+      break;
+    }
+    else
+    {
+      ROS_INFO_STREAM_NAMED("manipulation","Found valid cartesian path");
+      break;
     }
   } // end scoped pointer of locked planning scene
 
@@ -1295,7 +1307,7 @@ bool Manipulation::convertRobotStatesToTrajectory(const std::vector<moveit::core
   static const std::size_t MIN_TRAJECTORY_POINTS = 6;
   if (robot_trajectory->getWayPointCount() < MIN_TRAJECTORY_POINTS)
   {
-    ROS_WARN_STREAM_NAMED("manipulation","Interpolating trajectory because two few points (" << robot_trajectory->getWayPointCount() << ")");
+    ROS_INFO_STREAM_NAMED("manipulation","Interpolating trajectory because two few points (" << robot_trajectory->getWayPointCount() << ")");
 
     // Interpolate between each point
     double discretization = 0.25;
@@ -1458,6 +1470,13 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
 
   // Turn off auto mode
   remote_control_->setAutonomous(false);
+
+  // Open hand to ensure we aren't holding anything anymore
+  if (!openEndEffectors(true))
+  {
+    ROS_WARN_STREAM_NAMED("apc_manager","Unable to open end effectors");
+    //return false;
+  }
 
   const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->left_arm_ : config_->right_arm_;
 
@@ -1673,14 +1692,6 @@ bool Manipulation::statusPublisher(const std::string &status)
   visuals_->visual_tools_->publishText(status_position_, status, rvt::WHITE, rvt::LARGE);
 }
 
-bool Manipulation::orderPublisher(WorkOrder& order)
-{
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","orderPublisher()");
-
-  const std::string status = order.bin_->getName() + ": " + order.product_->getName();
-  visuals_->visual_tools_->publishText(status_position_, status, rvt::WHITE, rvt::LARGE);
-}
-
 bool Manipulation::statesEqual(const moveit::core::RobotState &s1, const moveit::core::RobotState &s2,
                                const robot_model::JointModelGroup* arm_jmg)
 {
@@ -1891,7 +1902,7 @@ bool Manipulation::waitForRobotToStop(const double& timeout)
 
 bool Manipulation::fixCurrentCollisionAndBounds(const robot_model::JointModelGroup* arm_jmg)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","fixCurrentCollisionAndBounds()");
+  ROS_INFO_STREAM_NAMED("manipulation","Checking current collision and bounds");
 
   bool result = true;
 
@@ -1904,7 +1915,7 @@ bool Manipulation::fixCurrentCollisionAndBounds(const robot_model::JointModelGro
   }
 
   // Check for collisions
-  bool verbose = true;
+  bool verbose = false;
   if (cloned_scene->isStateColliding(*current_state_, arm_jmg->getName(), verbose))
   {
     result = false;
@@ -1912,7 +1923,6 @@ bool Manipulation::fixCurrentCollisionAndBounds(const robot_model::JointModelGro
     std::cout << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
     ROS_WARN_STREAM_NAMED("manipulation","State is colliding, attempting to fix...");
-    std::cout << "-------------------------------------------------------" << std::endl;
 
     // Show collisions
     visuals_->visual_tools_->publishContactPoints(*current_state_, cloned_scene.get());

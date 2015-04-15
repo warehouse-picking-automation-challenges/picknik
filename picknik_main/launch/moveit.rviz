@@ -12,6 +12,7 @@ Panels:
         - /Trajectory1
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
+        - /TF1
         - /TF1/Frames1
         - /RobotModel1
         - /RobotModel1/Links1
@@ -558,7 +559,6 @@ Visualization Manager:
       Name: Amazon Markers
       Namespaces:
         Axis: true
-        Collision: true
         Line: true
         Sphere: true
         Text: true
@@ -582,13 +582,13 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /ompl_experience_database
@@ -868,7 +868,7 @@ Visualization Manager:
       Enabled: false
       Frame Timeout: 15
       Frames:
-        All Enabled: false
+        All Enabled: true
       Marker Scale: 0.5
       Name: TF
       Show Arrows: false
@@ -910,126 +910,18 @@ Visualization Manager:
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        arm_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        camera_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        gantry:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        gantry_plate:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_end_effector:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        jaco2_link_1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_4:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_5:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_finger_1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_finger_1_tip:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_finger_2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_finger_2_tip:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_finger_3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_finger_3_tip:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_link_hand:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        jaco2_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        xtion:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
       Update Interval: 0
-      Value: true
+      Value: false
       Visual Enabled: true
     - Alpha: 1
       Auto Size:
@@ -1084,22 +976,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 2.94181
+      Distance: 4.54999
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.740201
-        Y: 0.180641
+        X: 1.35339
+        Y: 0.566882
         Z: 1.90735e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.470399
+      Pitch: 0.320399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 4.03227
+      Yaw: 3.92726
     Saved: ~
 Window Geometry:
   Displays:
@@ -1115,5 +1007,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1194
-  X: 1771
+  X: 1909
   Y: 14

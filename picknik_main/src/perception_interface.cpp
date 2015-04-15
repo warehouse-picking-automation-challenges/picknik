@@ -79,9 +79,14 @@ PerceptionInterface::PerceptionInterface(bool verbose, VisualsPtr visuals, Shelf
 
 bool PerceptionInterface::isPerceptionReady()
 {
-  ROS_INFO_STREAM_NAMED("perception_interface","Waiting for object perception server on topic " << PERCEPTION_TOPIC);
+  // Do initial check before showing warning
+  if (!find_objects_action_.waitForServer(ros::Duration(0.1)))
+  {
+    ROS_WARN_STREAM_NAMED("perception_interface","Waiting for object perception server on topic " << PERCEPTION_TOPIC);
 
-  find_objects_action_.waitForServer();
+    find_objects_action_.waitForServer();
+  }
+
   return true;
 }
 

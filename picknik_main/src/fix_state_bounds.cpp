@@ -35,9 +35,16 @@
 /* Author: Ioan Sucan, Dave Coleman */
 
 #include <boost/math/constants/constants.hpp>
-//#include <moveit/trajectory_processing/trajectory_tools.h>
+
+// MoveIt
 #include <moveit/robot_state/conversions.h>
+
+// PickNik
 #include <picknik_main/fix_state_bounds.h>
+#include <picknik_main/namespaces.h>
+
+// Parameter loading
+#include <rviz_visual_tools/ros_param_utilities.h>
 
 namespace picknik_main
 {
@@ -45,23 +52,10 @@ namespace picknik_main
 FixStateBounds::FixStateBounds()
   : nh_("~")
 {
-  if (!nh_.getParam(BOUNDS_PARAM_NAME, bounds_dist_))
-  {
-    bounds_dist_ = 0.05;
-    ROS_WARN_STREAM_NAMED("fix_state_bounds","Param '" << BOUNDS_PARAM_NAME
-                          << "' was not set. Using default value: " << bounds_dist_);
-  }
-  else
-    ROS_INFO_STREAM_NAMED("fix_state_bounds","Param '" << BOUNDS_PARAM_NAME << "' was set to " << bounds_dist_);
+  const std::string parent_name = "fix_state_bounds"; // for namespacing logging messages
 
-  if (!nh_.getParam(DT_PARAM_NAME, max_dt_offset_))
-  {
-    max_dt_offset_ = 0.5;
-    ROS_WARN_STREAM_NAMED("fix_state_bounds","Param '" << DT_PARAM_NAME
-                          << "' was not set. Using default value: " << max_dt_offset_);
-  }
-  else
-    ROS_INFO_STREAM_NAMED("fix_state_bounds","Param '" << DT_PARAM_NAME << "' was set to " << max_dt_offset_);
+  rvt::getDoubleParameter(parent_name, nh_, BOUNDS_PARAM_NAME, bounds_dist_);
+  rvt::getDoubleParameter(parent_name, nh_, DT_PARAM_NAME, max_dt_offset_);
 }
 
 bool FixStateBounds::fixBounds(robot_state::RobotState& robot_state,
@@ -138,34 +132,34 @@ bool FixStateBounds::fixBounds(robot_state::RobotState& robot_state,
         joint_bounds_low << b[k].min_position_ << " ";
         joint_bounds_hi << b[k].max_position_ << " ";
       }
-      ROS_WARN_STREAM_NAMED("fix_state_bounds","Joint '" << joint_models[i]->getName() << "' is outside bounds by: [ " 
+      ROS_WARN_STREAM_NAMED("fix_state_bounds","Joint '" << joint_models[i]->getName() << "' is outside bounds by: [ "
                             << joint_values.str() << "]. Joint value hould be in the range [ " << joint_bounds_low.str() <<
                             "], [ " << joint_bounds_hi.str() << "])");
 
       /*
-      if (robot_state.satisfiesBounds(joint_models[i], bounds_dist_))
-      {
+        if (robot_state.satisfiesBounds(joint_models[i], bounds_dist_))
+        {
         robot_state.enforceBounds(joint_models[i]);
         change_req = true;
         ROS_INFO_NAMED("fix_state_bounds","Starting state is just outside bounds (joint '%s'). Assuming within bounds.", joint_models[i]->getName().c_str());
-      }
-      else
-      {
+        }
+        else
+        {
         std::stringstream joint_values;
         std::stringstream joint_bounds_low;
         std::stringstream joint_bounds_hi;
         const double *p = robot_state.getJointPositions(joint_models[i]);
         for (std::size_t k = 0 ; k < joint_models[i]->getVariableCount() ; ++k)
-          joint_values << p[k] << " ";
+        joint_values << p[k] << " ";
         const robot_model::JointModel::Bounds &b = joint_models[i]->getVariableBounds();
         for (std::size_t k = 0 ; k < b.size() ; ++k)
         {
-          joint_bounds_low << b[k].min_position_ << " ";
-          joint_bounds_hi << b[k].max_position_ << " ";
+        joint_bounds_low << b[k].min_position_ << " ";
+        joint_bounds_hi << b[k].max_position_ << " ";
         }
         ROS_WARN_STREAM_NAMED("fix_state_bounds","Joint '" << joint_models[i]->getName() << "' from the starting state is outside bounds by a significant margin: [ " << joint_values.str() << "]. Joint value hould be in the range [ " << joint_bounds_low.str() <<
-                              "], [ " << joint_bounds_hi.str() << "] but the error is above the ~" << BOUNDS_PARAM_NAME << " parameter (currently set to " << bounds_dist_ << ")");
-      }
+        "], [ " << joint_bounds_hi.str() << "] but the error is above the ~" << BOUNDS_PARAM_NAME << " parameter (currently set to " << bounds_dist_ << ")");
+        }
       */
     }
   }
