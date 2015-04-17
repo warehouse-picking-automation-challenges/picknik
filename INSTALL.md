@@ -15,8 +15,9 @@ Unzip the file and build
     unzip ws_picknik.zip
 	cd ws_picknik
 	rosdep install -y --from-paths src --ignore-src --rosdistro indigo
-    catkin config --install
 	catkin build
+
+NOTE: before running ``catkin build`` you might need to use ``catkin config --install`` to have the ARPG code link correctly. Not sure yet.
 
 To run simulation on your computer, add to your bashrc:
 
