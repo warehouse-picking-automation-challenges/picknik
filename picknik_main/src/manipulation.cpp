@@ -432,9 +432,10 @@ bool Manipulation::moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_
       ROS_WARN_STREAM_NAMED("manipulation","moveEEToPose() has collision_checking_verbose turned on");
     boost::scoped_ptr<planning_scene_monitor::LockedPlanningSceneRO> ls;
     ls.reset(new planning_scene_monitor::LockedPlanningSceneRO(planning_scene_monitor_));
+    bool only_check_self_collision = false;
     moveit::core::GroupStateValidityCallbackFn constraint_fn
       = boost::bind(&isStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
-                    collision_checking_verbose, visuals_, _1, _2, _3);
+                    collision_checking_verbose, only_check_self_collision, visuals_, _1, _2, _3);
 
     // Solve IK problem for arm
     std::size_t attempts = 3;
@@ -874,6 +875,72 @@ bool Manipulation::generateApproachPath(moveit_grasps::GraspCandidatePtr chosen,
 bool Manipulation::executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up,
                                        bool ignore_collision)
 {
+  // Find joint property
+  const moveit::core::JointModel* gantry_joint = robot_model_->getJointModel("gantry_joint");
+  if (!gantry_joint)
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to get joint link");
+    return false;
+  }
+  if (gantry_joint->getVariableCount() != 1)
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Invalid number of joints in " << gantry_joint->getName());
+    return false;
+  }
+
+  // Get latest state
+  getCurrentState();
+
+  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
+  robot_state_trajectory.push_back(current_state_);
+
+  // Get current gantry joint
+  const double* current_gantry_positions = current_state_->getJointPositions(gantry_joint);
+  double current_gantry_position = current_gantry_positions[0];
+  std::cout << "current_gantry_position: " << current_gantry_position << std::endl;
+
+  // Set new gantry joint
+  double new_gantry_positions[1];
+  if (up)
+    new_gantry_positions[0] = current_gantry_position + desired_lift_distance;
+  else
+    new_gantry_positions[0] = current_gantry_position - desired_lift_distance;
+
+  // Check joint limits
+  if (!gantry_joint->satisfiesPositionBounds(new_gantry_positions))
+  {
+    ROS_WARN_STREAM_NAMED("manipulation","New gantry position of " << new_gantry_positions[0] << " does not satisfy joint limit bounds. Enforcing bounds.");
+    if (!gantry_joint->enforcePositionBounds(new_gantry_positions))
+      ROS_ERROR_STREAM_NAMED("manipulation","Changes not made");
+  }
+
+  // Create new movemenet state
+  moveit::core::RobotStatePtr new_state(new moveit::core::RobotState(*current_state_));
+  new_state->setJointPositions(gantry_joint, new_gantry_positions);
+  robot_state_trajectory.push_back(new_state);
+
+  // Get approach trajectory message
+  moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg,
+                                      config_->lift_velocity_scaling_factor_))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
+    return false;
+  }
+
+  // Execute
+  if( !execution_interface_->executeTrajectory(cartesian_trajectory_msg, ignore_collision) )
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
+    return false;
+  }
+
+  return true;
+}
+
+bool Manipulation::executeVerticlePathOLD(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up,
+                                          bool ignore_collision)
+{
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeVerticlePath()");
 
   Eigen::Vector3d approach_direction;
@@ -933,6 +1000,11 @@ bool Manipulation::executeCartesianPath(const moveit::core::JointModelGroup *arm
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeCartesianPath()");
   getCurrentState();
 
+  // Debug
+  visuals_->visual_tools_->publishRobotState( current_state_, rvt::PURPLE );
+  visuals_->start_state_->hideRobot();
+  visuals_->goal_state_->hideRobot();
+
   double path_length;
   std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
   if (!computeStraightLinePath( direction, desired_distance, robot_state_trajectory, current_state_, arm_jmg, reverse_path,
@@ -961,26 +1033,20 @@ bool Manipulation::executeCartesianPath(const moveit::core::JointModelGroup *arm
   return true;
 }
 
-bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
-                                            double desired_approach_distance,
+bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction, double desired_approach_distance,
                                             std::vector<moveit::core::RobotStatePtr>& robot_state_trajectory,
-                                            moveit::core::RobotStatePtr robot_state,
-                                            const moveit::core::JointModelGroup *arm_jmg,
-                                            bool reverse_trajectory,
-                                            double& path_length,
-                                            bool ignore_collision)
+                                            moveit::core::RobotStatePtr robot_state, const moveit::core::JointModelGroup *arm_jmg,
+                                            bool reverse_trajectory, double& path_length, bool ignore_collision)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","computeStraightLinePath()");
 
-  if (ignore_collision)
-    ROS_INFO_STREAM_NAMED("manipulation","computeStraightLinePath() is ignoring collisions");
-
   // End effector parent link (arm tip for ik solving)
-  const moveit::core::LinkModel *ik_tip_link_model = grasp_datas_[arm_jmg]->parent_link_;
+  const moveit::core::LinkModel *ik_tip_link = grasp_datas_[arm_jmg]->parent_link_;
+  std::cout << "ik_tip_link: " << ik_tip_link->getName() << std::endl;
 
   // ---------------------------------------------------------------------------------------------
   // Show desired trajectory in BLACK
-  Eigen::Affine3d tip_pose_start = robot_state->getGlobalLinkTransform(ik_tip_link_model);
+  Eigen::Affine3d tip_pose_start = robot_state->getGlobalLinkTransform(ik_tip_link);
 
   // Debug
   if (false)
@@ -1032,10 +1098,10 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
   // Jump threshold for preventing consequtive joint values from 'jumping' by a large amount in joint space
   double jump_threshold = config_->jump_threshold_; // aka jump factor
 
-  bool collision_checking_verbose = false;
+  bool collision_checking_verbose = true;
 
   // Check for kinematic solver
-  if( !arm_jmg->canSetStateFromIK( ik_tip_link_model->getName() ) )
+  if( !arm_jmg->canSetStateFromIK( ik_tip_link->getName() ) )
     ROS_ERROR_STREAM_NAMED("manipulation","No IK Solver loaded - make sure moveit_config/kinamatics.yaml is loaded in this namespace");
 
   std::size_t attempts = 0;
@@ -1049,24 +1115,31 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
     }
     attempts++;
 
+    bool only_check_self_collision = false;
+    if (ignore_collision)
+    {
+      only_check_self_collision = true;
+      ROS_INFO_STREAM_NAMED("manipulation","computeStraightLinePath() is ignoring collisions with world objects (but not robot links)");
+    }
+
     // Collision check
     boost::scoped_ptr<planning_scene_monitor::LockedPlanningSceneRO> ls;
     ls.reset(new planning_scene_monitor::LockedPlanningSceneRO(planning_scene_monitor_));
     moveit::core::GroupStateValidityCallbackFn constraint_fn
       = boost::bind(&isStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
-                    collision_checking_verbose, visuals_, _1, _2, _3);
+                    collision_checking_verbose, only_check_self_collision, visuals_, _1, _2, _3);
 
     // -----------------------------------------------------------------------------------------------
     // Compute Cartesian Path
     path_length = robot_state->computeCartesianPath(arm_jmg,
                                                     robot_state_trajectory,
-                                                    ik_tip_link_model,
+                                                    ik_tip_link,
                                                     approach_direction,
                                                     true,           // direction is in global reference frame
                                                     desired_approach_distance,
                                                     max_step,
                                                     jump_threshold,
-                                                    ignore_collision ? NULL : constraint_fn // collision check
+                                                    constraint_fn // collision check
                                                     );
 
     ROS_DEBUG_STREAM_NAMED("manipulation","Cartesian resulting distance: " << path_length << " desired: " << desired_approach_distance
@@ -1087,7 +1160,7 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
       //   // Re-compute Cartesian Path
       //   path_length = robot_state->computeCartesianPath(arm_jmg,
       //                                                   robot_state_trajectory,
-      //                                                   ik_tip_link_model,
+      //                                                   ik_tip_link,
       //                                                   approach_direction,
       //                                                   true,           // direction is in global reference frame
       //                                                   desired_approach_distance,
@@ -1117,7 +1190,7 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
     }
   } // end while AND scoped pointer of locked planning scene
 
-  // Check if we never found a path
+    // Check if we never found a path
   if (attempts >= MAX_IK_ATTEMPTS)
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Never found a valid cartesian path, aborting");
@@ -1142,7 +1215,7 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
       std::cout << "Tip Pose Result: \n";
       for (std::size_t i = 0; i < robot_state_trajectory.size(); ++i)
       {
-        const Eigen::Affine3d tip_pose_start = robot_state_trajectory[i]->getGlobalLinkTransform(ik_tip_link_model);
+        const Eigen::Affine3d tip_pose_start = robot_state_trajectory[i]->getGlobalLinkTransform(ik_tip_link);
         std::cout << tip_pose_start.translation().x() << "\t" << tip_pose_start.translation().y() <<
           "\t" << tip_pose_start.translation().z() << std::endl;
       }
@@ -1151,13 +1224,13 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction,
     // Show actual trajectory in GREEN
     ROS_INFO_STREAM_NAMED("manipulation","Displaying cartesian trajectory in green");
     const Eigen::Affine3d& tip_pose_end =
-      robot_state_trajectory.back()->getGlobalLinkTransform(ik_tip_link_model);
+      robot_state_trajectory.back()->getGlobalLinkTransform(ik_tip_link);
     visuals_->visual_tools_->publishLine(tip_pose_start, tip_pose_end, rvt::LIME_GREEN, rvt::LARGE);
     visuals_->visual_tools_->publishSphere(tip_pose_end, rvt::ORANGE, rvt::LARGE);
 
     // Visualize end effector position of cartesian path
     ROS_INFO_STREAM_NAMED("manipulation","Visualize end effector position of cartesian path");
-    visuals_->visual_tools_->publishTrajectoryPoints(robot_state_trajectory, ik_tip_link_model);
+    visuals_->visual_tools_->publishTrajectoryPoints(robot_state_trajectory, ik_tip_link);
 
 
     // Show start and goal states of cartesian path
@@ -1683,7 +1756,7 @@ bool Manipulation::allowFingerTouch(const std::string& object_name, const robot_
     }
   } // end lock planning scene
 
-  // Debug current matrix
+    // Debug current matrix
   if (false)
   {
     moveit_msgs::AllowedCollisionMatrix msg;
@@ -2092,7 +2165,7 @@ bool Manipulation::getFilePath(std::string &file_path, const std::string &file_n
 
 namespace
 {
-bool isStateValid(const planning_scene::PlanningScene *planning_scene, bool verbose,
+bool isStateValid(const planning_scene::PlanningScene *planning_scene, bool verbose, bool only_check_self_collision,
                   picknik_main::VisualsPtr visuals, moveit::core::RobotState *robot_state,
                   const moveit::core::JointModelGroup *group, const double *ik_solution)
 {
@@ -2104,8 +2177,20 @@ bool isStateValid(const planning_scene::PlanningScene *planning_scene, bool verb
     ROS_ERROR_STREAM_NAMED("manipulation","No planning scene provided");
     return false;
   }
-  if (!planning_scene->isStateColliding(*robot_state, group->getName()))
-    return true; // not in collision
+  if (only_check_self_collision)
+  {
+    // No easy API exists for only checking self-collision, so we do it here. TODO: move this big into planning_scene.cpp
+    collision_detection::CollisionRequest req;
+    req.verbose = false;
+    req.group_name = group->getName();
+    collision_detection::CollisionResult  res;
+    planning_scene->checkSelfCollision(req, res, *robot_state);
+    if (!res.collision)
+      return true; // not in collision
+  }
+  else
+    if (!planning_scene->isStateColliding(*robot_state, group->getName()))
+      return true; // not in collision
 
   // Display more info about the collision
   if (verbose)

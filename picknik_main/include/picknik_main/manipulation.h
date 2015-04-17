@@ -184,6 +184,8 @@ bool plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotSta
    */
   bool executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true,
                            bool ignore_collision = false);
+  bool executeVerticlePathOLD(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true,
+                           bool ignore_collision = false);
 
   /**
    * \brief Translate arm left and right
@@ -478,7 +480,7 @@ protected:
 
 namespace
 {
-bool isStateValid(const planning_scene::PlanningScene *planning_scene, bool verbose,
+bool isStateValid(const planning_scene::PlanningScene *planning_scene, bool verbose, bool only_check_self_collision,
                   picknik_main::VisualsPtr visuals, robot_state::RobotState *state,
                   const robot_state::JointModelGroup *group, const double *ik_solution);
 }

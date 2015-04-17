@@ -448,8 +448,8 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
       case 9: manipulation_->statusPublisher("Lifting product UP slightly");
 
         // DEBUG temp
-        remote_control_->setAutonomous(false);
-        remote_control_->setFullAutonomous(false);
+        // remote_control_->setAutonomous(false);
+        // remote_control_->setFullAutonomous(false);
 
         // Set planning scene
         //planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );

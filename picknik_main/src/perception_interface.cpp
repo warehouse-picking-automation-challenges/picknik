@@ -264,11 +264,7 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     const picknik_msgs::FoundObject& found_object = result->found_objects[i];
 
     // Get object's transform
-    Eigen::Affine3d camera_to_object_cv_frame = visuals_->visual_tools_->convertPose(found_object.object_pose);
-
-    // Convert coordinate systems
-    Eigen::Affine3d camera_to_object;
-    convertFrameCVToROS(camera_to_object_cv_frame, camera_to_object);
+    Eigen::Affine3d camera_to_object = visuals_->visual_tools_->convertPose(found_object.object_pose);
 
     // Convert to world frame
     const Eigen::Affine3d world_to_object = world_to_camera * camera_to_object;
@@ -282,7 +278,6 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     std::cout << "object_name:     " << found_object.object_name << std::endl;
     //std::cout << "expected_object_confidence: " << found_object.expected_object_confidence << std::endl;
     std::cout << "has mesh:        " << ((found_object.bounding_mesh.triangles.empty() || found_object.bounding_mesh.vertices.empty()) ? "NO" : "YES") << std::endl;
-    std::cout << "cv frame:        "; printTransform(camera_to_object_cv_frame);
     std::cout << "ros frame:       "; printTransform(camera_to_object);
     std::cout << "world_to_object: "; printTransform(world_to_object);
     std::cout << "bin_to_object:   "; printTransform(bin_to_object);
@@ -397,17 +392,6 @@ bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera)
 
 
   // visuals_->visual_tools_->publishWireframeRectangle(camera_view_finder, height, width, rvt::PINK, rvt::SMALL);
-  return true;
-}
-
-bool PerceptionInterface::convertFrameCVToROS(const Eigen::Affine3d& cv_frame, Eigen::Affine3d& ros_frame)
-{
-  Eigen::Matrix3d rotation;
-  rotation = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
-    * Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitZ());
-  //std::cout << "Rotation: " << rotation << std::endl;
-  ros_frame = rotation * cv_frame;
-
   return true;
 }
 
