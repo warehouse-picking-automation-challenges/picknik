@@ -53,10 +53,10 @@
 
     "work_order":
     [
-	// {
-	//     "bin": "bin_A",
-	//     "item": "crayola_64_ct"
-	// },
+	{
+	    "bin": "bin_A",
+	    "item": "crayola_64_ct"
+	},
 	{
 	    "bin": "bin_B",
 	    "item": "crayola_64_ct"

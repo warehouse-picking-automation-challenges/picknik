@@ -41,7 +41,6 @@ int main(int argc, char** argv)
   bool verbose = false;
   bool use_experience = true;
   bool fake_execution = true;
-  bool show_database = false;
   bool autonomous = false;
   bool full_autonomous = false;
   std::string order_file;
@@ -101,13 +100,6 @@ int main(int argc, char** argv)
       continue;
     }
 
-    if( std::string(argv[i]).compare("--show_database") == 0 )
-    {
-      ++i;
-      show_database = atoi(argv[i]);
-      ROS_DEBUG_STREAM_NAMED("main","Showing database: " << show_database);
-      continue;
-    }
     if( std::string(argv[i]).compare("--mode") == 0 )
     {
       ++i;
@@ -151,7 +143,7 @@ int main(int argc, char** argv)
     return 1; // error
   }
 
-  picknik_main::APCManager manager(verbose, order_file, use_experience, show_database, autonomous, full_autonomous);
+  picknik_main::APCManager manager(verbose, order_file, use_experience, autonomous, full_autonomous);
 
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
@@ -254,6 +246,10 @@ int main(int argc, char** argv)
     case 20:
       ROS_INFO_STREAM_NAMED("main","Going in and out of bin");
       manager.testInAndOut();
+      break;
+    case 21:
+      ROS_INFO_STREAM_NAMED("main","Show experience database");
+      manager.displayExperienceDatabase();
       break;
 
     default:

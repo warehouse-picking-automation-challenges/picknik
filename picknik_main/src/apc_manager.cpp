@@ -29,8 +29,7 @@
 namespace picknik_main
 {
 
-APCManager::APCManager(bool verbose, std::string order_file_path, bool use_experience, bool show_database, bool autonomous,
-                       bool full_autonomous)
+APCManager::APCManager(bool verbose, std::string order_file_path, bool use_experience, bool autonomous, bool full_autonomous)                       
   : nh_private_("~")
   , verbose_(verbose)
   , fake_perception_(false)
@@ -92,7 +91,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
 
   // Create manipulation manager
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
-                                       remote_control_, package_path_, shelf_, use_experience, show_database));
+                                       remote_control_, package_path_, shelf_, use_experience));
 
   // Load perception layer
   perception_interface_.reset(new PerceptionInterface(verbose_, visuals_, shelf_, config_, tf_, nh_private_));
@@ -1618,6 +1617,14 @@ bool APCManager::attachProduct(ProductObjectPtr product, const robot_model::Join
   }
 
   return true;
+}
+
+bool APCManager::displayExperienceDatabase()
+{
+  // Choose which planning group to use
+  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+
+  return manipulation_->displayLightningPlansStandAlone(arm_jmg);
 }
 
 

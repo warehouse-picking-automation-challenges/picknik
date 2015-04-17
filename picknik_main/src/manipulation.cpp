@@ -40,10 +40,10 @@ namespace picknik_main
 {
 
 Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
-                           planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                           ManipulationDataPtr config, moveit_grasps::GraspDatas grasp_datas,
-                           RemoteControlPtr remote_control, const std::string& package_path,
-                           ShelfObjectPtr shelf, bool use_experience, bool show_database)
+                             planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
+                             ManipulationDataPtr config, moveit_grasps::GraspDatas grasp_datas,
+                             RemoteControlPtr remote_control, const std::string& package_path,
+                             ShelfObjectPtr shelf, bool use_experience)
   : nh_("~")
   , verbose_(verbose)
   , visuals_(visuals)
@@ -54,164 +54,163 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   , package_path_(package_path)
   , shelf_(shelf)
   , use_experience_(use_experience)
-  , show_database_(show_database)
   , use_logging_(true)
 {
 
-  // Create initial robot state
+// Create initial robot state
   {
-    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
-    current_state_.reset(new moveit::core::RobotState(scene->getCurrentState()));
-  } // end scoped pointer of locked planning scene
+planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
+current_state_.reset(new moveit::core::RobotState(scene->getCurrentState()));
+} // end scoped pointer of locked planning scene
 
-  visuals_->visual_tools_->getSharedRobotState() = current_state_; // allow visual_tools to have the correct virtual joint
-  robot_model_ = current_state_->getRobotModel();
+visuals_->visual_tools_->getSharedRobotState() = current_state_; // allow visual_tools to have the correct virtual joint
+robot_model_ = current_state_->getRobotModel();
 
-  // Decide where to publish text
-  status_position_ = shelf_->getBottomRight();
-  bool show_text_for_video = false;
-  if (show_text_for_video)
-  {
-    status_position_.translation().x() = 0.25;
-    status_position_.translation().y() += 1.4;
-    status_position_.translation().z() += shelf_->getHeight() * 0.75;
-  }
-  else
-  {
-    status_position_.translation().x() = 0.25;
-    status_position_.translation().y() += shelf_->getWidth() * 0.5;
-    status_position_.translation().z() += shelf_->getHeight() * 1.1;
-  }
-  order_position_ = status_position_;
-  order_position_.translation().z() += 0.2;
+// Decide where to publish text
+status_position_ = shelf_->getBottomRight();
+bool show_text_for_video = false;
+if (show_text_for_video)
+ {
+status_position_.translation().x() = 0.25;
+status_position_.translation().y() += 1.4;
+status_position_.translation().z() += shelf_->getHeight() * 0.75;
+}
+ else
+ {
+status_position_.translation().x() = 0.25;
+status_position_.translation().y() += shelf_->getWidth() * 0.5;
+status_position_.translation().z() += shelf_->getHeight() * 1.1;
+}
+order_position_ = status_position_;
+order_position_.translation().z() += 0.2;
 
 
-  // Load logging capability
-  if (use_logging_ && use_experience)
-  {
-    /*    if (use_thunder_ && use_experience)
-          logging_file_.open("/home/dave/ompl_storage/thunder_whole_body_logging.csv", std::ios::out | std::ios::app);
-          else if (use_thunder_ && !use_experience)
-          logging_file_.open("/home/dave/ompl_storage/scratch_whole_body_logging.csv", std::ios::out | std::ios::app);
-          else*/
-    logging_file_.open("/home/dave/ompl_storage/lightning_whole_body_logging.csv", std::ios::out | std::ios::app);
-  }
+// Load logging capability
+if (use_logging_ && use_experience)
+ {
+/*    if (use_thunder_ && use_experience)
+      logging_file_.open("/home/dave/ompl_storage/thunder_whole_body_logging.csv", std::ios::out | std::ios::app);
+      else if (use_thunder_ && !use_experience)
+      logging_file_.open("/home/dave/ompl_storage/scratch_whole_body_logging.csv", std::ios::out | std::ios::app);
+      else*/
+logging_file_.open("/home/dave/ompl_storage/lightning_whole_body_logging.csv", std::ios::out | std::ios::app);
+}
 
-  // Load grasp generator
-  grasp_generator_.reset( new moveit_grasps::GraspGenerator(visuals_->start_state_) );
-  getCurrentState();
-  setStateWithOpenEE(true, current_state_); // so that grasp filter is started up with EE open
-  grasp_filter_.reset(new moveit_grasps::GraspFilter(current_state_, visuals_->start_state_) );
+// Load grasp generator
+grasp_generator_.reset( new moveit_grasps::GraspGenerator(visuals_->start_state_) );
+getCurrentState();
+setStateWithOpenEE(true, current_state_); // so that grasp filter is started up with EE open
+grasp_filter_.reset(new moveit_grasps::GraspFilter(current_state_, visuals_->start_state_) );
 
-  // Load execution interface
-  execution_interface_.reset( new ExecutionInterface(verbose_, remote_control_, visuals_, grasp_datas_, planning_scene_monitor_,
+// Load execution interface
+execution_interface_.reset( new ExecutionInterface(verbose_, remote_control_, visuals_, grasp_datas_, planning_scene_monitor_,
                                                      config_, package_path_, current_state_) );
 
-  // Done
-  ROS_INFO_STREAM_NAMED("manipulation","Manipulation Ready.");
+// Done
+ROS_INFO_STREAM_NAMED("manipulation","Manipulation Ready.");
 }
 
-bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointModelGroup* arm_jmg,
-                               moveit_grasps::GraspCandidatePtr& chosen, bool verbose)
-{
-  BinObjectPtr& bin = work_order.bin_;
-  ProductObjectPtr& product = work_order.product_;
-
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","chooseGrasp()");
-
-  Eigen::Affine3d world_to_product = product->getWorldPose(shelf_, bin);
-
-  if (verbose)
+  bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointModelGroup* arm_jmg,
+                                   moveit_grasps::GraspCandidatePtr& chosen, bool verbose)
   {
-    visuals_->visual_tools_->publishAxis(world_to_product);
-    visuals_->visual_tools_->publishText(world_to_product, "object_pose", rvt::BLACK, rvt::SMALL, false);
-  }
+BinObjectPtr& bin = work_order.bin_;
+ProductObjectPtr& product = work_order.product_;
 
-  if (verbose && false)
-  {
-    std::cout << std::endl;
-    std::cout << "-------------------------------------------------------" << std::endl;
+ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","chooseGrasp()");
 
-    std::cout << "Before getBoundingingBoxFromMesh(): " << std::endl;
-    std::cout << "  Cuboid Pose: "; printTransform(product->getCentroid());
-    std::cout << "  Height: " << product->getHeight() << std::endl;
-    std::cout << "  Depth: " << product->getDepth() << std::endl;
-    std::cout << "  Width: " << product->getWidth() << std::endl;
-  }
+Eigen::Affine3d world_to_product = product->getWorldPose(shelf_, bin);
 
-  // Get bounding box
-  Eigen::Affine3d cuboid_pose;
-  double depth, width, height;
-  if (!grasp_generator_->getBoundingBoxFromMesh(product->getCollisionMesh(), cuboid_pose, depth, width, height))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Failed to get bounding box");
-    return false;
-  }
-  product->setDepth(depth);
-  product->setWidth(width);
-  product->setHeight(height);
-
-  if (verbose && false)
-  {
-    std::cout << "After getBoundingingBoxFromMesh(): " << std::endl;
-    std::cout << "  Cuboid Pose: "; printTransform(product->getCentroid());
-    std::cout << "  Height: " << product->getHeight() << std::endl;
-    std::cout << "  Depth: " << product->getDepth() << std::endl;
-    std::cout << "  Width: " << product->getWidth() << std::endl;
-    std::cout << "-------------------------------------------------------" << std::endl;
-  }
-
-  // Visualize
-  product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()));
-
-  // Generate all possible grasps
-  std::vector<moveit_msgs::Grasp> possible_grasps;
-
-  double max_grasp_size = 0.10; // TODO: verify max object size Open Hand can grasp
-  grasp_generator_->generateGrasps( world_to_product, product->getDepth(), product->getWidth(), product->getHeight(),
-                                    max_grasp_size, grasp_datas_[arm_jmg], possible_grasps);
-
-  // Convert to the correct type for filtering
-  std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates;
-  grasp_candidates = grasp_filter_->convertToGraspCandidatePtrs(possible_grasps,grasp_datas_[arm_jmg]);
-
-  // add grasp filters
-  grasp_filter_->clearCuttingPlanes();
-  grasp_filter_->clearDesiredGraspOrientations();
-
-  Eigen::Affine3d cutting_pose = shelf_->getBottomRight() * bin->getBottomRight();
-  visuals_->visual_tools_->publishAxis(cutting_pose, 0.2);
-  // Bottom of bin
-  grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XY, -1);
-  // Right wall of bin
-  grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XZ, -1);
-
-  cutting_pose.translation() += Eigen::Vector3d(0, bin->getWidth(), bin->getHeight());
-  // Top of bin
-  grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XY, 1);
-  // Left wall of bin
-  grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XZ, 1);
-
-  // Filter grasps based on IK
-  bool filter_pregrasps = true;
-  bool verbose_if_failed = false;
-  bool grasp_verbose = false;
-  if (!grasp_filter_->filterGrasps(grasp_candidates, planning_scene_monitor_, arm_jmg, filter_pregrasps, grasp_verbose,
-                                   verbose_if_failed))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Unable to filter grasps");
-    return false;
-  }
-
-  // Choose grasp
-  if (!grasp_filter_->chooseBestGrasp(grasp_candidates, chosen))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","No best grasp found");
-    return false;
-  }
-
-  return true;
+if (verbose)
+ {
+visuals_->visual_tools_->publishAxis(world_to_product);
+visuals_->visual_tools_->publishText(world_to_product, "object_pose", rvt::BLACK, rvt::SMALL, false);
 }
+
+if (verbose && false)
+ {
+std::cout << std::endl;
+std::cout << "-------------------------------------------------------" << std::endl;
+
+std::cout << "Before getBoundingingBoxFromMesh(): " << std::endl;
+std::cout << "  Cuboid Pose: "; printTransform(product->getCentroid());
+std::cout << "  Height: " << product->getHeight() << std::endl;
+std::cout << "  Depth: " << product->getDepth() << std::endl;
+std::cout << "  Width: " << product->getWidth() << std::endl;
+ }
+
+// Get bounding box
+ Eigen::Affine3d cuboid_pose;
+ double depth, width, height;
+ if (!grasp_generator_->getBoundingBoxFromMesh(product->getCollisionMesh(), cuboid_pose, depth, width, height))
+ {
+   ROS_ERROR_STREAM_NAMED("manipulation","Failed to get bounding box");
+   return false;
+ }
+ product->setDepth(depth);
+ product->setWidth(width);
+ product->setHeight(height);
+
+ if (verbose && false)
+ {
+   std::cout << "After getBoundingingBoxFromMesh(): " << std::endl;
+   std::cout << "  Cuboid Pose: "; printTransform(product->getCentroid());
+   std::cout << "  Height: " << product->getHeight() << std::endl;
+   std::cout << "  Depth: " << product->getDepth() << std::endl;
+   std::cout << "  Width: " << product->getWidth() << std::endl;
+   std::cout << "-------------------------------------------------------" << std::endl;
+ }
+
+ // Visualize
+ product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()));
+
+ // Generate all possible grasps
+ std::vector<moveit_msgs::Grasp> possible_grasps;
+
+ double max_grasp_size = 0.10; // TODO: verify max object size Open Hand can grasp
+ grasp_generator_->generateGrasps( world_to_product, product->getDepth(), product->getWidth(), product->getHeight(),
+                                   max_grasp_size, grasp_datas_[arm_jmg], possible_grasps);
+
+ // Convert to the correct type for filtering
+ std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates;
+ grasp_candidates = grasp_filter_->convertToGraspCandidatePtrs(possible_grasps,grasp_datas_[arm_jmg]);
+
+ // add grasp filters
+ grasp_filter_->clearCuttingPlanes();
+ grasp_filter_->clearDesiredGraspOrientations();
+
+ Eigen::Affine3d cutting_pose = shelf_->getBottomRight() * bin->getBottomRight();
+ visuals_->visual_tools_->publishAxis(cutting_pose, 0.2);
+ // Bottom of bin
+ grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XY, -1);
+ // Right wall of bin
+ grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XZ, -1);
+
+ cutting_pose.translation() += Eigen::Vector3d(0, bin->getWidth(), bin->getHeight());
+ // Top of bin
+ grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XY, 1);
+ // Left wall of bin
+ grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XZ, 1);
+
+ // Filter grasps based on IK
+ bool filter_pregrasps = true;
+ bool verbose_if_failed = false;
+ bool grasp_verbose = false;
+ if (!grasp_filter_->filterGrasps(grasp_candidates, planning_scene_monitor_, arm_jmg, filter_pregrasps, grasp_verbose,
+                                  verbose_if_failed))
+ {
+   ROS_ERROR_STREAM_NAMED("manipulation","Unable to filter grasps");
+   return false;
+ }
+
+ // Choose grasp
+ if (!grasp_filter_->chooseBestGrasp(grasp_candidates, chosen))
+ {
+   ROS_ERROR_STREAM_NAMED("manipulation","No best grasp found");
+   return false;
+ }
+
+ return true;
+  }
 
 bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
                                               double velocity_scaling_factor)
@@ -612,7 +611,7 @@ bool Manipulation::plan(const moveit::core::RobotStatePtr& start, const moveit::
   planning_interface::PlanningContextPtr planning_context_handle;
 
   // SOLVE
-  loadPlanningPipeline(); // always call before using generatePlan()
+  loadPlanningPipeline(); // always call before using planning_pipeline_
   planning_scene::PlanningScenePtr cloned_scene;
   {
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
@@ -655,13 +654,6 @@ bool Manipulation::plan(const moveit::core::RobotStatePtr& start, const moveit::
     // Save database
     ROS_INFO_STREAM_NAMED("manipulation","Saving experience db...");
     experience_setup->saveIfChanged();
-
-    // Show the database
-    if (show_database_)
-    {
-      ROS_ERROR_STREAM_NAMED("manipulation","Showing database...");
-      displayLightningPlans(experience_setup, arm_jmg);
-    }
   }
 
   return !error;
@@ -861,7 +853,6 @@ bool Manipulation::generateApproachPath(moveit_grasps::GraspCandidatePtr chosen,
 
   // Visualize trajectory in Rviz display
   bool wait_for_trajetory = false;
-  ROS_WARN_STREAM_NAMED("manipulation","Enable publishTrajectoryPath in gen approach path");
   //visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, current_state_, wait_for_trajetory);
 
   // Set the pregrasp to be the first state in the trajectory. Copy value, not pointer
@@ -1098,7 +1089,7 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction, 
   // Jump threshold for preventing consequtive joint values from 'jumping' by a large amount in joint space
   double jump_threshold = config_->jump_threshold_; // aka jump factor
 
-  bool collision_checking_verbose = true;
+  bool collision_checking_verbose = false;
 
   // Check for kinematic solver
   if( !arm_jmg->canSetStateFromIK( ik_tip_link->getName() ) )
@@ -1173,9 +1164,6 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d approach_direction, 
     else if ( path_length < desired_approach_distance * 0.5 )
     {
       ROS_WARN_STREAM_NAMED("manipulation","Resuling cartesian path distance is less than half the desired distance");
-
-      if (attempts == 1)
-        ROS_WARN_STREAM_NAMED("manipulation","NOTE: WE GOT IK ON THE FIRST TRY");
 
       break;
     }
@@ -1570,7 +1558,7 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   // Open hand to ensure we aren't holding anything anymore
   if (!openEndEffectors(true))
   {
-    ROS_WARN_STREAM_NAMED("apc_manager","Unable to open end effectors");
+    ROS_WARN_STREAM_NAMED("manipulation","Unable to open end effectors");
     //return false;
   }
 
@@ -1809,7 +1797,52 @@ bool Manipulation::statesEqual(const moveit::core::RobotState &s1, const moveit:
   return true;
 }
 
-void Manipulation::displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup,
+bool Manipulation::displayLightningPlansStandAlone(const robot_model::JointModelGroup* arm_jmg)
+{
+  // Get manager
+  loadPlanningPipeline(); // always call before using planning_pipeline_
+  const planning_interface::PlannerManagerPtr planner_manager = planning_pipeline_->getPlannerManager();
+
+  // Create dummy request
+  planning_interface::MotionPlanRequest req;
+  moveit::core::robotStateToRobotStateMsg(*current_state_, req.start_state);
+  req.planner_id = "RRTConnectkConfigDefault";
+  req.group_name = arm_jmg->getName();
+  req.num_planning_attempts = 1; // this must be one else it threads and doesn't use lightning/thunder correctly
+  req.allowed_planning_time = 30; // seconds
+  req.use_experience = true;
+  req.experience_method = "lightning";
+  double workspace_size = 1;
+  req.workspace_parameters.header.frame_id = robot_model_->getModelFrame();
+  req.workspace_parameters.min_corner.x = current_state_->getVariablePosition("virtual_joint/trans_x") - workspace_size;
+  req.workspace_parameters.min_corner.y = current_state_->getVariablePosition("virtual_joint/trans_y") - workspace_size;
+  req.workspace_parameters.min_corner.z = 0; //floor current_state_->getVariablePosition("virtual_joint/trans_z") - workspace_size;
+  req.workspace_parameters.max_corner.x = current_state_->getVariablePosition("virtual_joint/trans_x") + workspace_size;
+  req.workspace_parameters.max_corner.y = current_state_->getVariablePosition("virtual_joint/trans_y") + workspace_size;
+  req.workspace_parameters.max_corner.z = current_state_->getVariablePosition("virtual_joint/trans_z") + workspace_size;
+  double tolerance_pose = 0.0001;
+  moveit_msgs::Constraints goal_constraint = kinematic_constraints::constructGoalConstraints(*current_state_, arm_jmg,
+                                                                                             tolerance_pose, tolerance_pose);
+  req.goal_constraints.push_back(goal_constraint);
+
+  // Get context
+  moveit_msgs::MoveItErrorCodes error_code;
+  planning_interface::PlanningContextPtr planning_context_handle
+    = planner_manager->getPlanningContext(planning_scene_monitor_->getPlanningScene(), req, error_code);
+
+  // Convert to model based planning context
+  moveit_ompl::ModelBasedPlanningContextPtr mbpc
+    = boost::dynamic_pointer_cast<moveit_ompl::ModelBasedPlanningContext>(planning_context_handle);
+
+  // Get experience setup
+  ompl::tools::ExperienceSetupPtr experience_setup
+    = boost::dynamic_pointer_cast<ompl::tools::ExperienceSetup>(mbpc->getOMPLSimpleSetup());
+
+  // Display database
+  return displayLightningPlans(experience_setup, arm_jmg);
+}
+
+bool Manipulation::displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup,
                                          const robot_model::JointModelGroup* arm_jmg)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","displayLightningPlans()");
@@ -1835,7 +1868,7 @@ void Manipulation::displayLightningPlans(ompl::tools::ExperienceSetupPtr experie
   {
     ompl_visual_tools_.reset(new ovt::OmplVisualTools(robot_model_->getModelFrame(),
                                                       "/ompl_experience_database", planning_scene_monitor_));
-    ompl_visual_tools_->loadRobotStatePub("/picknik_amazon");
+    ompl_visual_tools_->loadRobotStatePub("/picknik_main/robot_state");
   }
   ompl_visual_tools_->deleteAllMarkers(); // clear all old markers
   ompl_visual_tools_->setStateSpace(model_state_space);
@@ -1843,17 +1876,18 @@ void Manipulation::displayLightningPlans(ompl::tools::ExperienceSetupPtr experie
   // Get tip links for this setup
   std::vector<const robot_model::LinkModel*> tips;
   arm_jmg->getEndEffectorTips(tips);
-  ROS_INFO_STREAM_NAMED("manipulation","Found " << tips.size() << " tips");
+  //ROS_INFO_STREAM_NAMED("manipulation","Found " << tips.size() << " tips");
 
   bool show_trajectory_animated = false;//verbose_;
 
   // Loop through each path
   for (std::size_t path_id = 0; path_id < paths.size(); ++path_id)
   {
-    std::cout << "Processing path " << path_id << std::endl;
+    //std::cout << "Processing path " << path_id << std::endl;
     ompl_visual_tools_->publishRobotPath(paths[path_id], arm_jmg, tips, show_trajectory_animated);
   }
 
+  return true;
 }
 
 bool Manipulation::visualizeGrasps(std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates,
@@ -1897,8 +1931,7 @@ bool Manipulation::visualizeGrasps(std::vector<moveit_grasps::GraspCandidatePtr>
 
       bool blocking = false;
       double speed = 0.01;
-      ROS_WARN_STREAM_NAMED("manipulation","Enable publishTrajectoryPath here");
-      // visuals_->visual_tools_->publishTrajectoryPath(robot_state_trajectory, arm_jmg, speed, blocking);
+      visuals_->visual_tools_->publishTrajectoryPath(robot_state_trajectory, arm_jmg, speed, blocking);
     }
     std::cout << "grasp_candidates[i]->grasp_.grasp_pose: " << grasp_candidates[i]->grasp_.grasp_pose << std::endl;
     visuals_->visual_tools_->publishZArrow(grasp_candidates[i]->grasp_.grasp_pose, rvt::RED);

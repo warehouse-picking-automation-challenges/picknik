@@ -239,6 +239,7 @@ Button Mapings
 		19. Train experience database mode / workspace analysis
 
         20. GO in and out of bin
+		21. Show experience database
 		
 	jump_to - which step in the manipulation pipeline to start on
 	  Steps: NOT CORRECT ANYMORE
@@ -262,7 +263,6 @@ Button Mapings
 	num_orders -how many products to pick from the order, 0 = all
 	use_experience - whether to use cached planned (Lightning Database) or not
 	saving_enabled - allow new plans to be saved to experience database
-	show_database - whether to pause between motion plans and show all the saved paths (debug)
 	debug - slower and more verbose
 
 ## Working Tests

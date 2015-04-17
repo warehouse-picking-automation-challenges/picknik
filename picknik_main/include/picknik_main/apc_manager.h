@@ -56,12 +56,10 @@ public:
    * \param verbose - run in debug mode
    * \param order_file_path
    * \param Use an experience database in planning
-   * \param Show the experience database after each plan
    * \param autonomous - whether it should pause for human input, except executing trajectories which is always manual
    * \param full_autonomous - whether it should pause for human input
    */
-  APCManager(bool verbose, std::string order_file_path, bool use_experience, bool show_database, bool autonomous = false,
-             bool full_autonomous = false);
+  APCManager(bool verbose, std::string order_file_path, bool use_experience, bool autonomous = false, bool full_autonomous = false);             
 
   /**
    * \brief Check if all communication is properly active
@@ -300,6 +298,12 @@ public:
    * \return true on success
    */
   bool attachProduct(ProductObjectPtr product, const robot_model::JointModelGroup* arm_jmg);
+
+  /**
+   * \brief Show experience database
+   * \return true on success
+   */
+  bool displayExperienceDatabase();
 
 private:
 

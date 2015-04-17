@@ -68,7 +68,7 @@ Manipulation(bool verbose, VisualsPtr visuals,
                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                ManipulationDataPtr config, moveit_grasps::GraspDatas grasp_datas,
                RemoteControlPtr remote_control, const std::string& package_path,
-               ShelfObjectPtr shelf, bool use_experience, bool show_database);
+             ShelfObjectPtr shelf, bool use_experience);
 
 /**
  * \brief Destructor
@@ -350,11 +350,18 @@ bool plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotSta
   bool statesEqual(const moveit::core::RobotState &s1, const moveit::core::RobotState &s2, const robot_model::JointModelGroup* arm_jmg);
 
   /**
+   * \brief Show the trajectories saved in the experience database, handles loading expeirence setup without needing to first plan
+   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \return true on success
+   */
+  bool displayLightningPlansStandAlone(const robot_model::JointModelGroup* arm_jmg);
+
+  /**
    * \brief Show the trajectories saved in the experience database
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  void displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup, const robot_model::JointModelGroup* arm_jmg);
+  bool displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup, const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Visulization function
@@ -458,7 +465,6 @@ protected:
 
   // Experience-based planning
   bool use_experience_;
-  bool show_database_;
   bool use_logging_;
   std::ofstream logging_file_;
 
