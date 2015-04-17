@@ -9,7 +9,7 @@
 
 # Installation Instructions
 
-The installation instructions were to long, and have been moved to [Installation Instructions](INSTALL.md)
+The installation instructions were to long, and have been moved to INSTALL.md (no link provided because of BitBucket bug that does not allow you to go to latest version of the file)
     
 ## Architecture
 
