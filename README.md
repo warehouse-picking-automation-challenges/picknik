@@ -41,7 +41,7 @@ Also, to reduce debug output, add to your bashrc:
 
 ## Install dependencies for node:
 
-NOTE: WE NO LONGER NEED NODE
+NOTE: WE NO LONGER NEED NODE. CAN WE REMOVE THIS??
 
    1, install zmq
    
@@ -224,20 +224,6 @@ Its help documentation:
 
     optional arguments:
       -h, --help       show this help message and exit
-
-### Start Yale Controller
-
-If needed.
-
-    roslaunch open_hand_controller controller_manager.launch
-
-Check for correct USB
-
-    ls /dev/ttyUSB*
-
-Check to make sure you have ``dialout`` group
-
-    sudo adduser second_user dialout
 
 ## Start Realsense Camera
 
