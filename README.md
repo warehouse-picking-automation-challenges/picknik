@@ -37,12 +37,32 @@ Also, to reduce debug output, add to your bashrc:
     export ROSCONSOLE_CONFIG_FILE=~/ws_picknik/src/picknik/rosconsole.yaml
     export ROSCONSOLE_FORMAT='${severity} ${logger}: ${message}'
 
-## Install Perception Pipeline
+## Install Lu Ma's Perception Pipeline
+## Tested in MacOSX 10.09, 10.10, Ubuntu 14.04, Cuda 6.0, Cuda 6.5, Cuda 7.0
+If use CUDA 6.0, 6.5, please use gcc-46 as the cuda host compiler.
 
-## Install dependencies for node:
+### Install CUDA and NVIDIA Driver. Make sure your cuda driver works correctlly by runing any of the cuda example demo:
 
-NOTE: WE NO LONGER NEED NODE. CAN WE REMOVE THIS??
+### Install dependencies:
+ 1, install protobuf
+     download:  https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gzinstall 
+       
+       run ./configure
+       make -j3
+       sudo make install all
 
+       By default, the upper command will install the lib to /usr/local/lib/proto*, make sure all the protobuf libraries files is in /usr/lib/proto*. so you probability need to do
+	   cp /usr/local/lib/proto* /usr/lib/
+ 2, install google ceres solver:
+    sudo apt-get install libceres-dev 
+    
+ 3, install google log and google flags:
+    sudo apt-get install libgoogle-glog-dev
+    sudo apt-get install libgflags-dev 
+  
+ 4, also make sure you have opencv, boost  
+
+### Install dependencies for node (optional, not require):
    1, install zmq
    
        sudo apt-get install libzmq3-dev
@@ -54,8 +74,9 @@ NOTE: WE NO LONGER NEED NODE. CAN WE REMOVE THIS??
    3, add cpp binders for zmq
    
        git clone git@github.com:zeromq/zmqpp.git
-
-   4, install protobuf
+ 
+### Install and Configure CoreDev
+   1, git clone git@github.com:arpg/CoreDev.git
    
        https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gzinstall 
        run ./configure
@@ -66,22 +87,25 @@ By default, the upper command will install the lib to `/usr/local/lib/proto*`, m
 	   `cp /usr/local/lib/proto* /usr/lib/`
 
 Configurations
+=======
+   2, mkdir build
+   
+   3, cd build
 
-   1, disable pangolin_video
+   4, disable pangolin_video by doing:
 	
        ccmake .
        set BUILD_PANGOLIN_GUI to OFF
-	   
-   2, go to the CMakeList.txt file under HAL/Applications comment out everything expect for SensorViewer
+       
+   4.5 also make sure realsense is OFF by now.    
 
-Compile:
+   5, go to the CMakeList.txt file under HAL/Applications, comment out everything expect for the SensorViewer:
 
-   now you should be able to compile CoreDev by:
-   
-	cmake .
-    make
+      now you should be able to compile CoreDev by:
+      cmake .
+      make -j4
 	
-### Install kangaroo:
+### Install kangaroo (for SDF fusion, ray casting):
 
     git clone git@github.com:arpg/Kangaroo.git
 	cd kangaroo
@@ -92,9 +116,8 @@ Compile:
 	
 Notice: you may have some errors when building the examples, this is because we disabled the pangolin::video function before. just ignore it by now.
 
-### Install wallaby:
-
-	install cudpp
+### Install wallaby (for grid sdf fusion and voxel hashing):
+	1, install cudpp (optional, if you need voxel hashing)
 	git clone git@github.com:cudpp/cudpp.git
 	git submodule init
 	git submodule update
@@ -111,23 +134,31 @@ Notice: you may have some errors when building the examples, this is because we 
 	sudo chown -R robot cudpp_config.h
 	sudo chown -R robot cudpp_hash.h
 
-	install libglm
+	2, install libglm (required)
 	sudo apt-get install libglm-dev
 
-	compile wallaby
+	3, compile wallaby 
 	cd/wallaby
 	mkdir build
 	cmake ..
 	make -j4
 
 ### Install DDTR
-
 	git init submodule
 	git update submodule
 	mkdir build
 	cd build
 	cmake ..
 	make -j4
+
+
+## Applications:
+  ### RGFusion: 
+    A Rolling Grid Implementation of the kinect fusion. Support any source of the input images including stereo, RGBD. 
+    
+  ### Amazon:
+    A perception software for Amazon Picking Challenge. 
+ 
 
 ### Install Camera
 
