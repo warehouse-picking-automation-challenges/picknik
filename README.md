@@ -13,7 +13,7 @@ The installation instructions were to long, and have been moved to [Installation
     
 ## Architecture
 
-![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/3f6788816ad7733051493f55f142655b2702adb1/picknik_main/docs/apc_picknik_pipeline.png?token=ef4e18838e57f4cb97be4ecff9691b3740dd8a8e)
+![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/2d87e203d681d303616f7a8abbdff190b20d33c6/picknik_main/docs/apc_picknik_pipeline.png?token=e5bb167125b3e41ad534c539614c37974db3cc31)
 
 ## Run
 
