@@ -217,16 +217,17 @@ Button Mapings
     mode - what program to run inside the apc_manager, defaults to 1
 	  Available Modes:
 	    1. Actual APC contest mode
+		
 		2. GO home
 		3. GO goal bin
 		4. GO each bin location and request ObjectRecognitionServer
 		5. GO up and down with arms
 		6. GO to random valid locations
 		7. GO to verify shelf locaiton
-		8. Open close end effectors
+		8. Open and close end effector(s)
 		
-		9. Playback calibration trajectory
-		10. Record a calibration trajectory
+		9. Record a calibration trajectory
+		10. Playback calibration trajectory				
 		11. Record a bin observing trajectory
 		12. Playback bin observing trajectory (perceive)
 
@@ -240,6 +241,7 @@ Button Mapings
 
         20. GO in and out of bin
 		21. Show experience database
+		22. Test approach, lift, and retreat motion for random objects
 		
 	jump_to - which step in the manipulation pipeline to start on
 	  Steps: NOT CORRECT ANYMORE

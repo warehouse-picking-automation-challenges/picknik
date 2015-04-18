@@ -92,6 +92,14 @@ public:
   bool planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr grasp_candidate);
 
   /**
+   * \brief Compute a cartesian path along waypoints
+   * \return true on success
+   */
+  bool computeCartesianWaypointPath(moveit_grasps::GraspCandidatePtr grasp_candidate, 
+                                    const EigenSTL::vector_Affine3d &waypoints,
+                                    std::vector<moveit::core::RobotStatePtr> &robot_state_trajectory);
+
+  /**
    * \brief Read a trajectory from CSV and execute on robot
    * \param file_name - location of file
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)

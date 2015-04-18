@@ -29,7 +29,7 @@
 namespace picknik_main
 {
 
-APCManager::APCManager(bool verbose, std::string order_file_path, bool use_experience, bool autonomous, bool full_autonomous)                       
+APCManager::APCManager(bool verbose, std::string order_file_path, bool use_experience, bool autonomous, bool full_autonomous)
   : nh_private_("~")
   , verbose_(verbose)
   , fake_perception_(false)
@@ -194,7 +194,7 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to,
     std::cout << "=======================================================" << std::endl;
 
     // Check every product if system is still ready
-    if (!checkSystemReady()) 
+    if (!checkSystemReady())
       return false;
 
     if (!graspObjectPipeline(orders_[i], verbose_, jump_to))
@@ -550,7 +550,7 @@ bool APCManager::trainExperienceDatabase()
   // Create learning pipeline for training the experience database
   bool use_experience = false;
   learning_.reset(new LearningPipeline(verbose_, visuals_,
-  planning_scene_monitor_, 
+  planning_scene_monitor_,
   shelf_, use_experience));
 
   ROS_INFO_STREAM_NAMED("apc_manager","Training experience database");
@@ -777,6 +777,40 @@ bool APCManager::testShelfLocation()
   return true;
 }
 
+// Mode 22
+bool APCManager::testApproachLiftRetreat()
+{
+  Eigen::Affine3d ee_pose;
+  bool verbose = true;
+  moveit_grasps::GraspCandidatePtr chosen; // the grasp to use
+
+  // Grasps things in the work order
+  for (std::size_t i = 0; i < orders_.size(); ++i)
+  {
+    if (!ros::ok())
+      return false;
+
+    ROS_INFO_STREAM_NAMED("apc_manager","Starting order " << i);
+    WorkOrder& work_order = orders_[i];
+
+    // Choose which arm to use
+    const robot_model::JointModelGroup* arm_jmg = manipulation_->chooseArm(work_order.product_->getWorldPose(shelf_, work_order.bin_));
+
+    // Allow fingers to touch object
+    manipulation_->allowFingerTouch(work_order.product_->getCollisionName(), arm_jmg);
+
+    // Generate and chose grasp
+    if (!manipulation_->chooseGrasp(work_order, arm_jmg, chosen, verbose))
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","No grasps found for " << work_order.product_->getName());
+    }
+
+  } // end for
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Done testing cartesian path");
+  return true;
+}
+
 // Mode 14
 bool APCManager::getSRDFPose()
 {
@@ -976,7 +1010,7 @@ bool APCManager::testCameraPositions()
   return true;
 }
 
-// Mode 9
+// Mode 10
 bool APCManager::calibrateCamera()
 {
   ROS_DEBUG_STREAM_NAMED("apc_manager","Calibrating camera");
@@ -1007,7 +1041,7 @@ bool APCManager::calibrateCamera()
   return true;
 }
 
-// Mode 10
+// Mode 9
 bool APCManager::recordCalibrationTrajectory()
 {
   ROS_INFO_STREAM_NAMED("apc_manager","Recoding calibration trajectory");

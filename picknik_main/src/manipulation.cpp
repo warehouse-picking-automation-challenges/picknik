@@ -217,12 +217,14 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
     visuals_->grasp_markers_->deleteAllMarkers(); // clear all old markers    
   }
 
+  // TODO: choose the final grasp
+
   return true;
 }
 
 bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr grasp_candidate)
 {
-  double desired_approach_distance = config_->approach_distance_desired_;
+  double desired_approach_distance = config_->approach_distance_desired_; // TODO remove
 
   // Get settings from grasp generator
   const geometry_msgs::PoseStamped &grasp_pose_msg = grasp_candidate->grasp_.grasp_pose;
@@ -246,7 +248,7 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
 
   // Visualize waypoints
   bool static_id = false;
-  visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
+  //visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
   visuals_->grasp_markers_->publishText(pregrasp_pose, "pregrasp", rvt::WHITE, rvt::SMALL, static_id);
   //visuals_->grasp_markers_->publishZArrow(grasp_pose, rvt::YELLOW, rvt::SMALL);
   visuals_->grasp_markers_->publishText(grasp_pose, "grasp", rvt::WHITE, rvt::SMALL, static_id);
@@ -255,8 +257,33 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   //visuals_->grasp_markers_->publishZArrow(lifted_pregrasp_pose, rvt::RED, rvt::SMALL);
   visuals_->grasp_markers_->publishText(lifted_pregrasp_pose, "retreat", rvt::WHITE, rvt::SMALL, static_id);
 
-  // ---------------------------------------------------------------------------------------------
-  // Settings for computeCartesianPath
+  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;  
+  if (!computeCartesianWaypointPath(grasp_candidate, waypoints, robot_state_trajectory))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Unable to plan approach lift retreat path");
+    visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::RED, rvt::SMALL);
+    return false;
+  }
+
+  // Feedback
+  ROS_INFO_STREAM_NAMED("manipulation","Found valid waypoint manipulation path for grasp candidate");
+  ROS_INFO_STREAM_NAMED("manipulation","Visualize end effector position of cartesian path");
+
+  // Get arm planning group
+  const robot_model::JointModelGroup* arm_jmg = grasp_candidate->grasp_data_->arm_jmg_;
+
+  // Show visuals
+  visuals_->grasp_markers_->publishTrajectoryPoints(robot_state_trajectory, grasp_datas_[arm_jmg]->parent_link_);
+  visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
+
+  return true;
+}
+
+bool Manipulation::computeCartesianWaypointPath(moveit_grasps::GraspCandidatePtr grasp_candidate, 
+                                                const EigenSTL::vector_Affine3d &waypoints,
+                                                std::vector<moveit::core::RobotStatePtr> &robot_state_trajectory)
+{
+  double desired_approach_distance = config_->approach_distance_desired_; // TODO remove
 
   // Get arm planning group
   const robot_model::JointModelGroup* arm_jmg = grasp_candidate->grasp_data_->arm_jmg_;
@@ -294,11 +321,13 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
 
   // Check for kinematic solver
   if( !arm_jmg->canSetStateFromIK( ik_tip_link->getName() ) )
+  {
     ROS_ERROR_STREAM_NAMED("manipulation","No IK Solver loaded - make sure moveit_config/kinamatics.yaml is loaded in this namespace");
+    return false;
+  }
 
   // Results
   double last_valid_percentage;
-  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
 
   std::size_t attempts = 0;
   static const std::size_t MAX_IK_ATTEMPTS = 10;
@@ -350,10 +379,6 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
     std::cout << std::endl;
     return false;
   }
-
-  ROS_INFO_STREAM_NAMED("manipulation","Found valid waypoint manipulation path for grasp candidate");
-  ROS_INFO_STREAM_NAMED("manipulation","Visualize end effector position of cartesian path");
-  visuals_->grasp_markers_->publishTrajectoryPoints(robot_state_trajectory, ik_tip_link);
 
   return true;
 }

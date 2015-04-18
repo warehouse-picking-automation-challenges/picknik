@@ -192,13 +192,13 @@ int main(int argc, char** argv)
 
     case 9:
       if (!manager.checkSystemReady()) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Playback trajectory for calibration");
-      manager.calibrateCamera();
+      ROS_INFO_STREAM_NAMED("main","Recording a trajectory for calibration");
+      manager.recordCalibrationTrajectory();
       break;
     case 10:
       if (!manager.checkSystemReady()) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Recording a trajectory for calibration");
-      manager.recordCalibrationTrajectory();
+      ROS_INFO_STREAM_NAMED("main","Playback trajectory for calibration");
+      manager.calibrateCamera();
       break;
     case 11:
       if (!manager.checkSystemReady()) return 0;;
@@ -251,7 +251,10 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Show experience database");
       manager.displayExperienceDatabase();
       break;
-
+    case 22:
+      ROS_INFO_STREAM_NAMED("main","Testing approach lift retreat cartesian path");
+      manager.testApproachLiftRetreat();
+      break;      
     default:
       ROS_WARN_STREAM_NAMED("main","Unkown mode: " << mode);
   }

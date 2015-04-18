@@ -171,6 +171,12 @@ public:
   bool testGoHome();
 
   /**
+   * \brief Get cartesian path for grasping object
+   * \return true on success
+   */
+  bool testApproachLiftRetreat();
+
+  /**
    * \brief Get the XML of a SDF pose of joints
    * \return true on success
    */
