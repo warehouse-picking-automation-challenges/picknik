@@ -99,35 +99,37 @@ private:
 
   moveit::core::RobotStatePtr getCurrentState();
 
-  // A shared node handle
-  ros::NodeHandle nh_;
-
   // Show more visual and console output, with general slower run time.
   bool verbose_;
 
-  // File path to ROS package on drive
-  std::string package_path_;
-
-  // Trajectory execution
-  trajectory_execution_manager::TrajectoryExecutionManagerPtr trajectory_execution_manager_;
-  boost::shared_ptr<plan_execution::PlanExecution> plan_execution_;
-
   RemoteControlPtr remote_control_;
-  planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
+
   VisualsPtr visuals_;
 
   // Robot-specific data for generating grasps
   moveit_grasps::GraspDatas grasp_datas_;
 
+  planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
+
   // Robot-sepcific data for the APC
   ManipulationDataPtr config_;
+
+  // File path to ROS package on drive
+  std::string package_path_;
+
+  // Allocated memory for robot state
+  moveit::core::RobotStatePtr current_state_;
+
+  // A shared node handle
+  ros::NodeHandle nh_;
+
+  // Trajectory execution
+  trajectory_execution_manager::TrajectoryExecutionManagerPtr trajectory_execution_manager_;
+  boost::shared_ptr<plan_execution::PlanExecution> plan_execution_;
 
   // Check which controllers are loaded
   ros::ServiceClient zaber_list_controllers_client_;
   ros::ServiceClient kinova_list_controllers_client_;
-
-  // Allocated memory for robot state
-  moveit::core::RobotStatePtr current_state_;
 
 }; // end class
 

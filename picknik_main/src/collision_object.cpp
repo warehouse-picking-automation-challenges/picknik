@@ -136,6 +136,7 @@ bool RectangleObject::visualizeWireframe(const Eigen::Affine3d& trans) const
 {
   ROS_WARN_STREAM_NAMED("temp","viz wireframe todo");
   //return visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans), getDepth(), getWidth(), getHeight(), color_);
+  return true;
 }
 
 bool RectangleObject::visualizeAxis(const Eigen::Affine3d& trans) const

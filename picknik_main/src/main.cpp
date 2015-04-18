@@ -46,7 +46,7 @@ int main(int argc, char** argv)
   std::string order_file;
 
   // Parse command line arguments
-  for (std::size_t i = 0; i < argc; ++i)
+  for (int i = 0; i < argc; ++i)
   {
     if (strcmp(argv[i], "--verbose") == 0)
     {

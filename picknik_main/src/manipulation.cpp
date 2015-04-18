@@ -224,13 +224,10 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
 
 bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr grasp_candidate)
 {
-  double desired_approach_distance = config_->approach_distance_desired_; // TODO remove
-
   // Get settings from grasp generator
   const geometry_msgs::PoseStamped &grasp_pose_msg = grasp_candidate->grasp_.grasp_pose;
   const geometry_msgs::PoseStamped pregrasp_pose_msg
-    = moveit_grasps::GraspGenerator::getPreGraspPose(grasp_candidate->grasp_, grasp_candidate->grasp_data_->parent_link_->getName(),
-                                                     desired_approach_distance);
+    = moveit_grasps::GraspGenerator::getPreGraspPose(grasp_candidate->grasp_, grasp_candidate->grasp_data_->parent_link_->getName());                                                     
 
   // Create waypoints
   Eigen::Affine3d pregrasp_pose = visuals_->grasp_markers_->convertPose(pregrasp_pose_msg.pose);
@@ -1023,7 +1020,7 @@ bool Manipulation::generateApproachPath(moveit_grasps::GraspCandidatePtr chosen,
   }
 
   // Visualize trajectory in Rviz display
-  bool wait_for_trajetory = false;
+  //bool wait_for_trajetory = false;
   //visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, current_state_, wait_for_trajetory);
 
   // Set the pregrasp to be the first state in the trajectory. Copy value, not pointer
@@ -1715,6 +1712,7 @@ bool Manipulation::setStateWithOpenEE(bool open, moveit::core::RobotStatePtr rob
     if (config_->dual_arm_)
       grasp_datas_[config_->left_arm_]->setRobotStateGrasp( robot_state );
   }
+    return true;
 }
 
 ExecutionInterfacePtr Manipulation::getExecutionInterface()
@@ -1947,6 +1945,7 @@ bool Manipulation::statusPublisher(const std::string &status)
   std::cout << std::endl << std::endl;
   ROS_INFO_STREAM_NAMED("manipulation.status", status << " -------------------------------------");
   visuals_->visual_tools_->publishText(status_position_, status, rvt::WHITE, rvt::LARGE);
+  return true;
 }
 
 bool Manipulation::statesEqual(const moveit::core::RobotState &s1, const moveit::core::RobotState &s2,
@@ -2149,7 +2148,7 @@ bool Manipulation::waitForRobotToStop(const double& timeout)
 
   static const double UPDATE_RATE = 0.1; // how often to check if robot is stopped
   static const double POSITION_ERROR_THRESHOLD = 0.002;
-  static const std::size_t REQUIRED_STABILITY_PASSES = 4; // how many times it must be within threshold in a row
+  //static const std::size_t REQUIRED_STABILITY_PASSES = 4; // how many times it must be within threshold in a row
   std::size_t stability_passes = 0;
   double error;
   // Get the current position

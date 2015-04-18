@@ -361,6 +361,7 @@ bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::T
   // Copy results
   tf::transformTFToEigen(camera_transform, world_to_camera);
   time_stamp = camera_transform.stamp_;
+    return true;
 }
 
 bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera) 

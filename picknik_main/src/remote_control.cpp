@@ -132,6 +132,7 @@ bool RemoteControl::setReadyForNextStep()
     next_step_ready_ = true;
     stop_ = false;
   }
+  return true;
 }
 
 void RemoteControl::setAutonomous(bool autonomous)

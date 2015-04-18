@@ -231,7 +231,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
   moveit::core::RobotStatePtr pre_grasp_state(new moveit::core::RobotState(*current_state)); // Allocate robot states
   moveit::core::RobotStatePtr the_grasp_state(new moveit::core::RobotState(*current_state)); // Allocate robot states
   moveit_msgs::RobotTrajectory approach_trajectory_msg;
-  bool wait_for_trajetory = false;
+  //bool wait_for_trajetory = false;
   bool fallback_to_motion_planning = false;
 
   if (!remote_control_->getAutonomous())
@@ -655,7 +655,6 @@ bool APCManager::testUpAndDown()
 bool APCManager::testInAndOut()
 {
   // Set planning scene
-  bool show_products = false;
   planning_scene_manager_->displayEmptyShelf();
 
   double approach_distance_desired = 1.0;
@@ -841,7 +840,7 @@ bool APCManager::getSRDFPose()
 
     ros::Duration(4.0).sleep();
   }
-
+  return true;
 }
 
 // Mode 3
@@ -927,7 +926,7 @@ bool APCManager::testRandomValidMotions()
       const robot_model::JointModelGroup* arm_jmg = config_->right_arm_;
       if (config_->dual_arm_)
         if (visuals_->visual_tools_->iRand(0,1) == 0)
-          arm_jmg == config_->left_arm_;
+          arm_jmg = config_->left_arm_;
 
       goal_state->setToRandomPositions(arm_jmg);
 
@@ -1066,6 +1065,7 @@ bool APCManager::testGoHome()
   // Choose which planning group to use
   const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
   moveToStartPosition(arm_jmg);
+  return true;
 }
 
 // Mode 16
@@ -1208,6 +1208,7 @@ bool APCManager::testGraspGenerator()
   logging_file.open(file_path.c_str(), std::ios::out | std::ios::app);
   logging_file << csv_log_stream.str();
   logging_file.flush(); // save
+  return true;
 }
 
 // Mode 17
@@ -1228,8 +1229,8 @@ bool APCManager::testJointLimits()
 
   // Decide if we are testing 1 joint or all
   int test_joint_limit_joint;
-  int first_joint;
-  int last_joint;
+  std::size_t first_joint;
+  std::size_t last_joint;
   rvt::getIntParameter("apc_manager", nh_private_, "test/test_joint_limit_joint", test_joint_limit_joint);
   if (test_joint_limit_joint < 0)
   {
@@ -1352,7 +1353,7 @@ bool APCManager::perceiveBinWithCamera(BinObjectPtr bin)
   ROS_DEBUG_STREAM_NAMED("apc_manager","Moving camera around " << bin->getName());
 
   // Choose which planning group to use
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->left_arm_ : config_->right_arm_;
+  //const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->left_arm_ : config_->right_arm_;
 
   // Start playing back file
   const std::string file_name = "observe_bin_" + bin->getName() + "_trajectory";
@@ -1577,7 +1578,7 @@ bool APCManager::loadPlanningSceneMonitor()
 
   // Wait for complete state to be recieved
   std::vector<std::string> missing_joints;
-  int counter = 0;
+  std::size_t counter = 0;
   while( !planning_scene_monitor_->getStateMonitor()->haveCompleteState() && ros::ok() )
   {
     ROS_INFO_STREAM_THROTTLE_NAMED(1, "apc_manager","Waiting for complete state from topic " << joint_state_topic);
@@ -1588,7 +1589,7 @@ bool APCManager::loadPlanningSceneMonitor()
     if( counter % 10 == 0)
     {
       planning_scene_monitor_->getStateMonitor()->haveCompleteState( missing_joints );
-      for(int i = 0; i < missing_joints.size(); ++i)
+      for(std::size_t i = 0; i < missing_joints.size(); ++i)
         ROS_WARN_STREAM_NAMED("apc_manager","Unpublished joints: " << missing_joints[i]);
     }
     counter++;

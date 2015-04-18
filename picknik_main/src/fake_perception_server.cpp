@@ -184,7 +184,7 @@ int main(int argc, char** argv)
   bool verbose = false;
   if (argc > 1)
   {
-    for (std::size_t i = 0; i < argc; ++i)
+    for (int i = 0; i < argc; ++i)
     {
       if (strcmp(argv[i], "--verbose") == 0)
       {

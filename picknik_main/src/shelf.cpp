@@ -222,7 +222,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   double this_shelf_wall_width;
   double this_bin_width;
   double bin_z;
-  std::size_t bin_id = 0;
+  //std::size_t bin_id = 0;
   for (std::size_t wall_id = 0; wall_id < 4; ++wall_id)
   {
     const std::string wall_name = "wall_" + boost::lexical_cast<std::string>(wall_id);
@@ -461,6 +461,7 @@ bool ShelfObject::visualizeAxis(VisualsPtr visuals) const
   {
     bin_it->second->visualizeAxis(bottom_right_, visuals);
   }
+  return true;
 }
 
 bool ShelfObject::visualize(bool show_products) const
@@ -493,6 +494,7 @@ bool ShelfObject::visualize(bool show_products) const
   const Eigen::Vector3d point1(x1, 1, 0);
   const Eigen::Vector3d point2(x2, -1, 0.001);
   visuals_->visual_tools_display_->publishCuboid(point1, point2, rvt::DARK_GREY);
+    return true;
 }
 
 bool ShelfObject::visualizeEnvironmentObjects() const
@@ -503,6 +505,7 @@ bool ShelfObject::visualizeEnvironmentObjects() const
   {
     env_it->second->visualize(bottom_right_);
   }
+  return true;
 }
 
 bool ShelfObject::createCollisionBodiesEnvironmentObjects() const
@@ -513,6 +516,7 @@ bool ShelfObject::createCollisionBodiesEnvironmentObjects() const
   {
     env_it->second->createCollisionBodies(bottom_right_);
   }
+    return true;
 }
 
 bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool only_show_shelf_frame, bool show_all_products)
@@ -592,6 +596,7 @@ bool ShelfObject::createCollisionShelfDetailed()
   // Publish mesh
   if (!visuals_->visual_tools_->publishCollisionMesh(high_res_pose, collision_object_name_, high_res_mesh_path_, color_))
     return false;
+    return true;
 }
 
 BinObjectMap& ShelfObject::getBins()
