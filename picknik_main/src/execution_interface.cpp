@@ -104,11 +104,11 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
   // Visualize the hand/wrist path in Rviz
   if (trajectory.points.size() > 1)
   {
-    visuals_->goal_state_->deleteAllMarkers();
+    visuals_->trajectory_lines_->deleteAllMarkers();
     ros::spinOnce();
     
     //const moveit::core::LinkModel* robot_link = planning_scene_monitor_->getRobotModel()->getLinkModel("jaco2_link_finger_2_tip");
-    visuals_->goal_state_->publishTrajectoryLine(trajectory_msg, grasp_datas_[config_->right_arm_]->parent_link_,
+    visuals_->trajectory_lines_->publishTrajectoryLine(trajectory_msg, grasp_datas_[config_->right_arm_]->parent_link_,
                                                  config_->right_arm_, rvt::LIME_GREEN);
   }
   else

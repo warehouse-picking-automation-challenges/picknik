@@ -8,7 +8,7 @@ plot_position = 0; % 0 for velocity
 has_acceleration = 1; % if CSV includes acceleration
 
 %while 1
-    sampled_data = csvread('trajectory_3.csv',1,0);
+    sampled_data = csvread('trajectory_2.csv',1,0);
     
     %assign columns into seperate variable names - this is made quickly using the
     %header names and find-replace command

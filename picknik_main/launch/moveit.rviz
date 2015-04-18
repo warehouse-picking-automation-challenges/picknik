@@ -573,7 +573,6 @@ Visualization Manager:
       Name: Amazon Markers
       Namespaces:
         Axis: true
-        Collision: true
         Line: true
         Sphere: true
         Text: true
@@ -601,7 +600,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
-        Path: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -999,7 +998,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.73949
+      Distance: 5.94522
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -1011,10 +1010,10 @@ Visualization Manager:
         Z: 1.78814e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.365399
+      Pitch: 0.300399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 4.47726
+      Yaw: 4.26226
     Saved: ~
 Window Geometry:
   Displays:
@@ -1030,5 +1029,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1194
-  X: 1688
+  X: 1678
   Y: 14
