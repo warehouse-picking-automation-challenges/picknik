@@ -65,7 +65,6 @@
 
     <!-- Grasp Settings -->
     <rosparam command="load" file="$(find moveit_grasps)/config/grasp_debug_level.yaml"/>    
-    <rosparam command="load" file="$(find moveit_grasps)/config/grasp_default_parameters.yaml"/>    
 
     <!-- Settings of Amazon competition -->
     <rosparam command="load" file="$(find picknik_main)/config/apc_configuration.yaml"/>
