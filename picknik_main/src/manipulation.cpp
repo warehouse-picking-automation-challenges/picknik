@@ -2139,7 +2139,6 @@ bool Manipulation::displayLightningPlans(ompl::tools::ExperienceSetupPtr experie
   // Get tip links for this setup
   std::vector<const robot_model::LinkModel*> tips;
   arm_jmg->getEndEffectorTips(tips);
-  //ROS_INFO_STREAM_NAMED("manipulation","Found " << tips.size() << " tips");
 
   bool show_trajectory_animated = false;//verbose_;
 

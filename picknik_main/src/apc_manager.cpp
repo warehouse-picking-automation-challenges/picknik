@@ -1725,6 +1725,7 @@ bool APCManager::attachProduct(ProductObjectPtr product, const robot_model::Join
   return true;
 }
 
+// Mode 21
 bool APCManager::displayExperienceDatabase()
 {
   // Choose which planning group to use
@@ -1742,7 +1743,8 @@ bool APCManager::generateGoalBinLocations()
   static std::size_t NUM_DROPOFF_LOCATIONS = 8;
 
   // Calculate dimensions of goal bin
-  shelf_->getGoalBin()->calculateBoundingBox();
+  bool verbose = false;
+  shelf_->getGoalBin()->calculateBoundingBox(verbose);
 
   // Visualize
   shelf_->getGoalBin()->visualizeWireframe(shelf_->getBottomRight());
