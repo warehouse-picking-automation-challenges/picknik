@@ -21,6 +21,7 @@
 
 // MoveIt
 #include <moveit/robot_state/conversions.h>
+#include <moveit/macros/console_colors.h>
 
 // Boost
 #include <boost/filesystem.hpp>
@@ -82,6 +83,22 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to load shelf");
   }
   loadShelfContents(order_file_path);
+
+  // Decide where to publish status text
+  status_position_ = shelf_->getBottomRight();
+  bool show_text_for_video = false;
+  if (show_text_for_video)
+  {
+    status_position_.translation().x() = 0.25;
+    status_position_.translation().y() += 1.4;
+    status_position_.translation().z() += shelf_->getHeight() * 0.75;
+  }
+  else
+  {
+    status_position_.translation().x() = 0.25;
+    status_position_.translation().y() += shelf_->getWidth() * 0.5;
+    status_position_.translation().z() += shelf_->getHeight() * 1.1;
+  }
 
   // Load the remote control for dealing with GUIs
   remote_control_.reset(new RemoteControl(verbose, nh_private_, this));
@@ -208,14 +225,19 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to,
     if (!checkSystemReady())
       return false;
 
-    if (!graspObjectPipeline(orders_[i], verbose_, jump_to))
+    // Clear old grasp markers
+    visuals_->grasp_markers_->deleteAllMarkers();
+
+    WorkOrder &work_order = orders_[i];
+
+    if (!graspObjectPipeline(work_order, verbose_, jump_to))
     {
+      ROS_WARN_STREAM_NAMED("apc_manager","An error occured in last product order.");
+
       if (true)
       {
-        ROS_WARN_STREAM_NAMED("apc_manager","An error occured in last product order, but we are continuing on");
         // remote_control_->setAutonomous(false);
         // remote_control_->setFullAutonomous(false);          
-        // std::cout << "Waiting to continue " << std::endl;
         // remote_control_->waitForNextStep();
       }
       else
@@ -225,11 +247,25 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to,
       } 
     }
 
+    ROS_INFO_STREAM_NAMED("apc_manager","Cleaning up planning scene");
+
+    // Unattach from EE
+    visuals_->visual_tools_->cleanupACO( work_order.product_->getCollisionName() ); // use unique name
+    // Delete from planning scene the product
+    visuals_->visual_tools_->cleanupCO( work_order.product_->getCollisionName() ); // use unique name
+
     // Reset markers for next loop
     visuals_->visual_tools_->deleteAllMarkers();
+
+    // Show shelf with remaining products
+    visuals_->visualizeDisplayShelf(shelf_);
   }
 
-  manipulation_->statusPublisher("Finished");
+  statusPublisher("Finished");
+
+  // Show experience database results
+  manipulation_->printExperienceLogs();
+
   return true;
 }
 
@@ -263,14 +299,16 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
 
   // Jump to a particular step in the manipulation pipeline
   std::size_t step = jump_to;
+
+  // Don't move to initial position
+  if (skip_homing_step_ && step == 0)  
+    step = 1;
+
   while(ros::ok())
   {
 
     if (!remote_control_->getAutonomous())
     {
-      std::cout << std::endl;
-      std::cout << std::endl;
-      std::cout << "Waiting for step: " << step << std::endl;
       remote_control_->waitForNextStep();
     }
     else
@@ -283,32 +321,25 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
     switch (step)
     {
       // #################################################################################################################
-      case 0: manipulation_->statusPublisher("Moving to initial position");
+      case 0: statusPublisher("Moving to initial position");
 
         // Clear the temporary purple robot state image
         visuals_->visual_tools_->hideRobot();
 
-        // Clear old grasp markers
-        visuals_->grasp_markers_->deleteAllMarkers();
-
         // Set planning scene
         planning_scene_manager_->displayShelfAsWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
 
-        if (!skip_homing_step_)
+        // Move
+        if (!moveToStartPosition())
         {
-          // Move
-          if (!moveToStartPosition())
-          {
-            ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to initial position");
-            return false;
-          }
+          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to initial position");
+          return false;
         }
 
-        //break;
-        step++;
+        break;
 
         // #################################################################################################################
-      case 1: manipulation_->statusPublisher("Open end effectors");
+      case 1: statusPublisher("Open end effectors");
 
         // Set planning scene
         planning_scene_manager_->displayShelfWithOpenBins();
@@ -319,11 +350,12 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to open end effectors");
           return false;
         }
+
         //break;
         step++;
 
         // #################################################################################################################
-      case 2: manipulation_->statusPublisher("Finding location of product " + work_order.product_->getName() + " from " + work_order.bin_->getName());
+      case 2: statusPublisher("Finding location of product " + work_order.product_->getName() + " from " + work_order.bin_->getName());
 
         // Set planning scene
         planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
@@ -351,7 +383,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         break;
 
         // #################################################################################################################
-      case 3: manipulation_->statusPublisher("Get grasp for product " + work_order.product_->getName() + " from " + work_order.bin_->getName());
+      case 3: statusPublisher("Get grasp for product " + work_order.product_->getName() + " from " + work_order.bin_->getName());
 
         // Set planning scene
         planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
@@ -379,7 +411,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         break;
 
         // #################################################################################################################
-      case 4: manipulation_->statusPublisher("Get pre-grasp by generateApproachPath()");
+      case 4: statusPublisher("Get pre-grasp by generateApproachPath()");
 
         // Set planning scene
         planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
@@ -405,7 +437,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         step++;
 
         // #################################################################################################################
-      case 6: manipulation_->statusPublisher("Moving to pre-grasp position");
+      case 6: statusPublisher("Moving to pre-grasp position");
 
         // Set planning scene
         // TODO: add this back but sometimes do not if the pregrasp is so close that it would be in collision with wall
@@ -422,7 +454,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         break;
 
         // #################################################################################################################
-      case 7: manipulation_->statusPublisher("Cartesian move to the-grasp position");
+      case 7: statusPublisher("Cartesian move to the-grasp position");
 
         // Set planning scene
         planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
@@ -449,7 +481,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         break;
 
         // #################################################################################################################
-      case 8: manipulation_->statusPublisher("Grasping");
+      case 8: statusPublisher("Grasping");
 
         // Set planning scene
         planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
@@ -474,7 +506,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         break;
 
         // #################################################################################################################
-      case 9: manipulation_->statusPublisher("Lifting product UP slightly");
+      case 9: statusPublisher("Lifting product up slightly");
 
         // DEBUG temp
         // remote_control_->setAutonomous(false);
@@ -496,7 +528,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         break;
 
         // #################################################################################################################
-      case 10: manipulation_->statusPublisher("Moving BACK to pre-grasp position (retreat path)");
+      case 10: statusPublisher("Moving back to pre-grasp position (retreat path)");
 
         // Set planning scene
         //planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
@@ -511,7 +543,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         break;
 
         // #################################################################################################################
-      case 11: manipulation_->statusPublisher("Placing product in bin");
+      case 11: statusPublisher("Placing product in bin");
 
         // Set planning scene
         //planning_scene_manager_->displayShelfAsWall();
@@ -525,7 +557,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         break;
 
         // #################################################################################################################
-      case 12: manipulation_->statusPublisher("Releasing product");
+      case 12: statusPublisher("Releasing product");
 
         // Set planning scene
         // planning_scene_manager_->displayShelfAsWall();
@@ -542,26 +574,14 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
           return false;
         }
 
-        // Delete from planning scene the product
-        shelf_->deleteProduct(work_order.bin_->getName(), work_order.product_->getName());
-
-        // Unattach from EE
-        visuals_->visual_tools_->cleanupACO( work_order.product_->getCollisionName() ); // use unique name
-        visuals_->visual_tools_->cleanupCO( work_order.product_->getCollisionName() ); // use unique name
         break;
-
-        // #################################################################################################################
-        // case 13: manipulation_->statusPublisher("Moving to initial position");
-
-        //   if (!moveToStartPosition(arm_jmg))
-        //   {
-        //     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to initial position");
-        //     return false;
-        //   }
 
         // #################################################################################################################
       default:
         ROS_INFO_STREAM_NAMED("apc_manager","Manipulation pipeline end reached, ending");
+
+        // Remove product from shelf
+        shelf_->deleteProduct(work_order.bin_, work_order.product_);
 
         return true;
 
@@ -594,7 +614,7 @@ bool APCManager::trainExperienceDatabase()
 bool APCManager::testEndEffectors()
 {
   // Test visualization
-  manipulation_->statusPublisher("Testing open close visualization of EE");
+  statusPublisher("Testing open close visualization of EE");
   std::size_t i = 0;
   bool open;
   moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
@@ -653,7 +673,7 @@ bool APCManager::testUpAndDown()
   planning_scene_manager_->displayEmptyShelf();
 
   // Test
-  manipulation_->statusPublisher("Testing up and down calculations");
+  statusPublisher("Testing up and down calculations");
   std::size_t i = 0;
   while (ros::ok())
   {
@@ -690,7 +710,7 @@ bool APCManager::testInAndOut()
   double approach_distance_desired = 1.0;
 
   // Test
-  manipulation_->statusPublisher("Testing in and out calculations");
+  statusPublisher("Testing in and out calculations");
   std::size_t i = 1;
   while (ros::ok())
   {
@@ -796,9 +816,6 @@ bool APCManager::testShelfLocation()
     //   ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move backwards " << desired_approach_distance);
     // }
 
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << "Waiting before going to next bin" << std::endl;
     remote_control_->waitForNextStep();
   } // end for
 
@@ -897,8 +914,7 @@ bool APCManager::testGoalBinPose()
   // Create locations if necessary
   generateGoalBinLocations();
 
-  return true;
-
+  // Test every goal dropoff location
   for (std::size_t i = 0; i < dropoff_locations_.size(); ++i)
   {
     // Close end effector
@@ -1029,9 +1045,6 @@ bool APCManager::testCameraPositions()
     bool process_all_bins = false;
     if (process_all_bins)
     {
-      std::cout << std::endl;
-      std::cout << std::endl;
-      std::cout << "Waiting before moving to next bin" << std::endl;
       remote_control_->waitForNextStep();
     }
     else
@@ -1577,7 +1590,7 @@ bool APCManager::moveToDropOffPosition(const robot_model::JointModelGroup* arm_j
   // Move
   if (!manipulation_->moveEEToPose(dropoff_location, config_->main_velocity_scaling_factor_, arm_jmg))
   {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move arm to desired shelf location");
+    ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move arm to dropoff location");
     return false;
   }
 
@@ -1755,7 +1768,7 @@ bool APCManager::generateGoalBinLocations()
   shelf_->getGoalBin()->calculateBoundingBox(verbose);
 
   // Visualize
-  shelf_->getGoalBin()->visualizeWireframe(shelf_->getBottomRight());
+  //shelf_->getGoalBin()->visualizeWireframe(shelf_->getBottomRight());
 
   // Find starting location of dropoff
   Eigen::Affine3d overhead_goal_bin = shelf_->getBottomRight() * shelf_->getGoalBin()->getCentroid();
@@ -1801,6 +1814,14 @@ bool APCManager::generateGoalBinLocations()
     }
   }
 
+  return true;
+}
+
+bool APCManager::statusPublisher(const std::string &status)
+{
+  std::cout << MOVEIT_CONSOLE_COLOR_BLUE << "apc_manager.status: " << status << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
+
+  visuals_->visual_tools_->publishText(status_position_, status, rvt::WHITE, rvt::LARGE);
   return true;
 }
 

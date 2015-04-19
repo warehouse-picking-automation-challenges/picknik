@@ -44,6 +44,12 @@ public:
 
   bool visualizeDisplayShelf(ShelfObjectPtr shelf);
 
+  /**
+   * \brief Allow visual_tools to have the correct virtual joint
+   * \return true on success
+   */
+  bool setSharedRobotState(moveit::core::RobotStatePtr current_state);
+
   // Public vars
   mvt::MoveItVisualToolsPtr visual_tools_;
   mvt::MoveItVisualToolsPtr visual_tools_display_;

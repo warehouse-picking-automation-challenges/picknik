@@ -38,6 +38,7 @@
 
 #include <picknik_main/remote_control.h>
 #include <picknik_main/apc_manager.h>
+#include <moveit/macros/console_colors.h>
 
 namespace picknik_main
 {
@@ -57,7 +58,6 @@ RemoteControl::RemoteControl(bool verbose, ros::NodeHandle nh, APCManager* paren
   , stop_(false)
 {
   // Subscribe to remote control topic
-  ROS_DEBUG_STREAM_NAMED("apc_manager","Subscribing to button topics");
   std::size_t queue_size = 10;
   remote_next_control_ = nh_.subscribe("/picknik_main/next_command", queue_size, &RemoteControl::remoteNextCallback, this);
   remote_auto_control_ = nh_.subscribe("/picknik_main/auto_command", queue_size, &RemoteControl::remoteAutoCallback, this);
@@ -173,6 +173,14 @@ bool RemoteControl::getFullAutonomous()
 
 bool RemoteControl::waitForNextStep()
 {
+  // Check if we really need to wait
+  if ( !(!next_step_ready_ && !autonomous_ && ros::ok()) )
+    return true;
+  
+  // Show message
+  std::cout << std::endl << std::endl;
+  std::cout << MOVEIT_CONSOLE_COLOR_CYAN << "Waiting for next step " << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
+
   is_waiting_ = true;
   // Wait until next step is ready
   while (!next_step_ready_ && !autonomous_ && ros::ok())
@@ -189,6 +197,13 @@ bool RemoteControl::waitForNextStep()
 
 bool RemoteControl::waitForNextFullStep()
 {
+  // Check if we really need to wait
+  if ( !(!next_step_ready_ && !full_autonomous_ && ros::ok()) )
+    return true;
+  
+  // Show message
+  std::cout << MOVEIT_CONSOLE_COLOR_CYAN << "Waiting for next full step " << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
+
   is_waiting_ = true;
   // Wait until next step is ready
   while (!next_step_ready_ && !full_autonomous_ && ros::ok())

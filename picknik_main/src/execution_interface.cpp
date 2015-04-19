@@ -136,6 +136,10 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
       std::cout << "Diff time: " << diff.toSec() << std::endl;
       std::cout << "-------------------------------------------------------" << std::endl;
       std::cout << std::endl;
+
+      remote_control_->setAutonomous(false);
+      remote_control_->setFullAutonomous(false);
+      
       //return false;
     }
     else if (diff > warn_time_step)
@@ -162,10 +166,6 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
       // Only wait for non-finger trajectories
       trajectory.joint_names.size() > 3)
   {
-    std::cout << std::endl;
-    std::cout << std::endl;
-
-    ROS_INFO_STREAM_NAMED("execution_interface","Waiting before executing trajectory");
     remote_control_->waitForNextFullStep();
     ROS_INFO_STREAM_NAMED("execution_interface","Executing trajectory....");
   }

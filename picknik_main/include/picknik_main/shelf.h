@@ -62,12 +62,6 @@ public:
   bool visualizeAxis(const Eigen::Affine3d& trans, VisualsPtr visuals) const;
 
   /**
-   * \brief Create collision bodies of bin
-   * \param trans - transform from parent container to current container
-   */
-  //bool createCollisionBodies(const Eigen::Affine3d &trans) const;
-
-  /**
    * \brief Add the products to be picked as collision objects
    * \param trans - transform from parent container to current container
    * \return true on success
@@ -88,7 +82,7 @@ public:
    * \brief Getter for a product
    */ 
   ProductObjectPtr getProduct(const std::string& name);
-
+  
 }; // class
 
 typedef std::map<std::string, BinObjectPtr> BinObjectMap;
@@ -177,8 +171,10 @@ public:
    * \brief Delete product
    * \param bin
    * \param product name
+   * \return true on success
    */
-  bool deleteProduct(const std::string &bin_name, const std::string &product_name);
+  bool deleteProduct(BinObjectPtr bin, ProductObjectPtr product);
+  //bool deleteProduct(const std::string &bin_name, const std::string &product_name);
 
   /**
    * \brief Get shelf parts for prevent collision with products

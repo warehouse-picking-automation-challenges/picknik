@@ -320,6 +320,12 @@ public:
    */
   bool generateGoalBinLocations();
 
+  /**
+   * \brief Central Rviz status visualizer
+   * \return true on success
+   */
+  bool statusPublisher(const std::string &status);
+
 private:
 
   // A shared node handle
@@ -339,6 +345,9 @@ private:
   robot_model::RobotModelPtr robot_model_;
   planning_scene::PlanningScenePtr planning_scene_;
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
+
+  // User feedback
+  Eigen::Affine3d status_position_; // where to display messages
 
   // Properties
   ShelfObjectPtr shelf_;

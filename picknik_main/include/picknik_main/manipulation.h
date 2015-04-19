@@ -31,6 +31,7 @@
 #include <ompl_visual_tools/ompl_visual_tools.h>
 #include <moveit/kinematic_constraints/utils.h>
 #include <moveit/trajectory_processing/iterative_time_parameterization.h>
+#include <moveit/planning_interface/planning_interface.h>
 
 // OMPL
 #include <ompl/tools/experience/ExperienceSetup.h>
@@ -44,6 +45,11 @@
 // namespace trajectory_processing
 // {
 // MOVEIT_CLASS_FORWARD(IterativeParabolicTimeParameterization);
+// }
+
+// namespace planning_interface:
+// {
+// MOVEIT_CLASS_FORWARD(PlanningContext);
 // }
 
 namespace planning_pipeline
@@ -163,6 +169,12 @@ public:
             moveit_msgs::RobotTrajectory& trajectory_msg);
 
   /**
+   * \brief Print experience logs
+   * \return true on success
+   */
+  bool printExperienceLogs();
+
+  /**
    * \brief Interpolate
    * \return true on success
    */
@@ -200,8 +212,8 @@ public:
    */
   bool executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true,
                            bool ignore_collision = false);
-  bool executeVerticlePathOLD(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true,
-                              bool ignore_collision = false);
+  bool executeVerticlePathWithIK(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true,
+                                 bool ignore_collision = false);
 
   /**
    * \brief Translate arm left and right
@@ -357,12 +369,6 @@ public:
   void loadPlanningPipeline();
 
   /**
-   * \brief Central Rviz status visualizer
-   * \return true on success
-   */
-  bool statusPublisher(const std::string &status);
-
-  /**
    * \brief Helper function for determining if robot is already in desired state
    * \param robotstate to compare to
    * \param robotstate to compare to
@@ -468,6 +474,7 @@ protected:
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
   robot_model::RobotModelConstPtr robot_model_;
   planning_pipeline::PlanningPipelinePtr planning_pipeline_;
+  planning_interface::PlanningContextPtr planning_context_handle_;
 
   // Allocated memory for robot state
   moveit::core::RobotStatePtr current_state_;
@@ -489,10 +496,6 @@ protected:
   bool use_experience_;
   bool use_logging_;
   std::ofstream logging_file_;
-
-  // User feedback
-  Eigen::Affine3d status_position_; // where to display messages
-  Eigen::Affine3d order_position_; // where to display messages
 
   // Grasp generator
   moveit_grasps::GraspGeneratorPtr grasp_generator_;

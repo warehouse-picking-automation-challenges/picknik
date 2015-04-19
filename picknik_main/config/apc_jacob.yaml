@@ -40,8 +40,8 @@ joint_state_topic: /joint_states
 goal_bin_x: -0.35
 goal_bin_y: 0.0635
 goal_bin_z: 0.4
-place_goal_down_distance_desired: 0
-goal_bin_clearance: 0.1
+place_goal_down_distance_desired: 0.18
+goal_bin_clearance: 0.28
 
 # Side limits (walls)
 left_wall_y: 0 # 0 means disabled

@@ -1,2 +1,24 @@
+# Standard: 
+#   - prepend with 'show' if it affects rviz
+#   - prepend with 'verbose' if it affects console
+
 apc_manager:
-  show_goal_bin_markers: true
+  # Goal bin
+  show_goal_bin_markers: false
+
+  # Bounding Box
+  verbose_bounding_box: false
+  
+  #verbose_grasping_results: false
+  
+  # Experience planning
+  verbose_experience_database_stats: false
+
+  # Cartesian planning
+  verbose_cartesian_planning: false
+  show_grasp_filter_collision_if_failed: false
+
+  # Seed state
+  show_grasping_seed_state: false
+
+  

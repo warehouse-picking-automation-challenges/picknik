@@ -100,6 +100,7 @@ ProductObjectPtr BinObject::getProduct(const std::string& name)
   return ProductObjectPtr();
 }
 
+
 // -------------------------------------------------------------------------------------------------
 // Shelf Object
 // -------------------------------------------------------------------------------------------------
@@ -222,7 +223,6 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   double this_shelf_wall_width;
   double this_bin_width;
   double bin_z;
-  //std::size_t bin_id = 0;
   for (std::size_t wall_id = 0; wall_id < 4; ++wall_id)
   {
     const std::string wall_name = "wall_" + boost::lexical_cast<std::string>(wall_id);
@@ -429,7 +429,7 @@ bool ShelfObject::insertBinHelper(int bin_id, double height, double width, doubl
   //std::string bin_name = "bin_" + boost::lexical_cast<std::string>(bin_id);
   ROS_DEBUG_STREAM_NAMED("shelf","Creating bin '" << bin_name << "' with id " << bin_id);
 
-  BinObjectPtr new_bin(new BinObject(visuals_, rvt::MAGENTA, bin_name));
+  BinObjectPtr new_bin(new BinObject(visuals_, rvt::TRANSLUCENT_DARK, bin_name));
   bins_.insert( std::pair<std::string, BinObjectPtr>(bin_name, new_bin));
 
 
@@ -633,25 +633,42 @@ ProductObjectPtr ShelfObject::getProduct(const std::string &bin_name, const std:
   return product;
 }
 
-bool ShelfObject::deleteProduct(const std::string &bin_name, const std::string &product_name)
+bool ShelfObject::deleteProduct(BinObjectPtr bin, ProductObjectPtr product)
 {
-  // Find correct bin
-  BinObjectPtr bin = bins_[bin_name];
-
   std::vector<ProductObjectPtr>& products = bin->getProducts();
   // Find correct product
   for (std::size_t prod_id = 0; prod_id < products.size(); ++prod_id)
   {
-    if (products[prod_id]->getName() == product_name)
+    if (products[prod_id] == product)
     {
       products.erase(products.begin() + prod_id);
       return true;
     }
   }
 
-  ROS_WARN_STREAM_NAMED("shelf","Unable to delete product " << product_name << " in bin " << bin_name << " in the database");
+  ROS_WARN_STREAM_NAMED("shelf","Unable to delete product " << product->getName() << " in bin " << bin->getName() << " in the database");
   return false;
 }
+
+// bool ShelfObject::deleteProduct(const std::string &bin_name, const std::string &product_name)
+// {
+//   // Find correct bin
+//   BinObjectPtr bin = bins_[bin_name];
+
+//   std::vector<ProductObjectPtr>& products = bin->getProducts();
+//   // Find correct product
+//   for (std::size_t prod_id = 0; prod_id < products.size(); ++prod_id)
+//   {
+//     if (products[prod_id]->getName() == product_name)
+//     {
+//       products.erase(products.begin() + prod_id);
+//       return true;
+//     }
+//   }
+
+//   ROS_WARN_STREAM_NAMED("shelf","Unable to delete product " << product_name << " in bin " << bin_name << " in the database");
+//   return false;
+// }
 
 // -------------------------------------------------------------------------------------------------
 // Product Object
