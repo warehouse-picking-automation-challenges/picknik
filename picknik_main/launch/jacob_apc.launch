@@ -61,6 +61,7 @@
 
     <!-- Robot-specific settings -->
     <rosparam command="load" file="$(find picknik_main)/config/apc_jacob.yaml"/>
+    <rosparam command="load" file="$(find picknik_main)/config/picknik_debug_level.yaml"/>
     <rosparam command="load" file="$(find jacob_moveit_config)/config/kinematics.yaml"/>
     <rosparam command="load" file="$(find moveit_grasps)/config_robot/jacob_grasp_data.yaml"/>
 

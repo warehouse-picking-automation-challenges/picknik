@@ -101,10 +101,6 @@ Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
 	roslaunch picknik_main fake_perception_server.launch
 
-A transform of the camera is needed
-
-    roslaunch picknik_main camera_calibration.launch jacob:=false
-
 Run APC Manager (main program) for BAXTER
 
     roslaunch picknik_main baxter_apc.launch mode:=1 fake_execution:=true
@@ -127,10 +123,6 @@ Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
 	roslaunch picknik_main fake_perception_server.launch
 
-A transform of the camera is needed
-
-    roslaunch picknik_main camera_calibration.launch jacob:=false
-	
 Run APC Manager (main program) for BAXTER
 
     roslaunch picknik_main baxter_apc.launch mode:=1
@@ -153,13 +145,9 @@ Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
 	roslaunch picknik_main fake_perception_server.launch
 
-A transform of the camera is needed
-
-    roslaunch picknik_main camera_calibration.launch 
-
 Run APC Manager (main program) for JACOB in simulation
 
-	roslaunch picknik_main jacob_apc.launch fake_execution:=true mode:=1 auto:=1
+	roslaunch picknik_main jacob_apc.launch fake_execution:=1 fake_perception:=1 mode:=1 auto:=1
 
 ### Setup HARDWARE of Jacob
 
@@ -167,9 +155,11 @@ Start roscore:
 
     roscore &
 
-Start controller: WARNING - **THIS STARTS THE CALIBRATION ROUTINE AND WILL MOVE ROBOT INTO POSSIBLE COLLISION WITH GANTRY!!**
+Start controller:
 
 	roslaunch jacob_control jacob_hardware.launch
+
+Then calibrate the gantry by checking that it is safe to lower the robot to the bottom, then press RB on Xbox controller.
 
 Rviz Visualizers of robot states and debug markers
 
@@ -179,9 +169,6 @@ Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
 	roslaunch picknik_main fake_perception_server.launch
 
-A transform of the camera is needed
-
-    roslaunch picknik_main camera_calibration.launch 
 
 Run APC Manager (main program) for JACOB on hardware
 
