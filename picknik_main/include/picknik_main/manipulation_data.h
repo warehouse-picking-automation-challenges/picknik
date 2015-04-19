@@ -81,12 +81,16 @@ public:
 
   // Distance variables
   double place_goal_down_distance_desired_;
+  double goal_bin_clearance_;
   double jump_threshold_;
 
   // Robot semantics
   std::string start_pose_; // where to move robot to initially. should be for both arms if applicable
+
+  // TODO - delete these two
   std::string right_arm_dropoff_pose_; // where to discard picked items
   std::string left_arm_dropoff_pose_; // where to discard picked items
+
   std::string right_hand_name_;
   std::string left_hand_name_;
   std::string right_arm_name_;

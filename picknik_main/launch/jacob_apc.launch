@@ -25,6 +25,7 @@
   <arg name="jump_to" default="0" />
   <arg name="show_database" default="0" />
   <arg name="fake_execution" default="false"/>
+  <arg name="fake_perception" default="false"/>
 
   <!-- Ignore for now -->
   <arg name="saving_enabled" default="1" />
@@ -55,7 +56,7 @@
 	launch-prefix="$(arg launch_prefix)" output="screen" 
 	args="--mode $(arg mode) --full_auto $(arg full_auto) --auto $(arg auto) --verbose $(arg verbose) --order $(arg order) 
 	      --order_start $(arg order_start) --jump_to $(arg jump_to) --num_orders $(arg num_orders) 
-	      --bin_id $(arg bin_id) --fake_execution $(arg fake_execution)
+	      --bin_id $(arg bin_id) --fake_execution $(arg fake_execution) --fake_perception $(arg fake_perception)
 	      --show_database $(arg show_database) --use_experience $(arg use_experience)">
 
     <!-- Robot-specific settings -->

@@ -114,44 +114,14 @@ bool Manipulation::updateBoundingMesh(WorkOrder& work_order)
 {
   BinObjectPtr& bin = work_order.bin_;
   ProductObjectPtr& product = work_order.product_;
-  bool verbose = false;
+  bool verbose = true;
 
-  if (verbose)
-  {
-    std::cout << std::endl;
-    std::cout << "-------------------------------------------------------" << std::endl;
-
-    std::cout << "Before getBoundingingBoxFromMesh(): " << std::endl;
-    std::cout << "  Cuboid Pose: "; printTransform(product->getCentroid());
-    std::cout << "  Height: " << product->getHeight() << std::endl;
-    std::cout << "  Depth: " << product->getDepth() << std::endl;
-    std::cout << "  Width: " << product->getWidth() << std::endl;
-  }
-
-  // Get bounding box
-  Eigen::Affine3d cuboid_pose;
-  double depth, width, height;
-  if (!grasp_generator_->getBoundingBoxFromMesh(product->getCollisionMesh(), cuboid_pose, depth, width, height))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Failed to get bounding box");
-    return false;
-  }
-  product->setDepth(depth);
-  product->setWidth(width);
-  product->setHeight(height);
-
-  if (verbose)
-  {
-    std::cout << "After getBoundingingBoxFromMesh(): " << std::endl;
-    std::cout << "  Cuboid Pose: "; printTransform(product->getCentroid());
-    std::cout << "  Height: " << product->getHeight() << std::endl;
-    std::cout << "  Depth: " << product->getDepth() << std::endl;
-    std::cout << "  Width: " << product->getWidth() << std::endl;
-    std::cout << "-------------------------------------------------------" << std::endl;
-  }
+  // Calculate dimensions
+  product->calculateBoundingBox();
 
   // Visualize
-  product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()));
+  if (verbose)
+    product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()));
 
   return true;
 }

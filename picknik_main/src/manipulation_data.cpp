@@ -63,7 +63,6 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool in_simu
 
   if (in_simulation)
   {
-    ROS_WARN_STREAM_NAMED("manipulation_data","In full speed simulation mode");
     main_velocity_scaling_factor_ = 1.0;
     approach_velocity_scaling_factor_ = 1.0;
     lift_velocity_scaling_factor_ = 1.0;
@@ -74,6 +73,7 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool in_simu
   rvt::getDoubleParameter(parent_name, nh_, "wait_before_grasp", wait_before_grasp_);
   rvt::getDoubleParameter(parent_name, nh_, "wait_after_grasp", wait_after_grasp_);
   rvt::getDoubleParameter(parent_name, nh_, "place_goal_down_distance_desired", place_goal_down_distance_desired_);
+  rvt::getDoubleParameter(parent_name, nh_, "goal_bin_clearance", goal_bin_clearance_);
   rvt::getDoubleParameter(parent_name, nh_, "jump_threshold", jump_threshold_);
 
   // Load perception variables

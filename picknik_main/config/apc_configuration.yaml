@@ -26,6 +26,7 @@ num_bins: 12.0
 
 # Cartesian path config
 place_goal_down_distance_desired: 0.03
+goal_bin_clearance: 0.2
 jump_threshold: 10
 
 # Safety

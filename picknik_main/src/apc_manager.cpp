@@ -29,12 +29,20 @@
 namespace picknik_main
 {
 
-APCManager::APCManager(bool verbose, std::string order_file_path, bool use_experience, bool autonomous, bool full_autonomous, bool fake_execution)
+APCManager::APCManager(bool verbose, std::string order_file_path, bool use_experience, bool autonomous, bool full_autonomous, 
+                       bool fake_execution, bool fake_perception)
   : nh_private_("~")
   , verbose_(verbose)
-  , fake_perception_(false)
+  , fake_perception_(fake_perception)
   , skip_homing_step_(true)
+  , next_dropoff_location_(0)
 {
+  // Warn of fake modes
+  if (fake_perception)
+    ROS_WARN_STREAM_NAMED("apc_manager","In fake perception mode");
+  if (fake_execution)
+    ROS_WARN_STREAM_NAMED("apc_manager","In fake execution mode");
+
   // Load the loader
   robot_model_loader_.reset(new robot_model_loader::RobotModelLoader(ROBOT_DESCRIPTION));
 
@@ -199,9 +207,19 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to,
 
     if (!graspObjectPipeline(orders_[i], verbose_, jump_to))
     {
-      //ROS_WARN_STREAM_NAMED("apc_manager","An error occured in last product order, but we are continuing on");
-      ROS_ERROR_STREAM_NAMED("apc_manager","Shutting down for debug purposes only (it could continue on)");
-      return false;
+      if (true)
+      {
+        ROS_WARN_STREAM_NAMED("apc_manager","An error occured in last product order, but we are continuing on");
+        // remote_control_->setAutonomous(false);
+        // remote_control_->setFullAutonomous(false);          
+        // std::cout << "Waiting to continue " << std::endl;
+        // remote_control_->waitForNextStep();
+      }
+      else
+      {
+        ROS_ERROR_STREAM_NAMED("apc_manager","Shutting down for debug purposes only (it could continue on)");
+        return false;
+      } 
     }
 
     // Reset markers for next loop
@@ -267,6 +285,9 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Clear the temporary purple robot state image
         visuals_->visual_tools_->hideRobot();
 
+        // Clear old grasp markers
+        visuals_->grasp_markers_->deleteAllMarkers();
+
         // Set planning scene
         planning_scene_manager_->displayShelfAsWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
 
@@ -305,18 +326,24 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
         // Fake perception of product
-        if (!perceiveObjectFake(work_order))
+        if (fake_perception_)
         {
-          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
-          return false;
+          // Just use randomly generated placements
+          // if (!perceiveObjectFake(work_order))
+          // {
+          //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
+          //   return false;
+          // }
         }
-
-        // // Move camera to desired bin to get pose of product
-        // if (!perceiveObject(work_order, verbose))
-        // {
-        //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
-        //   return false;
-        // }
+        else
+        {
+          // Move camera to desired bin to get pose of product
+          if (!perceiveObject(work_order, verbose))
+          {
+            ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
+            return false;
+          }
+        }
 
         break;
 
@@ -486,11 +513,11 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Set planning scene
         //planning_scene_manager_->displayShelfAsWall();
 
-        // if (!placeObjectInGoalBin(arm_jmg))
-        // {
-        //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move object to goal bin");
-        //   return false;
-        // }
+        if (!placeObjectInGoalBin(arm_jmg))
+        {
+          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move object to goal bin");
+          return false;
+        }
 
         break;
 
@@ -500,17 +527,17 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Set planning scene
         // planning_scene_manager_->displayShelfAsWall();
 
-        // if (!manipulation_->openEndEffectorWithVelocity(true, arm_jmg))
-        // {
-        //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
-        //   return false;
-        // }
+        if (!manipulation_->openEndEffectorWithVelocity(true, arm_jmg))
+        {
+          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
+          return false;
+        }
 
-        // if (!liftFromGoalBin(arm_jmg))
-        // {
-        //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to lift up from goal bin");
-        //   return false;
-        // }
+        if (!liftFromGoalBin(arm_jmg))
+        {
+          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to lift up from goal bin");
+          return false;
+        }
 
         // Delete from planning scene the product
         shelf_->deleteProduct(work_order.bin_->getName(), work_order.product_->getName());
@@ -861,27 +888,41 @@ bool APCManager::testGoalBinPose()
 {
   const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
-  // Close end effector
-  if (!manipulation_->openEndEffectorWithVelocity(false, arm_jmg))
+  // Create locations if necessary
+  generateGoalBinLocations();
+
+  for (std::size_t i = 0; i < dropoff_locations_.size(); ++i)
   {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
-    return false;
-  }
-
-  // Go to dropoff position
-  if (!placeObjectInGoalBin(config_->right_arm_))
-    return false;
-
-  // Lower down into bin
-  if (config_->dual_arm_)
-    if (!placeObjectInGoalBin(config_->left_arm_))
+    // Close end effector
+    if (!manipulation_->openEndEffectorWithVelocity(false, arm_jmg))
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
       return false;
+    }
 
-  // Open end effector
-  if (!manipulation_->openEndEffectorWithVelocity(true, arm_jmg))
-  {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to open end effector");
-    return false;
+    // Go to dropoff position
+    if (!placeObjectInGoalBin(config_->right_arm_))
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to place objecto in goal bin");
+      return false;
+    }
+
+    // Open end effector
+    if (!manipulation_->openEndEffectorWithVelocity(true, arm_jmg))
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Unable to open end effector");
+      return false;
+    }
+
+    // Lift
+    if (!liftFromGoalBin(arm_jmg))
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Unable to lift up from goal bin");
+      return false;
+    }
+
+    // Go home
+    moveToStartPosition(arm_jmg);
   }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done going to goal bin pose");
@@ -1472,12 +1513,14 @@ bool APCManager::perceiveObjectFake(WorkOrder work_order)
 
 bool APCManager::placeObjectInGoalBin(const robot_model::JointModelGroup* arm_jmg)
 {
+  // Move to position
   if (!moveToDropOffPosition(arm_jmg))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to plan to goal bin");
     return false;
   }
-
+  
+  // Drop down
   bool lift = false;
   if (!manipulation_->executeVerticlePath(arm_jmg, config_->place_goal_down_distance_desired_, lift))
   {
@@ -1509,18 +1552,33 @@ bool APCManager::moveToStartPosition(const robot_model::JointModelGroup* arm_jmg
 
 bool APCManager::moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg)
 {
-  if (arm_jmg == NULL)
-    arm_jmg = config_->right_arm_;
+  // Create locations if necessary
+  generateGoalBinLocations();
 
-  // Choose which pose based on arm
-  std::string dropoff_pose;
-  if (arm_jmg == config_->right_arm_)
-    dropoff_pose = config_->right_arm_dropoff_pose_;
-  else
-    dropoff_pose = config_->left_arm_dropoff_pose_;
+  // Error check
+  if (next_dropoff_location_ >= dropoff_locations_.size())
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","This should never happen");
+    next_dropoff_location_ = 0; // reset
+  }
+
+  // Translate to custom end effector geometry
+  Eigen::Affine3d dropoff_location = dropoff_locations_[next_dropoff_location_];
+  dropoff_location = dropoff_location * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
 
   // Move
-  return manipulation_->moveToPose(arm_jmg, dropoff_pose, config_->main_velocity_scaling_factor_);
+  if (!manipulation_->moveEEToPose(dropoff_location, config_->main_velocity_scaling_factor_, arm_jmg))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move arm to desired shelf location");
+    return false;
+  }
+
+  // Set next dropoff location id
+  ++next_dropoff_location_;
+  if (next_dropoff_location_ >= dropoff_locations_.size())
+    next_dropoff_location_ = 0; // reset
+
+  return true;
 }
 
 bool APCManager::loadShelfWithOnlyOneProduct(const std::string& product_name)
@@ -1675,5 +1733,65 @@ bool APCManager::displayExperienceDatabase()
   return manipulation_->displayLightningPlansStandAlone(arm_jmg);
 }
 
+bool APCManager::generateGoalBinLocations()
+{
+  // Check if we need to generate these
+  if (dropoff_locations_.size())
+    return true;
+
+  static std::size_t NUM_DROPOFF_LOCATIONS = 8;
+
+  // Calculate dimensions of goal bin
+  shelf_->getGoalBin()->calculateBoundingBox();
+
+  // Visualize
+  shelf_->getGoalBin()->visualizeWireframe(shelf_->getBottomRight());
+
+  // Find starting location of dropoff
+  Eigen::Affine3d overhead_goal_bin = shelf_->getBottomRight() * shelf_->getGoalBin()->getCentroid();
+  overhead_goal_bin.translation().z() += shelf_->getGoalBin()->getHeight() + config_->goal_bin_clearance_;
+
+  // Convert pose that has z arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
+  overhead_goal_bin = overhead_goal_bin * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitY());
+  //visuals_->visual_tools_->publishAxis(overhead_goal_bin);
+
+  bool visualize_dropoff_locations = true;
+
+  // Calculations
+  const std::size_t num_cols = 2;
+  const std::size_t num_rows = NUM_DROPOFF_LOCATIONS / num_cols;
+  const double total_x_depth = shelf_->getGoalBin()->getDepth() / 3.0; // this is the longer dimension
+  const double delta_x = total_x_depth / (num_rows - 1);
+  const double total_y_width = shelf_->getGoalBin()->getWidth() / 3.0;
+  const double delta_y = total_y_width / (num_cols - 1);
+
+  // Create first location
+  Eigen::Affine3d first_location = overhead_goal_bin;
+  first_location.translation().x() -= total_x_depth / 2.0;
+  first_location.translation().y() -= total_y_width / 2.0;
+  if (visualize_dropoff_locations)
+    visuals_->visual_tools_->publishZArrow(first_location, rvt::BLUE);
+  
+  // Generate row and column locaitons
+  for (std::size_t y = 0; y < num_cols; ++y)
+  {
+    for (std::size_t x = 0; x < num_rows; ++x)
+    {
+      Eigen::Affine3d new_location = first_location;
+      new_location.translation().x() += delta_x * x;
+      new_location.translation().y() += delta_y * y;
+
+      // Visualize
+      if (visualize_dropoff_locations)
+        if (!(y ==0 && x==0)) // we already showed this arrow
+          visuals_->visual_tools_->publishZArrow(new_location, rvt::GREEN);    
+
+      // Save
+      dropoff_locations_.push_back(new_location);
+    }
+  }
+
+  return true;
+}
 
 } // end namespace

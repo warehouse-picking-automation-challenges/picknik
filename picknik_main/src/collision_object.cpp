@@ -13,6 +13,7 @@
 */
 
 #include <picknik_main/collision_object.h>
+#include <moveit_grasps/grasp_generator.h> // get bounding box
 
 namespace picknik_main
 {
@@ -346,6 +347,44 @@ const Eigen::Affine3d& MeshObject::getCentroid() const
 void MeshObject::setCentroid(const Eigen::Affine3d& centroid)
 {
   centroid_ = centroid;
+}
+
+bool MeshObject::calculateBoundingBox(bool verbose)
+{
+  if (verbose)
+  {
+    std::cout << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+
+    std::cout << "Before getBoundingingBoxFromMesh(): " << std::endl;
+    std::cout << "  Cuboid Pose: "; printTransform(getCentroid());
+    std::cout << "  Height: " << getHeight() << std::endl;
+    std::cout << "  Depth: " << getDepth() << std::endl;
+    std::cout << "  Width: " << getWidth() << std::endl;
+  }
+
+  // Get bounding box
+  Eigen::Affine3d cuboid_pose;
+  double depth, width, height;
+  if (!moveit_grasps::GraspGenerator::getBoundingBoxFromMesh(getCollisionMesh(), cuboid_pose, depth, width, height))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to get bounding box");
+    return false;
+  }
+  setDepth(depth);
+  setWidth(width);
+  setHeight(height);
+
+  if (verbose)
+  {
+    std::cout << "After getBoundingingBoxFromMesh(): " << std::endl;
+    std::cout << "  Cuboid Pose: "; printTransform(getCentroid());
+    std::cout << "  Height: " << getHeight() << std::endl;
+    std::cout << "  Depth: " << getDepth() << std::endl;
+    std::cout << "  Width: " << getWidth() << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+  }
+  return true;
 }
 
 } // namespace

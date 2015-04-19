@@ -59,8 +59,10 @@ public:
    * \param autonomous - whether it should pause for human input, except executing trajectories which is always manual
    * \param full_autonomous - whether it should pause for human input
    * \param fake_execution - when true velocities are full speed
+   * \param fake_perception   
    */
-  APCManager(bool verbose, std::string order_file_path, bool use_experience, bool autonomous = false, bool full_autonomous = false, bool fake_execution = false);
+  APCManager(bool verbose, std::string order_file_path, bool use_experience, bool autonomous = false, bool full_autonomous = false, 
+             bool fake_execution = false, bool fake_perception = false);
 
   /**
    * \brief Check if all communication is properly active
@@ -260,7 +262,7 @@ public:
    * \param optionally specify which arm to use
    * \return true on success
    */
-  bool moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg = NULL);
+  bool moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Load single product, one per shelf, for testing
@@ -311,6 +313,12 @@ public:
    * \return true on success
    */
   bool displayExperienceDatabase();
+
+  /**
+   * \brief Create locations to place products
+   * \return true on success
+   */
+  bool generateGoalBinLocations();
 
 private:
 
@@ -363,6 +371,10 @@ private:
 
   // Allow Rviz to request the entire scene at startup
   ros::ServiceServer get_scene_service_;
+
+  // Locations to dropoff products
+  EigenSTL::vector_Affine3d dropoff_locations_;
+  std::size_t next_dropoff_location_;
 
 }; // end class
 

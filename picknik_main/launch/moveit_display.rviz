@@ -187,6 +187,10 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        xtion_sensor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
@@ -198,7 +202,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
-        {}
+        Path: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -216,22 +220,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.39897
+      Distance: 2.99109
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.21651
-        Y: 0.886006
-        Z: -1.43051e-06
+        X: 1.43576
+        Y: 1.03618
+        Z: -1.66893e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.3704
+      Pitch: 0.5904
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.97174
+      Yaw: 3.85674
     Saved: ~
 Window Geometry:
   Displays:
@@ -245,5 +249,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 721
-  X: 1189
+  X: 962
   Y: 14

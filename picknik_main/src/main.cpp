@@ -41,6 +41,7 @@ int main(int argc, char** argv)
   bool verbose = false;
   bool use_experience = true;
   bool fake_execution = true;
+  bool fake_perception = true;
   bool autonomous = false;
   bool full_autonomous = false;
   std::string order_file;
@@ -100,6 +101,14 @@ int main(int argc, char** argv)
       continue;
     }
 
+    if( std::string(argv[i]).compare("--fake_perception") == 0 )
+    {
+      ++i;
+      fake_perception = atoi(argv[i]);
+      ROS_DEBUG_STREAM_NAMED("main","Fake perception: " << fake_perception);
+      continue;
+    }
+
     if( std::string(argv[i]).compare("--mode") == 0 )
     {
       ++i;
@@ -143,7 +152,7 @@ int main(int argc, char** argv)
     return 1; // error
   }
 
-  picknik_main::APCManager manager(verbose, order_file, use_experience, autonomous, full_autonomous, fake_execution);
+  picknik_main::APCManager manager(verbose, order_file, use_experience, autonomous, full_autonomous, fake_execution, fake_perception);
 
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
