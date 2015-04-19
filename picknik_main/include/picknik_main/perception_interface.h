@@ -110,14 +110,6 @@ public:
    */
   bool publishCameraFrame(Eigen::Affine3d camera_to_world);
 
-  /**
-   * \brief Convert between computer vision frame to ROS frame
-   * \param computer_vision_frame
-   * \param output - ros_frame
-   * \return true on success
-   */
-  bool convertFrameCVToROS(const Eigen::Affine3d& cv_frame, Eigen::Affine3d& ros_frame);
-
 private:
 
   // Show more visual and console output, with general slower run time.

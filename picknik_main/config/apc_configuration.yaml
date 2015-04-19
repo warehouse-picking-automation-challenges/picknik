@@ -25,18 +25,12 @@ bin_left_margin: 0.01
 num_bins: 12.0
 
 # Cartesian path config
-approach_distance_desired: 1
-retreat_distance_desired: 0.5
-lift_distance_desired: 0.03
 place_goal_down_distance_desired: 0.03
+goal_bin_clearance: 0.2
 jump_threshold: 10
 
 # Safety
 collision_wall_safety_margin: 0.01 # 0.02
-
-# Sleep timers
-wait_before_grasp: 1.0
-wait_after_grasp: 1.0
 
 # Perception Data
 camera:

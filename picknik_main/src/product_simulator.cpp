@@ -151,6 +151,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
   // Show all display markers at once
   if (change_rviz_displays)
     visuals_->visual_tools_display_->triggerBatchPublishAndDisable();
+  return true;
 }
 
 bool ProductSimulator::addCollisionMesh(ProductObjectPtr& product, const Eigen::Affine3d& trans)

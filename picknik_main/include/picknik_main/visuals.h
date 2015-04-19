@@ -49,6 +49,8 @@ public:
   mvt::MoveItVisualToolsPtr visual_tools_display_;
   mvt::MoveItVisualToolsPtr start_state_; // also used for grasp markers
   mvt::MoveItVisualToolsPtr goal_state_; // also used for trajectory lines
+  mvt::MoveItVisualToolsPtr grasp_markers_; // also used for start state
+  mvt::MoveItVisualToolsPtr trajectory_lines_; // also used for goal state
 
 }; // end class
 

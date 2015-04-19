@@ -56,10 +56,13 @@ public:
    * \param verbose - run in debug mode
    * \param order_file_path
    * \param Use an experience database in planning
-   * \param Show the experience database after each plan
-   * \param autonomous - whether it should pause for human input
+   * \param autonomous - whether it should pause for human input, except executing trajectories which is always manual
+   * \param full_autonomous - whether it should pause for human input
+   * \param fake_execution - when true velocities are full speed
+   * \param fake_perception   
    */
-  APCManager(bool verbose, std::string order_file_path, bool use_experience, bool show_database, bool autonomous = false);
+  APCManager(bool verbose, std::string order_file_path, bool use_experience, bool autonomous = false, bool full_autonomous = false, 
+             bool fake_execution = false, bool fake_perception = false);
 
   /**
    * \brief Check if all communication is properly active
@@ -121,7 +124,7 @@ public:
    * \return true on success
    */
   bool testInAndOut();
-  
+
   /**
    * \brief Script for moving arms to locations of corner of shelf
    * \return true on success
@@ -169,6 +172,12 @@ public:
    * \return true on success
    */
   bool testGoHome();
+
+  /**
+   * \brief Get cartesian path for grasping object
+   * \return true on success
+   */
+  bool testApproachLiftRetreat();
 
   /**
    * \brief Get the XML of a SDF pose of joints
@@ -227,7 +236,7 @@ public:
    * \return true on success
    */
   bool perceiveObject(WorkOrder work_order, bool verbose);
-  bool perceiveObjectFake(WorkOrder work_order, bool verbose);
+  bool perceiveObjectFake(WorkOrder work_order);
 
   /**
    * \brief Move object into the goal bin
@@ -253,7 +262,7 @@ public:
    * \param optionally specify which arm to use
    * \return true on success
    */
-  bool moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg = NULL);
+  bool moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Load single product, one per shelf, for testing
@@ -299,6 +308,18 @@ public:
    */
   bool attachProduct(ProductObjectPtr product, const robot_model::JointModelGroup* arm_jmg);
 
+  /**
+   * \brief Show experience database
+   * \return true on success
+   */
+  bool displayExperienceDatabase();
+
+  /**
+   * \brief Create locations to place products
+   * \return true on success
+   */
+  bool generateGoalBinLocations();
+
 private:
 
   // A shared node handle
@@ -325,7 +346,7 @@ private:
 
   // File path to ROS package on drive
   std::string package_path_;
-  
+
   // Remote control for dealing with GUIs
   RemoteControlPtr remote_control_;
 
@@ -350,6 +371,10 @@ private:
 
   // Allow Rviz to request the entire scene at startup
   ros::ServiceServer get_scene_service_;
+
+  // Locations to dropoff products
+  EigenSTL::vector_Affine3d dropoff_locations_;
+  std::size_t next_dropoff_location_;
 
 }; // end class
 

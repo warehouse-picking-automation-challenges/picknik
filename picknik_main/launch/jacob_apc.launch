@@ -15,8 +15,9 @@
   <!-- Command line arguments -->
   <arg name="mode" default="1" />
   <arg name="auto" default="0" />
+  <arg name="full_auto" default="0" />
   <arg name="verbose" default="1" />
-  <arg name="use_experience" default="0" />
+  <arg name="use_experience" default="1" />
   <arg name="order" default="$(find picknik_main)/orders/cheezits.json" />
   <arg name="order_start" default="0" />
   <arg name="num_orders" default="0" />
@@ -24,6 +25,7 @@
   <arg name="jump_to" default="0" />
   <arg name="show_database" default="0" />
   <arg name="fake_execution" default="false"/>
+  <arg name="fake_perception" default="false"/>
 
   <!-- Ignore for now -->
   <arg name="saving_enabled" default="1" />
@@ -52,9 +54,9 @@
   <!-- Main process -->
   <node name="picknik_main" pkg="picknik_main" type="main" respawn="false" 
 	launch-prefix="$(arg launch_prefix)" output="screen" 
-	args="--mode $(arg mode) --auto $(arg auto) --verbose $(arg verbose) --order $(arg order) 
+	args="--mode $(arg mode) --full_auto $(arg full_auto) --auto $(arg auto) --verbose $(arg verbose) --order $(arg order) 
 	      --order_start $(arg order_start) --jump_to $(arg jump_to) --num_orders $(arg num_orders) 
-	      --bin_id $(arg bin_id) --fake_execution $(arg fake_execution)
+	      --bin_id $(arg bin_id) --fake_execution $(arg fake_execution) --fake_perception $(arg fake_perception)
 	      --show_database $(arg show_database) --use_experience $(arg use_experience)">
 
     <!-- Robot-specific settings -->
@@ -64,7 +66,6 @@
 
     <!-- Grasp Settings -->
     <rosparam command="load" file="$(find moveit_grasps)/config/grasp_debug_level.yaml"/>    
-    <rosparam command="load" file="$(find moveit_grasps)/config/grasp_default_parameters.yaml"/>
 
     <!-- Settings of Amazon competition -->
     <rosparam command="load" file="$(find picknik_main)/config/apc_configuration.yaml"/>

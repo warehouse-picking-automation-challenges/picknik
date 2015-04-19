@@ -50,7 +50,7 @@ ManipulationData::ManipulationData()
 {
 }
 
-bool ManipulationData::load(robot_model::RobotModelPtr robot_model)
+bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool in_simulation)
 {
   const std::string parent_name = "manipulation_data"; // for namespacing logging messages
 
@@ -60,12 +60,20 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model)
   rvt::getDoubleParameter(parent_name, nh_, "lift_velocity_scaling_factor", lift_velocity_scaling_factor_);
   rvt::getDoubleParameter(parent_name, nh_, "retreat_velocity_scaling_factor", retreat_velocity_scaling_factor_);
   rvt::getDoubleParameter(parent_name, nh_, "calibration_velocity_scaling_factor", calibration_velocity_scaling_factor_);
+
+  if (in_simulation)
+  {
+    main_velocity_scaling_factor_ = 1.0;
+    approach_velocity_scaling_factor_ = 1.0;
+    lift_velocity_scaling_factor_ = 1.0;
+    retreat_velocity_scaling_factor_ = 1.0;
+    calibration_velocity_scaling_factor_ = 1.0;
+  }
+
   rvt::getDoubleParameter(parent_name, nh_, "wait_before_grasp", wait_before_grasp_);
   rvt::getDoubleParameter(parent_name, nh_, "wait_after_grasp", wait_after_grasp_);
-  rvt::getDoubleParameter(parent_name, nh_, "approach_distance_desired", approach_distance_desired_);
-  rvt::getDoubleParameter(parent_name, nh_, "retreat_distance_desired", retreat_distance_desired_);
-  rvt::getDoubleParameter(parent_name, nh_, "lift_distance_desired", lift_distance_desired_);
   rvt::getDoubleParameter(parent_name, nh_, "place_goal_down_distance_desired", place_goal_down_distance_desired_);
+  rvt::getDoubleParameter(parent_name, nh_, "goal_bin_clearance", goal_bin_clearance_);
   rvt::getDoubleParameter(parent_name, nh_, "jump_threshold", jump_threshold_);
 
   // Load perception variables

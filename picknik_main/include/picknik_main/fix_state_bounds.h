@@ -62,7 +62,7 @@ public:
   /**
    * \brief Getter for MaxBoundsError
    */ 
-  const double getMaxBoundsError() const
+  double getMaxBoundsError() const
   {
     return bounds_dist_;
   }

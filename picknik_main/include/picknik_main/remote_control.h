@@ -123,11 +123,11 @@ public:
 
 private:
 
-  // A shared node handle
-  ros::NodeHandle nh_;
-
   // Show more visual and console output, with general slower run time.
   bool verbose_;
+
+  // A shared node handle
+  ros::NodeHandle nh_;
 
   // The overall manager for sending commands
   APCManager* parent_;

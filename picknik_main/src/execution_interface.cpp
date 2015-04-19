@@ -96,16 +96,19 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
     if (trajectory.joint_names.size() > 3)
     {
       static std::size_t trajectory_count = 0;
-      //saveTrajectory(trajectory_msg, "trajectory_"+ boost::lexical_cast<std::string>(trajectory_count++)+".csv");
-      saveTrajectory(trajectory_msg, "trajectory.csv");
+      saveTrajectory(trajectory_msg, "trajectory_"+ boost::lexical_cast<std::string>(trajectory_count++)+".csv");
+      //saveTrajectory(trajectory_msg, "trajectory.csv");
     }
   }
 
   // Visualize the hand/wrist path in Rviz
   if (trajectory.points.size() > 1)
   {
-    visuals_->goal_state_->deleteAllMarkers();
-    visuals_->goal_state_->publishTrajectoryLine(trajectory_msg, grasp_datas_[config_->right_arm_]->parent_link_,
+    visuals_->trajectory_lines_->deleteAllMarkers();
+    ros::spinOnce();
+    
+    //const moveit::core::LinkModel* robot_link = planning_scene_monitor_->getRobotModel()->getLinkModel("jaco2_link_finger_2_tip");
+    visuals_->trajectory_lines_->publishTrajectoryLine(trajectory_msg, grasp_datas_[config_->right_arm_]->parent_link_,
                                                  config_->right_arm_, rvt::LIME_GREEN);
   }
   else

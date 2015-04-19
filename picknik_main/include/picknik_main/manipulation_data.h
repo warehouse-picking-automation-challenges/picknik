@@ -59,9 +59,11 @@ public:
 
   /**
    * \brief Load the configuration from rosparam
+   * \param robot_model
+   * \param in_simulation - whether to load full speed velocity constraints (simulation goes faster)
    * \return true on success
    */
-  bool load(robot_model::RobotModelPtr robot_model);
+  bool load(robot_model::RobotModelPtr robot_model, bool in_simulation);
 
   // A shared node handle
   ros::NodeHandle nh_;
@@ -78,16 +80,17 @@ public:
   double wait_after_grasp_;
 
   // Distance variables
-  double approach_distance_desired_;
-  double retreat_distance_desired_;
-  double lift_distance_desired_;
   double place_goal_down_distance_desired_;
+  double goal_bin_clearance_;
   double jump_threshold_;
 
   // Robot semantics
   std::string start_pose_; // where to move robot to initially. should be for both arms if applicable
+
+  // TODO - delete these two
   std::string right_arm_dropoff_pose_; // where to discard picked items
   std::string left_arm_dropoff_pose_; // where to discard picked items
+
   std::string right_hand_name_;
   std::string left_hand_name_;
   std::string right_arm_name_;

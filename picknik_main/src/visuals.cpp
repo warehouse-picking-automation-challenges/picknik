@@ -48,6 +48,7 @@ Visuals::Visuals(robot_model::RobotModelPtr robot_model, planning_scene_monitor:
   ros::spinOnce();
   start_state_->deleteAllMarkers(); // clear all old markers
   start_state_->hideRobot(); // show that things have been reset
+  grasp_markers_ = start_state_; // same object just renamed
 
   // ------------------------------------------------------------------------------------------------------
   // Load RobotState VisualTools for Goal State
@@ -58,7 +59,7 @@ Visuals::Visuals(robot_model::RobotModelPtr robot_model, planning_scene_monitor:
   ros::spinOnce();
   goal_state_->deleteAllMarkers(); // clear all old markers
   goal_state_->hideRobot(); // show that things have been reset
-
+  trajectory_lines_ = goal_state_; // same object just renamed
 }
 
 bool Visuals::visualizeDisplayShelf(ShelfObjectPtr shelf)

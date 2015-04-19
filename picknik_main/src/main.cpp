@@ -41,12 +41,13 @@ int main(int argc, char** argv)
   bool verbose = false;
   bool use_experience = true;
   bool fake_execution = true;
-  bool show_database = false;
+  bool fake_perception = true;
   bool autonomous = false;
+  bool full_autonomous = false;
   std::string order_file;
 
   // Parse command line arguments
-  for (std::size_t i = 0; i < argc; ++i)
+  for (int i = 0; i < argc; ++i)
   {
     if (strcmp(argv[i], "--verbose") == 0)
     {
@@ -76,6 +77,14 @@ int main(int argc, char** argv)
       continue;
     }
 
+    if( std::string(argv[i]).compare("--full_auto") == 0 )
+    {
+      ++i;
+      full_autonomous = atoi(argv[i]);
+      ROS_DEBUG_STREAM_NAMED("main","Using full_autonomous: " << full_autonomous);
+      continue;
+    }
+
     if( std::string(argv[i]).compare("--use_experience") == 0 )
     {
       ++i;
@@ -92,13 +101,14 @@ int main(int argc, char** argv)
       continue;
     }
 
-    if( std::string(argv[i]).compare("--show_database") == 0 )
+    if( std::string(argv[i]).compare("--fake_perception") == 0 )
     {
       ++i;
-      show_database = atoi(argv[i]);
-      ROS_DEBUG_STREAM_NAMED("main","Showing database: " << show_database);
+      fake_perception = atoi(argv[i]);
+      ROS_DEBUG_STREAM_NAMED("main","Fake perception: " << fake_perception);
       continue;
     }
+
     if( std::string(argv[i]).compare("--mode") == 0 )
     {
       ++i;
@@ -142,7 +152,7 @@ int main(int argc, char** argv)
     return 1; // error
   }
 
-  picknik_main::APCManager manager(verbose, order_file, use_experience, show_database, autonomous);
+  picknik_main::APCManager manager(verbose, order_file, use_experience, autonomous, full_autonomous, fake_execution, fake_perception);
 
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
@@ -169,7 +179,7 @@ int main(int argc, char** argv)
       manager.testCameraPositions();
       break;
     case 5:
-      if (!manager.checkSystemReady()) return 0;;
+      //if (!manager.checkSystemReady()) return 0;;
       ROS_INFO_STREAM_NAMED("main","Raise the roof (go up and down)");
       manager.testUpAndDown();
       break;      
@@ -191,13 +201,13 @@ int main(int argc, char** argv)
 
     case 9:
       if (!manager.checkSystemReady()) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Playback trajectory for calibration");
-      manager.calibrateCamera();
+      ROS_INFO_STREAM_NAMED("main","Recording a trajectory for calibration");
+      manager.recordCalibrationTrajectory();
       break;
     case 10:
       if (!manager.checkSystemReady()) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Recording a trajectory for calibration");
-      manager.recordCalibrationTrajectory();
+      ROS_INFO_STREAM_NAMED("main","Playback trajectory for calibration");
+      manager.calibrateCamera();
       break;
     case 11:
       if (!manager.checkSystemReady()) return 0;;
@@ -246,7 +256,14 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Going in and out of bin");
       manager.testInAndOut();
       break;
-
+    case 21:
+      ROS_INFO_STREAM_NAMED("main","Show experience database");
+      manager.displayExperienceDatabase();
+      break;
+    case 22:
+      ROS_INFO_STREAM_NAMED("main","Testing approach lift retreat cartesian path");
+      manager.testApproachLiftRetreat();
+      break;      
     default:
       ROS_WARN_STREAM_NAMED("main","Unkown mode: " << mode);
   }

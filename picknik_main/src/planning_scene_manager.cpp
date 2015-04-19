@@ -78,6 +78,7 @@ bool PlanningSceneManager::displayEmptyShelf()
 
   // Output planning scene
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
+  return true;
 }
 
 bool PlanningSceneManager::displayShelfWithOpenBins()

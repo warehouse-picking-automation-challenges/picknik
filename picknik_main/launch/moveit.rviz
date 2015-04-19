@@ -4,6 +4,7 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
         - /Grid1/Offset1
         - /Robot State1
         - /Planning Start State1
@@ -12,9 +13,7 @@ Panels:
         - /Trajectory1
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
-        - /TF1
         - /TF1/Frames1
-        - /RobotModel1
         - /RobotModel1/Links1
         - /DepthCloud1/Auto Size1
       Splitter Ratio: 0.748603
@@ -167,6 +166,10 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        xtion_sensor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Name: Robot State
       Robot Alpha: 1
       Robot Description: robot_description
@@ -293,6 +296,10 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        xtion_sensor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Name: Planning Start State
       Robot Alpha: 1
       Robot Description: robot_description
@@ -419,6 +426,10 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        xtion_sensor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Name: Planning Goal State
       Robot Alpha: 1
       Robot Description: robot_description
@@ -545,6 +556,10 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        xtion_sensor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Name: OMPL State
       Robot Alpha: 1
       Robot Description: robot_description
@@ -578,7 +593,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/grasping_markers
       Name: Amazon Grasp Markers
       Namespaces:
-        {}
+        Arrow: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -586,7 +601,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
-        {}
+        Path: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -721,7 +736,11 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-      Loop Animation: true
+        xtion_sensor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Loop Animation: false
       Name: Trajectory
       Robot Alpha: 0.5
       Robot Description: robot_description
@@ -860,6 +879,10 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          xtion_sensor:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
         Robot Alpha: 0.5
         Show Robot Collision: false
         Show Robot Visual: false
@@ -963,7 +986,7 @@ Visualization Manager:
       Value: false
   Enabled: true
   Global Options:
-    Background Color: 48; 48; 48
+    Background Color: 227; 227; 227
     Fixed Frame: world
     Frame Rate: 30
   Name: root
@@ -976,22 +999,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.54999
+      Distance: 4.64404
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.35339
-        Y: 0.566882
-        Z: 1.90735e-06
+        X: 1.45031
+        Y: -2.51471
+        Z: 0
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.320399
+      Pitch: 0.240398
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.92726
+      Yaw: 2.0254
     Saved: ~
 Window Geometry:
   Displays:
@@ -1007,5 +1030,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1194
-  X: 1909
+  X: 1658
   Y: 14
