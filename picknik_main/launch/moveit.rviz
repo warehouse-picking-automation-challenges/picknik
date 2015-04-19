@@ -4,6 +4,7 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
         - /Grid1/Offset1
         - /Robot State1
         - /Planning Start State1
@@ -574,7 +575,6 @@ Visualization Manager:
       Namespaces:
         Axis: true
         Line: true
-        Sphere: true
         Text: true
         goal_bin: true
       Queue Size: 100
@@ -592,7 +592,9 @@ Visualization Manager:
       Marker Topic: /picknik_main/grasping_markers
       Name: Amazon Grasp Markers
       Namespaces:
-        {}
+        Arrow: true
+        Sphere: true
+        Triangle: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -985,7 +987,7 @@ Visualization Manager:
       Value: false
   Enabled: true
   Global Options:
-    Background Color: 48; 48; 48
+    Background Color: 130; 130; 130
     Fixed Frame: world
     Frame Rate: 30
   Name: root
@@ -998,22 +1000,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 5.94522
+      Distance: 12.6206
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.653413
-        Y: 1.08658
+        X: 6.05794
+        Y: 0.115409
         Z: 1.78814e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.300399
+      Pitch: 0.100399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 4.26226
+      Yaw: 3.40226
     Saved: ~
 Window Geometry:
   Displays:
@@ -1029,5 +1031,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1194
-  X: 1678
+  X: 1668
   Y: 14

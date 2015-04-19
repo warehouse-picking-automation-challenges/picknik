@@ -50,7 +50,7 @@ ManipulationData::ManipulationData()
 {
 }
 
-bool ManipulationData::load(robot_model::RobotModelPtr robot_model)
+bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool in_simulation)
 {
   const std::string parent_name = "manipulation_data"; // for namespacing logging messages
 
@@ -61,7 +61,6 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model)
   rvt::getDoubleParameter(parent_name, nh_, "retreat_velocity_scaling_factor", retreat_velocity_scaling_factor_);
   rvt::getDoubleParameter(parent_name, nh_, "calibration_velocity_scaling_factor", calibration_velocity_scaling_factor_);
 
-  bool in_simulation = true;
   if (in_simulation)
   {
     ROS_WARN_STREAM_NAMED("manipulation_data","WARNING: IN FULL SPEED SIMULATION MODE!!!");

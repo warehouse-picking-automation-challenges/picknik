@@ -244,20 +244,6 @@ Button Mapings
 		22. Test approach, lift, and retreat motion for random objects
 		
 	jump_to - which step in the manipulation pipeline to start on
-	  Steps: NOT CORRECT ANYMORE
-	    0. Move to initial position
-		1. Open end effectors
-		2. Generate and choose grasp
-		3. Setting the-grasp
-		4. Get pre-grasp by generateApproachPath()
-		5. N/A
-		6. Moving to pre-grasp position
-		7. Cartesian move to the-grasp position
-		8. Grasping
-		9. Lifting product UP slightly
-		10. Moving BACK to pre-grasp position
-		11. Moving back to INITIAL position
-		12. Releasing product
 	auto - whether to go into auto step mode, but does not allow trajectories to be executed without verification
 	full_auto - whether to go into autonomous mode, without any human intervention even for execution
     order - which json file to use, defaults to orders/simple.json
@@ -266,7 +252,8 @@ Button Mapings
 	use_experience - whether to use cached planned (Lightning Database) or not
 	saving_enabled - allow new plans to be saved to experience database
 	debug - slower and more verbose
-
+	fake_execution - runs at higher speeds and uses simulated controllers
+	
 ## Working Tests
 
 Document here all roslaunch files for testing/verifying various parts of the system. Also specify if you've checked it in

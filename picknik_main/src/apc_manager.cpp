@@ -29,7 +29,7 @@
 namespace picknik_main
 {
 
-APCManager::APCManager(bool verbose, std::string order_file_path, bool use_experience, bool autonomous, bool full_autonomous)
+APCManager::APCManager(bool verbose, std::string order_file_path, bool use_experience, bool autonomous, bool full_autonomous, bool fake_execution)
   : nh_private_("~")
   , verbose_(verbose)
   , fake_perception_(false)
@@ -82,7 +82,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
 
   // Load manipulation data for our robot
   config_.reset(new ManipulationData());
-  config_->load(robot_model_);
+  config_->load(robot_model_, fake_execution);
 
   // Load grasp data specific to our robot
   grasp_datas_[config_->right_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_->right_hand_name_, robot_model_));
@@ -305,7 +305,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
         // Fake perception of product
-        if (!perceiveObjectFake(work_order, verbose))
+        if (!perceiveObjectFake(work_order))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
           return false;
@@ -792,6 +792,9 @@ bool APCManager::testApproachLiftRetreat()
     ROS_INFO_STREAM_NAMED("apc_manager","Starting order " << i);
     WorkOrder& work_order = orders_[i];
 
+    // Set a fake pose of object
+    perceiveObjectFake(work_order);
+
     // Choose which arm to use
     const robot_model::JointModelGroup* arm_jmg = manipulation_->chooseArm(work_order.product_->getWorldPose(shelf_, work_order.bin_));
 
@@ -804,6 +807,8 @@ bool APCManager::testApproachLiftRetreat()
       ROS_ERROR_STREAM_NAMED("apc_manager","No grasps found for " << work_order.product_->getName());
     }
 
+    ROS_INFO_STREAM_NAMED("temp","ending early for fun");
+    return true; // TEMP ender
   } // end for
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done testing cartesian path");
@@ -1434,7 +1439,7 @@ bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
   return true;
 }
 
-bool APCManager::perceiveObjectFake(WorkOrder work_order, bool verbose)
+bool APCManager::perceiveObjectFake(WorkOrder work_order)
 {
   BinObjectPtr& bin = work_order.bin_;
   ProductObjectPtr& product = work_order.product_;

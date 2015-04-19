@@ -143,7 +143,7 @@ int main(int argc, char** argv)
     return 1; // error
   }
 
-  picknik_main::APCManager manager(verbose, order_file, use_experience, autonomous, full_autonomous);
+  picknik_main::APCManager manager(verbose, order_file, use_experience, autonomous, full_autonomous, fake_execution);
 
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;

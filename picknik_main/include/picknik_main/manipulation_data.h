@@ -59,9 +59,11 @@ public:
 
   /**
    * \brief Load the configuration from rosparam
+   * \param robot_model
+   * \param in_simulation - whether to load full speed velocity constraints (simulation goes faster)
    * \return true on success
    */
-  bool load(robot_model::RobotModelPtr robot_model);
+  bool load(robot_model::RobotModelPtr robot_model, bool in_simulation);
 
   // A shared node handle
   ros::NodeHandle nh_;

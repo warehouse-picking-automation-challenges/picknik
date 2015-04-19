@@ -164,32 +164,38 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
   product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()));
 
   // Generate all possible grasps
-  std::vector<moveit_msgs::Grasp> possible_grasps;
+  std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates;
 
   double max_grasp_size = 0.10; // TODO: verify max object size Open Hand can grasp
   grasp_generator_->generateGrasps( world_to_product, product->getDepth(), product->getWidth(), product->getHeight(),
-                                    max_grasp_size, grasp_datas_[arm_jmg], possible_grasps);
-
-  // Convert to the correct type for filtering
-  std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates;
-  grasp_candidates = grasp_filter_->convertToGraspCandidatePtrs(possible_grasps,grasp_datas_[arm_jmg]);
+                                    max_grasp_size, grasp_datas_[arm_jmg], grasp_candidates);
 
   // add grasp filters
   grasp_filter_->clearCuttingPlanes();
   grasp_filter_->clearDesiredGraspOrientations();
 
   Eigen::Affine3d cutting_pose = shelf_->getBottomRight() * bin->getBottomRight();
-  visuals_->visual_tools_->publishAxis(cutting_pose, 0.2);
+  //visuals_->visual_tools_->publishAxis(cutting_pose, 0.2);
+
   // Bottom of bin
   grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XY, -1);
+
   // Right wall of bin
   grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XZ, -1);
 
-  cutting_pose.translation() += Eigen::Vector3d(0, bin->getWidth(), bin->getHeight());
   // Top of bin
+  cutting_pose.translation() += Eigen::Vector3d(0, bin->getWidth(), bin->getHeight());
   grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XY, 1);
+
   // Left wall of bin
   grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::XZ, 1);
+
+  // Back half of product
+  cutting_pose = shelf_->getBottomRight() * bin->getBottomRight();
+  cutting_pose.translation() += Eigen::Vector3d(product->getCentroid().translation().x(), 
+                                                bin->getWidth() / 2.0, 
+                                                bin->getHeight()/2.0);
+  grasp_filter_->addCuttingPlane(cutting_pose, moveit_grasps::YZ, 1);
 
   // Filter grasps based on IK
   bool filter_pregrasps = true;
@@ -206,16 +212,32 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
   grasp_filter_->chooseBestGrasps(grasp_candidates);
 
   // For each remaining grasp, calculate entire approach, lift, and retreat path
+  std::size_t failed_grasp_candidates = 0;
   for (std::size_t i = 0; i < grasp_candidates.size(); ++i)
   {
     if (!ros::ok())
       return false;
 
-    planApproachLiftRetreat(grasp_candidates[i]);
+    if (!planApproachLiftRetreat(grasp_candidates[i]))
+    {
+      ROS_WARN_STREAM_NAMED("manipulation","Grasp candidate " << i << " was unable to find valid cartesian waypoint path");
+      std::cout << "-------------------------------------------------------" << std::endl;
+      std::cout << std::endl;
 
-    ros::Duration(1.0).sleep();
-    visuals_->grasp_markers_->deleteAllMarkers(); // clear all old markers    
+      failed_grasp_candidates++;
+    }
+
+    //visuals_->grasp_markers_->deleteAllMarkers(); // clear all old markers    
   }
+
+  // Results
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << "Total grasp candidates: " << grasp_candidates.size() << std::endl;
+  std::cout << "Failed due to invalid cartesian path: " << failed_grasp_candidates << std::endl;
+  std::cout << "Remaining grasp candidates: " << grasp_candidates.size() - failed_grasp_candidates << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << std::endl;
 
   // TODO: choose the final grasp
 
@@ -244,21 +266,27 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   waypoints.push_back(lifted_pregrasp_pose);
 
   // Visualize waypoints
-  bool static_id = false;
-  //visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
-  visuals_->grasp_markers_->publishText(pregrasp_pose, "pregrasp", rvt::WHITE, rvt::SMALL, static_id);
-  //visuals_->grasp_markers_->publishZArrow(grasp_pose, rvt::YELLOW, rvt::SMALL);
-  visuals_->grasp_markers_->publishText(grasp_pose, "grasp", rvt::WHITE, rvt::SMALL, static_id);
-  //visuals_->grasp_markers_->publishZArrow(lifted_grasp_pose, rvt::ORANGE, rvt::SMALL);
-  visuals_->grasp_markers_->publishText(lifted_grasp_pose, "lifted", rvt::WHITE, rvt::SMALL, static_id);
-  //visuals_->grasp_markers_->publishZArrow(lifted_pregrasp_pose, rvt::RED, rvt::SMALL);
-  visuals_->grasp_markers_->publishText(lifted_pregrasp_pose, "retreat", rvt::WHITE, rvt::SMALL, static_id);
+  bool visualize_path_details = false;
+  bool visualize_results = false;
+  if (visualize_path_details)
+  {
+    bool static_id = false;
+    //visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
+    visuals_->grasp_markers_->publishText(pregrasp_pose, "pregrasp", rvt::WHITE, rvt::SMALL, static_id);
+    //visuals_->grasp_markers_->publishZArrow(grasp_pose, rvt::YELLOW, rvt::SMALL);
+    visuals_->grasp_markers_->publishText(grasp_pose, "grasp", rvt::WHITE, rvt::SMALL, static_id);
+    //visuals_->grasp_markers_->publishZArrow(lifted_grasp_pose, rvt::ORANGE, rvt::SMALL);
+    visuals_->grasp_markers_->publishText(lifted_grasp_pose, "lifted", rvt::WHITE, rvt::SMALL, static_id);
+    //visuals_->grasp_markers_->publishZArrow(lifted_pregrasp_pose, rvt::RED, rvt::SMALL);
+    visuals_->grasp_markers_->publishText(lifted_pregrasp_pose, "retreat", rvt::WHITE, rvt::SMALL, static_id);
+  }
 
   std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;  
   if (!computeCartesianWaypointPath(grasp_candidate, waypoints, robot_state_trajectory))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to plan approach lift retreat path");
-    visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::RED, rvt::SMALL);
+    if (visualize_results)
+      visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::RED, rvt::SMALL);
     return false;
   }
 
@@ -270,8 +298,11 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   const robot_model::JointModelGroup* arm_jmg = grasp_candidate->grasp_data_->arm_jmg_;
 
   // Show visuals
-  visuals_->grasp_markers_->publishTrajectoryPoints(robot_state_trajectory, grasp_datas_[arm_jmg]->parent_link_);
-  visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
+  if (visualize_results)
+  {
+    visuals_->grasp_markers_->publishTrajectoryPoints(robot_state_trajectory, grasp_datas_[arm_jmg]->parent_link_);
+    visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
+  }
 
   return true;
 }
@@ -327,13 +358,13 @@ bool Manipulation::computeCartesianWaypointPath(moveit_grasps::GraspCandidatePtr
   double last_valid_percentage;
 
   std::size_t attempts = 0;
-  static const std::size_t MAX_IK_ATTEMPTS = 10;
+  static const std::size_t MAX_IK_ATTEMPTS = 3;
   while (attempts < MAX_IK_ATTEMPTS)
   {
     if (attempts > 0)
     {
       std::cout << std::endl;
-      ROS_WARN_STREAM_NAMED("manipulation","Attempting IK solution, attempts # " << attempts);
+      ROS_WARN_STREAM_NAMED("manipulation","Attempting IK solution, attempt # " << attempts + 1);
     }
     attempts++;
 
@@ -352,13 +383,15 @@ bool Manipulation::computeCartesianWaypointPath(moveit_grasps::GraspCandidatePtr
     ROS_DEBUG_STREAM_NAMED("manipulation","Cartesian last_valid_percentage: " << last_valid_percentage 
                            << " number of states in trajectory: " << robot_state_trajectory.size());
 
+    double min_allowed_valid_percentage = 0.9;
     if( last_valid_percentage == 0 )
     {
       ROS_ERROR_STREAM_NAMED("manipulation","Failed to computer cartesian path: last_valid_percentage is 0");
     }
-    else if ( last_valid_percentage < 0.5 )
+    else if ( last_valid_percentage < min_allowed_valid_percentage )
     {
-      ROS_WARN_STREAM_NAMED("manipulation","Resuling cartesian path distance is less than half the desired distance");
+      ROS_WARN_STREAM_NAMED("manipulation","Resulting cartesian path distance is less than " << min_allowed_valid_percentage 
+                            << " the desired distance, percent valid: " << last_valid_percentage);
     }
     else
     {
@@ -372,8 +405,6 @@ bool Manipulation::computeCartesianWaypointPath(moveit_grasps::GraspCandidatePtr
   if (attempts >= MAX_IK_ATTEMPTS)
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to find valid waypoint manipulation path for this grasp candidate");
-    std::cout << "-------------------------------------------------------" << std::endl;
-    std::cout << std::endl;
     return false;
   }
 
