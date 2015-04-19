@@ -229,6 +229,7 @@ Button Mapings
         20. GO in and out of bin
 		21. Show experience database
 		22. Test approach, lift, and retreat motion for random objects
+		23. Unit tests for manipulation
 		
 	jump_to - which step in the manipulation pipeline to start on
 	auto - whether to go into auto step mode, but does not allow trajectories to be executed without verification

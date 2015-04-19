@@ -326,6 +326,18 @@ public:
    */
   bool statusPublisher(const std::string &status);
 
+  /**
+   * \brief Test various product benchmarks
+   * \return true on success
+   */
+  bool unitTests();
+
+  /**
+   * \brief Update settings for new unit test
+   * \return true on success
+   */
+  bool startUnitTest(const std::string &json_file, const std::string &test_name, const Eigen::Affine3d &product_pose);
+
 private:
 
   // A shared node handle

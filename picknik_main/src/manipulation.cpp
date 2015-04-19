@@ -56,7 +56,6 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   , use_experience_(use_experience)
   , use_logging_(true)
 {
-
   // Create initial robot state
   {
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
@@ -68,6 +67,11 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
 
   // Set robot model
   robot_model_ = current_state_->getRobotModel();
+
+  // Load execution interface
+  execution_interface_.reset( new ExecutionInterface(verbose_, remote_control_, visuals_, grasp_datas_, planning_scene_monitor_,
+                                                     config_, package_path_, current_state_) );
+
 
   // Load logging capability
   if (use_logging_ && use_experience)
@@ -82,13 +86,8 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
 
   // Load grasp generator
   grasp_generator_.reset( new moveit_grasps::GraspGenerator(visuals_->grasp_markers_) );
-  getCurrentState();
   setStateWithOpenEE(true, current_state_); // so that grasp filter is started up with EE open
   grasp_filter_.reset(new moveit_grasps::GraspFilter(current_state_, visuals_->grasp_markers_) );
-
-  // Load execution interface
-  execution_interface_.reset( new ExecutionInterface(verbose_, remote_control_, visuals_, grasp_datas_, planning_scene_monitor_,
-                                                     config_, package_path_, current_state_) );
 
   // Done
   ROS_INFO_STREAM_NAMED("manipulation","Manipulation Ready.");
@@ -143,9 +142,9 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
     ROS_WARN_STREAM_NAMED("manipulation","Unable to update bounding mesh");
   }
 
-  double max_grasp_size = 0.10; // TODO: verify max object size Open Hand can grasp
+  // Generate grasps
   grasp_generator_->generateGrasps( world_to_product, product->getDepth(), product->getWidth(), product->getHeight(),
-                                    max_grasp_size, grasp_datas_[arm_jmg], grasp_candidates);
+                                    grasp_datas_[arm_jmg], grasp_candidates);
 
   // add grasp filters
   grasp_filter_->clearCuttingPlanes();
@@ -468,7 +467,7 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
   std::cout << "-------------------------------------------------------" << std::endl;
 
   // Execute
-  if( !execution_interface_->executeTrajectory(trajectory_msg) )
+  if( !execution_interface_->executeTrajectory(trajectory_msg, arm_jmg) )
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
     return false;
@@ -745,7 +744,7 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   // Execute trajectory
   if (execute_trajectory)
   {
-    if( !execution_interface_->executeTrajectory(trajectory_msg) )
+    if( !execution_interface_->executeTrajectory(trajectory_msg, arm_jmg) )
     {
       ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
       return false;
@@ -845,7 +844,7 @@ bool Manipulation::plan(const moveit::core::RobotStatePtr& start, const moveit::
     }
 
     // Save database
-    ROS_INFO_STREAM_NAMED("manipulation","Saving experience db...");
+    ROS_DEBUG_STREAM_NAMED("manipulation","Saving experience db...");
     experience_setup->saveIfChanged();
   }
 
@@ -1015,7 +1014,7 @@ bool Manipulation::executeState(const moveit::core::RobotStatePtr goal_state, co
   }
 
   // Execute
-  if( !execution_interface_->executeTrajectory(trajectory_msg) )
+  if( !execution_interface_->executeTrajectory(trajectory_msg, jmg) )
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
     return false;
@@ -1031,22 +1030,16 @@ bool Manipulation::generateApproachPath(moveit_grasps::GraspCandidatePtr chosen,
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","generateApproachPath()");
 
-  ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","finger_to_palm_depth: " << chosen->grasp_data_->finger_to_palm_depth_);
-  ROS_DEBUG_STREAM_NAMED("manipulation.generate_approach_path","approach_distance_desired: " << chosen->grasp_data_->approach_distance_desired_);
-  double desired_approach_distance = chosen->grasp_data_->finger_to_palm_depth_ + chosen->grasp_data_->approach_distance_desired_;
-
   Eigen::Vector3d approach_direction = grasp_generator_->getPreGraspDirection(chosen->grasp_,
                                                                               chosen->grasp_data_->parent_link_->getName());
-  //            x, y, z
-  //approach_direction << -1, 0, 0.5; // backwards towards robot body
-  //std::cout << "DIRECTION: " << approach_direction << std::endl;
   bool reverse_path = true;
 
   double path_length;
   bool ignore_collision = false;
   std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
   getCurrentState();
-  if (!computeStraightLinePath( approach_direction, desired_approach_distance, robot_state_trajectory, the_grasp_state,
+  if (!computeStraightLinePath( approach_direction, chosen->grasp_data_->approach_distance_desired_, 
+                                robot_state_trajectory, the_grasp_state,
                                 chosen->grasp_data_->arm_jmg_, reverse_path, path_length, ignore_collision))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Error occured while computing straight line path");
@@ -1140,7 +1133,7 @@ bool Manipulation::executeVerticlePath(const moveit::core::JointModelGroup *arm_
   }
 
   // Execute
-  if( !execution_interface_->executeTrajectory(cartesian_trajectory_msg, ignore_collision) )
+  if( !execution_interface_->executeTrajectory(cartesian_trajectory_msg, arm_jmg, ignore_collision) )
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
     return false;
@@ -1235,7 +1228,7 @@ bool Manipulation::executeCartesianPath(const moveit::core::JointModelGroup *arm
   }
 
   // Execute
-  if( !execution_interface_->executeTrajectory(cartesian_trajectory_msg, ignore_collision) )
+  if( !execution_interface_->executeTrajectory(cartesian_trajectory_msg, arm_jmg, ignore_collision) )
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
     return false;
@@ -1716,7 +1709,7 @@ bool Manipulation::openEndEffector(bool open, const robot_model::JointModelGroup
   ee_traj->getRobotTrajectoryMsg(trajectory_msg);
 
   // Execute trajectory
-  if( !execution_interface_->executeTrajectory(trajectory_msg) )
+  if( !execution_interface_->executeTrajectory(trajectory_msg, arm_jmg) )
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute grasp trajectory");
     return false;
@@ -1774,7 +1767,7 @@ bool Manipulation::openEndEffectorWithVelocity(bool open, const robot_model::Joi
   ee_trajectory->getRobotTrajectoryMsg(trajectory_msg);
 
   // Execute trajectory
-  if( !execution_interface_->executeTrajectory(trajectory_msg) )
+  if( !execution_interface_->executeTrajectory(trajectory_msg, arm_jmg) )
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute grasp trajectory");
     return false;
@@ -1831,16 +1824,15 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   for (collision_detection::CollisionResult::ContactMap::const_iterator contact_it = contacts.begin();
        contact_it != contacts.end(); contact_it++)
   {
-    const std::string& body_id_1 = contact_it->first.first;
-    const std::string& body_id_2 = contact_it->first.second;
-    std::cout << "body_id_1: " << body_id_1 << std::endl;
-    std::cout << "body_id_2: " << body_id_2 << std::endl;
+    //const std::string& body_id_1 = contact_it->first.first;
+    //const std::string& body_id_2 = contact_it->first.second;
+    //std::cout << "body_id_1: " << body_id_1 << std::endl;
+    //std::cout << "body_id_2: " << body_id_2 << std::endl;
 
     const std::vector<collision_detection::Contact>& contacts = contact_it->second;
 
     for (std::size_t i = 0; i < contacts.size(); ++i)
     {
-      std::cout << "loop i= " << i << std::endl;
       const collision_detection::Contact& contact = contacts[i];
 
       // Find the world object that is the problem
@@ -2216,9 +2208,8 @@ bool Manipulation::visualizeGrasps(std::vector<moveit_grasps::GraspCandidatePtr>
 
 moveit::core::RobotStatePtr Manipulation::getCurrentState()
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","getCurrentState()");
-  planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
-  (*current_state_) = scene->getCurrentState();
+  // Pass down to the exection interface layer so that we can catch the getCurrentState with a fake one if we are unit testing
+  current_state_ = execution_interface_->getCurrentState();
   return current_state_;
 }
 

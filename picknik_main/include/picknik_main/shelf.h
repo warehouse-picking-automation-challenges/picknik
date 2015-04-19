@@ -272,6 +272,18 @@ public:
   {
     return environment_objects_[name];
   }
+
+  /**
+   * \brief Reset contents of shelf
+   * \return true on success
+   */
+  void clearProducts()
+  {
+    for (BinObjectMap::const_iterator bin_it = bins_.begin(); bin_it != bins_.end(); bin_it++)
+    {
+      bin_it->second->getProducts().clear();
+    }
+  }
   
   // Loaded shelf parameter values
   //double shelf_distance_from_robot_;

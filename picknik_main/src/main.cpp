@@ -264,6 +264,10 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Testing approach lift retreat cartesian path");
       manager.testApproachLiftRetreat();
       break;      
+    case 23:
+      ROS_INFO_STREAM_NAMED("main","Unit tests for manipulation");
+      manager.unitTests();
+      break;      
     default:
       ROS_WARN_STREAM_NAMED("main","Unkown mode: " << mode);
   }

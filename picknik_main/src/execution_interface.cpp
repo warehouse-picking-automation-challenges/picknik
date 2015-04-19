@@ -65,6 +65,7 @@ ExecutionInterface::ExecutionInterface(bool verbose, RemoteControlPtr remote_con
   , package_path_(package_path)
   , current_state_(current_state)
   , nh_("~")
+  , unit_testing_enabled_(false)
 {
   // Check that controllers are ready
   zaber_list_controllers_client_ = nh_.serviceClient<controller_manager_msgs::ListControllers>("/jacob/zaber/controller_manager/list_controllers");
@@ -73,7 +74,8 @@ ExecutionInterface::ExecutionInterface(bool verbose, RemoteControlPtr remote_con
   ROS_INFO_STREAM_NAMED("execution_interface","ExecutionInterface Ready.");
 }
 
-bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg, bool ignore_collision)
+bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg, 
+                                           const robot_model::JointModelGroup* jmg, bool ignore_collision)
 {
   trajectory_msgs::JointTrajectory& trajectory = trajectory_msg.joint_trajectory;
 
@@ -96,24 +98,23 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
     if (trajectory.joint_names.size() > 3)
     {
       static std::size_t trajectory_count = 0;
-      saveTrajectory(trajectory_msg, "trajectory_"+ boost::lexical_cast<std::string>(trajectory_count++)+".csv");
+      saveTrajectory(trajectory_msg, jmg->getName() + "_trajectory_"+ boost::lexical_cast<std::string>(trajectory_count++)+".csv");
       //saveTrajectory(trajectory_msg, "trajectory.csv");
     }
   }
 
   // Visualize the hand/wrist path in Rviz
-  if (trajectory.points.size() > 1)
+  if (trajectory.points.size() > 1 && !jmg->isEndEffector())
   {
     visuals_->trajectory_lines_->deleteAllMarkers();
-    ros::spinOnce();
+    ros::spinOnce(); // TODO remove?
     
-    //const moveit::core::LinkModel* robot_link = planning_scene_monitor_->getRobotModel()->getLinkModel("jaco2_link_finger_2_tip");
-    visuals_->trajectory_lines_->publishTrajectoryLine(trajectory_msg, grasp_datas_[config_->right_arm_]->parent_link_,
-                                                 config_->right_arm_, rvt::LIME_GREEN);
+    visuals_->trajectory_lines_->publishTrajectoryLine(trajectory_msg, grasp_datas_[jmg]->parent_link_,
+                                                       config_->right_arm_, rvt::LIME_GREEN);
   }
   else
     ROS_WARN_STREAM_NAMED("execution_interface","Not visualizing path because trajectory only has "
-                          << trajectory.points.size() << " points");
+                          << trajectory.points.size() << " points or because is end effector");
 
   // Visualize trajectory in Rviz
   bool wait_for_trajetory = false;
@@ -159,6 +160,17 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
     trajectory_execution_manager_.reset(new trajectory_execution_manager::
                                         TrajectoryExecutionManager(planning_scene_monitor_->getRobotModel()));
     plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
+  }
+
+  // Check if in unit testing mode
+  if (unit_testing_enabled_)
+  {
+    robot_trajectory::RobotTrajectoryPtr 
+      robot_trajectory(new robot_trajectory::RobotTrajectory(planning_scene_monitor_->getRobotModel(), jmg));
+                                                             
+    robot_trajectory->setRobotTrajectoryMsg(*current_state_, trajectory_msg);
+    *current_state_ = robot_trajectory->getLastWayPoint();
+    return true;
   }
 
   // Confirm trajectory before continuing
@@ -407,9 +419,23 @@ bool ExecutionInterface::getFilePath(std::string &file_path, const std::string &
 
 moveit::core::RobotStatePtr ExecutionInterface::getCurrentState()
 {
+  // Get the fake current state
+  if (unit_testing_enabled_)
+  {
+    ROS_WARN_STREAM_NAMED("manipulation","Unit testing enabled, get current state is skipping planning scene");
+    return current_state_;
+  }
+
+  // Get the real current state
   planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
   (*current_state_) = scene->getCurrentState();
   return current_state_;
+}
+
+bool ExecutionInterface::enableUnitTesting()
+{
+  unit_testing_enabled_ = true;
+  return true;
 }
 
 } // end namespace

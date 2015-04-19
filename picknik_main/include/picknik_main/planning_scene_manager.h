@@ -83,7 +83,7 @@ public:
    * \brief Show shelf with all bins enabled
    * \return true on success
    */
-  bool displayShelfWithOpenBins();
+  bool displayShelfWithOpenBins(bool force = false);
 
   /**
    * \brief Show shelf as simple solid wall, not details
