@@ -196,6 +196,9 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to,
   // Grasps things
   for (std::size_t i = order_start; i < num_orders; ++i)
   {
+    if (!ros::ok())
+      return false;
+
     std::cout << std::endl;
     std::cout << "=======================================================" << std::endl;
     ROS_INFO_STREAM_NAMED("apc_manager","Starting order " << i);
@@ -888,8 +891,13 @@ bool APCManager::testGoalBinPose()
 {
   const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
+  // Set planning scene
+  planning_scene_manager_->displayShelfWithOpenBins();
+
   // Create locations if necessary
   generateGoalBinLocations();
+
+  return true;
 
   for (std::size_t i = 0; i < dropoff_locations_.size(); ++i)
   {
@@ -903,7 +911,7 @@ bool APCManager::testGoalBinPose()
     // Go to dropoff position
     if (!placeObjectInGoalBin(config_->right_arm_))
     {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to place objecto in goal bin");
+      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to place object in goal bin");
       return false;
     }
 
@@ -1757,7 +1765,7 @@ bool APCManager::generateGoalBinLocations()
   overhead_goal_bin = overhead_goal_bin * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitY());
   //visuals_->visual_tools_->publishAxis(overhead_goal_bin);
 
-  bool visualize_dropoff_locations = true;
+  bool visualize_dropoff_locations = config_->isEnabled("show_goal_bin_markers");
 
   // Calculations
   const std::size_t num_cols = 2;

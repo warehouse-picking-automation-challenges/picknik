@@ -255,6 +255,7 @@ bool MeshObject::visualize(const Eigen::Affine3d& trans) const
 
 bool MeshObject::visualizeWireframe(const Eigen::Affine3d& trans) const
 {
+  // Show wireframe in both systems
   visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans), depth_, width_, height_, rvt::LIME_GREEN);
   visuals_->visual_tools_->publishWireframeCuboid( transform(centroid_, trans), depth_, width_, height_, rvt::LIME_GREEN);
   return true;
@@ -364,7 +365,7 @@ bool MeshObject::calculateBoundingBox(bool verbose)
   }
 
   // Get bounding box
-  Eigen::Affine3d cuboid_pose;
+  Eigen::Affine3d cuboid_pose; // TODO what to do with this?
   double depth, width, height;
   if (!moveit_grasps::GraspGenerator::getBoundingBoxFromMesh(getCollisionMesh(), cuboid_pose, depth, width, height))
   {
