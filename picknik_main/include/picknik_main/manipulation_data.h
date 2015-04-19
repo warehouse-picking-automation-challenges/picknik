@@ -80,9 +80,6 @@ public:
   double wait_after_grasp_;
 
   // Distance variables
-  double approach_distance_desired_;
-  double retreat_distance_desired_;
-  double lift_distance_desired_;
   double place_goal_down_distance_desired_;
   double jump_threshold_;
 

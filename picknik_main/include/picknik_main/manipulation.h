@@ -71,25 +71,26 @@ public:
                ShelfObjectPtr shelf, bool use_experience);
 
   /**
-   * \brief Destructor
+   * \brief Calculate the bouding mesh for a product
+   * \return true on success
    */
-  ~Manipulation()
-  {}
+  bool updateBoundingMesh(WorkOrder& work_order);
 
   /**
    * \brief Choose the grasp for the object
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool chooseGrasp(WorkOrder work_order, const robot_model::JointModelGroup* arm_jmg,
-                   moveit_grasps::GraspCandidatePtr& chosen, bool verbose);
+  bool chooseGrasp(WorkOrder work_order, const robot_model::JointModelGroup* arm_jmg,                   
+                   std::vector<moveit_grasps::GraspCandidatePtr> &qgrasp_candidates,
+                   bool verbose, moveit::core::RobotStatePtr seed_state = moveit::core::RobotStatePtr());
 
   /**
    * \brief Plan entire cartesian manipulation sequence
    * \param input - description
    * \return true on success
    */
-  bool planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr grasp_candidate);
+  bool planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr grasp_candidate, bool verbose_cartesian_paths);
 
   /**
    * \brief Compute a cartesian path along waypoints
@@ -258,6 +259,12 @@ public:
    * \return true on success
    */
   bool perturbCamera(BinObjectPtr bin);
+
+  /**
+   * \brief Create the initial guess for a grasp
+   * \return true on success
+   */
+  bool getGraspingSeedState(BinObjectPtr bin, moveit::core::RobotStatePtr& seed_state, const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Move camera to in front of bin

@@ -227,7 +227,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
   moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
 
   // Variables
-  moveit_grasps::GraspCandidatePtr chosen; // the grasp to use
+  std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates;
   moveit::core::RobotStatePtr pre_grasp_state(new moveit::core::RobotState(*current_state)); // Allocate robot states
   moveit::core::RobotStatePtr the_grasp_state(new moveit::core::RobotState(*current_state)); // Allocate robot states
   moveit_msgs::RobotTrajectory approach_trajectory_msg;
@@ -333,15 +333,15 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         manipulation_->allowFingerTouch(work_order.product_->getCollisionName(), arm_jmg);
 
         // Generate and chose grasp
-        if (!manipulation_->chooseGrasp(work_order, arm_jmg, chosen, verbose))
+        if (!manipulation_->chooseGrasp(work_order, arm_jmg, grasp_candidates, verbose))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","No grasps found");
           return false;
         }
 
         // Get the pre and post grasp states
-        chosen->getPreGraspState(pre_grasp_state);
-        chosen->getGraspStateOpen(the_grasp_state);
+        grasp_candidates.front()->getPreGraspState(pre_grasp_state);
+        grasp_candidates.front()->getGraspStateOpen(the_grasp_state);
 
         // Visualize
         visuals_->start_state_->publishRobotState(pre_grasp_state, rvt::GREEN);
@@ -357,7 +357,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Hide the purple robot
         visuals_->visual_tools_->hideRobot();
 
-        if (!manipulation_->generateApproachPath(chosen, approach_trajectory_msg, pre_grasp_state, the_grasp_state, verbose))
+        if (!manipulation_->generateApproachPath(grasp_candidates.front(), approach_trajectory_msg, pre_grasp_state, the_grasp_state, verbose))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to generate straight approach path");
           return false;
@@ -456,7 +456,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Clear all collision objects
         //visuals_->visual_tools_->removeAllCollisionObjects(); // clear all old collision objects
 
-        if (!manipulation_->executeVerticlePath(arm_jmg, config_->lift_distance_desired_))
+        if (!manipulation_->executeVerticlePath(arm_jmg, grasp_datas_[arm_jmg]->lift_distance_desired_))
         {
           ROS_WARN_STREAM_NAMED("apc_manager","Unable to execute retrieval path after grasping");
           return false;
@@ -473,7 +473,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
 
         // Retreat backwards
         if (!fallback_to_motion_planning)
-          if (!manipulation_->executeRetreatPath(arm_jmg, config_->retreat_distance_desired_))
+          if (!manipulation_->executeRetreatPath(arm_jmg, grasp_datas_[arm_jmg]->retreat_distance_desired_))
           {
             ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute retrieval path after grasping");
             return false;
@@ -781,7 +781,6 @@ bool APCManager::testApproachLiftRetreat()
 {
   Eigen::Affine3d ee_pose;
   bool verbose = true;
-  moveit_grasps::GraspCandidatePtr chosen; // the grasp to use
 
   // Grasps things in the work order
   for (std::size_t i = 0; i < orders_.size(); ++i)
@@ -793,22 +792,31 @@ bool APCManager::testApproachLiftRetreat()
     WorkOrder& work_order = orders_[i];
 
     // Set a fake pose of object
-    perceiveObjectFake(work_order);
+    //perceiveObjectFake(work_order);
 
     // Choose which arm to use
     const robot_model::JointModelGroup* arm_jmg = manipulation_->chooseArm(work_order.product_->getWorldPose(shelf_, work_order.bin_));
 
     // Allow fingers to touch object
     manipulation_->allowFingerTouch(work_order.product_->getCollisionName(), arm_jmg);
+        
+    std::size_t repeat_loops = 1; // a debug mode
+    for (std::size_t i = 0; i < repeat_loops; ++i)
+    {      
+      if (!ros::ok())
+        break;
 
-    // Generate and chose grasp
-    if (!manipulation_->chooseGrasp(work_order, arm_jmg, chosen, verbose))
-    {
-      ROS_ERROR_STREAM_NAMED("apc_manager","No grasps found for " << work_order.product_->getName());
+      std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates;
+
+      // Generate and chose grasp
+      if (!manipulation_->chooseGrasp(work_order, arm_jmg, grasp_candidates, verbose))
+      {
+        ROS_ERROR_STREAM_NAMED("apc_manager","No grasps found for " << work_order.product_->getName());
+      }
     }
 
-    ROS_INFO_STREAM_NAMED("temp","ending early for fun");
-    return true; // TEMP ender
+    //ROS_INFO_STREAM_NAMED("temp","ending after first order");
+    //return true; // TEMP ender
   } // end for
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done testing cartesian path");
@@ -1085,7 +1093,7 @@ bool APCManager::testGraspGenerator()
   moveit::core::RobotStatePtr the_grasp_state(new moveit::core::RobotState(*current_state)); // Allocate robot states
   Eigen::Affine3d global_object_pose;
   const robot_model::JointModelGroup* arm_jmg;
-  moveit_grasps::GraspCandidatePtr chosen; // the grasp to use
+  std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates;
 
   // Scoring
   std::size_t overall_attempts = 0;
@@ -1159,7 +1167,7 @@ bool APCManager::testGraspGenerator()
 
       // Generate and chose grasp
       bool success = true;
-      if (!manipulation_->chooseGrasp(work_order, arm_jmg, chosen, verbose_))
+      if (!manipulation_->chooseGrasp(work_order, arm_jmg, grasp_candidates, verbose_))
       {
         ROS_WARN_STREAM_NAMED("apc_manager","No grasps found for product " << product->getName() << " in bin " << bin->getName() );
         success = false;
@@ -1182,7 +1190,7 @@ bool APCManager::testGraspGenerator()
       {
         if (config_->dual_arm_)
           the_grasp_state->setToDefaultValues(config_->both_arms_, config_->start_pose_); // hide the other arm
-        the_grasp_state->setJointGroupPositions(arm_jmg, chosen->grasp_ik_solution_);
+        the_grasp_state->setJointGroupPositions(arm_jmg, grasp_candidates.front()->grasp_ik_solution_);
         manipulation_->setStateWithOpenEE(true, the_grasp_state);
         visuals_->visual_tools_->publishRobotState(the_grasp_state, rvt::PURPLE);
 
