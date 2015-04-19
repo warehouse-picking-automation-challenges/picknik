@@ -364,11 +364,11 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         if (fake_perception_)
         {
           // Just use randomly generated placements
-          // if (!perceiveObjectFake(work_order))
-          // {
-          //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
-          //   return false;
-          // }
+          if (!perceiveObjectFake(work_order))
+          {
+            ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
+            return false;
+          }
         }
         else
         {

@@ -278,14 +278,14 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
   if (!computeCartesianWaypointPath(grasp_candidate, waypoints, robot_state_trajectory))
   {
-    ROS_WARN_STREAM_NAMED("manipulation","Unable to plan approach lift retreat path");
+    ROS_WARN_STREAM_NAMED("manipulation.waypoints","Unable to plan approach lift retreat path");
     if (verbose_cartesian_paths)
       visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::RED, rvt::SMALL);
     return false;
   }
 
   // Feedback
-  ROS_DEBUG_STREAM_NAMED("manipulation","Found valid waypoint manipulation path for grasp candidate");
+  ROS_DEBUG_STREAM_NAMED("manipulation.waypoints","Found valid waypoint manipulation path for grasp candidate");
 
   // Get arm planning group
   const robot_model::JointModelGroup* arm_jmg = grasp_candidate->grasp_data_->arm_jmg_;
@@ -293,7 +293,7 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   // Show visuals
   if (verbose_cartesian_paths)
   {
-    ROS_INFO_STREAM_NAMED("manipulation","Visualize end effector position of cartesian path");
+    ROS_INFO_STREAM_NAMED("manipulation.waypoints","Visualize end effector position of cartesian path");
     visuals_->grasp_markers_->publishTrajectoryPoints(robot_state_trajectory, grasp_datas_[arm_jmg]->parent_link_);
     visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
   }
@@ -319,7 +319,7 @@ bool Manipulation::computeCartesianWaypointPath(moveit_grasps::GraspCandidatePtr
   // Error check
   if (desired_approach_distance < max_step)
   {
-    ROS_ERROR_STREAM_NAMED("manipulation","Not enough: desired_approach_distance (" << desired_approach_distance << ")  < max_step (" << max_step << ")");
+    ROS_ERROR_STREAM_NAMED("manipulation.waypoints","Not enough: desired_approach_distance (" << desired_approach_distance << ")  < max_step (" << max_step << ")");
     return false;
   }
 
@@ -327,7 +327,7 @@ bool Manipulation::computeCartesianWaypointPath(moveit_grasps::GraspCandidatePtr
   moveit::core::RobotStatePtr start_state(new moveit::core::RobotState(*current_state_));
   if (!grasp_candidate->getPreGraspState(start_state))
   {
-    ROS_ERROR_STREAM_NAMED("manipulation","Unable to set pregrasp");
+    ROS_ERROR_STREAM_NAMED("manipulation.waypoints","Unable to set pregrasp");
     return false;
   }
 
@@ -344,7 +344,7 @@ bool Manipulation::computeCartesianWaypointPath(moveit_grasps::GraspCandidatePtr
   // Check for kinematic solver
   if( !arm_jmg->canSetStateFromIK( ik_tip_link->getName() ) )
   {
-    ROS_ERROR_STREAM_NAMED("manipulation","No IK Solver loaded - make sure moveit_config/kinamatics.yaml is loaded in this namespace");
+    ROS_ERROR_STREAM_NAMED("manipulation.waypoints","No IK Solver loaded - make sure moveit_config/kinamatics.yaml is loaded in this namespace");
     return false;
   }
 
@@ -357,7 +357,7 @@ bool Manipulation::computeCartesianWaypointPath(moveit_grasps::GraspCandidatePtr
   {
     if (attempts > 0)
     {
-      ROS_WARN_STREAM_NAMED("manipulation","Attempting IK solution, attempt # " << attempts + 1);
+      ROS_DEBUG_STREAM_NAMED("manipulation.waypoints","Attempting IK solution, attempt # " << attempts + 1);
     }
     attempts++;
 
@@ -373,30 +373,30 @@ bool Manipulation::computeCartesianWaypointPath(moveit_grasps::GraspCandidatePtr
                                                               global_reference_frame,
                                                               max_step, jump_threshold, constraint_fn);
 
-    ROS_DEBUG_STREAM_NAMED("manipulation","Cartesian last_valid_percentage: " << last_valid_percentage
+    ROS_DEBUG_STREAM_NAMED("manipulation.waypoints","Cartesian last_valid_percentage: " << last_valid_percentage
                            << " number of states in trajectory: " << robot_state_trajectory.size());
 
     double min_allowed_valid_percentage = 0.9;
     if( last_valid_percentage == 0 )
     {
-      ROS_WARN_STREAM_NAMED("manipulation","Failed to computer cartesian path: last_valid_percentage is 0");
+      ROS_DEBUG_STREAM_NAMED("manipulation.waypoints","Failed to computer cartesian path: last_valid_percentage is 0");
     }
     else if ( last_valid_percentage < min_allowed_valid_percentage )
     {
-      ROS_WARN_STREAM_NAMED("manipulation","Resulting cartesian path distance is less than " << min_allowed_valid_percentage
+      ROS_DEBUG_STREAM_NAMED("manipulation.waypoints","Resulting cartesian path distance is less than " << min_allowed_valid_percentage
                             << " the desired distance, percent valid: " << last_valid_percentage);
     }
     else
     {
-      ROS_DEBUG_STREAM_NAMED("manipulation","Found valid cartesian path");
+      ROS_DEBUG_STREAM_NAMED("manipulation.waypoints","Found valid cartesian path");
       break;
     }
-  } // end while AND scoped pointer of locked planning scene
+  } // end while AND scoped pointer of locked planning scenep
 
 
   if (attempts >= MAX_IK_ATTEMPTS)
   {
-    ROS_WARN_STREAM_NAMED("manipulation","Unable to find valid waypoint manipulation path for this grasp candidate");
+    ROS_DEBUG_STREAM_NAMED("manipulation.waypoints","Unable to find valid waypoint manipulation path for this grasp candidate");
     return false;
   }
 
