@@ -99,6 +99,10 @@ Rviz Visualizers of robot states and debug markers
 
     roslaunch picknik_main rviz.launch
 
+Camera calibration:
+
+    roslaunch picknik_main camera_calibration.launch
+
 Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
 	roslaunch picknik_main fake_perception_server.launch
@@ -122,11 +126,14 @@ Then calibrate the gantry by checking that it is safe to lower the robot to the 
 Rviz Visualizers of robot states and debug markers
 
     roslaunch picknik_main rviz.launch
+
+Camera calibration:
+
+    roslaunch picknik_main camera_calibration.launch
 	
 Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
 	roslaunch picknik_main fake_perception_server.launch
-
 
 Run APC Manager (main program) for JACOB on hardware
 

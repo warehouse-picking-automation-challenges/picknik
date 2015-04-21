@@ -426,7 +426,7 @@ moveit::core::RobotStatePtr ExecutionInterface::getCurrentState()
   // Get the fake current state
   if (unit_testing_enabled_)
   {
-    ROS_WARN_STREAM_NAMED("manipulation","Unit testing enabled, get current state is skipping planning scene");
+    //ROS_WARN_STREAM_NAMED("manipulation","Unit testing enabled, get current state is skipping planning scene");
     return current_state_;
   }
 

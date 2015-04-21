@@ -168,13 +168,18 @@ public:
   ProductObjectPtr getProduct(const std::string &bin_name, const std::string &product_name);
 
   /**
+   * \brief Get all the products existing in all the bins
+   * \return true on success
+   */
+  bool getAllProducts(std::vector<ProductObjectPtr> &products);
+
+  /**
    * \brief Delete product
    * \param bin
    * \param product name
    * \return true on success
    */
   bool deleteProduct(BinObjectPtr bin, ProductObjectPtr product);
-  //bool deleteProduct(const std::string &bin_name, const std::string &product_name);
 
   /**
    * \brief Get shelf parts for prevent collision with products

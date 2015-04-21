@@ -264,12 +264,12 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   {
     const picknik_msgs::FoundObject& found_object = result->found_objects[i];
 
-   
-    // Get object's transform
-    Eigen::Affine3d camera_to_object;
+    // Get object's transform    
+    Eigen::Affine3d camera_to_object = visuals_->visual_tools_->convertPose(found_object.object_pose);
+    // Eigen::Affine3d camera_to_object;
 
-    // Convert to ROS frame
-    convertFrameCVToROS(visuals_->visual_tools_->convertPose(found_object.object_pose), camera_to_object);
+    // // Convert to ROS frame
+    // convertFrameCVToROS(visuals_->visual_tools_->convertPose(found_object.object_pose), camera_to_object);
       
     // Convert to world frame
     const Eigen::Affine3d world_to_object = world_to_camera * camera_to_object;

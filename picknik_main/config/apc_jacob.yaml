@@ -17,7 +17,7 @@ right_arm_dropoff_pose: goal_bin_pose
 left_arm_dropoff_pose: left_goal_bin_pose_DISABLED
 
 # Cartesian path config
-jump_threshold: 10
+jump_threshold: 4
 
 # Safety
 collision_wall_safety_margin: 0.01 # 0.02

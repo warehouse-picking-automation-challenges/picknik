@@ -633,6 +633,20 @@ ProductObjectPtr ShelfObject::getProduct(const std::string &bin_name, const std:
   return product;
 }
 
+bool ShelfObject::getAllProducts(std::vector<ProductObjectPtr> &products)
+{
+  products.clear();
+  for (BinObjectMap::const_iterator bin_it = bins_.begin(); bin_it != bins_.end(); bin_it++)
+  {
+    for (std::vector<ProductObjectPtr>::const_iterator product_it = bin_it->second->getProducts().begin(); 
+         product_it != bin_it->second->getProducts().end(); product_it++)
+    {
+      products.push_back(*product_it);
+    }
+  }
+  return true;
+}
+
 bool ShelfObject::deleteProduct(BinObjectPtr bin, ProductObjectPtr product)
 {
   std::vector<ProductObjectPtr>& products = bin->getProducts();
@@ -649,26 +663,6 @@ bool ShelfObject::deleteProduct(BinObjectPtr bin, ProductObjectPtr product)
   ROS_WARN_STREAM_NAMED("shelf","Unable to delete product " << product->getName() << " in bin " << bin->getName() << " in the database");
   return false;
 }
-
-// bool ShelfObject::deleteProduct(const std::string &bin_name, const std::string &product_name)
-// {
-//   // Find correct bin
-//   BinObjectPtr bin = bins_[bin_name];
-
-//   std::vector<ProductObjectPtr>& products = bin->getProducts();
-//   // Find correct product
-//   for (std::size_t prod_id = 0; prod_id < products.size(); ++prod_id)
-//   {
-//     if (products[prod_id]->getName() == product_name)
-//     {
-//       products.erase(products.begin() + prod_id);
-//       return true;
-//     }
-//   }
-
-//   ROS_WARN_STREAM_NAMED("shelf","Unable to delete product " << product_name << " in bin " << bin_name << " in the database");
-//   return false;
-// }
 
 // -------------------------------------------------------------------------------------------------
 // Product Object

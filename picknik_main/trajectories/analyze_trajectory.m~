@@ -4,11 +4,12 @@ format long g
 clf
 
 % SETTINGS
-plot_position = 1;
+plot_position = 1; % 0 for velocity
 has_acceleration = 1; % if CSV includes acceleration
+show_point = 7; % display a line for a point
 
 %while 1
-    sampled_data = csvread('trajectory.csv',1,0);
+    sampled_data = csvread('analysis/manipulator_trajectory_8.csv',1,0);
     
     %assign columns into seperate variable names - this is made quickly using the
     %header names and find-replace command
@@ -41,6 +42,10 @@ has_acceleration = 1; % if CSV includes acceleration
     joint3_lower = -3.92699081699;
     joint3_upper = 0.785398163397;
     
+    % show point
+    point_line = zeros(size(timestamp))
+    point_line(show_point,:) = 8
+    
     if (plot_position)
         plot(...
              timestamp', gantry_pos,'r', ...%time_start_end, [-pi, -pi], 'r--', time_start_end, [pi, pi], 'r--',...
@@ -50,7 +55,11 @@ has_acceleration = 1; % if CSV includes acceleration
              timestamp', joint4_pos,'g',...
              timestamp', joint5_pos,...
              timestamp', joint6_pos)
-
+         
+        hold on
+        plot([1 15],[2 2],'--')
+        %line([x x], [y1 y2],'--');
+        
         xlabel('Time')
         ylabel('Position')
         legend('Gantry Pos',...%'Continous Low', 'Continuous High',...
@@ -88,13 +97,13 @@ has_acceleration = 1; % if CSV includes acceleration
     end
     
     % Stats
-    fprintf('Gantry diff %d \n', gantry_pos(end,1) - gantry_pos(1,1))
-    fprintf('Joint 1 diff %d \n', joint1_pos(end,1) - joint1_pos(1,1))
-    fprintf('Joint 2 diff %d \n', joint1_pos(end,1) - joint1_pos(1,1))
-    fprintf('Joint 3 diff %d \n', joint1_pos(end,1) - joint1_pos(1,1))
-    fprintf('Joint 4 diff %d \n', joint1_pos(end,1) - joint1_pos(1,1))
-    fprintf('Joint 5 diff %d \n', joint1_pos(end,1) - joint1_pos(1,1))
-    fprintf('Joint 6 diff %d \n', joint1_pos(end,1) - joint1_pos(1,1))
+    fprintf('Gantry  diff %.6f \n', gantry_pos(end,1) - gantry_pos(1,1))
+    fprintf('Joint 1 diff %.6f \n', joint1_pos(end,1) - joint1_pos(1,1))
+    fprintf('Joint 2 diff %.6f \n', joint2_pos(end,1) - joint2_pos(1,1))
+    fprintf('Joint 3 diff %.6f \n', joint3_pos(end,1) - joint3_pos(1,1))
+    fprintf('Joint 4 diff %.6f \n', joint4_pos(end,1) - joint4_pos(1,1))
+    fprintf('Joint 5 diff %.6f \n', joint5_pos(end,1) - joint5_pos(1,1))
+    fprintf('Joint 6 diff %.6f \n', joint6_pos(end,1) - joint6_pos(1,1))
     
              
     

@@ -254,7 +254,7 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   lifted_pregrasp_pose.translation().z() += grasp_candidate->grasp_data_->lift_distance_desired_;
 
   EigenSTL::vector_Affine3d waypoints;
-  waypoints.push_back(pregrasp_pose);
+  //waypoints.push_back(pregrasp_pose); // this is included in the robot_state being used to calculate cartesian path
   waypoints.push_back(grasp_pose);
   waypoints.push_back(lifted_grasp_pose);
   waypoints.push_back(lifted_pregrasp_pose);
@@ -339,11 +339,13 @@ bool Manipulation::computeCartesianWaypointPath(const robot_model::JointModelGro
   double last_valid_percentage;
 
   std::size_t attempts = 0;
-  static const std::size_t MAX_IK_ATTEMPTS = 3;
+  static const std::size_t MAX_IK_ATTEMPTS = 5;
   while (attempts < MAX_IK_ATTEMPTS)
   {
     if (attempts > 0)
     {
+      std::cout << std::endl;
+      std::cout << "-------------------------------------------------------" << std::endl;
       ROS_DEBUG_STREAM_NAMED("manipulation.waypoints","Attempting IK solution, attempt # " << attempts + 1);
     }
     attempts++;
@@ -356,6 +358,7 @@ bool Manipulation::computeCartesianWaypointPath(const robot_model::JointModelGro
                     collision_checking_verbose, only_check_self_collision, visuals_, _1, _2, _3);
 
     // Compute Cartesian Path
+    robot_state_trajectory.clear();
     last_valid_percentage = start_state->computeCartesianPath(arm_jmg, robot_state_trajectory, ik_tip_link, waypoints,
                                                               global_reference_frame,
                                                               max_step, jump_threshold, constraint_fn);
@@ -381,9 +384,9 @@ bool Manipulation::computeCartesianWaypointPath(const robot_model::JointModelGro
   } // end while AND scoped pointer of locked planning scenep
 
 
-  if (attempts >= MAX_IK_ATTEMPTS)
+  if (attempts > MAX_IK_ATTEMPTS)
   {
-    ROS_DEBUG_STREAM_NAMED("manipulation.waypoints","Unable to find valid waypoint manipulation path for this grasp candidate");
+    ROS_DEBUG_STREAM_NAMED("manipulation.waypoints","Unable to find valid waypoint cartesian path after " << MAX_IK_ATTEMPTS);
     return false;
   }
 
@@ -1017,8 +1020,8 @@ bool Manipulation::executeState(const moveit::core::RobotStatePtr goal_state, co
 bool Manipulation::executeApproachPath(moveit_grasps::GraspCandidatePtr chosen_grasp)
 {
   // Get start pose
-  getCurrentState();
-  Eigen::Affine3d pregrasp_pose = current_state_->getGlobalLinkTransform(chosen_grasp->grasp_data_->parent_link_);
+  //getCurrentState();
+  //Eigen::Affine3d pregrasp_pose = current_state_->getGlobalLinkTransform(chosen_grasp->grasp_data_->parent_link_);
 
   // Get goal pose
   const geometry_msgs::PoseStamped &grasp_pose_msg = chosen_grasp->grasp_.grasp_pose;  
@@ -1026,7 +1029,7 @@ bool Manipulation::executeApproachPath(moveit_grasps::GraspCandidatePtr chosen_g
 
   // Create desired trajectory
   EigenSTL::vector_Affine3d waypoints;
-  waypoints.push_back(pregrasp_pose);
+  //waypoints.push_back(pregrasp_pose);
   waypoints.push_back(grasp_pose);
 
   // Visualize waypoints
@@ -1034,8 +1037,8 @@ bool Manipulation::executeApproachPath(moveit_grasps::GraspCandidatePtr chosen_g
   if (visualize_path_details)
   {
     bool static_id = false;
-    visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
-    visuals_->grasp_markers_->publishText(pregrasp_pose, "pregrasp", rvt::WHITE, rvt::SMALL, static_id);
+    //visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
+    //visuals_->grasp_markers_->publishText(pregrasp_pose, "pregrasp", rvt::WHITE, rvt::SMALL, static_id);
     visuals_->grasp_markers_->publishZArrow(grasp_pose, rvt::YELLOW, rvt::SMALL);
     visuals_->grasp_markers_->publishText(grasp_pose, "grasp", rvt::WHITE, rvt::SMALL, static_id);
   }
@@ -1396,11 +1399,12 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d direction, double de
     Eigen::Affine3d target_pose = start_pose;
     target_pose.translation() += rotated_direction * desired_distance;
 
+    robot_state_trajectory.clear();
     last_valid_percentage = robot_state->computeCartesianPath(arm_jmg, robot_state_trajectory, ik_tip_link,
                                                               target_pose, true, max_step, jump_threshold, constraint_fn);
 
     ROS_DEBUG_STREAM_NAMED("manipulation","Cartesian last_valid_percentage: " << last_valid_percentage
-                           << " number of states in trajectory: " << robot_state_trajectory.size());
+                           << ", number of states in trajectory: " << robot_state_trajectory.size());
 
     double min_allowed_valid_percentage = 0.9;
     if( last_valid_percentage == 0 )

@@ -1894,15 +1894,15 @@ bool APCManager::startUnitTest(const std::string &json_file, const std::string &
   std::string json_file_path = package_path_ + "/orders/" + json_file;
   loadShelfContents(json_file_path);
 
+  // Get all the products in the shelf
+  std::vector<ProductObjectPtr> products;
+  shelf_->getAllProducts(products);
+
   // Set all products to same exact pose
-  for (std::size_t i = 0; i < orders_.size(); ++i)
+  for (std::vector<ProductObjectPtr>::iterator product_it = products.begin(); product_it != products.end(); product_it++)
   {
-    if (!ros::ok())
-      return false;
-
-    WorkOrder &work_order = orders_[i];
-
-    work_order.product_->setCentroid(product_pose);
+    ProductObjectPtr &p = *product_it;
+    p->setCentroid(product_pose);
   }  
 
   // Display new shelf
