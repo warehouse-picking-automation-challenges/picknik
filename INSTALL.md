@@ -41,23 +41,25 @@ If use CUDA 6.0, 6.5, please use gcc-46 as the cuda host compiler.
 ### Install CUDA and NVIDIA Driver. Make sure your cuda driver works correctlly by runing any of the cuda example demo:
 
 ### Install dependencies:
- 1, install protobuf
-     download:  https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gzinstall 
-       
-       run ./configure
-       make -j3
-       sudo make install all
+ 0, pre-request:
+    sudo apt-get install autoconf2.13 libglm-dev libtinyxml2-dev
 
-       By default, the upper command will install the lib to /usr/local/lib/proto*, make sure all the protobuf libraries files is in /usr/lib/proto*. so you probability need to do
-	   cp /usr/local/lib/proto* /usr/lib/
- 2, install google ceres solver:
+ 1, install protobuf
+    https://github.com/google/protobuf.git
+    ./autogen.sh
+    run ./configure
+    make -j3
+    sudo make install all
+    cp /usr/local/lib/libproto* /usr/lib/
+    
+ 2, install google ceres solver: (you don't need to do this if you have ros installed)
     sudo apt-get install libceres-dev 
     
- 3, install google log and google flags:
+ 3, install google log and google flags: (you don't need to do this if you have ros installed)
     sudo apt-get install libgoogle-glog-dev
     sudo apt-get install libgflags-dev 
   
- 4, also make sure you have opencv, boost  
+ 4, also make sure you have opencv, boost (you don't need to do this if you have ros installed)  
 
 ### Install and Configure CoreDev
    1, git clone git@github.com:arpg/CoreDev.git
@@ -70,28 +72,11 @@ If use CUDA 6.0, 6.5, please use gcc-46 as the cuda host compiler.
 By default, the upper command will install the lib to `/usr/local/lib/proto*`, make sure all the protobuf libraries files is in `/usr/lib/proto*`. so you probability need to do
 	   `cp /usr/local/lib/proto* /usr/lib/`
 
-Configurations
-=======
    2, mkdir build
    
    3, cd build
 
-   4, disable pangolin_video by doing:
-	
-       ccmake .
-       set BUILD_PANGOLIN_GUI to OFF
-       
-   4.5 also make sure realsense is OFF by now.    
-
-   5, go to the CMakeList.txt file under HAL/Applications, comment out everything expect for the SensorViewer:
-
-      now you should be able to compile CoreDev by:
-      cmake .
-      make -j4
-	
 ### Install kangaroo (for SDF fusion, ray casting):
-
-    git clone git@github.com:arpg/Kangaroo.git
 	cd kangaroo
 	mkdir build
     cd build
@@ -101,27 +86,6 @@ Configurations
 Notice: you may have some errors when building the examples, this is because we disabled the pangolin::video function before. just ignore it by now.
 
 ### Install wallaby (for grid sdf fusion and voxel hashing):
-	1, install cudpp (optional, if you need voxel hashing)
-	git clone git@github.com:cudpp/cudpp.git
-	git submodule init
-	git submodule update
-	mkdir build
-	cd build
-	cmake ..
-	make -j4
-
-	now copy the following header files..
-	cp /cudpp/cudpp/include/cudpp_config.h /usr/local/include/
-	cp /cudpp/cudpp/include/cudpp_hash.h /usr/local/include/
-
-	change permission from root to the user
-	sudo chown -R robot cudpp_config.h
-	sudo chown -R robot cudpp_hash.h
-
-	2, install libglm (required)
-	sudo apt-get install libglm-dev
-
-	3, compile wallaby 
 	cd/wallaby
 	mkdir build
 	cmake ..
@@ -135,7 +99,6 @@ Notice: you may have some errors when building the examples, this is because we 
 	cmake ..
 	make -j4
 
-
 ## Applications:
   ### RGFusion: 
     A Rolling Grid Implementation of the kinect fusion. Support any source of the input images including stereo, RGBD. 
@@ -143,8 +106,7 @@ Notice: you may have some errors when building the examples, this is because we 
   ### Amazon:
     A perception software for Amazon Picking Challenge. 
  
-
-### Install Camera
+### Install Camera (you dont need to do this if you followed the upper directions)
 
     sudo apt-get install libavcodec-dev libudev-dev
 
