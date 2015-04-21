@@ -178,7 +178,7 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
       // Only wait for non-finger trajectories
       trajectory.joint_names.size() > 3)
   {
-    remote_control_->waitForNextFullStep();
+    remote_control_->waitForNextFullStep("execute trajectory");
     ROS_INFO_STREAM_NAMED("execution_interface","Executing trajectory....");
   }
 
@@ -259,23 +259,23 @@ bool ExecutionInterface::checkExecutionManager()
   }
 
   // Check that correct controllers are running
-  // bool has_error = true;
+  bool has_error = true;
 
-  // while (has_error && ros::ok())
-  // {
-  //   has_error = false;
-  //   if (!checkTrajectoryController(zaber_list_controllers_client_, "zaber"))
-  //   {
-  //     has_error = true;
-  //   }
+  while (has_error && ros::ok())
+  {
+    has_error = false;
+    if (!checkTrajectoryController(zaber_list_controllers_client_, "zaber"))
+    {
+      has_error = true;
+    }
 
-  //   bool has_ee = true;
-  //   if (!checkTrajectoryController(kinova_list_controllers_client_, "kinova", has_ee))
-  //   {
-  //     has_error = true;
-  //   }
-  //   ros::Duration(0.5).sleep();
-  // }
+    bool has_ee = true;
+    if (!checkTrajectoryController(kinova_list_controllers_client_, "kinova", has_ee))
+    {
+      has_error = true;
+    }
+    ros::Duration(0.5).sleep();
+  }
 
   return true;
 }
@@ -397,7 +397,7 @@ bool ExecutionInterface::getFilePath(std::string &file_path, const std::string &
 
   // Check that the directory exists, if not, create it
   fs::path path;
-  path = fs::path(package_path_ + "/trajectories");
+  path = fs::path(package_path_ + "/trajectories/analysis/");
 
   boost::system::error_code returnedError;
   fs::create_directories( path, returnedError );

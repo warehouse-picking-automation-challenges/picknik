@@ -9,8 +9,6 @@ apc_manager:
   # Bounding Box
   verbose_bounding_box: false
   
-  #verbose_grasping_results: false
-  
   # Experience planning
   verbose_experience_database_stats: false
 

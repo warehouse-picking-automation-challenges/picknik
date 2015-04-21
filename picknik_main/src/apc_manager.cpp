@@ -37,6 +37,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   , fake_perception_(fake_perception)
   , skip_homing_step_(true)
   , next_dropoff_location_(0)
+  , order_file_path_(order_file_path)
 {
   // Warn of fake modes
   if (fake_perception)
@@ -82,23 +83,12 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to load shelf");
   }
-  loadShelfContents(order_file_path);
 
   // Decide where to publish status text
   status_position_ = shelf_->getBottomRight();
-  bool show_text_for_video = false;
-  if (show_text_for_video)
-  {
-    status_position_.translation().x() = 0.25;
-    status_position_.translation().y() += 1.4;
-    status_position_.translation().z() += shelf_->getHeight() * 0.75;
-  }
-  else
-  {
-    status_position_.translation().x() = 0.25;
-    status_position_.translation().y() += shelf_->getWidth() * 0.5;
-    status_position_.translation().z() += shelf_->getHeight() * 1.1;
-  }
+  status_position_.translation().x() = 0.25;
+  status_position_.translation().y() += shelf_->getWidth() * 0.5;
+  status_position_.translation().z() += shelf_->getHeight() * 1.1;
 
   // Load the remote control for dealing with GUIs
   remote_control_.reset(new RemoteControl(verbose, nh_private_, this));
@@ -121,11 +111,6 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   // Load perception layer
   perception_interface_.reset(new PerceptionInterface(verbose_, visuals_, shelf_, config_, tf_, nh_private_));
 
-  // Generate random product poses and visualize the shelf
-  bool product_simulator_verbose = false;
-  ProductSimulator product_simulator(product_simulator_verbose, visuals_, planning_scene_monitor_);
-  product_simulator.generateRandomProductPoses(shelf_);
-
   // Load planning scene manager
   planning_scene_manager_.reset(new PlanningSceneManager(verbose, visuals_, shelf_));
   planning_scene_manager_->displayShelfWithOpenBins();
@@ -139,7 +124,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
   ROS_INFO_STREAM_NAMED("apc_manager","APCManager Ready.");
 }
 
-bool APCManager::checkSystemReady()
+bool APCManager::checkSystemReady(bool remove_from_shelf)
 {
   std::cout << std::endl;
   std::cout << std::endl;
@@ -178,14 +163,16 @@ bool APCManager::checkSystemReady()
   const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Check robot state valid
-  //planning_scene_manager_->displayEmptyShelf(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
-  planning_scene_manager_->displayShelfAsWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
-  while (ros::ok() && !manipulation_->fixCurrentCollisionAndBounds(arm_jmg))
+  if (remove_from_shelf)
   {
-    // Show the current state just for the heck of it
-    publishCurrentState();
+    planning_scene_manager_->displayShelfAsWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
+    while (ros::ok() && !manipulation_->fixCurrentCollisionAndBounds(arm_jmg))
+    {
+      // Show the current state just for the heck of it
+      publishCurrentState();
 
-    ros::Duration(0.5).sleep();
+      ros::Duration(0.5).sleep();
+    }
   }
 
   // Check robot calibrated
@@ -206,6 +193,12 @@ bool APCManager::checkSystemReady()
 bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to,
                           std::size_t num_orders)
 {
+  // Load JSON file
+  loadShelfContents(order_file_path_);
+
+  // Generate random product poses and visualize the shelf
+  createRandomProductPoses();
+
   // Decide how many products to pick
   if (num_orders == 0)
     num_orders = orders_.size();
@@ -649,6 +642,13 @@ bool APCManager::testEndEffectors()
 bool APCManager::testVisualizeShelf()
 {
   ROS_INFO_STREAM_NAMED("apc_manager","Testing all planning scene manager modes");
+
+  // Load JSON file
+  loadShelfContents(order_file_path_);
+
+  // Generate random product poses and visualize the shelf
+  createRandomProductPoses();
+
   //planning_scene_manager_->testAllModes();
   ros::spin();
   return true;
@@ -816,6 +816,12 @@ bool APCManager::testShelfLocation()
 // Mode 22
 bool APCManager::testApproachLiftRetreat()
 {
+  // Load JSON file
+  loadShelfContents(order_file_path_);
+
+  // Generate random product poses and visualize the shelf
+  createRandomProductPoses();
+
   Eigen::Affine3d ee_pose;
   bool verbose = true;
 
@@ -877,7 +883,7 @@ bool APCManager::getSRDFPose()
     moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
 
     // Check if current state is valid
-    manipulation_->fixCurrentCollisionAndBounds(arm_jmg);
+    //manipulation_->fixCurrentCollisionAndBounds(arm_jmg);
 
     // Output XML
     std::cout << "<group_state name=\"\" group=\"" << arm_jmg->getName() << "\">\n";
@@ -1026,9 +1032,23 @@ bool APCManager::testRandomValidMotions()
   return true;
 }
 
+bool APCManager::createRandomProductPoses()
+{
+  // Generate random product poses and visualize the shelf
+  bool product_simulator_verbose = false;
+  ProductSimulator product_simulator(product_simulator_verbose, visuals_, planning_scene_monitor_);
+  return product_simulator.generateRandomProductPoses(shelf_);
+}
+
 // Mode 4
 bool APCManager::testCameraPositions()
 {
+  // Load JSON file
+  loadShelfContents(order_file_path_);
+
+  // Generate random product poses and visualize the shelf
+  createRandomProductPoses();
+
   std::size_t bin_skipper = 0;
   for (BinObjectMap::const_iterator bin_it = shelf_->getBins().begin(); bin_it != shelf_->getBins().end(); bin_it++)
   {
@@ -1114,6 +1134,9 @@ bool APCManager::recordCalibrationTrajectory()
   const std::string file_name = "calibration_trajectory";
   manipulation_->getFilePath(file_path, file_name);
 
+  // Wait
+  remote_control_->waitForNextStep("start recording calibration trajectory");
+
   // Start recording
   manipulation_->recordTrajectoryToFile(file_path);
 
@@ -1136,6 +1159,12 @@ bool APCManager::testGoHome()
 // Mode 16
 bool APCManager::testGraspGenerator()
 {
+  // Load JSON file
+  loadShelfContents(order_file_path_);
+
+  // Generate random product poses and visualize the shelf
+  createRandomProductPoses();
+
   // Benchmark runtime
   ros::Time start_time;
   start_time = ros::Time::now();
@@ -1357,6 +1386,12 @@ bool APCManager::testJointLimits()
 // Mode 18
 bool APCManager::testPerceptionComm()
 {
+  // Load JSON file
+  loadShelfContents(order_file_path_);
+
+  // Generate random product poses and visualize the shelf
+  createRandomProductPoses();
+
   // Display planning scene
   planning_scene_manager_->displayShelfWithOpenBins();
 
@@ -1418,7 +1453,7 @@ bool APCManager::perceiveBinWithCamera(BinObjectPtr bin)
   ROS_DEBUG_STREAM_NAMED("apc_manager","Moving camera around " << bin->getName());
 
   // Choose which planning group to use
-  //const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->left_arm_ : config_->right_arm_;
+  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->left_arm_ : config_->right_arm_;
 
   // Start playing back file
   const std::string file_name = "observe_bin_" + bin->getName() + "_trajectory";
@@ -1430,17 +1465,16 @@ bool APCManager::perceiveBinWithCamera(BinObjectPtr bin)
     ROS_ERROR_STREAM_NAMED("apc_manager","No products in bin " << bin->getName());
     return false;
   }
-  ROS_WARN_STREAM_NAMED("apc_manager","Temp");
   ProductObjectPtr product = bin->getProducts()[0];
 
   // Communicate with perception pipeline
   perception_interface_->startPerception(product, bin);
 
-  // if (!manipulation_->playbackTrajectoryFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
-  // {
-  //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to playback " << file_name);
-  //   return false;
-  // }
+  if (!manipulation_->playbackTrajectoryFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to playback " << file_name);
+    return false;
+  }
 
   // Set planning scene
   planning_scene_manager_->displayShelfWithOpenBins();
@@ -1876,6 +1910,27 @@ bool APCManager::startUnitTest(const std::string &json_file, const std::string &
     ROS_ERROR_STREAM_NAMED("apc_manager","Test '" << test_name << "' failed to run fully");
     return false;
   }
+  return true;
+}
+
+// Mode 23
+bool APCManager::gotoPose(const std::string& pose_name)
+{
+  ROS_INFO_STREAM_NAMED("apc_manager","Going to pose " << pose_name);
+  planning_scene_manager_->displayShelfWithOpenBins();
+  ros::Duration(1).sleep();
+  ros::spinOnce();
+
+  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  bool check_validity = true;
+
+  if (!manipulation_->moveToPose(arm_jmg, pose_name, config_->main_velocity_scaling_factor_, check_validity))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to pose");
+    return false;
+  }
+  ROS_INFO_STREAM_NAMED("apc_manager","Spinning until shutdown requested");
+  ros::spin();
   return true;
 }
 

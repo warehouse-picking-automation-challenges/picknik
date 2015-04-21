@@ -118,7 +118,7 @@ bool PerceptionInterface::endPerception(ProductObjectPtr& product, BinObjectPtr&
   }
 
   // Tell the perception pipeline we are done moving the camera
-  bool use_stop_command = false;
+  bool use_stop_command = true;
   if (use_stop_command)
   {
     ROS_INFO_STREAM_NAMED("perception_interface","Sending stop command to perception server");
@@ -139,7 +139,8 @@ bool PerceptionInterface::endPerception(ProductObjectPtr& product, BinObjectPtr&
 
   // Wait for the action to return with product pose
   double timeout = 60;
-  ROS_WARN_STREAM_NAMED("perception_interface","TIMEOUT IS SET HIGH");
+  if (timeout > 30)
+    ROS_WARN_STREAM_NAMED("perception_interface","Perception timeout is set to a high value");
   if (!find_objects_action_.waitForResult(ros::Duration(timeout)))
   {
     ROS_ERROR_STREAM_NAMED("perception_interface","Percetion action did not finish before the time out.");
@@ -278,7 +279,7 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     std::cout << "object_name:     " << found_object.object_name << std::endl;
     //std::cout << "expected_object_confidence: " << found_object.expected_object_confidence << std::endl;
     std::cout << "has mesh:        " << ((found_object.bounding_mesh.triangles.empty() || found_object.bounding_mesh.vertices.empty()) ? "NO" : "YES") << std::endl;
-    std::cout << "ros frame:       "; printTransform(camera_to_object);
+    std::cout << "original:        "; printTransform(camera_to_object);
     std::cout << "world_to_object: "; printTransform(world_to_object);
     std::cout << "bin_to_object:   "; printTransform(bin_to_object);
     std::cout << std::endl;
@@ -343,7 +344,7 @@ bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::T
 {
   tf::StampedTransform camera_transform;
   static const std::string parent_frame = "/world";
-  static const std::string camera_frame = "/xtion_camera";
+  static const std::string camera_frame = "/xtion_sensor";
 
   try
   {

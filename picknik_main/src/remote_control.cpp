@@ -171,7 +171,7 @@ bool RemoteControl::getFullAutonomous()
   return full_autonomous_;
 }
 
-bool RemoteControl::waitForNextStep()
+bool RemoteControl::waitForNextStep(const std::string &caption)
 {
   // Check if we really need to wait
   if ( !(!next_step_ready_ && !autonomous_ && ros::ok()) )
@@ -179,7 +179,7 @@ bool RemoteControl::waitForNextStep()
   
   // Show message
   std::cout << std::endl << std::endl;
-  std::cout << MOVEIT_CONSOLE_COLOR_CYAN << "Waiting for next step " << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
+  std::cout << MOVEIT_CONSOLE_COLOR_CYAN << "Waiting to " << caption << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
 
   is_waiting_ = true;
   // Wait until next step is ready
@@ -195,14 +195,14 @@ bool RemoteControl::waitForNextStep()
   return true;
 }
 
-bool RemoteControl::waitForNextFullStep()
+bool RemoteControl::waitForNextFullStep(const std::string &caption)
 {
   // Check if we really need to wait
   if ( !(!next_step_ready_ && !full_autonomous_ && ros::ok()) )
     return true;
   
   // Show message
-  std::cout << MOVEIT_CONSOLE_COLOR_CYAN << "Waiting for next full step " << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
+  std::cout << MOVEIT_CONSOLE_COLOR_CYAN << "Waiting to " << caption << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
 
   is_waiting_ = true;
   // Wait until next step is ready

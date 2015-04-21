@@ -68,7 +68,7 @@ public:
    * \brief Check if all communication is properly active
    * \return true on success
    */
-  bool checkSystemReady();
+  bool checkSystemReady(bool remove_from_shelf = true);
 
   /**
    * \brief Load the shelf and products
@@ -149,6 +149,13 @@ public:
    */
   bool testRandomValidMotions();
 
+  /**
+   * \brief Show random product locations
+   * \param input - description
+   * \return true on success
+   */
+  bool createRandomProductPoses();
+  
   /**
    * \brief Send arm to camera positions
    * \return true on success
@@ -338,6 +345,13 @@ public:
    */
   bool startUnitTest(const std::string &json_file, const std::string &test_name, const Eigen::Affine3d &product_pose);
 
+  /**
+   * \brief Move to a pose named in the SRDF
+   * \param pose_name
+   * \return true on success
+   */
+  bool gotoPose(const std::string& pose_name);
+
 private:
 
   // A shared node handle
@@ -364,6 +378,7 @@ private:
   // Properties
   ShelfObjectPtr shelf_;
   WorkOrders orders_;
+  std::string order_file_path_;
 
   // File path to ROS package on drive
   std::string package_path_;
