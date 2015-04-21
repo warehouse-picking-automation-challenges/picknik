@@ -31,6 +31,7 @@
 #include <ompl_visual_tools/ompl_visual_tools.h>
 #include <moveit/kinematic_constraints/utils.h>
 #include <moveit/trajectory_processing/iterative_time_parameterization.h>
+#include <moveit/planning_interface/planning_interface.h>
 
 // OMPL
 #include <ompl/tools/experience/ExperienceSetup.h>
@@ -44,6 +45,11 @@
 // namespace trajectory_processing
 // {
 // MOVEIT_CLASS_FORWARD(IterativeParabolicTimeParameterization);
+// }
+
+// namespace planning_interface:
+// {
+// MOVEIT_CLASS_FORWARD(PlanningContext);
 // }
 
 namespace planning_pipeline
@@ -68,7 +74,7 @@ public:
                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                ManipulationDataPtr config, moveit_grasps::GraspDatas grasp_datas,
                RemoteControlPtr remote_control, const std::string& package_path,
-               ShelfObjectPtr shelf, bool use_experience);
+               ShelfObjectPtr shelf, bool use_experience, bool fake_execution);
 
   /**
    * \brief Calculate the bouding mesh for a product
@@ -96,7 +102,7 @@ public:
    * \brief Compute a cartesian path along waypoints
    * \return true on success
    */
-  bool computeCartesianWaypointPath(moveit_grasps::GraspCandidatePtr grasp_candidate, 
+  bool computeCartesianWaypointPath(const robot_model::JointModelGroup* arm_jmg, moveit::core::RobotStatePtr start_state,
                                     const EigenSTL::vector_Affine3d &waypoints,
                                     std::vector<moveit::core::RobotStatePtr> &robot_state_trajectory);
 
@@ -163,6 +169,12 @@ public:
             moveit_msgs::RobotTrajectory& trajectory_msg);
 
   /**
+   * \brief Print experience logs
+   * \return true on success
+   */
+  bool printExperienceLogs();
+
+  /**
    * \brief Interpolate
    * \return true on success
    */
@@ -183,6 +195,13 @@ public:
                     double velocity_scaling_factor);
 
   /**
+   * \brief Using the current EE pose and the goal grasp pose, move forward into the target object
+   * \param chosen - the grasp we are using
+   * \return true on success
+   */
+  bool executeApproachPath(moveit_grasps::GraspCandidatePtr chosen);
+
+  /**
    * \brief Generate the straight line path from pregrasp to grasp
    * \param chosen - all the data on the chosen grasp
    * \return true on success
@@ -198,10 +217,11 @@ public:
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true,
-                           bool ignore_collision = false);
-  bool executeVerticlePathOLD(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true,
-                              bool ignore_collision = false);
+  bool executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, const double &velocity_scaling_factor, 
+                           bool up = true, bool ignore_collision = false);
+                           
+  bool executeVerticlePathWithIK(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true,
+                                 bool ignore_collision = false);
 
   /**
    * \brief Translate arm left and right
@@ -357,12 +377,6 @@ public:
   void loadPlanningPipeline();
 
   /**
-   * \brief Central Rviz status visualizer
-   * \return true on success
-   */
-  bool statusPublisher(const std::string &status);
-
-  /**
    * \brief Helper function for determining if robot is already in desired state
    * \param robotstate to compare to
    * \param robotstate to compare to
@@ -468,6 +482,7 @@ protected:
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
   robot_model::RobotModelConstPtr robot_model_;
   planning_pipeline::PlanningPipelinePtr planning_pipeline_;
+  planning_interface::PlanningContextPtr planning_context_handle_;
 
   // Allocated memory for robot state
   moveit::core::RobotStatePtr current_state_;
@@ -489,10 +504,6 @@ protected:
   bool use_experience_;
   bool use_logging_;
   std::ofstream logging_file_;
-
-  // User feedback
-  Eigen::Affine3d status_position_; // where to display messages
-  Eigen::Affine3d order_position_; // where to display messages
 
   // Grasp generator
   moveit_grasps::GraspGeneratorPtr grasp_generator_;

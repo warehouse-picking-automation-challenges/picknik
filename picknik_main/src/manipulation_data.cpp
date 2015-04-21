@@ -63,6 +63,7 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool in_simu
 
   if (in_simulation)
   {
+    ROS_WARN_STREAM_NAMED("manipulation_data","In simulation mode - velocity set to 100%");
     main_velocity_scaling_factor_ = 1.0;
     approach_velocity_scaling_factor_ = 1.0;
     lift_velocity_scaling_factor_ = 1.0;
@@ -131,6 +132,16 @@ bool ManipulationData::loadVerboseLevels(const std::string& parent_name)
 
   // Populate what settings we want
   setting_names.push_back("show_goal_bin_markers");
+  setting_names.push_back("verbose_bounding_box");
+  setting_names.push_back("verbose_experience_database_stats");
+  setting_names.push_back("verbose_cartesian_planning");
+  setting_names.push_back("show_grasping_seed_state");
+  setting_names.push_back("show_grasp_filter_collision_if_failed");
+  setting_names.push_back("show_simulated_paths_moving");
+  //setting_names.push_back("");
+  //setting_names.push_back("");
+  //setting_names.push_back("");
+  //setting_names.push_back("");
 
   // Load settings from rosparam
   for (std::size_t i = 0; i < setting_names.size(); ++i)
@@ -145,7 +156,6 @@ bool ManipulationData::isEnabled(const std::string& setting_name)
   std::map<std::string,bool>::iterator it = enabled_.find(setting_name);
   if(it != enabled_.end())
   {
-    ROS_WARN_STREAM_NAMED("manipulation_data","Key " << setting_name << " is " << it->second);
     // Element found;
     return it->second;
   }

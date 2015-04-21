@@ -45,6 +45,7 @@ int main(int argc, char** argv)
   bool autonomous = false;
   bool full_autonomous = false;
   std::string order_file;
+  std::string pose;
 
   // Parse command line arguments
   for (int i = 0; i < argc; ++i)
@@ -66,6 +67,14 @@ int main(int argc, char** argv)
       }
       order_file = argv[i];
       ROS_DEBUG_STREAM_NAMED("main","Using order file " << order_file);
+      continue;
+    }
+
+    if (strcmp(argv[i], "--pose") == 0)
+    {
+      ++i;
+      pose = argv[i];
+      ROS_DEBUG_STREAM_NAMED("main","Using pose " << pose);
       continue;
     }
 
@@ -157,65 +166,67 @@ int main(int argc, char** argv)
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
 
+  bool remove_from_shelf = true; // option if checkSystemReady() should auto remove arm from shelf
+
   switch (mode)
   {
     case 1:
       ROS_INFO_STREAM_NAMED("main","Run actual Amazon Picking Challenge mode");
-      manager.runOrder(order_start, jump_to, num_orders);
+      manager.mainOrderProcessor(order_start, jump_to, num_orders);
       break;
     case 2:
-      if (!manager.checkSystemReady()) return 0;;
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Go to home position");
       manager.testGoHome();
       break;
     case 3:
-      if (!manager.checkSystemReady()) return 0;;
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Going to goal_bin place pose");
       manager.testGoalBinPose();
       break;
     case 4:
-      if (!manager.checkSystemReady()) return 0;;
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Moving camera to each bin location");      
       manager.testCameraPositions();
       break;
     case 5:
-      //if (!manager.checkSystemReady()) return 0;;
+      //if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Raise the roof (go up and down)");
       manager.testUpAndDown();
       break;      
     case 6:
-      if (!manager.checkSystemReady()) return 0;;
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Plan to random valid locations");
       manager.testRandomValidMotions();
       break;
     case 7:
-      if (!manager.checkSystemReady()) return 0;;
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Verify shelf location");
       manager.testShelfLocation();
       break;
     case 8:
-      if (!manager.checkSystemReady()) return 0;;
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Test end effectors mode");
       manager.testEndEffectors();
       break;
 
     case 9:
-      if (!manager.checkSystemReady()) return 0;;
+      //if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Recording a trajectory for calibration");
       manager.recordCalibrationTrajectory();
       break;
     case 10:
-      if (!manager.checkSystemReady()) return 0;;
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Playback trajectory for calibration");
       manager.calibrateCamera();
       break;
     case 11:
-      if (!manager.checkSystemReady()) return 0;;
+      //if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Recording bin observing trajectory");
       manager.recordBinWithCamera(bin_id);
       break;
     case 12:
-      if (!manager.checkSystemReady()) return 0;;
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Playing back bin observing trajectory");
       manager.perceiveBinWithCamera(bin_id);
       break;
@@ -239,12 +250,12 @@ int main(int argc, char** argv)
       manager.testGraspGenerator();
       break;
     case 17:
-      if (!manager.checkSystemReady()) return 0;;
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Test joint limits");
       manager.testJointLimits();
       break;
     case 18:
-      if (!manager.checkSystemReady()) return 0;;
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Requesting perception test");
       manager.testPerceptionComm();
       break;
@@ -253,6 +264,8 @@ int main(int argc, char** argv)
       manager.trainExperienceDatabase();
       break;
     case 20:
+      remove_from_shelf = false;
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Going in and out of bin");
       manager.testInAndOut();
       break;
@@ -261,8 +274,21 @@ int main(int argc, char** argv)
       manager.displayExperienceDatabase();
       break;
     case 22:
+      remove_from_shelf = false;
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Testing approach lift retreat cartesian path");
       manager.testApproachLiftRetreat();
+      break;      
+    case 23:
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Unit tests for manipulation");
+      manager.unitTests();
+      break;      
+    case 24:
+      remove_from_shelf = false;
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Going to pose " << pose);
+      manager.gotoPose(pose);
       break;      
     default:
       ROS_WARN_STREAM_NAMED("main","Unkown mode: " << mode);

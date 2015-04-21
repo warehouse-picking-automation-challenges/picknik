@@ -108,6 +108,13 @@ public:
     // If the camera angle was bad or some other failure, return false
     result.succeeded = true;
 
+    // DUMMY
+    Eigen::Affine3d thing = Eigen::Affine3d::Identity();
+    Eigen::Matrix4d rot;
+    thing = thing * rot;
+    thing.matrix() = rot;
+
+
     // For each object in the bin
     for (std::size_t i = 0; i < goal->expected_objects_names.size(); ++i)
     {
@@ -116,8 +123,8 @@ public:
 
       // Object pose
       Eigen::Affine3d pose = Eigen::Affine3d::Identity();
-      //pose.translation().z() = 0.45;
-      pose.translation().y() = -0.45;
+      pose.translation().x() = 0.45;
+      //pose.translation().y() = -0.45;
       //pose = pose 
       //  * Eigen::AngleAxisd(1.7, Eigen::Vector3d::UnitY());
         

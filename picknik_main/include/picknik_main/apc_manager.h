@@ -68,7 +68,7 @@ public:
    * \brief Check if all communication is properly active
    * \return true on success
    */
-  bool checkSystemReady();
+  bool checkSystemReady(bool remove_from_shelf = true);
 
   /**
    * \brief Load the shelf and products
@@ -84,9 +84,16 @@ public:
    * \param num_orders - how many products to pick from the order, 0 = all
    * \return true on success
    */
-  bool runOrder(std::size_t order_start = 0, std::size_t jump_to = 0,
-                std::size_t num_orders = 0);
+  bool mainOrderProcessor(std::size_t order_start = 0, std::size_t jump_to = 0, std::size_t num_orders = 0);
 
+  /**
+   * \brief Main program runner
+   * \param Which product in the order to skip ahead to
+   * \param jump_to - which step in manipulation to start at
+   * \param num_orders - how many products to pick from the order, 0 = all
+   * \return true on success
+   */
+  bool runOrder(std::size_t order_start = 0, std::size_t jump_to = 0, std::size_t num_orders = 0);
 
   /**
    * \brief Grasp object once we know the pose
@@ -149,6 +156,13 @@ public:
    */
   bool testRandomValidMotions();
 
+  /**
+   * \brief Show random product locations
+   * \param input - description
+   * \return true on success
+   */
+  bool createRandomProductPoses();
+  
   /**
    * \brief Send arm to camera positions
    * \return true on success
@@ -320,6 +334,31 @@ public:
    */
   bool generateGoalBinLocations();
 
+  /**
+   * \brief Central Rviz status visualizer
+   * \return true on success
+   */
+  bool statusPublisher(const std::string &status);
+
+  /**
+   * \brief Test various product benchmarks
+   * \return true on success
+   */
+  bool unitTests();
+
+  /**
+   * \brief Update settings for new unit test
+   * \return true on success
+   */
+  bool startUnitTest(const std::string &json_file, const std::string &test_name, const Eigen::Affine3d &product_pose);
+
+  /**
+   * \brief Move to a pose named in the SRDF
+   * \param pose_name
+   * \return true on success
+   */
+  bool gotoPose(const std::string& pose_name);
+
 private:
 
   // A shared node handle
@@ -340,9 +379,13 @@ private:
   planning_scene::PlanningScenePtr planning_scene_;
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
 
+  // User feedback
+  Eigen::Affine3d status_position_; // where to display messages
+
   // Properties
   ShelfObjectPtr shelf_;
   WorkOrders orders_;
+  std::string order_file_path_;
 
   // File path to ROS package on drive
   std::string package_path_;

@@ -59,19 +59,6 @@ If use CUDA 6.0, 6.5, please use gcc-46 as the cuda host compiler.
   
  4, also make sure you have opencv, boost  
 
-### Install dependencies for node (optional, not require):
-   1, install zmq
-   
-       sudo apt-get install libzmq3-dev
-
-   2, install gui version of cmake
-   
-       sudo apt-get install cmake-curses-gui
-
-   3, add cpp binders for zmq
-   
-       git clone git@github.com:zeromq/zmqpp.git
- 
 ### Install and Configure CoreDev
    1, git clone git@github.com:arpg/CoreDev.git
    

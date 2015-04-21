@@ -72,6 +72,14 @@ bool Visuals::visualizeDisplayShelf(ShelfObjectPtr shelf)
   return true;
 }
 
-
+bool Visuals::setSharedRobotState(moveit::core::RobotStatePtr current_state)
+{
+  // allow visual_tools to have the correct virtual joint
+  visual_tools_->getSharedRobotState() = current_state; 
+  visual_tools_display_->getSharedRobotState() = current_state; 
+  start_state_->getSharedRobotState() = current_state; 
+  goal_state_->getSharedRobotState() = current_state; 
+  return true;
+}
 
 } // end namespace

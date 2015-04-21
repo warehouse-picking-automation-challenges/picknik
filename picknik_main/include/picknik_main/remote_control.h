@@ -118,8 +118,8 @@ public:
    * \brief Wait until user presses a button
    * \return true on success
    */
-  bool waitForNextStep();
-  bool waitForNextFullStep();
+  bool waitForNextStep(const std::string &caption = "go to next step");
+  bool waitForNextFullStep(const std::string &caption = "go to next full step");
 
 private:
 

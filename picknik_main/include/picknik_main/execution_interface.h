@@ -75,19 +75,33 @@ public:
    */
   ExecutionInterface(bool verbose, RemoteControlPtr remote_control, VisualsPtr visuals, moveit_grasps::GraspDatas grasp_datas,
                      planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor, 
-                     ManipulationDataPtr config, const std::string& package_path, moveit::core::RobotStatePtr current_state);
+                     ManipulationDataPtr config, const std::string& package_path, moveit::core::RobotStatePtr current_state,
+                     bool fake_execution);
 
   /**
    * \brief Do a bunch of checks and send to low level controllers
    * \return true on success
    */
-  bool executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg, bool ignore_collision = false);
+  bool executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg, const robot_model::JointModelGroup* jmg, 
+                         bool ignore_collision = false);
 
   /**
    * \brief Ensure controllers are ready and in correct state
    * \return true on success
    */
   bool checkExecutionManager();
+
+  /**
+   * \brief Turn on unit testingn
+   * \return true on success
+   */
+  bool enableUnitTesting();
+
+  /**
+   * \brief Get the current state of the robot
+   * \return true on success
+   */
+  moveit::core::RobotStatePtr getCurrentState();
 
 private:
   
@@ -96,8 +110,6 @@ private:
   bool saveTrajectory(const moveit_msgs::RobotTrajectory &trajectory_msg, const std::string &file_name);
 
   bool getFilePath(std::string &file_path, const std::string &file_name) const;
-
-  moveit::core::RobotStatePtr getCurrentState();
 
   // Show more visual and console output, with general slower run time.
   bool verbose_;
@@ -131,6 +143,10 @@ private:
   ros::ServiceClient zaber_list_controllers_client_;
   ros::ServiceClient kinova_list_controllers_client_;
 
+  // Unit testing mode - do not actually execute trajectories
+  bool unit_testing_enabled_;
+  
+  bool fake_execution_;
 }; // end class
 
 } // end namespace

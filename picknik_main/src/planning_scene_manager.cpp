@@ -81,9 +81,9 @@ bool PlanningSceneManager::displayEmptyShelf()
   return true;
 }
 
-bool PlanningSceneManager::displayShelfWithOpenBins()
+bool PlanningSceneManager::displayShelfWithOpenBins(bool force)
 {
-  if (mode_ == ALL_OPEN_BINS)
+  if (!force && mode_ == ALL_OPEN_BINS)
   {
     return true;
   }

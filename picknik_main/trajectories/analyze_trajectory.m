@@ -4,11 +4,14 @@ format long g
 clf
 
 % SETTINGS
-plot_position = 0; % 0 for velocity
+plot_position = 1; % 0 for velocity
 has_acceleration = 1; % if CSV includes acceleration
 
 %while 1
-    sampled_data = csvread('trajectory_2.csv',1,0);
+    sampled_data = csvread('analysis/manipulator_trajectory_1.csv',1,0);
+
+    % check for errors in trajectory
+    show_point = 0; % display a line for a point, this index is base=0, aka my C++ output
     
     %assign columns into seperate variable names - this is made quickly using the
     %header names and find-replace command
@@ -43,14 +46,21 @@ has_acceleration = 1; % if CSV includes acceleration
     
     if (plot_position)
         plot(...
-             timestamp', gantry_pos,'r', ...%time_start_end, [-pi, -pi], 'r--', time_start_end, [pi, pi], 'r--',...
-             timestamp', joint1_pos,'y', ...%time_start_end, [-pi,-pi], 'yo',time_start_end, [joint2_upper,joint2_upper], 'y--',...
-             timestamp', joint2_pos,'m', ...%time_start_end, [joint3_lower,joint3_lower], 'm--',time_start_end, [joint3_upper,joint3_upper], 'm--',...
-             timestamp', joint3_pos,'c',...
-             timestamp', joint4_pos,'g',...
-             timestamp', joint5_pos,...
-             timestamp', joint6_pos)
-
+             timestamp', gantry_pos,'o-', ...%time_start_end, [-pi, -pi], 'r--', time_start_end, [pi, pi], 'r--',...
+             timestamp', joint1_pos,'o-', ...%time_start_end, [-pi,-pi], 'yo',time_start_end, [joint2_upper,joint2_upper], 'y--',...
+             timestamp', joint2_pos,'o-', ...%time_start_end, [joint3_lower,joint3_lower], 'm--',time_start_end, [joint3_upper,joint3_upper], 'm--',...
+             timestamp', joint3_pos,'o-',...
+             timestamp', joint4_pos,'o-',...
+             timestamp', joint5_pos,'o-',...
+             timestamp', joint6_pos,'o-')
+         
+        % show location of error
+        if (show_point > 0)
+            hold on
+            height_bounds_of_plot = [-4 2]
+            plot([timestamp(show_point+1) timestamp(show_point+1)],height_bounds_of_plot,'--')
+        end
+        
         xlabel('Time')
         ylabel('Position')
         legend('Gantry Pos',...%'Continous Low', 'Continuous High',...
@@ -95,6 +105,7 @@ has_acceleration = 1; % if CSV includes acceleration
     fprintf('Joint 4 diff %.6f \n', joint4_pos(end,1) - joint4_pos(1,1))
     fprintf('Joint 5 diff %.6f \n', joint5_pos(end,1) - joint5_pos(1,1))
     fprintf('Joint 6 diff %.6f \n', joint6_pos(end,1) - joint6_pos(1,1))
+    fprintf('Number of states: %d \n', size(joint6_pos,1))
     
              
     

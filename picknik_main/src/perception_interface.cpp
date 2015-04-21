@@ -118,7 +118,7 @@ bool PerceptionInterface::endPerception(ProductObjectPtr& product, BinObjectPtr&
   }
 
   // Tell the perception pipeline we are done moving the camera
-  bool use_stop_command = false;
+  bool use_stop_command = true;
   if (use_stop_command)
   {
     ROS_INFO_STREAM_NAMED("perception_interface","Sending stop command to perception server");
@@ -139,7 +139,8 @@ bool PerceptionInterface::endPerception(ProductObjectPtr& product, BinObjectPtr&
 
   // Wait for the action to return with product pose
   double timeout = 60;
-  ROS_WARN_STREAM_NAMED("perception_interface","TIMEOUT IS SET HIGH");
+  if (timeout > 30)
+    ROS_WARN_STREAM_NAMED("perception_interface","Perception timeout is set to a high value");
   if (!find_objects_action_.waitForResult(ros::Duration(timeout)))
   {
     ROS_ERROR_STREAM_NAMED("perception_interface","Percetion action did not finish before the time out.");
@@ -263,9 +264,13 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   {
     const picknik_msgs::FoundObject& found_object = result->found_objects[i];
 
-    // Get object's transform
+    // Get object's transform    
     Eigen::Affine3d camera_to_object = visuals_->visual_tools_->convertPose(found_object.object_pose);
+    // Eigen::Affine3d camera_to_object;
 
+    // // Convert to ROS frame
+    // convertFrameCVToROS(visuals_->visual_tools_->convertPose(found_object.object_pose), camera_to_object);
+      
     // Convert to world frame
     const Eigen::Affine3d world_to_object = world_to_camera * camera_to_object;
     visuals_->visual_tools_->publishAxisLabeled(world_to_object, found_object.object_name);
@@ -278,7 +283,7 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     std::cout << "object_name:     " << found_object.object_name << std::endl;
     //std::cout << "expected_object_confidence: " << found_object.expected_object_confidence << std::endl;
     std::cout << "has mesh:        " << ((found_object.bounding_mesh.triangles.empty() || found_object.bounding_mesh.vertices.empty()) ? "NO" : "YES") << std::endl;
-    std::cout << "ros frame:       "; printTransform(camera_to_object);
+    std::cout << "original:        "; printTransform(camera_to_object);
     std::cout << "world_to_object: "; printTransform(world_to_object);
     std::cout << "bin_to_object:   "; printTransform(bin_to_object);
     std::cout << std::endl;
@@ -395,5 +400,17 @@ bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera)
   // visuals_->visual_tools_->publishWireframeRectangle(camera_view_finder, height, width, rvt::PINK, rvt::SMALL);
   return true;
 }
+
+bool PerceptionInterface::convertFrameCVToROS(const Eigen::Affine3d& cv_frame, Eigen::Affine3d& ros_frame)
+{
+  Eigen::Matrix3d rotation;
+  rotation = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
+    * Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitZ());
+  //std::cout << "Rotation: " << rotation << std::endl;                                                                                                                                                                                                                           
+  ros_frame = rotation * cv_frame;
+
+  return true;
+}
+
 
 } // namespace
