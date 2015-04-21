@@ -79,9 +79,14 @@ PerceptionInterface::PerceptionInterface(bool verbose, VisualsPtr visuals, Shelf
 
 bool PerceptionInterface::isPerceptionReady()
 {
-  ROS_INFO_STREAM_NAMED("apc_manager","Waiting for object perception server on topic " << PERCEPTION_TOPIC);
+  // Do initial check before showing warning
+  if (!find_objects_action_.waitForServer(ros::Duration(0.1)))
+  {
+    ROS_WARN_STREAM_NAMED("perception_interface","Waiting for object perception server on topic " << PERCEPTION_TOPIC);
 
-  find_objects_action_.waitForServer();
+    find_objects_action_.waitForServer();
+  }
+
   return true;
 }
 
@@ -113,21 +118,30 @@ bool PerceptionInterface::endPerception(ProductObjectPtr& product, BinObjectPtr&
   }
 
   // Tell the perception pipeline we are done moving the camera
-  ROS_INFO_STREAM_NAMED("perception_interface","Sending stop command to perception server");
-  std_msgs::Bool result;
-  result.data = true; // meaningless value
-  stop_perception_pub_.publish( result );
-  ros::spinOnce(); // repeat 3 times for guarantees
-  ros::Duration(0.1).sleep();
-  stop_perception_pub_.publish( result );
-  ros::spinOnce();
-  ros::Duration(0.1).sleep();
-  stop_perception_pub_.publish( result );
+  bool use_stop_command = true;
+  if (use_stop_command)
+  {
+    ROS_INFO_STREAM_NAMED("perception_interface","Sending stop command to perception server");
+    std_msgs::Bool result;
+    result.data = true; // meaningless value
+    stop_perception_pub_.publish( result );
+    ros::spinOnce(); // repeat 3 times for guarantees
+    ros::Duration(0.1).sleep();
+    stop_perception_pub_.publish( result );
+    ros::spinOnce();
+    ros::Duration(0.1).sleep();
+    stop_perception_pub_.publish( result );
+  }
+  else
+    ROS_WARN_STREAM_NAMED("pereption_interface","Not using stop command!");
 
   ROS_INFO_STREAM_NAMED("perception_interface","Waiting for response from perception server");
 
   // Wait for the action to return with product pose
-  if (!find_objects_action_.waitForResult(ros::Duration(20.0)))
+  double timeout = 60;
+  if (timeout > 30)
+    ROS_WARN_STREAM_NAMED("perception_interface","Perception timeout is set to a high value");
+  if (!find_objects_action_.waitForResult(ros::Duration(timeout)))
   {
     ROS_ERROR_STREAM_NAMED("perception_interface","Percetion action did not finish before the time out.");
     is_processing_perception_ = false;
@@ -140,7 +154,7 @@ bool PerceptionInterface::endPerception(ProductObjectPtr& product, BinObjectPtr&
 
   // Get result
   picknik_msgs::FindObjectsResultConstPtr perception_result = find_objects_action_.getResult();
-  ROS_DEBUG_STREAM_NAMED("apc_manager.perception","Perception result:\n" << *perception_result);
+  //ROS_DEBUG_STREAM_NAMED("perception_interface","Perception result:\n" << *perception_result);
 
   if (!perception_result->succeeded)
   {
@@ -164,7 +178,7 @@ bool PerceptionInterface::endPerception(ProductObjectPtr& product, BinObjectPtr&
 }
 
 bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResultConstPtr result,
-                                               ProductObjectPtr& product, BinObjectPtr& bin)
+                                                   ProductObjectPtr& product, BinObjectPtr& bin)
 {
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
@@ -250,13 +264,13 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   {
     const picknik_msgs::FoundObject& found_object = result->found_objects[i];
 
-    // Get object's transform
-    Eigen::Affine3d camera_to_object_cv_frame = visuals_->visual_tools_->convertPose(found_object.object_pose);
+    // Get object's transform    
+    Eigen::Affine3d camera_to_object = visuals_->visual_tools_->convertPose(found_object.object_pose);
+    // Eigen::Affine3d camera_to_object;
 
-    // Convert coordinate systems
-    Eigen::Affine3d camera_to_object;
-    convertFrameCVToROS(camera_to_object_cv_frame, camera_to_object);
-
+    // // Convert to ROS frame
+    // convertFrameCVToROS(visuals_->visual_tools_->convertPose(found_object.object_pose), camera_to_object);
+      
     // Convert to world frame
     const Eigen::Affine3d world_to_object = world_to_camera * camera_to_object;
     visuals_->visual_tools_->publishAxisLabeled(world_to_object, found_object.object_name);
@@ -269,8 +283,7 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     std::cout << "object_name:     " << found_object.object_name << std::endl;
     //std::cout << "expected_object_confidence: " << found_object.expected_object_confidence << std::endl;
     std::cout << "has mesh:        " << ((found_object.bounding_mesh.triangles.empty() || found_object.bounding_mesh.vertices.empty()) ? "NO" : "YES") << std::endl;
-    std::cout << "cv frame:        "; printTransform(camera_to_object_cv_frame);
-    std::cout << "ros frame:       "; printTransform(camera_to_object);
+    std::cout << "original:        "; printTransform(camera_to_object);
     std::cout << "world_to_object: "; printTransform(world_to_object);
     std::cout << "bin_to_object:   "; printTransform(bin_to_object);
     std::cout << std::endl;
@@ -353,6 +366,7 @@ bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::T
   // Copy results
   tf::transformTFToEigen(camera_transform, world_to_camera);
   time_stamp = camera_transform.stamp_;
+    return true;
 }
 
 bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera) 
@@ -392,10 +406,11 @@ bool PerceptionInterface::convertFrameCVToROS(const Eigen::Affine3d& cv_frame, E
   Eigen::Matrix3d rotation;
   rotation = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
     * Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitZ());
-  //std::cout << "Rotation: " << rotation << std::endl;
+  //std::cout << "Rotation: " << rotation << std::endl;                                                                                                                                                                                                                           
   ros_frame = rotation * cv_frame;
 
   return true;
 }
+
 
 } // namespace

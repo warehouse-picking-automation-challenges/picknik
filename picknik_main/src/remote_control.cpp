@@ -38,6 +38,7 @@
 
 #include <picknik_main/remote_control.h>
 #include <picknik_main/apc_manager.h>
+#include <moveit/macros/console_colors.h>
 
 namespace picknik_main
 {
@@ -53,13 +54,14 @@ RemoteControl::RemoteControl(bool verbose, ros::NodeHandle nh, APCManager* paren
   , is_waiting_(false)
   , next_step_ready_(false)
   , autonomous_(false)
+  , full_autonomous_(false)
   , stop_(false)
 {
   // Subscribe to remote control topic
-  ROS_DEBUG_STREAM_NAMED("apc_manager","Subscribing to button topics");
   std::size_t queue_size = 10;
   remote_next_control_ = nh_.subscribe("/picknik_main/next_command", queue_size, &RemoteControl::remoteNextCallback, this);
   remote_auto_control_ = nh_.subscribe("/picknik_main/auto_command", queue_size, &RemoteControl::remoteAutoCallback, this);
+  remote_full_auto_control_ = nh_.subscribe("/picknik_main/full_auto_command", queue_size, &RemoteControl::remoteFullAutoCallback, this);
   remote_stop_control_ = nh_.subscribe("/picknik_main/stop_command", queue_size, &RemoteControl::remoteStopCallback, this);
   remote_joy_ = nh_.subscribe("/joy", queue_size, &RemoteControl::joyCallback, this);
 
@@ -74,6 +76,11 @@ void RemoteControl::remoteNextCallback(const std_msgs::Bool::ConstPtr& msg)
 void RemoteControl::remoteAutoCallback(const std_msgs::Bool::ConstPtr& msg)
 {
   setAutonomous();
+}
+
+void RemoteControl::remoteFullAutoCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+  setFullAutonomous();
 }
 
 void RemoteControl::remoteStopCallback(const std_msgs::Bool::ConstPtr& msg)
@@ -101,7 +108,7 @@ void RemoteControl::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
   // 7 - start
   // 8 - power
   if (msg->buttons[8])
-    setAutonomous();
+    setFullAutonomous();
   // 9 - Button stick left
   // 10 - Button stick right
 
@@ -125,11 +132,20 @@ bool RemoteControl::setReadyForNextStep()
     next_step_ready_ = true;
     stop_ = false;
   }
+  return true;
 }
 
 void RemoteControl::setAutonomous(bool autonomous)
 {
   // TODO: disable this feature for final competition
+  autonomous_ = autonomous;
+  stop_ = false;
+}
+
+void RemoteControl::setFullAutonomous(bool autonomous)
+{
+  // TODO: disable this feature for final competition
+  full_autonomous_ = autonomous;
   autonomous_ = autonomous;
   stop_ = false;
 }
@@ -150,11 +166,47 @@ bool RemoteControl::getAutonomous()
   return autonomous_;
 }
 
-bool RemoteControl::waitForNextStep()
+bool RemoteControl::getFullAutonomous()
 {
+  return full_autonomous_;
+}
+
+bool RemoteControl::waitForNextStep(const std::string &caption)
+{
+  // Check if we really need to wait
+  if ( !(!next_step_ready_ && !autonomous_ && ros::ok()) )
+    return true;
+  
+  // Show message
+  std::cout << std::endl << std::endl;
+  std::cout << MOVEIT_CONSOLE_COLOR_CYAN << "Waiting to " << caption << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
+
   is_waiting_ = true;
   // Wait until next step is ready
   while (!next_step_ready_ && !autonomous_ && ros::ok())
+  {
+    ros::Duration(0.25).sleep();
+    ros::spinOnce();
+  }
+  if (!ros::ok())
+    return false;
+  next_step_ready_ = false;
+  is_waiting_ = false;
+  return true;
+}
+
+bool RemoteControl::waitForNextFullStep(const std::string &caption)
+{
+  // Check if we really need to wait
+  if ( !(!next_step_ready_ && !full_autonomous_ && ros::ok()) )
+    return true;
+  
+  // Show message
+  std::cout << MOVEIT_CONSOLE_COLOR_CYAN << "Waiting to " << caption << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
+
+  is_waiting_ = true;
+  // Wait until next step is ready
+  while (!next_step_ready_ && !full_autonomous_ && ros::ok())
   {
     ros::Duration(0.25).sleep();
     ros::spinOnce();

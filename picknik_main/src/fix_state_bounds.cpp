@@ -35,9 +35,16 @@
 /* Author: Ioan Sucan, Dave Coleman */
 
 #include <boost/math/constants/constants.hpp>
-#include <moveit/trajectory_processing/trajectory_tools.h>
+
+// MoveIt
 #include <moveit/robot_state/conversions.h>
+
+// PickNik
 #include <picknik_main/fix_state_bounds.h>
+#include <picknik_main/namespaces.h>
+
+// Parameter loading
+#include <rviz_visual_tools/ros_param_utilities.h>
 
 namespace picknik_main
 {
@@ -45,23 +52,10 @@ namespace picknik_main
 FixStateBounds::FixStateBounds()
   : nh_("~")
 {
-    if (!nh_.getParam(BOUNDS_PARAM_NAME, bounds_dist_))
-    {
-      bounds_dist_ = 0.05;
-      ROS_WARN_STREAM_NAMED("fix_state_bounds","Param '" << BOUNDS_PARAM_NAME 
-                            << "' was not set. Using default value: " << bounds_dist_);
-    }
-    else
-      ROS_INFO_STREAM_NAMED("fix_state_bounds","Param '" << BOUNDS_PARAM_NAME << "' was set to " << bounds_dist_);
+  const std::string parent_name = "fix_state_bounds"; // for namespacing logging messages
 
-    if (!nh_.getParam(DT_PARAM_NAME, max_dt_offset_))
-    {
-      max_dt_offset_ = 0.5;
-      ROS_WARN_STREAM_NAMED("fix_state_bounds","Param '" << DT_PARAM_NAME 
-                            << "' was not set. Using default value: " << max_dt_offset_);
-    }
-    else
-      ROS_INFO_STREAM_NAMED("fix_state_bounds","Param '" << DT_PARAM_NAME << "' was set to " << max_dt_offset_);
+  rvt::getDoubleParameter(parent_name, nh_, BOUNDS_PARAM_NAME, bounds_dist_);
+  rvt::getDoubleParameter(parent_name, nh_, DT_PARAM_NAME, max_dt_offset_);
 }
 
 bool FixStateBounds::fixBounds(robot_state::RobotState& robot_state,
@@ -69,10 +63,10 @@ bool FixStateBounds::fixBounds(robot_state::RobotState& robot_state,
 {
   ROS_INFO_STREAM_NAMED("fix_state_bounds","Fixing bounds");
 
-  const std::vector<const robot_model::JointModel*> &jmodels = jmg->getJointModels();
+  const std::vector<const robot_model::JointModel*> &joint_models = jmg->getJointModels();
 
   bool change_req = false;
-  for (std::size_t i = 0 ; i < jmodels.size() ; ++i)
+  for (std::size_t i = 0 ; i < joint_models.size() ; ++i)
   {
     // Check if we have a revolute, continuous joint. If we do, then we only need to make sure
     // it is within de model's declared bounds (usually -Pi, Pi), since the values wrap around.
@@ -80,7 +74,7 @@ bool FixStateBounds::fixBounds(robot_state::RobotState& robot_state,
     // how many times the joint was wrapped. Because of this, we remember the offsets for continuous
     // joints, and we un-do them when the plan comes from the planner
 
-    const robot_model::JointModel* jm = jmodels[i];
+    const robot_model::JointModel* jm = joint_models[i];
     if (jm->getType() == robot_model::JointModel::REVOLUTE)
     {
       if (static_cast<const robot_model::RevoluteJointModel*>(jm)->isContinuous())
@@ -118,37 +112,55 @@ bool FixStateBounds::fixBounds(robot_state::RobotState& robot_state,
         }
   }
 
-  // pointer to a prefix state we could possibly add, if we detect we have to make changes
-  robot_state::RobotStatePtr prefix_state;
-  for (std::size_t i = 0 ; i < jmodels.size() ; ++i)
+
+  for (std::size_t i = 0 ; i < joint_models.size() ; ++i)
   {
-    if (!robot_state.satisfiesBounds(jmodels[i]))
+    if (!robot_state.satisfiesBounds(joint_models[i]))
     {
-      if (robot_state.satisfiesBounds(jmodels[i], bounds_dist_))
+      robot_state.enforceBounds(joint_models[i]);
+      change_req = true;
+
+      std::stringstream joint_values;
+      std::stringstream joint_bounds_low;
+      std::stringstream joint_bounds_hi;
+      const double *p = robot_state.getJointPositions(joint_models[i]);
+      for (std::size_t k = 0 ; k < joint_models[i]->getVariableCount() ; ++k)
+        joint_values << p[k] << " ";
+      const robot_model::JointModel::Bounds &b = joint_models[i]->getVariableBounds();
+      for (std::size_t k = 0 ; k < b.size() ; ++k)
       {
-        if (!prefix_state)
-          prefix_state.reset(new robot_state::RobotState(robot_state));
-        robot_state.enforceBounds(jmodels[i]);
-        change_req = true;
-        ROS_INFO_NAMED("fix_state_bounds","Starting state is just outside bounds (joint '%s'). Assuming within bounds.", jmodels[i]->getName().c_str());
+        joint_bounds_low << b[k].min_position_ << " ";
+        joint_bounds_hi << b[k].max_position_ << " ";
       }
-      else
-      {
+      ROS_WARN_STREAM_NAMED("fix_state_bounds","Joint '" << joint_models[i]->getName() << "' is outside bounds by: [ "
+                            << joint_values.str() << "]. Joint value hould be in the range [ " << joint_bounds_low.str() <<
+                            "], [ " << joint_bounds_hi.str() << "])");
+
+      /*
+        if (robot_state.satisfiesBounds(joint_models[i], bounds_dist_))
+        {
+        robot_state.enforceBounds(joint_models[i]);
+        change_req = true;
+        ROS_INFO_NAMED("fix_state_bounds","Starting state is just outside bounds (joint '%s'). Assuming within bounds.", joint_models[i]->getName().c_str());
+        }
+        else
+        {
         std::stringstream joint_values;
         std::stringstream joint_bounds_low;
         std::stringstream joint_bounds_hi;
-        const double *p = robot_state.getJointPositions(jmodels[i]);
-        for (std::size_t k = 0 ; k < jmodels[i]->getVariableCount() ; ++k)
-          joint_values << p[k] << " ";
-        const robot_model::JointModel::Bounds &b = jmodels[i]->getVariableBounds();
+        const double *p = robot_state.getJointPositions(joint_models[i]);
+        for (std::size_t k = 0 ; k < joint_models[i]->getVariableCount() ; ++k)
+        joint_values << p[k] << " ";
+        const robot_model::JointModel::Bounds &b = joint_models[i]->getVariableBounds();
         for (std::size_t k = 0 ; k < b.size() ; ++k)
         {
-          joint_bounds_low << b[k].min_position_ << " ";
-          joint_bounds_hi << b[k].max_position_ << " ";
+        joint_bounds_low << b[k].min_position_ << " ";
+        joint_bounds_hi << b[k].max_position_ << " ";
         }
-        ROS_WARN_STREAM_NAMED("fix_state_bounds","Joint '" << jmodels[i]->getName() << "' from the starting state is outside bounds by a significant margin: [ " << joint_values.str() << "] should be in the range [ " << joint_bounds_low.str() <<
-                              "], [ " << joint_bounds_hi.str() << "] but the error above the ~" << BOUNDS_PARAM_NAME << " parameter (currently set to " << bounds_dist_ << ")");
-      }
+        ROS_WARN_STREAM_NAMED("fix_state_bounds","Joint '" << joint_models[i]->getName() << "' from the starting state is outside bounds by a significant margin: [ " << joint_values.str() << "]. Joint value hould be in the range [ " << joint_bounds_low.str() <<
+        "], [ " << joint_bounds_hi.str() << "] but the error is above the ~" << BOUNDS_PARAM_NAME << " parameter (currently set to " << bounds_dist_ << ")");
+        }
+      */
     }
   }
 

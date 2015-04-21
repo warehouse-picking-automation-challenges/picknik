@@ -159,14 +159,7 @@ public:
       //visual_tools_->publishCollisionMesh(collision_pose, collision_name, "file://" + display_mesh_path.string(), rvt::RAND);
       //visual_tools_->triggerPlanningSceneUpdate();
     }
-  }
-
-  /**
-   * \brief Destructor
-   */
-  ~MeshPublisher()
-  {
-
+    return true;
   }
 
 private:
@@ -201,7 +194,7 @@ int main(int argc, char** argv)
   bool verbose = false;
   if (argc > 1)
   {
-    for (std::size_t i = 0; i < argc; ++i)
+    for (std::size_t i = 0; i < std::size_t(argc); ++i)
     {
       if (strcmp(argv[i], "--verbose") == 0)
       {

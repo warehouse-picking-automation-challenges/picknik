@@ -6,21 +6,25 @@
   <!-- BAXTER -->      
   <group unless="$(arg jacob)">
     <node pkg="tf" type="static_transform_publisher" name="camera_to_ee" 
-	  args="0.072 -0.02 -0.015 3.14 -1.57 0 /left_gripper_base /xtion_camera 50" />
+	    args="0.072 -0.02 -0.015 3.14 -1.57 0 /left_gripper_base /xtion_camera 50" />
 
     <node pkg="tf" type="static_transform_publisher" name="camera_to_ee_2" 
-	  args="0.072 -0.02 -0.015 3.14 -1.57 0 /left_gripper_base /realsense_case_link 50" />
+	    args="0.072 -0.02 -0.015 3.14 -1.57 0 /left_gripper_base /realsense_case_link 50" />
   </group>
 
   <!-- JACOB -->
   <group if="$(arg jacob)">
-    <node pkg="tf" type="static_transform_publisher" name="jacob_camera_to_ee" 
-	  args="0.035 -0.055 -0.04 0 3.14 0 /jaco2_link_hand /xtion_camera 50" />
+    <!-- <node pkg="tf" type="static_transform_publisher" name="jacob_camera_to_ee"  -->
+    <!-- 	    args="0.035 -0.055 -0.04 -1.57 1.57 0 /jaco2_link_hand /xtion_camera 50" /> -->
+      <!-- args="0.035 -0.055 -0.04 0 3.14 0 /jaco2_link_hand /xtion_camera 50" /> -->
 
-    <node pkg="tf" type="static_transform_publisher" name="jacob_camera_to_ee_2" 
-	  args="0.035 -0.055 -0.04 3.14 1.57 0 /jaco2_link_hand /realsense_case_link 50" />
+      <!-- red - roll, green pitch, blue yall -->
+    <node pkg="tf" type="static_transform_publisher" name="jacob_camera_to_camera" 
+	    args="0.0215 0.017 -0.01 -1.5708 -1.71 0.0 /xtion /xtion_camera 50" />
+	    <!-- args="0.0215 0.017 -0.01 -1.5708 -1.5708 0 /xtion /xtion_camera 50" /> -->
+
   </group>
 
-	  <!-- args="0.035 -0.055 -0.04 0 3.141590 3.3 /jaco2_link_hand /xtion_camera 50" /> -->
+    <!-- args="0.035 -0.055 -0.04 0 3.141590 3.3 /jaco2_link_hand /xtion_camera 50" /> -->
 
 </launch>

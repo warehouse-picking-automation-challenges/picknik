@@ -65,8 +65,13 @@ PickNikPanel::PickNikPanel( QWidget* parent )
 
   // Create a push button
   btn_auto_ = new QPushButton(this);
-  btn_auto_->setText("Auto");
+  btn_auto_->setText("Auto Step");
   connect( btn_auto_, SIGNAL( clicked() ), this, SLOT( moveAuto() ) );
+
+  // Create a push button
+  btn_full_auto_ = new QPushButton(this);
+  btn_full_auto_->setText("Full Auto");
+  connect( btn_full_auto_, SIGNAL( clicked() ), this, SLOT( moveFullAuto() ) );
 
   // Create a push button
   btn_stop_ = new QPushButton(this);
@@ -77,6 +82,7 @@ PickNikPanel::PickNikPanel( QWidget* parent )
   QHBoxLayout* hlayout = new QHBoxLayout;
   hlayout->addWidget( btn_next_ );
   hlayout->addWidget( btn_auto_ );
+  hlayout->addWidget( btn_full_auto_ );
   hlayout->addWidget( btn_stop_ );
 
   // Lay out the topic field above the control widget.
@@ -87,11 +93,13 @@ PickNikPanel::PickNikPanel( QWidget* parent )
 
   next_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/next_command", 1 );
   auto_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/auto_command", 1 );
+  full_auto_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/full_auto_command", 1 );
   stop_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/stop_command", 1 );
 
   // Make the control widget start disabled, since we don't start with an output topic.
   btn_next_->setEnabled( true );
   btn_auto_->setEnabled( true );
+  btn_full_auto_->setEnabled( true );
 }
 
 void PickNikPanel::moveNext()
@@ -104,10 +112,18 @@ void PickNikPanel::moveNext()
 
 void PickNikPanel::moveAuto()
 {
-  ROS_INFO_STREAM_NAMED("picknik","Running continously");
+  ROS_INFO_STREAM_NAMED("picknik","Running auto step");
   std_msgs::Bool result;
   result.data = true;
   auto_publisher_.publish( result );
+}
+
+void PickNikPanel::moveFullAuto()
+{
+  ROS_INFO_STREAM_NAMED("picknik","Running auto trajectory");
+  std_msgs::Bool result;
+  result.data = true;
+  full_auto_publisher_.publish( result );
 }
 
 void PickNikPanel::moveStop()

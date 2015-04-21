@@ -50,66 +50,117 @@ ManipulationData::ManipulationData()
 {
 }
 
-bool ManipulationData::load(robot_model::RobotModelPtr robot_model)
+bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool in_simulation)
 {
-const std::string parent_name = "manipulation_data"; // for namespacing logging messages
+  const std::string parent_name = "manipulation_data"; // for namespacing logging messages
 
-// Load performance variables
-rvt::getDoubleParameter(parent_name, nh_, "main_velocity_scaling_factor", main_velocity_scaling_factor_);
-rvt::getDoubleParameter(parent_name, nh_, "approach_velocity_scaling_factor", approach_velocity_scaling_factor_);
-rvt::getDoubleParameter(parent_name, nh_, "lift_velocity_scaling_factor", lift_velocity_scaling_factor_);
-rvt::getDoubleParameter(parent_name, nh_, "retreat_velocity_scaling_factor", retreat_velocity_scaling_factor_);
-rvt::getDoubleParameter(parent_name, nh_, "calibration_velocity_scaling_factor", calibration_velocity_scaling_factor_);
-rvt::getDoubleParameter(parent_name, nh_, "wait_before_grasp", wait_before_grasp_);
-rvt::getDoubleParameter(parent_name, nh_, "wait_after_grasp", wait_after_grasp_);
-rvt::getDoubleParameter(parent_name, nh_, "approach_distance_desired", approach_distance_desired_);
-rvt::getDoubleParameter(parent_name, nh_, "lift_distance_desired", lift_distance_desired_);
-rvt::getDoubleParameter(parent_name, nh_, "place_goal_down_distance_desired", place_goal_down_distance_desired_);
+  // Load performance variables
+  rvt::getDoubleParameter(parent_name, nh_, "main_velocity_scaling_factor", main_velocity_scaling_factor_);
+  rvt::getDoubleParameter(parent_name, nh_, "approach_velocity_scaling_factor", approach_velocity_scaling_factor_);
+  rvt::getDoubleParameter(parent_name, nh_, "lift_velocity_scaling_factor", lift_velocity_scaling_factor_);
+  rvt::getDoubleParameter(parent_name, nh_, "retreat_velocity_scaling_factor", retreat_velocity_scaling_factor_);
+  rvt::getDoubleParameter(parent_name, nh_, "calibration_velocity_scaling_factor", calibration_velocity_scaling_factor_);
 
-// Load perception variables
-rvt::getDoubleParameter(parent_name, nh_, "camera/x_translation_from_bin", camera_x_translation_from_bin_);
-rvt::getDoubleParameter(parent_name, nh_, "camera/y_translation_from_bin", camera_y_translation_from_bin_);
-rvt::getDoubleParameter(parent_name, nh_, "camera/z_translation_from_bin", camera_z_translation_from_bin_);
-rvt::getDoubleParameter(parent_name, nh_, "camera/x_rotation_from_standard_grasp", camera_x_rotation_from_standard_grasp_);
-rvt::getDoubleParameter(parent_name, nh_, "camera/y_rotation_from_standard_grasp", camera_y_rotation_from_standard_grasp_);
-rvt::getDoubleParameter(parent_name, nh_, "camera/z_rotation_from_standard_grasp", camera_z_rotation_from_standard_grasp_);
-rvt::getDoubleParameter(parent_name, nh_, "camera/lift_distance", camera_lift_distance_);
-rvt::getDoubleParameter(parent_name, nh_, "camera/left_distance", camera_left_distance_);
-rvt::getDoubleParameter(parent_name, nh_, "camera/camera_frame_display_scale", camera_frame_display_scale_);
+  if (in_simulation)
+  {
+    ROS_WARN_STREAM_NAMED("manipulation_data","In simulation mode - velocity set to 100%");
+    main_velocity_scaling_factor_ = 1.0;
+    approach_velocity_scaling_factor_ = 1.0;
+    lift_velocity_scaling_factor_ = 1.0;
+    retreat_velocity_scaling_factor_ = 1.0;
+    calibration_velocity_scaling_factor_ = 1.0;
+  }
 
-// Load robot semantics
-rvt::getStringParameter(parent_name, nh_, "start_pose", start_pose_);
-rvt::getStringParameter(parent_name, nh_, "right_arm_dropoff_pose", right_arm_dropoff_pose_);
-rvt::getStringParameter(parent_name, nh_, "left_arm_dropoff_pose", left_arm_dropoff_pose_);
-rvt::getStringParameter(parent_name, nh_, "right_hand_name", right_hand_name_);
-rvt::getStringParameter(parent_name, nh_, "left_hand_name", left_hand_name_);
-rvt::getStringParameter(parent_name, nh_, "right_arm_name", right_arm_name_);
-rvt::getStringParameter(parent_name, nh_, "left_arm_name", left_arm_name_);
-rvt::getStringParameter(parent_name, nh_, "both_arms_name", both_arms_name_);
+  rvt::getDoubleParameter(parent_name, nh_, "wait_before_grasp", wait_before_grasp_);
+  rvt::getDoubleParameter(parent_name, nh_, "wait_after_grasp", wait_after_grasp_);
+  rvt::getDoubleParameter(parent_name, nh_, "place_goal_down_distance_desired", place_goal_down_distance_desired_);
+  rvt::getDoubleParameter(parent_name, nh_, "goal_bin_clearance", goal_bin_clearance_);
+  rvt::getDoubleParameter(parent_name, nh_, "jump_threshold", jump_threshold_);
 
-// Decide on dual arm mode we are in
-int temp_value;
-rvt::getIntParameter(parent_name, nh_, "dual_arm", temp_value);
- dual_arm_ = temp_value;
+  // Load perception variables
+  rvt::getDoubleParameter(parent_name, nh_, "camera/x_translation_from_bin", camera_x_translation_from_bin_);
+  rvt::getDoubleParameter(parent_name, nh_, "camera/y_translation_from_bin", camera_y_translation_from_bin_);
+  rvt::getDoubleParameter(parent_name, nh_, "camera/z_translation_from_bin", camera_z_translation_from_bin_);
+  rvt::getDoubleParameter(parent_name, nh_, "camera/x_rotation_from_standard_grasp", camera_x_rotation_from_standard_grasp_);
+  rvt::getDoubleParameter(parent_name, nh_, "camera/y_rotation_from_standard_grasp", camera_y_rotation_from_standard_grasp_);
+  rvt::getDoubleParameter(parent_name, nh_, "camera/z_rotation_from_standard_grasp", camera_z_rotation_from_standard_grasp_);
+  rvt::getDoubleParameter(parent_name, nh_, "camera/lift_distance", camera_lift_distance_);
+  rvt::getDoubleParameter(parent_name, nh_, "camera/left_distance", camera_left_distance_);
+  rvt::getDoubleParameter(parent_name, nh_, "camera/camera_frame_display_scale", camera_frame_display_scale_);
 
- // Load proper groups
- // TODO - check if joint model group exists
- if (dual_arm_)
- {
-   // Load arm groups
-   left_arm_ = robot_model->getJointModelGroup(left_arm_name_);
-   right_arm_ = robot_model->getJointModelGroup(right_arm_name_);
-   both_arms_ = robot_model->getJointModelGroup(both_arms_name_);
- }
- else
- {
-   // Load arm groups
-   right_arm_ = robot_model->getJointModelGroup(right_arm_name_);
- }
+  // Load robot semantics
+  rvt::getStringParameter(parent_name, nh_, "start_pose", start_pose_);
+  rvt::getStringParameter(parent_name, nh_, "right_arm_dropoff_pose", right_arm_dropoff_pose_);
+  rvt::getStringParameter(parent_name, nh_, "left_arm_dropoff_pose", left_arm_dropoff_pose_);
+  rvt::getStringParameter(parent_name, nh_, "right_hand_name", right_hand_name_);
+  rvt::getStringParameter(parent_name, nh_, "left_hand_name", left_hand_name_);
+  rvt::getStringParameter(parent_name, nh_, "right_arm_name", right_arm_name_);
+  rvt::getStringParameter(parent_name, nh_, "left_arm_name", left_arm_name_);
+  rvt::getStringParameter(parent_name, nh_, "both_arms_name", both_arms_name_);
 
- ROS_INFO_STREAM_NAMED("manipulation_data","ManipulationData Ready.");
+  // Load verbose/visualization settings
+  loadVerboseLevels(parent_name);
 
- return true;
+  // Decide on dual arm mode we are in
+  int temp_value;
+  rvt::getIntParameter(parent_name, nh_, "dual_arm", temp_value);
+  dual_arm_ = temp_value;
+
+  // Load proper groups
+  // TODO - check if joint model group exists
+  if (dual_arm_)
+  {
+    // Load arm groups
+    left_arm_ = robot_model->getJointModelGroup(left_arm_name_);
+    right_arm_ = robot_model->getJointModelGroup(right_arm_name_);
+    both_arms_ = robot_model->getJointModelGroup(both_arms_name_);
+  }
+  else
+  {
+    // Load arm groups
+    right_arm_ = robot_model->getJointModelGroup(right_arm_name_);
+  }
+
+  ROS_INFO_STREAM_NAMED("manipulation_data","ManipulationData Ready.");
+
+  return true;
+}
+
+bool ManipulationData::loadVerboseLevels(const std::string& parent_name)
+{
+  std::vector<std::string> setting_names;
+
+  // Populate what settings we want
+  setting_names.push_back("show_goal_bin_markers");
+  setting_names.push_back("verbose_bounding_box");
+  setting_names.push_back("verbose_experience_database_stats");
+  setting_names.push_back("verbose_cartesian_planning");
+  setting_names.push_back("show_grasping_seed_state");
+  setting_names.push_back("show_grasp_filter_collision_if_failed");
+  setting_names.push_back("show_simulated_paths_moving");
+  //setting_names.push_back("");
+  //setting_names.push_back("");
+  //setting_names.push_back("");
+  //setting_names.push_back("");
+
+  // Load settings from rosparam
+  for (std::size_t i = 0; i < setting_names.size(); ++i)
+  {
+    rvt::getBoolParameter(parent_name, nh_, "apc_manager/" + setting_names[i], enabled_[setting_names[i]]);    
+  }
+  return true;
+}
+
+bool ManipulationData::isEnabled(const std::string& setting_name)
+{
+  std::map<std::string,bool>::iterator it = enabled_.find(setting_name);
+  if(it != enabled_.end())
+  {
+    // Element found;
+    return it->second;
+  }
+  ROS_ERROR_STREAM_NAMED("manipulation_data","Enabled setting key " << setting_name << " does not exist in the available configuration");
+  return false;
 }
 
 } // end namespace

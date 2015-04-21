@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   ompl_visual_tools
   cmake_modules
   picknik_msgs
+  controller_manager_msgs
 )
 
 find_package(Eigen REQUIRED)
@@ -22,6 +23,7 @@ catkin_package(
     moveit_visual_tools
     moveit_ompl
     picknik_msgs
+    controller_manager_msgs
   DEPENDS
     Eigen
   INCLUDE_DIRS 
@@ -41,6 +43,8 @@ catkin_package(
 ###########
 ## Build ##
 ###########
+set(CMAKE_CXX_FLAGS "-W -Wall -Wno-unused-parameter -fno-strict-aliasing -Wno-reorder")
+
 include_directories(
   include 
   ${catkin_INCLUDE_DIRS}
@@ -87,6 +91,15 @@ add_library(amazon_json_parser
 target_link_libraries(amazon_json_parser
   jsoncpp
   visuals
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
+# Planning Scene Library
+add_library(planning_scene_manager
+  src/planning_scene_manager.cpp
+)
+target_link_libraries(planning_scene_manager
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
@@ -153,6 +166,15 @@ target_link_libraries(perception_interface
   ${Boost_LIBRARIES}
 )
 
+# execution interface library
+add_library(execution_interface
+  src/execution_interface.cpp
+)
+target_link_libraries(execution_interface
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
 # Manipulation pipeline library
 add_library(manipulation
   src/manipulation.cpp
@@ -161,10 +183,11 @@ add_dependencies(manipulation picknik_main_generate_messages_cpp)
 target_link_libraries(manipulation
   visuals
   manipulation_data
+  execution_interface
   product_simulator
   shelf
   fix_state_bounds
-  remote_control
+  remote_control  
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
@@ -187,6 +210,8 @@ target_link_libraries(apc_manager
   amazon_json_parser
   manipulation
   perception_interface
+  execution_interface
+  planning_scene_manager
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )

@@ -97,12 +97,12 @@ bool AmazonJSONParser::parseBins(const std::string& package_path, const Json::Va
 
     const Json::Value& bin = bin_contents[bin_name];
 
-    double bin_y_space = 0.08; // where to place objects
+    //double bin_y_space = 0.08; // where to place objects
 
     // Get each product
-    for ( int index = 0; index < bin.size(); ++index )
+    for ( std::size_t index = 0; index < bin.size(); ++index )
     {
-      const std::string& product_name = bin[index].asString();
+      const std::string& product_name = bin[int(index)].asString();
       if (verbose_)
         ROS_DEBUG_STREAM_NAMED("parser","   product: " << product_name);
 
@@ -138,9 +138,9 @@ bool AmazonJSONParser::parseBins(const std::string& package_path, const Json::Va
 bool AmazonJSONParser::parseWorkOrders(const Json::Value work_orders, ShelfObjectPtr shelf, WorkOrders& orders)
 {
   // Get each work order
-  for ( int work_id = 0; work_id < 	work_orders.size(); ++work_id )
+  for ( std::size_t work_id = 0; work_id < work_orders.size(); ++work_id )
   {
-    const Json::Value& work_order = work_orders[work_id]; // is an object
+    const Json::Value& work_order = work_orders[int(work_id)]; // is an object
 
     if (!work_order.isObject())
     {

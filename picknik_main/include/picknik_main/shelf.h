@@ -62,12 +62,6 @@ public:
   bool visualizeAxis(const Eigen::Affine3d& trans, VisualsPtr visuals) const;
 
   /**
-   * \brief Create collision bodies of bin
-   * \param trans - transform from parent container to current container
-   */
-  //bool createCollisionBodies(const Eigen::Affine3d &trans) const;
-
-  /**
    * \brief Add the products to be picked as collision objects
    * \param trans - transform from parent container to current container
    * \return true on success
@@ -88,7 +82,7 @@ public:
    * \brief Getter for a product
    */ 
   ProductObjectPtr getProduct(const std::string& name);
-
+  
 }; // class
 
 typedef std::map<std::string, BinObjectPtr> BinObjectMap;
@@ -137,6 +131,11 @@ public:
   bool visualizeEnvironmentObjects() const;
 
   /**
+   * \brief Add all other collision objects to planning scene
+   */
+  bool createCollisionBodiesEnvironmentObjects() const;
+
+  /**
    * \brief Create collision bodies of shelf
    * \param focus_bin_id - which bin to enable e.g. allow manipulation in
    * \param only_show_shelf_frame - when false, show the contents of the shelf too
@@ -169,11 +168,18 @@ public:
   ProductObjectPtr getProduct(const std::string &bin_name, const std::string &product_name);
 
   /**
+   * \brief Get all the products existing in all the bins
+   * \return true on success
+   */
+  bool getAllProducts(std::vector<ProductObjectPtr> &products);
+
+  /**
    * \brief Delete product
    * \param bin
    * \param product name
+   * \return true on success
    */
-  bool deleteProduct(const std::string &bin_name, const std::string &product_name);
+  bool deleteProduct(BinObjectPtr bin, ProductObjectPtr product);
 
   /**
    * \brief Get shelf parts for prevent collision with products
@@ -270,6 +276,18 @@ public:
   RectangleObjectPtr getEnvironmentCollisionObject(const std::string& name)
   {
     return environment_objects_[name];
+  }
+
+  /**
+   * \brief Reset contents of shelf
+   * \return true on success
+   */
+  void clearProducts()
+  {
+    for (BinObjectMap::const_iterator bin_it = bins_.begin(); bin_it != bins_.end(); bin_it++)
+    {
+      bin_it->second->getProducts().clear();
+    }
   }
   
   // Loaded shelf parameter values

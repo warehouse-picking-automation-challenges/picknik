@@ -24,10 +24,15 @@
 // PickNik
 #include <picknik_main/namespaces.h>
 
+// Boost
+#include <boost/enable_shared_from_this.hpp>
+
 namespace picknik_main
 {
 
-class Visuals
+MOVEIT_CLASS_FORWARD(ShelfObject);
+
+class Visuals : public boost::enable_shared_from_this<Visuals>
 {
 public:
 
@@ -37,11 +42,21 @@ public:
    */
   Visuals(robot_model::RobotModelPtr robot_model, planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor);
 
+  bool visualizeDisplayShelf(ShelfObjectPtr shelf);
+
+  /**
+   * \brief Allow visual_tools to have the correct virtual joint
+   * \return true on success
+   */
+  bool setSharedRobotState(moveit::core::RobotStatePtr current_state);
+
   // Public vars
   mvt::MoveItVisualToolsPtr visual_tools_;
   mvt::MoveItVisualToolsPtr visual_tools_display_;
-  mvt::MoveItVisualToolsPtr start_state_;
-  mvt::MoveItVisualToolsPtr goal_state_;
+  mvt::MoveItVisualToolsPtr start_state_; // also used for grasp markers
+  mvt::MoveItVisualToolsPtr goal_state_; // also used for trajectory lines
+  mvt::MoveItVisualToolsPtr grasp_markers_; // also used for start state
+  mvt::MoveItVisualToolsPtr trajectory_lines_; // also used for goal state
 
 }; // end class
 

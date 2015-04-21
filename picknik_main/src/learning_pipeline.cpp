@@ -46,9 +46,8 @@ namespace picknik_main
 
 LearningPipeline::LearningPipeline(bool verbose, VisualsPtr visuals,
                                    planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                                   boost::shared_ptr<plan_execution::PlanExecution> plan_execution,
                                    ShelfObjectPtr shelf, bool use_experience, bool show_database)
-  : ManipulationPipeline(verbose, visuals, planning_scene_monitor, plan_execution, shelf, use_experience, show_database)
+  : ManipulationPipeline(verbose, visuals, planning_scene_monitor, shelf, use_experience, show_database)
 {
 
   ROS_INFO_STREAM_NAMED("learning_pipeline","LearningPipeline Ready.");

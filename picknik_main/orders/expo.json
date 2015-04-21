@@ -1,0 +1,105 @@
+{
+    "bin_contents":
+    {
+	"bin_A":
+	[
+	    "expo_dry_erase_board_eraser"
+	],
+	"bin_B":
+	[
+	    "expo_dry_erase_board_eraser"
+	],
+	"bin_C":
+	[
+	    "expo_dry_erase_board_eraser"
+	],
+	"bin_D":
+	[
+	    "expo_dry_erase_board_eraser"
+	],
+	"bin_E":
+	[
+	    "expo_dry_erase_board_eraser"
+	],
+	"bin_F":
+	[
+	    "expo_dry_erase_board_eraser"
+	],
+	"bin_G":
+	[
+	    "expo_dry_erase_board_eraser"
+	],
+	"bin_H":
+	[
+	    "expo_dry_erase_board_eraser"
+	],
+	"bin_I":
+	[
+	    "expo_dry_erase_board_eraser"
+	],
+	"bin_J":
+	[
+	    "expo_dry_erase_board_eraser"
+	],
+	"bin_K":
+	[
+	    "expo_dry_erase_board_eraser"
+	],
+	"bin_L":
+	[
+	    "expo_dry_erase_board_eraser"
+	]
+    },
+
+    "work_order":
+    [
+	{
+	    "bin": "bin_A",
+	    "item": "expo_dry_erase_board_eraser"
+	},
+	{
+	    "bin": "bin_B",
+	    "item": "expo_dry_erase_board_eraser"
+	},
+	{
+	    "bin": "bin_C",
+	    "item": "expo_dry_erase_board_eraser"
+	},
+	{
+	    "bin": "bin_D",
+	    "item": "expo_dry_erase_board_eraser"
+	},
+	{
+	    "bin": "bin_E",
+	    "item": "expo_dry_erase_board_eraser"
+	},
+	{
+	    "bin": "bin_F",
+	    "item": "expo_dry_erase_board_eraser"
+	},
+	{
+	    "bin": "bin_G",
+	    "item": "expo_dry_erase_board_eraser"
+	},
+	{
+	    "bin": "bin_H",
+	    "item": "expo_dry_erase_board_eraser"
+	},
+	{
+	    "bin": "bin_I",
+	    "item": "expo_dry_erase_board_eraser"
+	},
+	{
+	    "bin": "bin_J",
+	    "item": "expo_dry_erase_board_eraser"
+	},
+	{
+	    "bin": "bin_K",
+	    "item": "expo_dry_erase_board_eraser"
+	},
+	{
+	    "bin": "bin_L",
+	    "item": "expo_dry_erase_board_eraser"
+	}
+    ]
+}

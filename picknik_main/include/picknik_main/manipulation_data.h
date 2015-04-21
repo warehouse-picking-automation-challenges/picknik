@@ -59,12 +59,33 @@ public:
 
   /**
    * \brief Load the configuration from rosparam
+   * \param robot_model
+   * \param in_simulation - whether to load full speed velocity constraints (simulation goes faster)
    * \return true on success
    */
-  bool load(robot_model::RobotModelPtr robot_model);
+  bool load(robot_model::RobotModelPtr robot_model, bool in_simulation);
+
+  /**
+   * \brief Check if certain key is enabled
+   * \return true if enabled
+   */
+  bool isEnabled(const std::string& setting_name);
+
+private:
+
+  /**
+   * \brief Load verbose/visulization settings
+   * \return true on success
+   */
+  bool loadVerboseLevels(const std::string& parent_name);
 
   // A shared node handle
   ros::NodeHandle nh_;
+
+  // Visualization settings
+  std::map<std::string, bool> enabled_;
+
+public:
 
   // Performance variables
   double main_velocity_scaling_factor_;
@@ -78,14 +99,17 @@ public:
   double wait_after_grasp_;
 
   // Distance variables
-  double approach_distance_desired_;
-  double lift_distance_desired_;
   double place_goal_down_distance_desired_;
+  double goal_bin_clearance_;
+  double jump_threshold_;
 
   // Robot semantics
   std::string start_pose_; // where to move robot to initially. should be for both arms if applicable
+
+  // TODO - delete these two
   std::string right_arm_dropoff_pose_; // where to discard picked items
   std::string left_arm_dropoff_pose_; // where to discard picked items
+
   std::string right_hand_name_;
   std::string left_hand_name_;
   std::string right_arm_name_;
@@ -110,7 +134,6 @@ public:
 
   // Logic on type of robot
   bool dual_arm_;
-
 }; // end class
 
 // Create boost pointers for this class

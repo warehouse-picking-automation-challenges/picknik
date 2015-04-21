@@ -5,7 +5,11 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Grid1/Offset1
-        - /Amazon Shelf Markers1/Namespaces1
+        - /Axes1
+        - /Amazon Detailed Markers1/Namespaces1
+        - /RobotModel1
+        - /Amazon Trajectory Markers1
+        - /Amazon Trajectory Markers1/Namespaces1
       Splitter Ratio: 0.666041
     Tree Height: 437
   - Class: rviz/Help
@@ -38,38 +42,36 @@ Visualization Manager:
       Value: true
     - Class: rviz/Axes
       Enabled: true
-      Length: 0.5
+      Length: 0.1
       Name: Axes
-      Radius: 0.05
+      Radius: 0.01
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /amazon_shelf_markers_display
-      Name: Amazon Shelf Markers
+      Marker Topic: /picknik_main/highres_markers
+      Name: Amazon Detailed Markers
       Namespaces:
         Axis: true
         Cuboid: true
+        Line: true
         Shelf: true
         goal_bin_49: true
-        product_cheezit_big_original_53: true
-        product_crayola_64_ct_54: true
-        product_expo_dry_erase_board_eraser_52: true
-        product_expo_dry_erase_board_eraser_56: true
-        product_expo_dry_erase_board_eraser_57: true
-        product_expo_dry_erase_board_eraser_59: true
-        product_feline_greenies_dental_treats_58: true
-        product_feline_greenies_dental_treats_64: true
-        product_first_years_take_and_toss_straw_cup_61: true
-        product_first_years_take_and_toss_straw_cup_66: true
-        product_highland_6539_self_stick_notes_60: true
-        product_mommys_helper_outlet_plugs_65: true
-        product_munchkin_white_hot_duck_bath_toy_62: true
-        product_oreo_mega_stuf_55: true
-        product_sharpie_accent_tank_style_highlighters_63: true
+        product_crayola_64_ct_55: true
+        product_crayola_64_ct_56: true
+        product_crayola_64_ct_57: true
+        product_crayola_64_ct_58: true
+        product_crayola_64_ct_59: true
+        product_crayola_64_ct_60: true
+        product_crayola_64_ct_61: true
+        product_crayola_64_ct_62: true
+        product_crayola_64_ct_63: true
+        product_crayola_64_ct_64: true
+        product_crayola_64_ct_65: true
+        product_crayola_64_ct_66: true
       Queue Size: 100
       Value: true
-    - Alpha: 1
+    - Alpha: 0.5
       Class: rviz/RobotModel
       Collision Enabled: false
       Enabled: true
@@ -79,254 +81,105 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        arm_mount:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        collision_head_link_1:
+        camera_mount:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        collision_head_link_2:
+        frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        display:
+        gantry:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        dummyhead1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        head:
+        gantry_plate:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        head_camera:
+        jaco2_end_effector:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        left_arm_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_arm_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_gripper:
+        jaco2_link_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_base:
+        jaco2_link_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_l_finger:
+        jaco2_link_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_gripper_r_finger:
+        jaco2_link_4:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand:
+        jaco2_link_5:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand_accelerometer:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_hand_camera:
+        jaco2_link_base:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_hand_camera_axis:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_hand_range:
+        jaco2_link_finger_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_elbow:
+        jaco2_link_finger_1_tip:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_forearm:
+        jaco2_link_finger_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_lower_shoulder:
+        jaco2_link_finger_2_tip:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_torso_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        left_upper_elbow:
+        jaco2_link_finger_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_upper_elbow_visual:
+        jaco2_link_finger_3_tip:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_upper_forearm:
+        jaco2_link_hand:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        left_upper_forearm_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_upper_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pedestal:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_arm_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_arm_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_gripper:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_base:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_l_finger:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_gripper_r_finger:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand_accelerometer:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_hand_camera:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_hand_camera_axis:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_hand_range:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_lower_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_torso_itb:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        right_upper_elbow:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_elbow_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_forearm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_forearm_visual:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_upper_shoulder:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_wrist:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        screen:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        sonar_ring:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        torso:
+        jaco2_wrist:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -336,12 +189,25 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        xtion_sensor:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /picknik_main/trajectory_markers
+      Name: Amazon Trajectory Markers
+      Namespaces:
+        Path: true
+        Sphere: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -353,38 +219,39 @@ Visualization Manager:
     - Class: rviz/Select
     - Class: rviz/Interact
       Hide Inactive Objects: true
+    - Class: rviz/Measure
   Value: true
   Views:
     Current:
-      Class: rviz/XYOrbit
-      Distance: 4.59681
+      Class: rviz/Orbit
+      Distance: 2.37667
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.55809
-        Y: 0.323089
-        Z: -4.76834e-07
+        X: 0.565799
+        Y: 0.0389672
+        Z: 1.33301
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.650399
+      Pitch: 0.500399
       Target Frame: base_link
-      Value: XYOrbit (rviz)
-      Yaw: 3.70674
+      Value: Orbit (rviz)
+      Yaw: 3.22723
     Saved: ~
 Window Geometry:
   Displays:
-    collapsed: true
+    collapsed: false
   Height: 1028
   Help:
     collapsed: false
-  Hide Left Dock: true
+  Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd00000001000000000000015a000003e6fc0200000009fb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c0061007900730000000000000003e6000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a0056006900650077007300000002c80000013a000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e0067010000026d000001950000000000000000000002d1000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000001000000000000010f000003befc0200000009fb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c006100790073000000002800000287000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000028000003be000000b000fffffffb0000000c00430061006d00650072006100000002ff000001610000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e0067010000026d000001950000000000000000000002d6000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
   Views:
     collapsed: false
-  Width: 721
-  X: 773
+  Width: 726
+  X: 1183
   Y: 14

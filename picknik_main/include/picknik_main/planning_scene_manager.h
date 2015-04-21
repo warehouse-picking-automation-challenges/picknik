@@ -33,26 +33,37 @@
  *********************************************************************/
 
 /* Author: Dave Coleman <dave@dav.ee>
-   Desc:   Contains all hooks for remote control
+   Desc:   Shows different versions of a shelf planning scene
 */
 
-#ifndef PICKNIK_MAIN__REMOTE_CONTROL
-#define PICKNIK_MAIN__REMOTE_CONTROL
+#ifndef PICKNIK_MAIN__PLANNING_SCENE_MANAGER
+#define PICKNIK_MAIN__PLANNING_SCENE_MANAGER
+
+// PickNik
+#include <picknik_main/namespaces.h>
 
 // MoveIt
 #include <moveit/macros/class_forward.h>
 
 // ROS
 #include <ros/ros.h>
-#include <std_msgs/Bool.h>
-#include <sensor_msgs/Joy.h>
 
 namespace picknik_main
 {
 
-MOVEIT_CLASS_FORWARD(APCManager);
+MOVEIT_CLASS_FORWARD(ShelfObject);
+MOVEIT_CLASS_FORWARD(Visuals);
 
-class RemoteControl
+enum SceneModes {
+  NOT_LOADED,
+  ALL_OPEN_BINS,
+  FOCUSED_ON_BIN,
+  ONLY_COLLISION_WALL,
+  EMPTY_SHELF
+};
+
+
+class PlanningSceneManager
 {
 public:
 
@@ -60,97 +71,60 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  RemoteControl(bool verbose, ros::NodeHandle nh, APCManager* parent);
+  PlanningSceneManager(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf);
 
   /**
-   * \brief Remote control from Rviz
-   */
-  void remoteNextCallback(const std_msgs::Bool::ConstPtr& msg);
-
-  /**
-   * \brief Remote control from Rviz
-   */
-  void remoteAutoCallback(const std_msgs::Bool::ConstPtr& msg);
-  void remoteFullAutoCallback(const std_msgs::Bool::ConstPtr& msg);
-
-  /**
-   * \brief Remote control from Rviz
-   */
-  void remoteStopCallback(const std_msgs::Bool::ConstPtr& msg);
-
-  /**
-   * \brief Recieves inputs from joystick
-   * \param input - description
+   * \brief Show shelf with no products
    * \return true on success
    */
-  void joyCallback(const sensor_msgs::Joy::ConstPtr& msg);
+  bool displayEmptyShelf();
 
   /**
-   * \brief Step to next step
+   * \brief Show shelf with all bins enabled
    * \return true on success
    */
-  bool setReadyForNextStep();
+  bool displayShelfWithOpenBins(bool force = false);
 
   /**
-   * \brief Enable autonomous mode
-   */
-  void setAutonomous(bool autonomous = true);
-  void setFullAutonomous(bool autonomous = true);
-
-  /**
-   * \brief Get the autonomous mode
-   * \return true if is in autonomous mode
-   */
-  bool getAutonomous();
-  bool getFullAutonomous();
-
-  /**
-   * \brief Stop something in pipeline
-   */
-  void setStop(bool stop = true);
-
-  /**
-   * \brief See if we are in stop mode
-   */
-  bool getStop();
-
-  /**
-   * \brief Wait until user presses a button
+   * \brief Show shelf as simple solid wall, not details
    * \return true on success
    */
-  bool waitForNextStep(const std::string &caption = "go to next step");
-  bool waitForNextFullStep(const std::string &caption = "go to next full step");
+  bool displayShelfAsWall();
+
+  /**
+   * \brief Only show one bin, disable the rest
+   * \return true on success
+   */
+  bool displayShelfOnlyBin( const std::string& bin_name );
+
+  /**
+   * \brief Switch between the 3 modes
+   */
+  bool testAllModes();
 
 private:
-
-  // Show more visual and console output, with general slower run time.
-  bool verbose_;
 
   // A shared node handle
   ros::NodeHandle nh_;
 
-  // The overall manager for sending commands
-  APCManager* parent_;
+  // Show more visual and console output, with general slower run time.
+  bool verbose_;
 
-  // Remote control
-  ros::Subscriber remote_next_control_;
-  ros::Subscriber remote_auto_control_;
-  ros::Subscriber remote_full_auto_control_;
-  ros::Subscriber remote_stop_control_;
-  ros::Subscriber remote_joy_;
+  // For visualizing things in rviz
+  VisualsPtr visuals_;
 
-  // Remote control
-  bool autonomous_;
-  bool full_autonomous_;
-  bool next_step_ready_;
-  bool is_waiting_;
-  bool stop_;
+  // Properties
+  ShelfObjectPtr shelf_;
+
+  // Mode switching to reduce redudant scene changes
+  SceneModes mode_;
+  std::string focused_bin_;
 
 }; // end class
 
 // Create boost pointers for this class
-typedef boost::shared_ptr<RemoteControl> RemoteControlPtr;
-typedef boost::shared_ptr<const RemoteControl> RemoteControlConstPtr;
+typedef boost::shared_ptr<PlanningSceneManager> PlanningSceneManagerPtr;
+typedef boost::shared_ptr<const PlanningSceneManager> PlanningSceneManagerConstPtr;
 
 } // end namespace
 
