@@ -110,6 +110,8 @@ public:
    */
   bool publishCameraFrame(Eigen::Affine3d camera_to_world);
 
+  bool convertFrameCVToROS(const Eigen::Affine3d& cv_frame, Eigen::Affine3d& ros_frame);
+
 private:
 
   // Show more visual and console output, with general slower run time.

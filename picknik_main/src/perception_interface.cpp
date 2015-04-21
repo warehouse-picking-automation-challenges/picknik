@@ -264,9 +264,13 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   {
     const picknik_msgs::FoundObject& found_object = result->found_objects[i];
 
+   
     // Get object's transform
-    Eigen::Affine3d camera_to_object = visuals_->visual_tools_->convertPose(found_object.object_pose);
+    Eigen::Affine3d camera_to_object;
 
+    // Convert to ROS frame
+    convertFrameCVToROS(visuals_->visual_tools_->convertPose(found_object.object_pose), camera_to_object);
+      
     // Convert to world frame
     const Eigen::Affine3d world_to_object = world_to_camera * camera_to_object;
     visuals_->visual_tools_->publishAxisLabeled(world_to_object, found_object.object_name);
@@ -344,7 +348,7 @@ bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::T
 {
   tf::StampedTransform camera_transform;
   static const std::string parent_frame = "/world";
-  static const std::string camera_frame = "/xtion_sensor";
+  static const std::string camera_frame = "/xtion_camera";
 
   try
   {
@@ -396,5 +400,17 @@ bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera)
   // visuals_->visual_tools_->publishWireframeRectangle(camera_view_finder, height, width, rvt::PINK, rvt::SMALL);
   return true;
 }
+
+bool PerceptionInterface::convertFrameCVToROS(const Eigen::Affine3d& cv_frame, Eigen::Affine3d& ros_frame)
+{
+  Eigen::Matrix3d rotation;
+  rotation = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
+    * Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitZ());
+  //std::cout << "Rotation: " << rotation << std::endl;                                                                                                                                                                                                                           
+  ros_frame = rotation * cv_frame;
+
+  return true;
+}
+
 
 } // namespace
