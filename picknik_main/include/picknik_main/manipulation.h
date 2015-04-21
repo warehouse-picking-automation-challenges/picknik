@@ -74,7 +74,7 @@ public:
                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                ManipulationDataPtr config, moveit_grasps::GraspDatas grasp_datas,
                RemoteControlPtr remote_control, const std::string& package_path,
-               ShelfObjectPtr shelf, bool use_experience);
+               ShelfObjectPtr shelf, bool use_experience, bool fake_execution);
 
   /**
    * \brief Calculate the bouding mesh for a product
@@ -102,7 +102,7 @@ public:
    * \brief Compute a cartesian path along waypoints
    * \return true on success
    */
-  bool computeCartesianWaypointPath(moveit_grasps::GraspCandidatePtr grasp_candidate, 
+  bool computeCartesianWaypointPath(const robot_model::JointModelGroup* arm_jmg, moveit::core::RobotStatePtr start_state,
                                     const EigenSTL::vector_Affine3d &waypoints,
                                     std::vector<moveit::core::RobotStatePtr> &robot_state_trajectory);
 
@@ -195,6 +195,13 @@ public:
                     double velocity_scaling_factor);
 
   /**
+   * \brief Using the current EE pose and the goal grasp pose, move forward into the target object
+   * \param chosen - the grasp we are using
+   * \return true on success
+   */
+  bool executeApproachPath(moveit_grasps::GraspCandidatePtr chosen);
+
+  /**
    * \brief Generate the straight line path from pregrasp to grasp
    * \param chosen - all the data on the chosen grasp
    * \return true on success
@@ -210,8 +217,9 @@ public:
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true,
-                           bool ignore_collision = false);
+  bool executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, const double &velocity_scaling_factor, 
+                           bool up = true, bool ignore_collision = false);
+                           
   bool executeVerticlePathWithIK(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true,
                                  bool ignore_collision = false);
 

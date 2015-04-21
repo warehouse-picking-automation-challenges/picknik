@@ -75,7 +75,8 @@ public:
    */
   ExecutionInterface(bool verbose, RemoteControlPtr remote_control, VisualsPtr visuals, moveit_grasps::GraspDatas grasp_datas,
                      planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor, 
-                     ManipulationDataPtr config, const std::string& package_path, moveit::core::RobotStatePtr current_state);
+                     ManipulationDataPtr config, const std::string& package_path, moveit::core::RobotStatePtr current_state,
+                     bool fake_execution);
 
   /**
    * \brief Do a bunch of checks and send to low level controllers
@@ -144,7 +145,8 @@ private:
 
   // Unit testing mode - do not actually execute trajectories
   bool unit_testing_enabled_;
-
+  
+  bool fake_execution_;
 }; // end class
 
 } // end namespace

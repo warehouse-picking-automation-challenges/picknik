@@ -7,7 +7,6 @@ Panels:
         - /Grid1/Offset1
         - /Amazon Markers1/Namespaces1
         - /Amazon Trajectory Markers1
-        - /Amazon Trajectory Markers1/Status1
         - /Amazon Trajectory Markers1/Namespaces1
         - /Trajectory1
         - /PlanningScene1/Scene Geometry1
@@ -572,12 +571,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Markers
       Namespaces:
-        Arrow: true
-        Axis: true
-        Line: true
-        Sphere: true
-        Text: true
-        goal_bin: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -593,7 +587,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/grasping_markers
       Name: Amazon Grasp Markers
       Namespaces:
-        Arrow: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -601,7 +595,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
-        Path: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -1030,5 +1024,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1194
-  X: 1688
+  X: 1909
   Y: 14

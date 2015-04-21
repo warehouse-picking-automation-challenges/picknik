@@ -19,4 +19,5 @@ apc_manager:
   # Seed state
   show_grasping_seed_state: false
 
-  
+  # Unit testing / simulation
+  show_simulated_paths_moving: false

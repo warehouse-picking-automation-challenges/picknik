@@ -84,9 +84,16 @@ public:
    * \param num_orders - how many products to pick from the order, 0 = all
    * \return true on success
    */
-  bool runOrder(std::size_t order_start = 0, std::size_t jump_to = 0,
-                std::size_t num_orders = 0);
+  bool mainOrderProcessor(std::size_t order_start = 0, std::size_t jump_to = 0, std::size_t num_orders = 0);
 
+  /**
+   * \brief Main program runner
+   * \param Which product in the order to skip ahead to
+   * \param jump_to - which step in manipulation to start at
+   * \param num_orders - how many products to pick from the order, 0 = all
+   * \return true on success
+   */
+  bool runOrder(std::size_t order_start = 0, std::size_t jump_to = 0, std::size_t num_orders = 0);
 
   /**
    * \brief Grasp object once we know the pose

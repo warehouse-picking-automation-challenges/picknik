@@ -106,7 +106,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
 
   // Create manipulation manager
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
-                                       remote_control_, package_path_, shelf_, use_experience));
+                                       remote_control_, package_path_, shelf_, use_experience, fake_execution));
 
   // Load perception layer
   perception_interface_.reset(new PerceptionInterface(verbose_, visuals_, shelf_, config_, tf_, nh_private_));
@@ -190,8 +190,8 @@ bool APCManager::checkSystemReady(bool remove_from_shelf)
 }
 
 // Mode 1
-bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to,
-                          std::size_t num_orders)
+bool APCManager::mainOrderProcessor(std::size_t order_start, std::size_t jump_to, std::size_t num_orders)
+                          
 {
   // Load JSON file
   loadShelfContents(order_file_path_);
@@ -199,6 +199,11 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to,
   // Generate random product poses and visualize the shelf
   createRandomProductPoses();
 
+  return runOrder(order_start, jump_to, num_orders);
+}
+
+bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to, std::size_t num_orders)                          
+{
   // Decide how many products to pick
   if (num_orders == 0)
     num_orders = orders_.size();
@@ -393,7 +398,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         break;
 
         // #################################################################################################################
-      case 4: statusPublisher("Get pre-grasp by generateApproachPath()");
+      case 4: //statusPublisher("Get pre-grasp by generateApproachPath()");
 
         // Set planning scene
         // planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
@@ -409,8 +414,9 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
 
         // Visualize trajectory in Rviz display
         //visuals_->visual_tools_->publishTrajectoryPath(approach_trajectory_msg, current_state, wait_for_trajetory);
+        //break;
 
-        break;
+        step++;
 
         // #################################################################################################################
       case 5: // Not implemented
@@ -442,12 +448,8 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Set planning scene
         planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
-        // Create the collision objects
-        if (!planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() ))
-        {
-          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to setup planning scene");
-          return false;
-        }
+        // Clear old grasp markers
+        visuals_->grasp_markers_->deleteAllMarkers();
 
         // Visualize trajectory in Rviz display
         //current_state = manipulation_->getCurrentState();
@@ -461,12 +463,19 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // }
 
         // Execute straight forward
-        if (!manipulation_->executeRetreatPath(arm_jmg, grasp_candidates.front()->grasp_data_->approach_distance_desired_, false))
+        // if (!manipulation_->executeRetreatPath(arm_jmg, grasp_candidates.front()->grasp_data_->approach_distance_desired_, false))
+        // {
+        //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move through approach path");
+        //   return false;
+        // }
+
+        // Execute straight forward
+        if (!manipulation_->executeApproachPath(grasp_candidates.front()))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move through approach path");
-          return true;
+          return false;
         }
-
+        
         // Wait
         ROS_INFO_STREAM_NAMED("apc_manager","Waiting " << config_->wait_before_grasp_ << " seconds before grasping");
         ros::Duration(config_->wait_after_grasp_).sleep();
@@ -504,7 +513,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Set planning scene
         //planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
-        if (!manipulation_->executeVerticlePath(arm_jmg, grasp_datas_[arm_jmg]->lift_distance_desired_))
+        if (!manipulation_->executeVerticlePath(arm_jmg, grasp_datas_[arm_jmg]->lift_distance_desired_, config_->lift_velocity_scaling_factor_))
         {
           ROS_WARN_STREAM_NAMED("apc_manager","Unable to execute retrieval path after grasping");
           return false;
@@ -561,7 +570,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
 
         // #################################################################################################################
       default:
-        ROS_INFO_STREAM_NAMED("apc_manager","Manipulation pipeline end reached, ending");
+        ROS_INFO_STREAM_NAMED("apc_manager","Manipulation pipeline finished, pat yourself on the back!");
 
         // Remove product from shelf
         shelf_->deleteProduct(work_order.bin_, work_order.product_);
@@ -1395,7 +1404,7 @@ bool APCManager::testPerceptionComm()
   // Display planning scene
   planning_scene_manager_->displayShelfWithOpenBins();
 
-  BinObjectPtr& bin = shelf_->getBins()["bin_D"];
+  BinObjectPtr& bin = shelf_->getBins()["bin_I"];
   if (bin->getProducts().size() == 0)
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","No products in bin "<< bin->getName());
@@ -1407,8 +1416,8 @@ bool APCManager::testPerceptionComm()
   perception_interface_->startPerception(product, bin);
 
   // Dummy wait
-  ROS_WARN_STREAM_NAMED("apc_manager","dummy wait");
-  ros::Duration(15).sleep();
+  //ROS_WARN_STREAM_NAMED("apc_manager","dummy wait");
+  //ros::Duration(15).sleep();
 
   // Get result from perception pipeline
   if (!perception_interface_->endPerception(product, bin))
@@ -1429,6 +1438,12 @@ bool APCManager::recordBinWithCamera(std::size_t bin_id)
 // Mode 12
 bool APCManager::perceiveBinWithCamera(std::size_t bin_id)
 {
+  // Load JSON file
+  loadShelfContents(order_file_path_);
+
+  // Generate random product poses and visualize the shelf
+  createRandomProductPoses();
+
   return perceiveBinWithCamera(shelf_->getBin(bin_id));
 }
 
@@ -1860,7 +1875,7 @@ bool APCManager::unitTests()
   const std::string test_name = "SuperSimple";
   const std::string json_file = "crayola.json";
   Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
-  product_pose.translation() = Eigen::Vector3d(0.12, 0.08, 0.08);
+  product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.08);
   product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
     * Eigen::AngleAxisd(-1.57, Eigen::Vector3d::UnitY());
 
@@ -1898,11 +1913,12 @@ bool APCManager::startUnitTest(const std::string &json_file, const std::string &
   planning_scene_manager_->displayShelfWithOpenBins(force);
 
   ROS_INFO_STREAM_NAMED("apc_manager","Finished updating json file and product location for unit test");
-  ros::Duration(5.0).sleep();
+  ros::Duration(2.0).sleep();
   ros::spinOnce();
 
   // Disable actual execution
-  manipulation_->getExecutionInterface()->enableUnitTesting();
+  if (!config_->isEnabled("show_simulated_paths_moving"))
+    manipulation_->getExecutionInterface()->enableUnitTesting();
 
   // Start processing
   if (!runOrder(0, 0, 0)) // do all the orders

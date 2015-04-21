@@ -172,7 +172,7 @@ int main(int argc, char** argv)
   {
     case 1:
       ROS_INFO_STREAM_NAMED("main","Run actual Amazon Picking Challenge mode");
-      manager.runOrder(order_start, jump_to, num_orders);
+      manager.mainOrderProcessor(order_start, jump_to, num_orders);
       break;
     case 2:
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
@@ -221,7 +221,7 @@ int main(int argc, char** argv)
       manager.calibrateCamera();
       break;
     case 11:
-      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
+      //if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Recording bin observing trajectory");
       manager.recordBinWithCamera(bin_id);
       break;

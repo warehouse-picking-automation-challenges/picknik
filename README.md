@@ -83,49 +83,7 @@ Testing
 
 ## Start Robots
 
-### Simulation of BAXTER
-
-Start roscore:
-
-    roscore &
-	
-Start fake controllers
-
-    roslaunch baxter_control baxter_visualization.launch
-
-Rviz Visualizers of robot states and debug markers 
-
-    roslaunch picknik_main rviz.launch jacob:=false
-
-Run the fake object recognition server: (or real one if you have Lu Ma skillz)
-
-	roslaunch picknik_main fake_perception_server.launch
-
-Run APC Manager (main program) for BAXTER
-
-    roslaunch picknik_main baxter_apc.launch mode:=1 fake_execution:=true
-	
-### Setup Hardware of BAXTER
-
-Enable Baxter:
-
-    rostopic pub -1 /robot/set_super_enable std_msgs/Bool True	
-
-Use Rethink's controllers
-
-    roslaunch baxter_control baxter_hardware_rethink.launch
-
-Rviz Visualizers of robot states and debug markers 
-
-    roslaunch picknik_main rviz.launch jacob:=false
-
-Run the fake object recognition server: (or real one if you have Lu Ma skillz)
-
-	roslaunch picknik_main fake_perception_server.launch
-
-Run APC Manager (main program) for BAXTER
-
-    roslaunch picknik_main baxter_apc.launch mode:=1
+Baxter documentation has been moved ot BAXTER.md
 	
 ### Setup Simulation of JACOB
 
@@ -194,7 +152,15 @@ Calibrate x axis
 
     roslaunch picknik_main jacob_apc.launch fake_execution:=0 fake_perception:=1 mode:=24 pose:=x_calibration
 
+### Shelf to Camera Calibration
+
+Run the pre-recorded trajectory so that perception can build shelf model:
+
+    roslaunch picknik_main jacob_apc.launch mode:=10 fake_perception:=1
+
 ### ROS Video Integration
+
+Not in use at the moment...
 
     rosrun image_view image_view image:=/camera/image/rgb_raw
 
@@ -264,17 +230,11 @@ Button Mapings
 	debug - slower and more verbose
 	fake_execution - runs at higher speeds and uses simulated controllers
 	
-## Working Tests
-
-Document here all roslaunch files for testing/verifying various parts of the system. Also specify if you've checked it in
-simulation, hardware, or both.
-
-### Loading meshes
+## Mesh Test
 
 Simply displays all meshes from our mesh library in Rviz.
 
  - Visualization: Working Feb 11
- - Hardware: N/A
 
 Start fake controllers
 

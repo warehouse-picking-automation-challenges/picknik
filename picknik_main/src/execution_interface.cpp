@@ -55,7 +55,7 @@ ExecutionInterface::ExecutionInterface(bool verbose, RemoteControlPtr remote_con
                                        moveit_grasps::GraspDatas grasp_datas,
                                        planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                                        ManipulationDataPtr config, const std::string& package_path, 
-                                       moveit::core::RobotStatePtr current_state)
+                                       moveit::core::RobotStatePtr current_state, bool fake_execution)
   : verbose_(verbose)
   , remote_control_(remote_control)
   , visuals_(visuals)
@@ -66,6 +66,7 @@ ExecutionInterface::ExecutionInterface(bool verbose, RemoteControlPtr remote_con
   , current_state_(current_state)
   , nh_("~")
   , unit_testing_enabled_(false)
+  , fake_execution_(fake_execution)
 {
   // Check that controllers are ready
   zaber_list_controllers_client_ = nh_.serviceClient<controller_manager_msgs::ListControllers>("/jacob/zaber/controller_manager/list_controllers");
@@ -287,17 +288,20 @@ bool ExecutionInterface::checkTrajectoryController(ros::ServiceClient& service_c
   controller_manager_msgs::ListControllers service;
   if (!service_client.call(service))
   {
-    ROS_ERROR_STREAM_NAMED("execution_interface","Unable to check if controllers for " << hardware_name << " are loaded, failing. Using nh namespace " << nh_.getNamespace());
-    std::cout << "service: " << service.response << std::endl;
+    ROS_ERROR_STREAM_THROTTLE_NAMED(2, "execution_interface","Unable to check if controllers for " << hardware_name 
+                                    << " are loaded, failing. Using nh namespace " << nh_.getNamespace() 
+                                    << ". Service response: " << service.response);
     return false;
   }
+
+  std::string control_type = fake_execution_ ? "position" : "velocity";
 
   // Check if proper controller is running
   bool found_main_controller = false;
   bool found_ee_controller = false;
   for (std::size_t i = 0; i < service.response.controller.size(); ++i)
   {
-    if (service.response.controller[i].name == "velocity_trajectory_controller")
+    if (service.response.controller[i].name == control_type + "_trajectory_controller")
     {
       found_main_controller = true;
       if (service.response.controller[i].state != "running")
@@ -306,7 +310,7 @@ bool ExecutionInterface::checkTrajectoryController(ros::ServiceClient& service_c
         return false;
       }
     }
-    if (service.response.controller[i].name == "ee_velocity_trajectory_controller")
+    if (service.response.controller[i].name == "ee_" + control_type + "_trajectory_controller")
     {
       found_ee_controller = true;
       if (service.response.controller[i].state != "running")
@@ -319,12 +323,12 @@ bool ExecutionInterface::checkTrajectoryController(ros::ServiceClient& service_c
 
   if (has_ee && !found_ee_controller)
   {
-    ROS_ERROR_STREAM_THROTTLE_NAMED(2, "execution_interface","No end effector controller found for " << hardware_name);
+    ROS_ERROR_STREAM_THROTTLE_NAMED(2, "execution_interface","No end effector controller found for " << hardware_name << ". Controllers are: " << service.response);
     return false;
   }
   if (!found_main_controller)
   {
-    ROS_ERROR_STREAM_THROTTLE_NAMED(2, "execution_interface","No main controller found for " << hardware_name);
+    ROS_ERROR_STREAM_THROTTLE_NAMED(2, "execution_interface","No main controller found for " << hardware_name << ". Controllers are: " << service.response);
     return false;
   }
 
