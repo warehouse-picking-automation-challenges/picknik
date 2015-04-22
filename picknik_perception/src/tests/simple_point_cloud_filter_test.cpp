@@ -18,7 +18,6 @@ private:
   rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
 
   SimplePointCloudFilter* pc_filter_ptr_;
-  ManualTFAlignment* tf_align_ptr_;
   
   ros::Subscriber pc_sub_;
   ros::Publisher aligned_cloud_pub_;
@@ -34,17 +33,6 @@ public:
     visual_tools_->deleteAllMarkers();
 
     pc_filter_ptr_ = new SimplePointCloudFilter();
-    tf_align_ptr_ = new ManualTFAlignment();
-
-    // set initial camera transform
-    // TODO: Should be read in from file or set in launch file
-    //-1.202   -0.23   1.28    0      0.03    0
-    tf_align_ptr_->setPose(Eigen::Vector3d(-1.202, -0.23, 1.28), Eigen::Vector3d(0, 0.03, 0));
-    tf_align_ptr_->from_ = "/world";
-    tf_align_ptr_->to_ = "/camera_link";
-
-
-    tf_align_ptr_->printMenu();
 
     // listen to point cloud topic
     // TODO: camera topic should be set in launch file
@@ -70,9 +58,6 @@ public:
     ROS_DEBUG_STREAM_NAMED("PC_filter.test","starting main filter test");
     while ( ros::ok() )
     {
-      // publish transform to camera
-      tf_align_ptr_->publishTF();
-
       // get bounding box at specified interval
       if (count % bbox_rate == 0)
       {

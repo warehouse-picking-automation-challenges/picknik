@@ -1125,6 +1125,9 @@ bool APCManager::calibrateCamera()
 {
   ROS_DEBUG_STREAM_NAMED("apc_manager","Calibrating camera");
 
+  // Display planning scene
+  planning_scene_manager_->displayShelfWithOpenBins();
+
   // Close fingers
   if (!manipulation_->openEndEffectors(false))
   {

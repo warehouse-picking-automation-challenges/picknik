@@ -1,7 +1,7 @@
-initial_x: 0.1315
-initial_y: -0.103
-initial_z: 3.46945e-18
-initial_roll: -1.2808
+initial_x: 0.0315
+initial_y: 0.047
+initial_z: -0.03
+initial_roll: -1.3308
 initial_pitch: -1.59
 initial_yaw: -0.08
 from: xtion

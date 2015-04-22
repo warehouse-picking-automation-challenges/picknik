@@ -348,7 +348,7 @@ bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::T
 {
   tf::StampedTransform camera_transform;
   static const std::string parent_frame = "/world";
-  static const std::string camera_frame = "/xtion_camera";
+  static const std::string camera_frame = "/camera_link";
 
   try
   {
