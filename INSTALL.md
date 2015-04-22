@@ -34,17 +34,24 @@ Also, to reduce debug output, add to your bashrc:
     export ROSCONSOLE_CONFIG_FILE=~/ws_picknik/src/picknik/rosconsole.yaml
     export ROSCONSOLE_FORMAT='${severity} ${logger}: ${message}'
 
-## Install Lu Ma's Perception Pipeline
-## Tested in MacOSX 10.09, 10.10, Ubuntu 14.04, Cuda 6.0, Cuda 6.5, Cuda 7.0
+## Install Perception Pipeline
+
+Tested in MacOSX 10.09, 10.10, Ubuntu 14.04, Cuda 6.0, Cuda 6.5, Cuda 7.0
+
 If use CUDA 6.0, 6.5, please use gcc-46 as the cuda host compiler.
 
-### Install CUDA and NVIDIA Driver. Make sure your cuda driver works correctlly by runing any of the cuda example demo:
+### Install CUDA and NVIDIA Driver
+
+Make sure your cuda driver works correctlly by runing any of the cuda example demo:
 
 ### Install dependencies:
+
  0, pre-request:
+ 
     sudo apt-get install autoconf2.13 libglm-dev libtinyxml2-dev
 
  1, install protobuf
+ 
     https://github.com/google/protobuf.git
     ./autogen.sh
     run ./configure
@@ -53,9 +60,11 @@ If use CUDA 6.0, 6.5, please use gcc-46 as the cuda host compiler.
     cp /usr/local/lib/libproto* /usr/lib/
     
  2, install google ceres solver: (you don't need to do this if you have ros installed)
+ 
     sudo apt-get install libceres-dev 
     
  3, install google log and google flags: (you don't need to do this if you have ros installed)
+ 
     sudo apt-get install libgoogle-glog-dev
     sudo apt-get install libgflags-dev 
   
@@ -69,6 +78,7 @@ If use CUDA 6.0, 6.5, please use gcc-46 as the cuda host compiler.
     make -j4
 
 ### Install kangaroo (for SDF fusion, ray casting):
+
 	cd kangaroo
 	mkdir build
     cd build
@@ -76,12 +86,14 @@ If use CUDA 6.0, 6.5, please use gcc-46 as the cuda host compiler.
 	make -j
 	
 ### Install wallaby (for grid sdf fusion and voxel hashing):
+
 	cd/wallaby
 	mkdir build
 	cmake ..
 	make -j4
 
 ### Install DDTR
+
 	git init submodule
 	git update submodule
 	mkdir build
@@ -90,11 +102,14 @@ If use CUDA 6.0, 6.5, please use gcc-46 as the cuda host compiler.
 	make -j4
 
 ## Applications:
-  ### RGFusion: 
-    A Rolling Grid Implementation of the kinect fusion. Support any source of the input images including stereo, RGBD. 
+
+### RGFusion:
+
+A Rolling Grid Implementation of the kinect fusion. Support any source of the input images including stereo, RGBD. 
     
-  ### Amazon:
-    A perception software for Amazon Picking Challenge. 
+### Amazon:
+
+A perception software for Amazon Picking Challenge. 
  
 ### Install Camera (you dont need to do this if you followed the upper directions)
 

@@ -649,12 +649,12 @@ bool Manipulation::moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_
 
   ROS_INFO_STREAM_NAMED("manipulation","Found solution to pose request");
 
-  // Debug
-  visuals_->visual_tools_->publishRobotState( goal_state, rvt::PURPLE );
-  visuals_->goal_state_->hideRobot();
-  visuals_->start_state_->hideRobot();
-  std::cout << "sleep " << std::endl;
-  ros::Duration(10.0).sleep();
+  // // Debug
+  // visuals_->visual_tools_->publishRobotState( goal_state, rvt::PURPLE );
+  // visuals_->goal_state_->hideRobot();
+  // visuals_->start_state_->hideRobot();
+  // std::cout << "sleep " << std::endl;
+  // ros::Duration(10.0).sleep();
 
   // Plan to this position
   bool verbose = true;
