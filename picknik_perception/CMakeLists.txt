@@ -71,6 +71,13 @@ target_link_libraries(simple_point_cloud_filter
   ${catkin_LIBRARIES}
 )
 
+add_library(manual_tf_alignment
+  src/manual_tf_alignment.cpp
+)
+target_link_libraries(manual_tf_alignment
+  ${catkin_LIBRARIES}
+)
+
 add_executable(simple_point_cloud_filter_test
   src/tests/simple_point_cloud_filter_test.cpp
 )
