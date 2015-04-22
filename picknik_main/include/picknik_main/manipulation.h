@@ -104,7 +104,7 @@ public:
    */
   bool computeCartesianWaypointPath(const robot_model::JointModelGroup* arm_jmg, moveit::core::RobotStatePtr start_state,
                                     const EigenSTL::vector_Affine3d &waypoints,
-                                    std::vector<moveit::core::RobotStatePtr> &robot_state_trajectory);
+                                    std::vector<std::vector<moveit::core::RobotStatePtr> > &robot_state_trajectory);
 
   /**
    * \brief Read a trajectory from CSV and execute on robot
@@ -202,6 +202,13 @@ public:
   bool executeApproachPath(moveit_grasps::GraspCandidatePtr chosen);
 
   /**
+   * \brief Using the current EE pose and the goal grasp pose, move forward into the target object
+   * \param chosen - the grasp we are using
+   * \return true on success
+   */
+  bool executeSavedCartesianPath(moveit_grasps::GraspCandidatePtr chosen, std::size_t segment_id);
+
+  /**
    * \brief Generate the straight line path from pregrasp to grasp
    * \param chosen - all the data on the chosen grasp
    * \return true on success
@@ -218,9 +225,9 @@ public:
    * \return true on success
    */
   bool executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, const double &velocity_scaling_factor, 
-                           bool up = true, bool ignore_collision = false);
+                           bool up, bool ignore_collision = false);
                            
-  bool executeVerticlePathWithIK(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true,
+  bool executeVerticlePathWithIK(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up,
                                  bool ignore_collision = false);
 
   /**
@@ -228,7 +235,7 @@ public:
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool executeHorizontalPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_left_distance, bool left = true,
+  bool executeHorizontalPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_left_distance, bool left,
                              bool ignore_collision = false);
 
   /**
@@ -236,7 +243,7 @@ public:
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_retreat_distance = 0.25, bool retreat = true,
+  bool executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_retreat_distance, bool retreat,
                           bool ignore_collision = false);
 
   /**
@@ -245,7 +252,7 @@ public:
    * \return true on success
    */
   bool executeCartesianPath(const moveit::core::JointModelGroup *arm_jmg, const Eigen::Vector3d& direction, double desired_distance,
-                            double velocity_scaling_factor, bool reverse_path = false, bool ignore_collision = false);
+                            double velocity_scaling_factor, bool reverse_path, bool ignore_collision = false);
 
   /**
    * \brief Function for testing multiple directions
@@ -361,7 +368,7 @@ public:
    * \param optionally specify which arm to use
    * \return true on success
    */
-  bool moveToStartPosition(const robot_model::JointModelGroup* arm_jmg = NULL, bool check_validity = true);
+  bool moveToStartPosition(const robot_model::JointModelGroup* arm_jmg, bool check_validity = true);
 
   /**
    * \brief Prevent a product from colliding with the fingers

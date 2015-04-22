@@ -102,6 +102,8 @@ public:
   double place_goal_down_distance_desired_;
   double goal_bin_clearance_;
   double jump_threshold_;
+  
+  double planning_time_;
 
   // Robot semantics
   std::string start_pose_; // where to move robot to initially. should be for both arms if applicable

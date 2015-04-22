@@ -8,7 +8,7 @@ plot_position = 1; % 0 for velocity
 has_acceleration = 1; % if CSV includes acceleration
 
 %while 1
-    sampled_data = csvread('analysis/manipulator_trajectory_1.csv',1,0);
+    sampled_data = csvread('analysis/manipulator_trajectory_5.csv',1,0);
 
     % check for errors in trajectory
     show_point = 0; % display a line for a point, this index is base=0, aka my C++ output

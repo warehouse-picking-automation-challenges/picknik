@@ -470,7 +470,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // }
 
         // Execute straight forward
-        if (!manipulation_->executeApproachPath(grasp_candidates.front()))
+        if (!manipulation_->executeSavedCartesianPath(grasp_candidates.front(), moveit_grasps::APPROACH))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move through approach path");
           return false;
@@ -513,11 +513,19 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Set planning scene
         //planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
-        if (!manipulation_->executeVerticlePath(arm_jmg, grasp_datas_[arm_jmg]->lift_distance_desired_, config_->lift_velocity_scaling_factor_))
+        // Lift up
+        if (!manipulation_->executeSavedCartesianPath(grasp_candidates.front(), moveit_grasps::LIFT))
         {
-          ROS_WARN_STREAM_NAMED("apc_manager","Unable to execute retrieval path after grasping");
+          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute lift path after grasping");
           return false;
         }
+
+        // if (!manipulation_->executeVerticlePath(arm_jmg, grasp_datas_[arm_jmg]->lift_distance_desired_, 
+        //                                         config_->lift_velocity_scaling_factor_, true /* up */ ))
+        // {
+        //ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute lift path after grasping");
+        //   return false;
+        // }
         break;
 
         // #################################################################################################################
@@ -526,12 +534,20 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Set planning scene
         //planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
-        // Retreat backwards
-        if (!manipulation_->executeRetreatPath(arm_jmg, grasp_datas_[arm_jmg]->retreat_distance_desired_))
-        {
-          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute retrieval path after grasping");
-          return false;
-        }
+        // Retreat backwards using new IK solution
+        // if (!manipulation_->executeRetreatPath(arm_jmg, grasp_datas_[arm_jmg]->retreat_distance_desired_, true /*retreat*/))
+        // {
+        //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute retrieval path");
+        //   return false;
+        // }
+
+        // Retreat backwards using pre-computed trajectory
+        // if (!manipulation_->executeSavedCartesianPath(grasp_candidates.front(), moveit_grasps::RETREAT))
+        // {
+        //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute retreaval path");
+        //   return false;
+        // }
+
         break;
 
         // #################################################################################################################
@@ -680,17 +696,17 @@ bool APCManager::testUpAndDown()
     if (i % 2 == 0)
     {
       std::cout << "Moving up --------------------------------------" << std::endl;
-      manipulation_->executeVerticlePath(config_->right_arm_, lift_distance_desired, true);
+      manipulation_->executeVerticlePath(config_->right_arm_, lift_distance_desired, config_->lift_velocity_scaling_factor_, true);
       if (config_->dual_arm_)
-        manipulation_->executeVerticlePath(config_->left_arm_, lift_distance_desired, true);
+        manipulation_->executeVerticlePath(config_->left_arm_, lift_distance_desired, config_->lift_velocity_scaling_factor_, true);
       ros::Duration(1.0).sleep();
     }
     else
     {
       std::cout << "Moving down ------------------------------------" << std::endl;
-      manipulation_->executeVerticlePath(config_->right_arm_, lift_distance_desired, false);
+      manipulation_->executeVerticlePath(config_->right_arm_, lift_distance_desired, config_->lift_velocity_scaling_factor_, false);
       if (config_->dual_arm_)
-        manipulation_->executeVerticlePath(config_->left_arm_, lift_distance_desired, false);
+        manipulation_->executeVerticlePath(config_->left_arm_, lift_distance_desired, config_->lift_velocity_scaling_factor_, false);
       ros::Duration(1.0).sleep();
     }
     ++i;
@@ -1581,8 +1597,9 @@ bool APCManager::placeObjectInGoalBin(const robot_model::JointModelGroup* arm_jm
   }
 
   // Drop down
-  bool lift = false;
-  if (!manipulation_->executeVerticlePath(arm_jmg, config_->place_goal_down_distance_desired_, lift))
+  bool up = false;
+  if (!manipulation_->executeVerticlePath(arm_jmg, config_->place_goal_down_distance_desired_, 
+                                          config_->main_velocity_scaling_factor_, up))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Failed to lower product into goal bin, using distance "
                            << config_->place_goal_down_distance_desired_);
@@ -1594,8 +1611,9 @@ bool APCManager::placeObjectInGoalBin(const robot_model::JointModelGroup* arm_jm
 
 bool APCManager::liftFromGoalBin(const robot_model::JointModelGroup* arm_jmg)
 {
-  bool lift = true;
-  if (!manipulation_->executeVerticlePath(arm_jmg, config_->place_goal_down_distance_desired_, lift))
+  bool up = true;
+  if (!manipulation_->executeVerticlePath(arm_jmg, config_->place_goal_down_distance_desired_, 
+                                          config_->main_velocity_scaling_factor_, up))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Failed to raise arm back up from goal, using distance "
                            << config_->place_goal_down_distance_desired_);

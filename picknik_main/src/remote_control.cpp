@@ -153,7 +153,11 @@ void RemoteControl::setFullAutonomous(bool autonomous)
 void RemoteControl::setStop(bool stop)
 {
   stop_ = stop;
-  autonomous_ = !stop;
+  if (stop)
+  {
+    autonomous_ = false;
+    full_autonomous_ = false;
+  }
 }
 
 bool RemoteControl::getStop()
