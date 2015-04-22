@@ -542,11 +542,11 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // }
 
         // Retreat backwards using pre-computed trajectory
-        // if (!manipulation_->executeSavedCartesianPath(grasp_candidates.front(), moveit_grasps::RETREAT))
-        // {
-        //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute retreaval path");
-        //   return false;
-        // }
+        if (!manipulation_->executeSavedCartesianPath(grasp_candidates.front(), moveit_grasps::RETREAT))
+        {
+          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute retreaval path");
+          return false;
+        }
 
         break;
 

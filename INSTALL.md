@@ -61,20 +61,12 @@ If use CUDA 6.0, 6.5, please use gcc-46 as the cuda host compiler.
   
  4, also make sure you have opencv, boost (you don't need to do this if you have ros installed)  
 
-### Install and Configure CoreDev
-   1, git clone git@github.com:arpg/CoreDev.git
-   
-       https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gzinstall 
-       run ./configure
-       make -j3
-       sudo make install all
+### Install CoreDev
 
-By default, the upper command will install the lib to `/usr/local/lib/proto*`, make sure all the protobuf libraries files is in `/usr/lib/proto*`. so you probability need to do
-	   `cp /usr/local/lib/proto* /usr/lib/`
-
-   2, mkdir build
-   
-   3, cd build
+    cd CoreDev
+    mkdir build
+    cd build
+    make -j4
 
 ### Install kangaroo (for SDF fusion, ray casting):
 	cd kangaroo
@@ -83,8 +75,6 @@ By default, the upper command will install the lib to `/usr/local/lib/proto*`, m
 	ccmake ..
 	make -j
 	
-Notice: you may have some errors when building the examples, this is because we disabled the pangolin::video function before. just ignore it by now.
-
 ### Install wallaby (for grid sdf fusion and voxel hashing):
 	cd/wallaby
 	mkdir build
