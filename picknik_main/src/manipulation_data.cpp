@@ -139,7 +139,7 @@ bool ManipulationData::loadVerboseLevels(const std::string& parent_name)
   setting_names.push_back("show_grasping_seed_state");
   setting_names.push_back("show_grasp_filter_collision_if_failed");
   setting_names.push_back("show_simulated_paths_moving");
-  //setting_names.push_back("");
+  setting_names.push_back("generic_bool");
   //setting_names.push_back("");
   //setting_names.push_back("");
   //setting_names.push_back("");

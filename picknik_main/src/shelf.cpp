@@ -50,14 +50,14 @@ bool BinObject::visualize(const Eigen::Affine3d& trans) const
 bool BinObject::visualizeAxis(const Eigen::Affine3d& trans, VisualsPtr visuals) const
 {
   // Show coordinate system
-  visuals_->visual_tools_->publishAxis( transform(bottom_right_, trans) );
+  //visuals_->visual_tools_->publishAxisLabled( transform(bottom_right_, trans), name_ );
 
   // Show label
-  Eigen::Affine3d text_location = transform( bottom_right_, trans);
+  // Eigen::Affine3d text_location = transform( bottom_right_, trans);
 
-  text_location.translation() += Eigen::Vector3d(0,getWidth()/2.0, getHeight()*0.9);
+  // text_location.translation() += Eigen::Vector3d(0,getWidth()/2.0, getHeight()*0.9);
 
-  visuals->visual_tools_->publishText( text_location, name_, rvt::BLACK, rvt::REGULAR, false);
+  // visuals->visual_tools_->publishText( text_location, name_, rvt::BLACK, rvt::REGULAR, false);
 
   return true;
 }

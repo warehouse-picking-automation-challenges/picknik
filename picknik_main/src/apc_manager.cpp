@@ -1968,4 +1968,46 @@ bool APCManager::gotoPose(const std::string& pose_name)
   return true;
 }
 
+// Mode 25
+bool APCManager::testIKSolver()
+{
+  moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*manipulation_->getCurrentState()));
+
+  const robot_model::JointModelGroup* arm_jmg = config_->right_arm_;
+  Eigen::Affine3d ee_pose = Eigen::Affine3d::Identity();
+  ee_pose.translation().x() += 0.3;
+  ee_pose.translation().y() += 0.2;
+  ee_pose.translation().z() += 1.4;
+  ee_pose = ee_pose * Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitY());
+
+  visuals_->visual_tools_->publishAxisLabeled(ee_pose, "desired");
+
+  // Transform from world frame to 'gantry' frame  
+  if (config_->isEnabled("generic_bool"))
+    ee_pose = goal_state->getGlobalLinkTransform("gantry") * ee_pose;
+
+  for (std::size_t i = 0; i < 100; ++i)
+  {
+    // Solve IK problem for arm
+    std::size_t attempts = 0; // use default
+    double timeout = 0; // use default
+    if (!goal_state->setFromIK(arm_jmg, ee_pose, attempts, timeout))
+    {
+      ROS_ERROR_STREAM_NAMED("manipulation","Unable to find arm solution for desired pose");
+      return false;
+    }
+
+    ROS_INFO_STREAM_NAMED("apc_manager","SOLVED");
+
+    // Show solution
+    visuals_->visual_tools_->publishRobotState(goal_state, rvt::RAND);
+
+    ros::Duration(0.5).sleep();
+    goal_state->setToRandomPositions(arm_jmg);
+  }
+
+  return true;
+}
+
+
 } // end namespace

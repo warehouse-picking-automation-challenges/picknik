@@ -39,6 +39,8 @@ both_arms_name: manipulator_DISABLED
 # in-lab distance is 0.5+0.029-0.035 = 0.494
 world_to_shelf_transform: [0.489, -0.438, 0.002, 0.0, 0.0, 0.0]  # IDEAL
 
+# Adding 0.38 m offset on arm_mount_joint
+
 # Topics
 joint_state_topic: /joint_states
 

@@ -59,9 +59,9 @@ public:
    * \param autonomous - whether it should pause for human input, except executing trajectories which is always manual
    * \param full_autonomous - whether it should pause for human input
    * \param fake_execution - when true velocities are full speed
-   * \param fake_perception   
+   * \param fake_perception
    */
-  APCManager(bool verbose, std::string order_file_path, bool use_experience, bool autonomous = false, bool full_autonomous = false, 
+  APCManager(bool verbose, std::string order_file_path, bool use_experience, bool autonomous = false, bool full_autonomous = false,
              bool fake_execution = false, bool fake_perception = false);
 
   /**
@@ -162,7 +162,7 @@ public:
    * \return true on success
    */
   bool createRandomProductPoses();
-  
+
   /**
    * \brief Send arm to camera positions
    * \return true on success
@@ -358,6 +358,12 @@ public:
    * \return true on success
    */
   bool gotoPose(const std::string& pose_name);
+
+  /**
+   * \brief Test IK solver
+   * \return true on success
+   */
+  bool testIKSolver();
 
 private:
 

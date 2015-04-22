@@ -290,6 +290,10 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Going to pose " << pose);
       manager.gotoPose(pose);
       break;      
+    case 25:
+      ROS_INFO_STREAM_NAMED("main","Testing IK solver");
+      manager.testIKSolver();
+      break;      
     default:
       ROS_WARN_STREAM_NAMED("main","Unkown mode: " << mode);
   }

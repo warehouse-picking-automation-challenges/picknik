@@ -21,3 +21,6 @@ apc_manager:
 
   # Unit testing / simulation
   show_simulated_paths_moving: true
+
+  # Multi-use yes/no - can be used for anything
+  generic_bool: false

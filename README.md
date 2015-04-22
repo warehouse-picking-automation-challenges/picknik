@@ -224,7 +224,7 @@ Button Mapings
 		22. Test approach, lift, and retreat motion for random objects
 		23. Unit tests for manipulation
 		24. Go to pose pose:=NAME
-        
+        25. Test IK solver with simple pose request
 		
 	jump_to - which step in the manipulation pipeline to start on
 	auto - whether to go into auto step mode, but does not allow trajectories to be executed without verification
@@ -236,6 +236,7 @@ Button Mapings
 	saving_enabled - allow new plans to be saved to experience database
 	debug - slower and more verbose
 	fake_execution - runs at higher speeds and uses simulated controllers
+	bin_id - specify which bin to look at, as a index number, starting at 0, e.g A=0, B=1
 	
 ## Mesh Test
 
@@ -263,14 +264,24 @@ Load meshes
 	rosrun ros_control_boilerplate controller_state_to_csv /home/dave/ros/combined_analysis/gantry_trajectory_1.csv /jacob/zaber/velocity_trajectory_controller/state
 
 
-### See Kinova USB Hub
+### Debug Kinova Connection
+
+See what is connected
 
     lsusb -t | grep ftdi
 
-## See Gantry USB Device
+### Debug Gantry Connection
+
+See what is connected
 
     ll /dev/zaber_vert
 
-# See Xbox Controlelrs
+### Debug Xbox Controlelrs
+
+See what is connected
 
     ll /dev/input/
+
+Change device ID
+
+    rosed jacob_control jacob_joy.launch
