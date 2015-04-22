@@ -118,16 +118,16 @@ public:
    * \brief Wait until user presses a button
    * \return true on success
    */
-  bool waitForNextStep();
-  bool waitForNextFullStep();
+  bool waitForNextStep(const std::string &caption = "go to next step");
+  bool waitForNextFullStep(const std::string &caption = "go to next full step");
 
 private:
 
-  // A shared node handle
-  ros::NodeHandle nh_;
-
   // Show more visual and console output, with general slower run time.
   bool verbose_;
+
+  // A shared node handle
+  ros::NodeHandle nh_;
 
   // The overall manager for sending commands
   APCManager* parent_;

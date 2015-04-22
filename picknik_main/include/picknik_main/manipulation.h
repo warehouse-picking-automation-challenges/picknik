@@ -31,6 +31,7 @@
 #include <ompl_visual_tools/ompl_visual_tools.h>
 #include <moveit/kinematic_constraints/utils.h>
 #include <moveit/trajectory_processing/iterative_time_parameterization.h>
+#include <moveit/planning_interface/planning_interface.h>
 
 // OMPL
 #include <ompl/tools/experience/ExperienceSetup.h>
@@ -44,6 +45,11 @@
 // namespace trajectory_processing
 // {
 // MOVEIT_CLASS_FORWARD(IterativeParabolicTimeParameterization);
+// }
+
+// namespace planning_interface:
+// {
+// MOVEIT_CLASS_FORWARD(PlanningContext);
 // }
 
 namespace planning_pipeline
@@ -60,91 +66,113 @@ class Manipulation
 {
 public:
 
-/**
- * \brief Constructor
- * \param verbose - run in debug mode
- */
-Manipulation(bool verbose, VisualsPtr visuals,
+  /**
+   * \brief Constructor
+   * \param verbose - run in debug mode
+   */
+  Manipulation(bool verbose, VisualsPtr visuals,
                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                ManipulationDataPtr config, moveit_grasps::GraspDatas grasp_datas,
                RemoteControlPtr remote_control, const std::string& package_path,
-               ShelfObjectPtr shelf, bool use_experience, bool show_database);
+               ShelfObjectPtr shelf, bool use_experience, bool fake_execution);
 
-/**
- * \brief Destructor
- */
-~Manipulation()
-{}
+  /**
+   * \brief Calculate the bouding mesh for a product
+   * \return true on success
+   */
+  bool updateBoundingMesh(WorkOrder& work_order);
 
-/**
- * \brief Choose the grasp for the object
- * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
- * \return true on success
- */
-bool chooseGrasp(WorkOrder work_order, const robot_model::JointModelGroup* arm_jmg,
-                   moveit_grasps::GraspCandidatePtr& chosen, bool verbose);
+  /**
+   * \brief Choose the grasp for the object
+   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \return true on success
+   */
+  bool chooseGrasp(WorkOrder work_order, const robot_model::JointModelGroup* arm_jmg,                   
+                   std::vector<moveit_grasps::GraspCandidatePtr> &qgrasp_candidates,
+                   bool verbose, moveit::core::RobotStatePtr seed_state = moveit::core::RobotStatePtr());
 
-/**
- * \brief Read a trajectory from CSV and execute on robot
- * \param file_name - location of file
- * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
- * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
- * \return true on success
- */
-bool playbackTrajectoryFromFile(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
+  /**
+   * \brief Plan entire cartesian manipulation sequence
+   * \param input - description
+   * \return true on success
+   */
+  bool planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr grasp_candidate, bool verbose_cartesian_paths);
+
+  /**
+   * \brief Compute a cartesian path along waypoints
+   * \return true on success
+   */
+  bool computeCartesianWaypointPath(const robot_model::JointModelGroup* arm_jmg, moveit::core::RobotStatePtr start_state,
+                                    const EigenSTL::vector_Affine3d &waypoints,
+                                    std::vector<std::vector<moveit::core::RobotStatePtr> > &robot_state_trajectory);
+
+  /**
+   * \brief Read a trajectory from CSV and execute on robot
+   * \param file_name - location of file
+   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
+   * \return true on success
+   */
+  bool playbackTrajectoryFromFile(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
                                   double velocity_scaling_factor);
 
-/**
- * \brief Read a trajectory from CSV and execute on robot state by state
- * \param file_name - location of file
- * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
- * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
- * \return true on success
- */
-bool playbackTrajectoryFromFileInteractive(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
+  /**
+   * \brief Read a trajectory from CSV and execute on robot state by state
+   * \param file_name - location of file
+   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
+   * \return true on success
+   */
+  bool playbackTrajectoryFromFileInteractive(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
                                              double velocity_scaling_factor);
 
-/**
- * \brief Record the entire state of a robot to file
- * \param file_name - location of file
- * \return true on success
- */
-bool recordTrajectoryToFile(const std::string &file_name);
+  /**
+   * \brief Record the entire state of a robot to file
+   * \param file_name - location of file
+   * \return true on success
+   */
+  bool recordTrajectoryToFile(const std::string &file_name);
 
-/**
- * \brief Move to any pose as defined in the SRDF
- * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
- * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
- * \return true on success
- */
-bool moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name, double velocity_scaling_factor,
+  /**
+   * \brief Move to any pose as defined in the SRDF
+   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
+   * \return true on success
+   */
+  bool moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name, double velocity_scaling_factor,
                   bool check_validity = true);
 
-/**
- * \brief Move EE to a particular pose by solving with IK
- * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
- * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
- * \return true on success
- */
-bool moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_scaling_factor, const robot_model::JointModelGroup* arm_jmg);
+  /**
+   * \brief Move EE to a particular pose by solving with IK
+   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
+   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \return true on success
+   */
+  bool moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_scaling_factor, const robot_model::JointModelGroup* arm_jmg);
 
-/**
- * \brief Send a planning request to moveit and execute
- * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
- * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
- * \return true on success
- */
-bool move(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
+  /**
+   * \brief Send a planning request to moveit and execute
+   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
+   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \return true on success
+   */
+  bool move(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
             const robot_model::JointModelGroup* arm_jmg, double velocity_scaling_factor,
             bool verbose, bool execute_trajectory = true, bool check_validity = true);
 
-/**
- * \brief Helper for move() command to allow easy re-planning
- * \return true on success
- */
-bool plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
+  /**
+   * \brief Helper for move() command to allow easy re-planning
+   * \return true on success
+   */
+  bool plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
             const robot_model::JointModelGroup* arm_jmg, double velocity_scaling_factor, bool verbose,
             moveit_msgs::RobotTrajectory& trajectory_msg);
+
+  /**
+   * \brief Print experience logs
+   * \return true on success
+   */
+  bool printExperienceLogs();
 
   /**
    * \brief Interpolate
@@ -167,6 +195,20 @@ bool plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotSta
                     double velocity_scaling_factor);
 
   /**
+   * \brief Using the current EE pose and the goal grasp pose, move forward into the target object
+   * \param chosen - the grasp we are using
+   * \return true on success
+   */
+  bool executeApproachPath(moveit_grasps::GraspCandidatePtr chosen);
+
+  /**
+   * \brief Using the current EE pose and the goal grasp pose, move forward into the target object
+   * \param chosen - the grasp we are using
+   * \return true on success
+   */
+  bool executeSavedCartesianPath(moveit_grasps::GraspCandidatePtr chosen, std::size_t segment_id);
+
+  /**
    * \brief Generate the straight line path from pregrasp to grasp
    * \param chosen - all the data on the chosen grasp
    * \return true on success
@@ -182,15 +224,18 @@ bool plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotSta
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up = true,
-                           bool ignore_collision = false);
+  bool executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, const double &velocity_scaling_factor, 
+                           bool up, bool ignore_collision = false);
+                           
+  bool executeVerticlePathWithIK(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up,
+                                 bool ignore_collision = false);
 
   /**
    * \brief Translate arm left and right
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool executeHorizontalPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_left_distance, bool left = true,
+  bool executeHorizontalPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_left_distance, bool left,
                              bool ignore_collision = false);
 
   /**
@@ -198,7 +243,7 @@ bool plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotSta
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_retreat_distance = 0.25, bool retreat = true,
+  bool executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_retreat_distance, bool retreat,
                           bool ignore_collision = false);
 
   /**
@@ -207,7 +252,7 @@ bool plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotSta
    * \return true on success
    */
   bool executeCartesianPath(const moveit::core::JointModelGroup *arm_jmg, const Eigen::Vector3d& direction, double desired_distance,
-                            double velocity_scaling_factor, bool reverse_path = false, bool ignore_collision = false);
+                            double velocity_scaling_factor, bool reverse_path, bool ignore_collision = false);
 
   /**
    * \brief Function for testing multiple directions
@@ -241,6 +286,12 @@ bool plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotSta
    * \return true on success
    */
   bool perturbCamera(BinObjectPtr bin);
+
+  /**
+   * \brief Create the initial guess for a grasp
+   * \return true on success
+   */
+  bool getGraspingSeedState(BinObjectPtr bin, moveit::core::RobotStatePtr& seed_state, const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Move camera to in front of bin
@@ -317,7 +368,7 @@ bool plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotSta
    * \param optionally specify which arm to use
    * \return true on success
    */
-  bool moveToStartPosition(const robot_model::JointModelGroup* arm_jmg = NULL, bool check_validity = true);
+  bool moveToStartPosition(const robot_model::JointModelGroup* arm_jmg, bool check_validity = true);
 
   /**
    * \brief Prevent a product from colliding with the fingers
@@ -333,18 +384,6 @@ bool plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotSta
   void loadPlanningPipeline();
 
   /**
-   * \brief Central Rviz status visualizer
-   * \return true on success
-   */
-  bool statusPublisher(const std::string &status);
-
-  /**
-   * \brief Central Rviz status visualizer for orders
-   * \return true on success
-   */
-  bool orderPublisher(WorkOrder& order);
-
-  /**
    * \brief Helper function for determining if robot is already in desired state
    * \param robotstate to compare to
    * \param robotstate to compare to
@@ -354,11 +393,18 @@ bool plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotSta
   bool statesEqual(const moveit::core::RobotState &s1, const moveit::core::RobotState &s2, const robot_model::JointModelGroup* arm_jmg);
 
   /**
+   * \brief Show the trajectories saved in the experience database, handles loading expeirence setup without needing to first plan
+   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \return true on success
+   */
+  bool displayLightningPlansStandAlone(const robot_model::JointModelGroup* arm_jmg);
+
+  /**
    * \brief Show the trajectories saved in the experience database
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  void displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup, const robot_model::JointModelGroup* arm_jmg);
+  bool displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup, const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Visulization function
@@ -443,6 +489,7 @@ protected:
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
   robot_model::RobotModelConstPtr robot_model_;
   planning_pipeline::PlanningPipelinePtr planning_pipeline_;
+  planning_interface::PlanningContextPtr planning_context_handle_;
 
   // Allocated memory for robot state
   moveit::core::RobotStatePtr current_state_;
@@ -462,13 +509,8 @@ protected:
 
   // Experience-based planning
   bool use_experience_;
-  bool show_database_;
   bool use_logging_;
   std::ofstream logging_file_;
-
-  // User feedback
-  Eigen::Affine3d status_position_; // where to display messages
-  Eigen::Affine3d order_position_; // where to display messages
 
   // Grasp generator
   moveit_grasps::GraspGeneratorPtr grasp_generator_;
@@ -484,7 +526,7 @@ protected:
 
 namespace
 {
-bool isStateValid(const planning_scene::PlanningScene *planning_scene, bool verbose,
+bool isStateValid(const planning_scene::PlanningScene *planning_scene, bool verbose, bool only_check_self_collision,
                   picknik_main::VisualsPtr visuals, robot_state::RobotState *state,
                   const robot_state::JointModelGroup *group, const double *ik_solution);
 }

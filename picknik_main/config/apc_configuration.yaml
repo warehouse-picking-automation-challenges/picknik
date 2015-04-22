@@ -23,33 +23,3 @@ bin_depth: 0.42
 bin_top_margin: 0.01
 bin_left_margin: 0.01
 num_bins: 12.0
-
-# Cartesian path config
-approach_distance_desired: 1
-retreat_distance_desired: 0.5
-lift_distance_desired: 0.03
-place_goal_down_distance_desired: 0.03
-jump_threshold: 10
-
-# Safety
-collision_wall_safety_margin: 0.01 # 0.02
-
-# Sleep timers
-wait_before_grasp: 1.0
-wait_after_grasp: 1.0
-
-# Perception Data
-camera:
-  x_translation_from_bin: -0.5 # meters
-  y_translation_from_bin: 0.0 # negative is right looking at shelf
-  z_translation_from_bin: -0.1 # negative is down
-  x_rotation_from_standard_grasp: 0 #-0.2  # radians
-  y_rotation_from_standard_grasp: 0  # negative is torwards right of shelf
-  z_rotation_from_standard_grasp: 0  # radians
-  lift_distance: 0.05
-  left_distance: 0.05
-  camera_frame_display_scale: 0.0005
-
-# Test data
-test:
-  test_joint_limit_joint: 5  # starts at 0, negative number means test all

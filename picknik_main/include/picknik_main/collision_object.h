@@ -357,6 +357,12 @@ public:
    */
   void setCentroid(const Eigen::Affine3d& centroid);
 
+  /**
+   * \brief Get bounding box and corresponding height/width/depth
+   * \return true on success
+   */
+  bool calculateBoundingBox(bool verbose = true);
+
 protected:
 
   // Geometry

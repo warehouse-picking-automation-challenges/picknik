@@ -45,12 +45,17 @@
 // ros_control
 #include <controller_manager_msgs/ListControllers.h>
 
+// Parameter loading
+//#include <rviz_visual_tools/ros_param_utilities.h>
+
 namespace picknik_main
 {
 
-ExecutionInterface::ExecutionInterface(bool verbose, RemoteControlPtr remote_control, VisualsPtr visuals, moveit_grasps::GraspDatas grasp_datas,
-                   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                   ManipulationDataPtr config, const std::string& package_path, moveit::core::RobotStatePtr current_state)
+ExecutionInterface::ExecutionInterface(bool verbose, RemoteControlPtr remote_control, VisualsPtr visuals,
+                                       moveit_grasps::GraspDatas grasp_datas,
+                                       planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
+                                       ManipulationDataPtr config, const std::string& package_path, 
+                                       moveit::core::RobotStatePtr current_state, bool fake_execution)
   : verbose_(verbose)
   , remote_control_(remote_control)
   , visuals_(visuals)
@@ -59,6 +64,9 @@ ExecutionInterface::ExecutionInterface(bool verbose, RemoteControlPtr remote_con
   , config_(config)
   , package_path_(package_path)
   , current_state_(current_state)
+  , nh_("~")
+  , unit_testing_enabled_(false)
+  , fake_execution_(fake_execution)
 {
   // Check that controllers are ready
   zaber_list_controllers_client_ = nh_.serviceClient<controller_manager_msgs::ListControllers>("/jacob/zaber/controller_manager/list_controllers");
@@ -67,7 +75,8 @@ ExecutionInterface::ExecutionInterface(bool verbose, RemoteControlPtr remote_con
   ROS_INFO_STREAM_NAMED("execution_interface","ExecutionInterface Ready.");
 }
 
-bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg, bool ignore_collision)
+bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg, 
+                                           const robot_model::JointModelGroup* jmg, bool ignore_collision)
 {
   trajectory_msgs::JointTrajectory& trajectory = trajectory_msg.joint_trajectory;
 
@@ -90,21 +99,23 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
     if (trajectory.joint_names.size() > 3)
     {
       static std::size_t trajectory_count = 0;
-      //saveTrajectory(trajectory_msg, "trajectory_"+ boost::lexical_cast<std::string>(trajectory_count++));
-      saveTrajectory(trajectory_msg, "trajectory");
+      saveTrajectory(trajectory_msg, jmg->getName() + "_trajectory_"+ boost::lexical_cast<std::string>(trajectory_count++)+".csv");
+      //saveTrajectory(trajectory_msg, "trajectory.csv");
     }
   }
 
   // Visualize the hand/wrist path in Rviz
-  if (trajectory.points.size() > 1)
+  if (trajectory.points.size() > 1 && !jmg->isEndEffector())
   {
-    visuals_->goal_state_->deleteAllMarkers();
-    visuals_->goal_state_->publishTrajectoryLine(trajectory_msg, grasp_datas_[config_->right_arm_]->parent_link_,
-                                                 config_->right_arm_, rvt::LIME_GREEN);
+    visuals_->trajectory_lines_->deleteAllMarkers();
+    ros::spinOnce(); // TODO remove?
+    
+    visuals_->trajectory_lines_->publishTrajectoryLine(trajectory_msg, grasp_datas_[jmg]->parent_link_,
+                                                       config_->right_arm_, rvt::LIME_GREEN);
   }
   else
     ROS_WARN_STREAM_NAMED("execution_interface","Not visualizing path because trajectory only has "
-                          << trajectory.points.size() << " points");
+                          << trajectory.points.size() << " points or because is end effector");
 
   // Visualize trajectory in Rviz
   bool wait_for_trajetory = false;
@@ -113,7 +124,7 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
   // Debug: check for errors in trajectory
   static const double MAX_TIME_STEP_SEC = 4.0;
   ros::Duration max_time_step(MAX_TIME_STEP_SEC);
-  static const double WARN_TIME_STEP_SEC = 2.0;
+  static const double WARN_TIME_STEP_SEC = 3.0;
   ros::Duration warn_time_step(WARN_TIME_STEP_SEC);
   ros::Duration diff;
   for (std::size_t i = 0; i < trajectory.points.size() - 1; ++i)
@@ -127,8 +138,11 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
       std::cout << "Diff time: " << diff.toSec() << std::endl;
       std::cout << "-------------------------------------------------------" << std::endl;
       std::cout << std::endl;
-      std::cout << std::endl;
-      return false;
+
+      remote_control_->setAutonomous(false);
+      remote_control_->setFullAutonomous(false);
+      
+      //return false;
     }
     else if (diff > warn_time_step)
     {
@@ -137,7 +151,6 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
       std::cout << "Next time: " << trajectory.points[i+1].time_from_start.toSec() << std::endl;
       std::cout << "Diff time: " << diff.toSec() << std::endl;
       std::cout << "-------------------------------------------------------" << std::endl;
-      std::cout << std::endl;
       std::cout << std::endl;
     }
   }
@@ -150,18 +163,25 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
     plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
   }
 
+  // Check if in unit testing mode
+  if (unit_testing_enabled_)
+  {
+    robot_trajectory::RobotTrajectoryPtr 
+      robot_trajectory(new robot_trajectory::RobotTrajectory(planning_scene_monitor_->getRobotModel(), jmg));
+                                                             
+    robot_trajectory->setRobotTrajectoryMsg(*current_state_, trajectory_msg);
+    *current_state_ = robot_trajectory->getLastWayPoint();
+    return true;
+  }
+
   // Confirm trajectory before continuing
   if (!remote_control_->getFullAutonomous() &&
       // Only wait for non-finger trajectories
       trajectory.joint_names.size() > 3)
   {
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << "Waiting before executing trajectory" << std::endl;
-    remote_control_->waitForNextFullStep();
+    remote_control_->waitForNextFullStep("execute trajectory");
+    ROS_INFO_STREAM_NAMED("execution_interface","Executing trajectory....");
   }
-
-  ROS_INFO_STREAM_NAMED("execution_interface","Executing trajectory...");
 
   // Clear
   plan_execution_->getTrajectoryExecutionManager()->clear();
@@ -210,16 +230,32 @@ bool ExecutionInterface::checkExecutionManager()
   ROS_INFO_STREAM_NAMED("execution_interface","Checking that execution manager is loaded.");
 
   // Load MoveIt! managers
-  trajectory_execution_manager_.reset(new trajectory_execution_manager::
-                                      TrajectoryExecutionManager(planning_scene_monitor_->getRobotModel()));
-  plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
+  if (!trajectory_execution_manager_)
+  {
+    trajectory_execution_manager_.reset(new trajectory_execution_manager::
+                                        TrajectoryExecutionManager(planning_scene_monitor_->getRobotModel()));
+  }
+  if (!plan_execution_)
+    plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
 
   const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Check active controllers are running
   if (!trajectory_execution_manager_->ensureActiveControllersForGroup(arm_jmg->getName()))
   {
-    ROS_ERROR_STREAM_NAMED("execution_interface","Group " << arm_jmg->getName() << " does not have active controllers loaded");
+    ROS_ERROR_STREAM_NAMED("execution_interface","Group " << arm_jmg->getName() << " does not have controllers loaded");
+    return false;
+  }
+
+  // Get the controllers List
+  std::vector<std::string> controller_list;
+  trajectory_execution_manager_->getControllerManager()->getControllersList(controller_list);
+  //std::copy(controller_list.begin(), controller_list.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
+
+  // Check active controllers are running
+  if (!trajectory_execution_manager_->ensureActiveControllers(controller_list))
+  {
+    ROS_ERROR_STREAM_NAMED("execution_interface","Robot does not have the desired controllers active");
     return false;
   }
 
@@ -245,23 +281,27 @@ bool ExecutionInterface::checkExecutionManager()
   return true;
 }
 
+// DEPRECATED IN FAVOR OF MOVEIT CONTROLLER MANAGER VERSION
 bool ExecutionInterface::checkTrajectoryController(ros::ServiceClient& service_client, const std::string& hardware_name, bool has_ee)
 {
   // Try to communicate with controller manager
   controller_manager_msgs::ListControllers service;
   if (!service_client.call(service))
   {
-    ROS_ERROR_STREAM_NAMED("execution_interface","Unable to check if controllers for " << hardware_name << " are loaded, failing. Using nh namespace " << nh_.getNamespace());
-    std::cout << "service: " << service.response << std::endl;
+    ROS_ERROR_STREAM_THROTTLE_NAMED(2, "execution_interface","Unable to check if controllers for " << hardware_name 
+                                    << " are loaded, failing. Using nh namespace " << nh_.getNamespace() 
+                                    << ". Service response: " << service.response);
     return false;
   }
+
+  std::string control_type = fake_execution_ ? "position" : "velocity";
 
   // Check if proper controller is running
   bool found_main_controller = false;
   bool found_ee_controller = false;
   for (std::size_t i = 0; i < service.response.controller.size(); ++i)
   {
-    if (service.response.controller[i].name == "velocity_trajectory_controller")
+    if (service.response.controller[i].name == control_type + "_trajectory_controller")
     {
       found_main_controller = true;
       if (service.response.controller[i].state != "running")
@@ -270,7 +310,7 @@ bool ExecutionInterface::checkTrajectoryController(ros::ServiceClient& service_c
         return false;
       }
     }
-    if (service.response.controller[i].name == "ee_velocity_trajectory_controller")
+    if (service.response.controller[i].name == "ee_" + control_type + "_trajectory_controller")
     {
       found_ee_controller = true;
       if (service.response.controller[i].state != "running")
@@ -283,12 +323,12 @@ bool ExecutionInterface::checkTrajectoryController(ros::ServiceClient& service_c
 
   if (has_ee && !found_ee_controller)
   {
-    ROS_ERROR_STREAM_THROTTLE_NAMED(2, "execution_interface","No end effector controller found for " << hardware_name);
+    ROS_ERROR_STREAM_THROTTLE_NAMED(2, "execution_interface","No end effector controller found for " << hardware_name << ". Controllers are: " << service.response);
     return false;
   }
   if (!found_main_controller)
   {
-    ROS_ERROR_STREAM_THROTTLE_NAMED(2, "execution_interface","No main controller found for " << hardware_name);
+    ROS_ERROR_STREAM_THROTTLE_NAMED(2, "execution_interface","No main controller found for " << hardware_name << ". Controllers are: " << service.response);
     return false;
   }
 
@@ -351,7 +391,7 @@ bool ExecutionInterface::saveTrajectory(const moveit_msgs::RobotTrajectory &traj
     output_file << std::endl;
   }
   output_file.close();
-  ROS_DEBUG_STREAM_NAMED("execution_interface","Saved trajectory to file " << file_path);
+  ROS_DEBUG_STREAM_NAMED("execution_interface","Saved trajectory to file " << file_name);
   return true;
 }
 
@@ -361,7 +401,7 @@ bool ExecutionInterface::getFilePath(std::string &file_path, const std::string &
 
   // Check that the directory exists, if not, create it
   fs::path path;
-  path = fs::path(package_path_ + "/trajectories");
+  path = fs::path(package_path_ + "/trajectories/analysis/");
 
   boost::system::error_code returnedError;
   fs::create_directories( path, returnedError );
@@ -374,7 +414,7 @@ bool ExecutionInterface::getFilePath(std::string &file_path, const std::string &
   }
 
   // Directories successfully created, append the group name as the file name
-  path = path / fs::path(file_name + ".csv");
+  path = path / fs::path(file_name);
   file_path = path.string();
 
   ROS_DEBUG_STREAM_NAMED("execution_interface.file_path","Using full file path" << file_path);
@@ -383,9 +423,23 @@ bool ExecutionInterface::getFilePath(std::string &file_path, const std::string &
 
 moveit::core::RobotStatePtr ExecutionInterface::getCurrentState()
 {
+  // Get the fake current state
+  if (unit_testing_enabled_)
+  {
+    //ROS_WARN_STREAM_NAMED("manipulation","Unit testing enabled, get current state is skipping planning scene");
+    return current_state_;
+  }
+
+  // Get the real current state
   planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
   (*current_state_) = scene->getCurrentState();
   return current_state_;
+}
+
+bool ExecutionInterface::enableUnitTesting()
+{
+  unit_testing_enabled_ = true;
+  return true;
 }
 
 } // end namespace

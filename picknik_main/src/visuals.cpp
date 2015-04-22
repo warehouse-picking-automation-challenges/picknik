@@ -48,6 +48,7 @@ Visuals::Visuals(robot_model::RobotModelPtr robot_model, planning_scene_monitor:
   ros::spinOnce();
   start_state_->deleteAllMarkers(); // clear all old markers
   start_state_->hideRobot(); // show that things have been reset
+  grasp_markers_ = start_state_; // same object just renamed
 
   // ------------------------------------------------------------------------------------------------------
   // Load RobotState VisualTools for Goal State
@@ -58,7 +59,7 @@ Visuals::Visuals(robot_model::RobotModelPtr robot_model, planning_scene_monitor:
   ros::spinOnce();
   goal_state_->deleteAllMarkers(); // clear all old markers
   goal_state_->hideRobot(); // show that things have been reset
-
+  trajectory_lines_ = goal_state_; // same object just renamed
 }
 
 bool Visuals::visualizeDisplayShelf(ShelfObjectPtr shelf)
@@ -71,6 +72,14 @@ bool Visuals::visualizeDisplayShelf(ShelfObjectPtr shelf)
   return true;
 }
 
-
+bool Visuals::setSharedRobotState(moveit::core::RobotStatePtr current_state)
+{
+  // allow visual_tools to have the correct virtual joint
+  visual_tools_->getSharedRobotState() = current_state; 
+  visual_tools_display_->getSharedRobotState() = current_state; 
+  start_state_->getSharedRobotState() = current_state; 
+  goal_state_->getSharedRobotState() = current_state; 
+  return true;
+}
 
 } // end namespace

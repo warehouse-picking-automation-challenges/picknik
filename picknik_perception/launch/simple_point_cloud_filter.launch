@@ -1,0 +1,20 @@
+<launch>
+
+  <!-- Load Rviz -->
+  <!-- <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false" -->
+  <!-- 	args="-d $(find picknik_perception)/launch/rviz/simple_point_cloud.rviz" output="screen"> -->
+  <!-- </node> -->
+
+  <!-- listen to keyboard presses -->
+  <!-- NOTE: will open a tiny window... keyboard presses register when this is in focus -->
+  <node pkg="keyboard" type="keyboard" name="keyboard" />
+
+  <!-- Publish world frame -->
+  <!-- <node pkg="tf" type="static_transform_publisher" name="tf_publisher_world" args="0 0 0 0 0 0 /world /base 25" /> -->
+  <!-- <node pkg="tf" type="static_transform_publisher" name="tf_publisher_world" args="0 0 2 0 0 0 /world /camera_link 25" /> -->
+
+  <!-- Get registered poitn cloud -->
+  <node pkg="dynamic_reconfigure" type="dynparam" name="depth_registration" 
+	args="set /camera/driver depth_registration true" />
+
+</launch>

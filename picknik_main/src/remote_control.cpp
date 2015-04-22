@@ -38,6 +38,7 @@
 
 #include <picknik_main/remote_control.h>
 #include <picknik_main/apc_manager.h>
+#include <moveit/macros/console_colors.h>
 
 namespace picknik_main
 {
@@ -57,7 +58,6 @@ RemoteControl::RemoteControl(bool verbose, ros::NodeHandle nh, APCManager* paren
   , stop_(false)
 {
   // Subscribe to remote control topic
-  ROS_DEBUG_STREAM_NAMED("apc_manager","Subscribing to button topics");
   std::size_t queue_size = 10;
   remote_next_control_ = nh_.subscribe("/picknik_main/next_command", queue_size, &RemoteControl::remoteNextCallback, this);
   remote_auto_control_ = nh_.subscribe("/picknik_main/auto_command", queue_size, &RemoteControl::remoteAutoCallback, this);
@@ -108,7 +108,7 @@ void RemoteControl::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
   // 7 - start
   // 8 - power
   if (msg->buttons[8])
-    setAutonomous();
+    setFullAutonomous();
   // 9 - Button stick left
   // 10 - Button stick right
 
@@ -132,6 +132,7 @@ bool RemoteControl::setReadyForNextStep()
     next_step_ready_ = true;
     stop_ = false;
   }
+  return true;
 }
 
 void RemoteControl::setAutonomous(bool autonomous)
@@ -152,7 +153,11 @@ void RemoteControl::setFullAutonomous(bool autonomous)
 void RemoteControl::setStop(bool stop)
 {
   stop_ = stop;
-  autonomous_ = !stop;
+  if (stop)
+  {
+    autonomous_ = false;
+    full_autonomous_ = false;
+  }
 }
 
 bool RemoteControl::getStop()
@@ -170,8 +175,16 @@ bool RemoteControl::getFullAutonomous()
   return full_autonomous_;
 }
 
-bool RemoteControl::waitForNextStep()
+bool RemoteControl::waitForNextStep(const std::string &caption)
 {
+  // Check if we really need to wait
+  if ( !(!next_step_ready_ && !autonomous_ && ros::ok()) )
+    return true;
+  
+  // Show message
+  std::cout << std::endl << std::endl;
+  std::cout << MOVEIT_CONSOLE_COLOR_CYAN << "Waiting to " << caption << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
+
   is_waiting_ = true;
   // Wait until next step is ready
   while (!next_step_ready_ && !autonomous_ && ros::ok())
@@ -186,8 +199,15 @@ bool RemoteControl::waitForNextStep()
   return true;
 }
 
-bool RemoteControl::waitForNextFullStep()
+bool RemoteControl::waitForNextFullStep(const std::string &caption)
 {
+  // Check if we really need to wait
+  if ( !(!next_step_ready_ && !full_autonomous_ && ros::ok()) )
+    return true;
+  
+  // Show message
+  std::cout << MOVEIT_CONSOLE_COLOR_CYAN << "Waiting to " << caption << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
+
   is_waiting_ = true;
   // Wait until next step is ready
   while (!next_step_ready_ && !full_autonomous_ && ros::ok())
