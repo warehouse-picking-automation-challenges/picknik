@@ -21,7 +21,6 @@ private:
   ManualTFAlignment* tf_align_ptr_;
   
   ros::Subscriber pc_sub_;
-  ros::Subscriber keyboard_sub_;
   ros::Publisher aligned_cloud_pub_;
   ros::Publisher roi_cloud_pub_;
 
@@ -44,9 +43,7 @@ public:
     tf_align_ptr_->from_ = "/world";
     tf_align_ptr_->to_ = "/camera_link";
 
-    // listen to keyboard topic
-    keyboard_sub_ = nh_.subscribe("/keyboard/keydown", 100, 
-                                  &picknik_perception::ManualTFAlignment::keyboardCallback, tf_align_ptr_);
+
     tf_align_ptr_->printMenu();
 
     // listen to point cloud topic
