@@ -266,6 +266,19 @@ Load meshes
 
     rosrun picknik_main mesh_publisher
 
+## Running ROS -> HAL Bridge
+
+HAL git branch features/ros_bridge includes a ROS connector to consume imagery from ROS
+
+    Run like: ./SensorViewer -cam ros:[topics=/camera/image_raw+/camera/depth/image_raw]
+
+    This will publish a Protobuf with one image per topic. The ROS bridge knows about mono16, bgr8, rgb8, mono8, and 32FC1 images.
+
+    Restrictions:
+
+	Images must be 640x480, this is a statically compiled thing
+    	ROS_MASTER must be set in the environment since the command-line args are buried within HAL
+	
 ## Debugging Tools
 
 ### Record CSV Files of Controller Data
@@ -295,3 +308,26 @@ See what is connected
 Change device ID
 
     rosed jacob_control jacob_joy.launch
+
+### Debugging USB Things
+
+ASUS Xtion node doesn't start
+
+    Xtion backend process XnSensorServer stopped,
+    'ps -aux' to find PID, kill -9 it, then restart
+
+    When one runs 'strace /usr/bin/Sample-NiSimpleViewer', recvmsg() calls will fail, indicating a lack of comm with the Xtion backend. 
+
+Reset USB stack without a reboot
+    WARNING: If your keyboard is plugged in via this USB node, you will lose control of the console
+    As root:
+
+    cd /sys/bus/pci/drivers/xhci_hcd
+    ls -l
+    echo "0000:00:14.0" > unbind
+
+    This will unbind the driver from the hardware. To reset:
+
+    echo "0000:00:14.0" > bind
+
+    This will re-enumerate all USB devices, including running udev rules, etc.
