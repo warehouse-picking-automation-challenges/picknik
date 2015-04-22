@@ -137,10 +137,11 @@ Rviz Visualizers of robot states and debug markers
 
     roslaunch picknik_main rviz.launch
 
-Camera calibration:
+Camera calibration (new!):
 
-    roslaunch picknik_main camera_calibration.launch
-	
+    #OLD roslaunch picknik_main camera_calibration.launch
+    roslaunch picknik_perception tf_keyboard.launch
+ 
 Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
 	roslaunch picknik_main fake_perception_server.launch
@@ -155,7 +156,7 @@ Adjust the values in ``config/apc_jacob.yaml`` for ``world_to_shelf_transform``:
 
 To quickly view updates yaml settings:
 
-     roslaunch picknik_main jacob_apc.launch mode:=13
+    roslaunch picknik_main jacob_apc.launch mode:=13
 	 
 Calibrate z axis
 
@@ -222,7 +223,7 @@ Button Mapings
 		12. Playback bin observing trajectory (perceive)
 
         13. Visualize shelf
-		14. SRDF: Get the current pose of the robot for the SRDF
+        14. SRDF: Get the current pose of the robot for the SRDF
 		15. Check if current state is in collision
 		16. Test grasp generator abilities and score results
 		17. Test joint limits
