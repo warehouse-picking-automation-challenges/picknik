@@ -3,13 +3,10 @@
   Desc  : A simple filter for a static depth camera
 */
 
-//#include <iostream>
-//#include <fstream>
 #include <string>
+#include <cmath>
 
 #include <ros/ros.h>
-//#include <ros/package.h>
-//#include <rviz_visual_tools/rviz_visual_tools.h>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -18,7 +15,6 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 
-//#include <keyboard/Key.h>
 #include <sensor_msgs/PointCloud2.h>
 
 #include <pcl_ros/point_cloud.h>
@@ -60,6 +56,7 @@ public:
    * \brief 
    */
   void setRegionOfInterest(Eigen::Affine3d pose, double depth, double width, double height);
+  void setRegionOfInterest(Eigen::Affine3d bottom_right_front_corner, Eigen::Affine3d top_left_back_corner);
 
   // point clouds
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr aligned_cloud_;
