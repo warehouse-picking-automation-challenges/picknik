@@ -5,29 +5,44 @@
 
 #include <picknik_perception/manual_tf_alignment.h>
 
+// Parameter loading
+#include <rviz_visual_tools/ros_param_utilities.h>
+
 namespace picknik_perception
 {
 
 ManualTFAlignment::ManualTFAlignment()
+  : nh_("~")
 {
   // default, save in picknik_perception/data
   std::string package_path = ros::package::getPath("picknik_perception");
-  save_path_ = package_path + "/data/tf_alignment.txt";
+  save_path_ = package_path + "/config/tf_keyboard.yaml";
   ROS_INFO_STREAM_NAMED("manualTF","Will save TF data to: " << save_path_);
-  
+
   // set defaults
   mode_ = 1;
   delta_ = 0.010;
 
-  // set default transform
-  from_ = "/world";
-  to_ = "/base";
+  // Get settings from rosparam
 
-}
+  // initial camera transform
+  const std::string parent_name = "manipulation_data"; // for namespacing logging messages
+  double x, y, z, roll, pitch, yaw;
+  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "initial_x", x);
+  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "initial_y", y);
+  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "initial_z", z);
+  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "initial_roll", roll);
+  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "initial_pitch", pitch);
+  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "initial_yaw", yaw);
+  setPose(Eigen::Vector3d(x, y, z), Eigen::Vector3d(roll, pitch, yaw));
 
-ManualTFAlignment::~ManualTFAlignment()
-{
+  // get frame names
+  rviz_visual_tools::getStringParameter(parent_name, nh_, "from", from_);
+  rviz_visual_tools::getStringParameter(parent_name, nh_, "to", to_);
 
+  // listen to keyboard topic
+  keyboard_sub_ = nh_.subscribe("/keyboard/keydown", 100,
+                                &ManualTFAlignment::keyboardCallback, this);
 }
 
 void ManualTFAlignment::keyboardCallback(const keyboard::Key::ConstPtr& msg)
@@ -38,48 +53,67 @@ void ManualTFAlignment::keyboardCallback(const keyboard::Key::ConstPtr& msg)
 
   switch(entry)
   {
-    case 101: // e
+    case 112: //
       std::cout << "Writing transformation to file..." << std::endl;
       writeTFToFile();
       break;
-    case 99: // c (coarse delta)
+    case 105: // (coarse delta)
       std::cout << "Delta = coarse (0.010)" << std::endl;
       delta_ = coarse;
       break;
-    case 102: // f (fine delta)
+    case 107: // (fine delta)
       std::cout << "Delta = fine (0.001)" << std::endl;
       delta_ = fine;
       break;
-    case 120: // x 
-      std::cout << "Press +/- to adjust X translation" << std::endl;
-      mode_ = 1;
+
+    // X axis
+    case 113: // up
+      updateTF(1, delta_);      
       break;
-    case 121: // y
-      std::cout << "Press +/- to adjust Y translation" << std::endl;
-      mode_ = 2;
+    case 97: // down
+      updateTF(1, -delta_);      
       break;
-    case 122: // z
-      std::cout << "Press +/- to adjust Z translation" << std::endl;
-      mode_ = 3;
-      break;          
-    case 114: // r (roll)
-      std::cout << "Press +/- to adjust roll angle" << std::endl;
-      mode_ = 4;
+
+    // y axis
+    case 119: // up
+      updateTF(2, delta_);      
       break;
-    case 112: // p (pitch)
-      std::cout << "Press +/- to adjust pitch angle" << std::endl;
-      mode_ = 5;
-      break;          
-    case 119: // w (yaw)
-      std::cout << "Press +/- to adjust yaw angle" << std::endl;
-      mode_ = 6;
+    case 115: // down
+      updateTF(2, -delta_);      
       break;
-    case 270: // + (on numberpad)
-      updateTF(mode_, delta_);
+
+    // z axis
+    case 101: // up
+      updateTF(3, delta_);      
       break;
-    case 269: // - (on numberpad)
-      updateTF(mode_, -delta_);
+    case 100: // down
+      updateTF(3, -delta_);      
       break;
+
+    // roll
+    case 114: // up
+      updateTF(4, delta_);      
+      break;
+    case 102: // down
+      updateTF(4, -delta_);      
+      break;
+
+    // pitch
+    case 116: // up
+      updateTF(5, delta_);      
+      break;
+    case 103: // down
+      updateTF(5, -delta_);      
+      break;
+
+    // yaw
+    case 121: // up
+      updateTF(6, delta_);      
+      break;
+    case 104: // down
+      updateTF(6, -delta_);      
+      break;
+
     default:
       // don't do anything
       break;
@@ -90,16 +124,17 @@ void ManualTFAlignment::printMenu()
 {
   std::cout << "Manual alignment of camera to world CS:" << std::endl;
   std::cout << "=======================================" << std::endl;
-  std::cout << "\nChoose Mode:" << std::endl;
-  std::cout << "x\tAdjust X translation" << std::endl;
-  std::cout << "y\tAdjust Y translation" << std::endl;
-  std::cout << "z\tAdjust Z translation" << std::endl;    
-  std::cout << "r\tAdjust Roll (rotation about X)" << std::endl;
-  std::cout << "p\tAdjust Pitch (rotation about Y)" << std::endl;
-  std::cout << "w\tAdjust Yaw (rotation about Z)" << std::endl;
-  std::cout << "c\tSet adjustment delta to COARSE (0.010)" << std::endl;
-  std::cout << "f\tSet adjustment delta to FINE (0.001)" << std::endl;
-  std::cout << "e\tWrite transform values to file" << std::endl;
+  std::cout << "MOVE: X  Y  Z  R  P  YAW " << std::endl;
+  std::cout << "------------------------" << std::endl;
+  std::cout << "up    q  w  e  r  t  y " << std::endl;
+  std::cout << "down  a  s  d  f  g  h " << std::endl;
+  std::cout << std::endl;
+  std::cout << "Fast: u " << std::endl;
+  std::cout << "Slow: j " << std::endl;
+  std::cout << "Save: p " << std::endl;
+  // std::cout << "c\tSet adjustment delta to COARSE (0.010)" << std::endl;
+  // std::cout << "f\tSet adjustment delta to FINE (0.001)" << std::endl;
+  // std::cout << "e\tWrite transform values to file" << std::endl;
 }
 
 void ManualTFAlignment::publishTF()
@@ -129,7 +164,7 @@ void ManualTFAlignment::setPose(Eigen::Vector3d translation, Eigen::Vector3d rot
 
 void ManualTFAlignment::updateTF(int mode, double delta)
 {
-  ROS_DEBUG_STREAM_NAMED("PC_filter.update","mode = " << mode << ", delta = " << delta);
+  ROS_DEBUG_STREAM_NAMED("tf_alignment","mode = " << mode << ", delta = " << delta);
 
   switch(mode)
   {
@@ -160,20 +195,23 @@ void ManualTFAlignment::updateTF(int mode, double delta)
 
 void ManualTFAlignment::writeTFToFile()
 {
-  std::string file_path = save_path_ + "/camera_transform.txt";
-  std::ofstream file (file_path.c_str(), std::ios::app);
+  std::ofstream file (save_path_.c_str()); //, std::ios::app);
 
   if (!file.is_open())
-    ROS_ERROR_STREAM_NAMED("PC_filter.write","output file could not be opened");
+    ROS_ERROR_STREAM_NAMED("tf_align.write","Output file could not be opened: " << save_path_);
   else
   {
-    ROS_INFO_STREAM_NAMED("PC_filter.write","Camera translation = \n " << translation_);
-    ROS_INFO_STREAM_NAMED("PC_filter.write","Camera rotations = \n" << rotation_);
-    for (std::size_t i = 0; i < 3; i++)
-      file << translation_[i] << "\t ";
-    for (std::size_t i = 0; i < 3; i++)
-      file << rotation_[i] << "\t";
-    file << std::endl;
+    ROS_INFO_STREAM_NAMED("tf_align.write","Camera translation = \n " << translation_);
+    ROS_INFO_STREAM_NAMED("tf_align.write","Camera rotations = \n" << rotation_);
+    
+    file << "initial_x: " << translation_[0] << std::endl;
+    file << "initial_y: " << translation_[1] << std::endl;
+    file << "initial_z: " << translation_[2] << std::endl;
+    file << "initial_roll: " << rotation_[0] << std::endl;
+    file << "initial_pitch: " << rotation_[1] << std::endl;
+    file << "initial_yaw: " << rotation_[2] << std::endl;
+    file << "from: " << from_ << std::endl;
+    file << "to: " << to_ << std::endl;
   }
   file.close();
 
