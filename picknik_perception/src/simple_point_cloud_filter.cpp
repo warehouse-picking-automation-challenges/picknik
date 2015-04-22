@@ -249,4 +249,17 @@ void SimplePointCloudFilter::setRegionOfInterest(Eigen::Affine3d pose, double de
   roi_height_ = height;
 }
 
+void SimplePointCloudFilter::setRegionOfInterest(Eigen::Affine3d bottom_right_front_corner, 
+                                                 Eigen::Affine3d top_left_back_corner)
+{
+  Eigen::Vector3d delta = top_left_back_corner.translation() - bottom_right_front_corner.translation();
+  roi_depth_ = std::abs(delta[0]);
+  roi_width_ = std::abs(delta[1]);
+  roi_height_ = std::abs(delta[2]);
+
+  Eigen::Affine3d pose = bottom_right_front_corner;
+  pose.translation() += Eigen::Vector3d(roi_depth_ / 2.0, roi_width_ / 2.0, roi_height_ / 2.0);
+}
+
+
 } // namespace
