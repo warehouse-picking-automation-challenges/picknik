@@ -1,0 +1,12 @@
+<launch>
+
+  <!-- listen to keyboard presses -->
+  <!-- NOTE: will open a tiny window... keyboard presses register when this is in focus -->
+  <node pkg="keyboard" type="keyboard" name="keyboard" />
+
+  <!-- Get registered poitn cloud -->
+  <node pkg="picknik_perception" type="tf_keyboard" name="tf_keyboard" output="screen">
+    <rosparam command="load" file="$(find picknik_perception)/config/tf_keyboard.yaml"/>
+  </node>
+
+</launch>

@@ -64,6 +64,7 @@ include_directories(SYSTEM
 #  ${catkin_LIBRARIES} 
 #  ${Boost_LIBRARIES}
 
+# Library
 add_library(simple_point_cloud_filter
   src/simple_point_cloud_filter.cpp
 )
@@ -71,6 +72,7 @@ target_link_libraries(simple_point_cloud_filter
   ${catkin_LIBRARIES}
 )
 
+# Library
 add_library(manual_tf_alignment
   src/manual_tf_alignment.cpp
 )
@@ -79,6 +81,7 @@ target_link_libraries(manual_tf_alignment
   ${Boost_LIBRARIES}
 )
 
+# Executable
 add_executable(simple_point_cloud_filter_test
   src/tests/simple_point_cloud_filter_test.cpp
 )
@@ -88,4 +91,13 @@ target_link_libraries(simple_point_cloud_filter_test
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
   ${Boost_LIBRARIES}
+)
+
+# Executable
+add_executable(tf_keyboard
+  src/tf_keyboard.cpp
+)
+target_link_libraries(tf_keyboard
+  manual_tf_alignment
+  ${catkin_LIBRARIES}
 )

@@ -29,12 +29,7 @@ public:
    * \brief
    */
   ManualTFAlignment();
-  
-  /*
-   * \brief
-   */
-  ~ManualTFAlignment();
-  
+    
   /*
    * \brief
    */
@@ -72,7 +67,8 @@ public:
   double delta_;
   std::string from_;
   std::string to_;
-
+  ros::Subscriber keyboard_sub_;
+  ros::NodeHandle nh_;
 
 };
 
