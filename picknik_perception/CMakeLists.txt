@@ -69,10 +69,10 @@ target_link_libraries(simple_point_cloud_filter
   ${catkin_LIBRARIES}
 )
 
-add_executable(test_simple_point_cloud_filter
-  src/tests/test_simple_point_cloud_filter.cpp
+add_executable(simple_point_cloud_filter_test
+  src/tests/simple_point_cloud_filter_test.cpp
 )
-target_link_libraries(test_simple_point_cloud_filter
+target_link_libraries(simple_point_cloud_filter_test
   simple_point_cloud_filter
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
