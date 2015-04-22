@@ -8,64 +8,29 @@
 namespace picknik_perception
 {
 
-SimplePointCloudFilter::SimplePointCloudFilter(bool verbose)
+SimplePointCloudFilter::SimplePointCloudFilter()
 {
   ROS_DEBUG_STREAM_NAMED("PC_filter.constructor","setting up simple point cloud filter");
-  
-  // set debug
-  verbose_ = verbose;
 
   // initialize bounding box variables
   get_bbox_ = false;
-  bbox_frames_ = 0;
   bbox_rotation_ = Eigen::Matrix3d::Zero();
   bbox_translation_ = Eigen::Vector3d::Zero();
   bbox_pose_ = Eigen::Affine3d::Identity();
-
-  // listen to point cloud topic
-  processing_ = false;
-  ros::Subscriber pc_sub = 
-    nh_.subscribe("/camera/depth_registered/points", 1, &SimplePointCloudFilter::pointCloudCallback, this);
   
-  // publish aligned point cloud and bin point cloud
-  aligned_cloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("aligned_cloud",1);
-  bin_cloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("bin_cloud",1);
-  
+  // set regoin of interest
+  roi_depth_ = 1.0;
+  roi_width_ = 1.0;
+  roi_height_ = 1.0;
+  roi_pose_ = Eigen::Affine3d::Identity();
+ 
   // set initial camera transform
-  // TODO: Should be read in from file
+  // TODO: Should be read in from file or set in launch file
   //-1.202   -0.23   1.28    0      0.03    0
   camera_translation_ = Eigen::Vector3d(-1.202, -0.23, 1.28);
   camera_rotation_ = Eigen::Vector3d(0, 0.03, 0);
-  camera_pose_ = Eigen::Affine3d::Identity();
-  camera_pose_ *= Eigen::AngleAxisd(camera_rotation_[0],Eigen::Vector3d::UnitX())
-    * Eigen::AngleAxisd(camera_rotation_[1],Eigen::Vector3d::UnitY())
-    * Eigen::AngleAxisd(camera_rotation_[2],Eigen::Vector3d::UnitZ());
-  camera_pose_.translation() = camera_translation_;
 
-  // Print menu for manual alignment of point cloud
-  std::cout << "Manual alignment of camera to world CS:" << std::endl;
-  std::cout << "=======================================" << std::endl;
-  std::cout << "\nChoose Mode:" << std::endl;
-  std::cout << "s\tStart bounding box tracking" << std::endl;
-  std::cout << "b\tDisplay bounding box" << std::endl;
-  std::cout << "x\tAdjust X translation" << std::endl;
-  std::cout << "y\tAdjust Y translation" << std::endl;
-  std::cout << "z\tAdjust Z translation" << std::endl;    
-  std::cout << "r\tAdjust Roll (rotation about X)" << std::endl;
-  std::cout << "p\tAdjust Pitch (rotation about Y)" << std::endl;
-  std::cout << "w\tAdjust Yaw (rotation about Z)" << std::endl;
-
-  if (verbose_)
-  {
-    visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base", "/rviz_visual_tools"));
-    visual_tools_->deleteAllMarkers();
-
-    // publish axes at origin
-    visual_tools_->publishAxis(Eigen::Affine3d::Identity());
-
-    // publish axes at camera
-    visual_tools_->publishAxis(camera_pose_);
-  }
+  printMenu();
 }
 
 SimplePointCloudFilter::~SimplePointCloudFilter()
@@ -217,76 +182,75 @@ void SimplePointCloudFilter::processPointCloud(const sensor_msgs::PointCloud2Con
   {
     ROS_ERROR_STREAM_NAMED("PC_filter.process","Error converting to desired frame");
   }  
-  aligned_cloud_pub_.publish(aligned_cloud);
+  aligned_cloud_ = aligned_cloud;
 
   /***** get point cloud that lies in region_of_interest *****/
   // (from Dave's baxter_experimental/flex_perception.cpp)
    
   // create new output cloud and place to save filtered results
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr bin_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr roi_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
   // Transform point cloud to bin CS
-  pcl::transformPointCloud(*aligned_cloud, *bin_cloud, bin_pose_.inverse());
+  pcl::transformPointCloud(*aligned_cloud, *roi_cloud, roi_pose_.inverse());
 
   // Filter based on bin location
   pcl::PassThrough<pcl::PointXYZRGB> pass_x;
-  pass_x.setInputCloud(bin_cloud);
+  pass_x.setInputCloud(roi_cloud);
   pass_x.setFilterFieldName("x");
-  pass_x.setFilterLimits(-bin_depth_ / 2.0, bin_depth_ / 2.0);
-  pass_x.filter(*bin_cloud);
+  pass_x.setFilterLimits(-roi_depth_ / 2.0, roi_depth_ / 2.0);
+  pass_x.filter(*roi_cloud);
 
   pcl::PassThrough<pcl::PointXYZRGB> pass_y;
-  pass_y.setInputCloud(bin_cloud);
+  pass_y.setInputCloud(roi_cloud);
   pass_y.setFilterFieldName("y");
-  pass_y.setFilterLimits(-bin_width_ / 2.0, bin_width_ / 2.0);
-  pass_y.filter(*bin_cloud);
+  pass_y.setFilterLimits(-roi_width_ / 2.0, roi_width_ / 2.0);
+  pass_y.filter(*roi_cloud);
 
   pcl::PassThrough<pcl::PointXYZRGB> pass_z;
-  pass_z.setInputCloud(bin_cloud);
+  pass_z.setInputCloud(roi_cloud);
   pass_z.setFilterFieldName("z");
-  pass_z.setFilterLimits(-bin_height_ / 2.0, bin_height_ / 2.0);
-  pass_z.filter(*bin_cloud);
+  pass_z.setFilterLimits(-roi_height_ / 2.0, roi_height_ / 2.0);
+  pass_z.filter(*roi_cloud);
 
   // slowish
   pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> rad;
-  rad.setInputCloud(bin_cloud);
+  rad.setInputCloud(roi_cloud);
   rad.setRadiusSearch(0.03);
   rad.setMinNeighborsInRadius(200);
-  rad.filter(*bin_cloud);
+  rad.filter(*roi_cloud);
 
   pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
-  sor.setInputCloud(bin_cloud);
+  sor.setInputCloud(roi_cloud);
   sor.setMeanK(50);
   sor.setStddevMulThresh(1.0);
-  sor.filter(*bin_cloud);
+  sor.filter(*roi_cloud);
 
   // Transform point cloud back to world CS
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr bin_cloud_final(new pcl::PointCloud<pcl::PointXYZRGB>);
-  pcl::transformPointCloud(*bin_cloud, *bin_cloud_final, bin_pose_);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr roi_cloud_final(new pcl::PointCloud<pcl::PointXYZRGB>);
+  pcl::transformPointCloud(*roi_cloud, *roi_cloud_final, roi_pose_);
+  roi_cloud_ = roi_cloud_final;
 
-  // publish pointcloud of bin
-  if (bin_cloud->points.size() == 0)
+  if (roi_cloud_final->points.size() == 0)
   {
     ROS_WARN_STREAM_NAMED("PC_filter.process","0 points left after filtering");
   }
-    
-  bin_cloud_pub_.publish(bin_cloud_final);
 
-  if (get_bbox_)
-  {
-    // get info for averaging bounding box
-    // TODO: should average over frames, but getBB function doesn't return same pose every time, so d, w, h
-    // get mixed up.
-    double depth, width, height;
-    Eigen::Affine3d cuboid_pose = Eigen::Affine3d::Identity();
-    bool bbox = getBoundingBox(bin_cloud_final, cuboid_pose, depth, width, height);
-    bbox_depth_ = depth;
-    bbox_width_ = width;
-    bbox_height_ = height;
-    bbox_rotation_ = cuboid_pose.rotation();
-    bbox_translation_ = cuboid_pose.translation();
-    get_bbox_ = false;
-  }
+}
+
+void SimplePointCloudFilter::printMenu()
+{
+  // Print menu for manual alignment of point cloud
+  std::cout << "Manual alignment of camera to world CS:" << std::endl;
+  std::cout << "=======================================" << std::endl;
+  std::cout << "\nChoose Mode:" << std::endl;
+  std::cout << "s\tStart bounding box tracking" << std::endl;
+  std::cout << "b\tDisplay bounding box" << std::endl;
+  std::cout << "x\tAdjust X translation" << std::endl;
+  std::cout << "y\tAdjust Y translation" << std::endl;
+  std::cout << "z\tAdjust Z translation" << std::endl;    
+  std::cout << "r\tAdjust Roll (rotation about X)" << std::endl;
+  std::cout << "p\tAdjust Pitch (rotation about Y)" << std::endl;
+  std::cout << "w\tAdjust Yaw (rotation about Z)" << std::endl;
 }
 
 void SimplePointCloudFilter::publishCameraTransform()
@@ -306,7 +270,6 @@ void SimplePointCloudFilter::publishCameraTransform()
 
   // publish
   br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "/world" , "/camera_link"));
-
 }
 
 } // namespace

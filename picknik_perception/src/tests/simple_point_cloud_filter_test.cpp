@@ -18,6 +18,10 @@ private:
 
   SimplePointCloudFilter* pc_filter_ptr_;
 
+  ros::Subscriber pc_sub_;
+  ros::Publisher aligned_cloud_pub_;
+  ros::Publisher roi_cloud_pub_;
+
 public:
 
   SimpleFilterTest()
@@ -27,11 +31,16 @@ public:
     visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base"));
     visual_tools_->deleteAllMarkers();
 
-    // Visualize origin of world
-    Eigen::Affine3d pose = Eigen::Affine3d::Identity();
-    visual_tools_->publishAxis(pose);
+    pc_filter_ptr_ = new SimplePointCloudFilter();
 
-    pc_filter_ptr_ = new SimplePointCloudFilter(true);
+    // listen to point cloud topic
+    // TODO: camera topic should be set in launch file
+    pc_sub_ = nh_.subscribe("/camera/depth_registered/points", 1, 
+                            &picknik_perception::SimplePointCloudFilter::processPointCloud, pc_filter_ptr_);
+
+    // publish aligned point cloud and bin point cloud
+    aligned_cloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("aligned_cloud",1);
+    roi_cloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("roi_cloud",1);
 
     ROS_DEBUG_STREAM_NAMED("PC_filter.test","starting main filter test");
 
@@ -39,7 +48,6 @@ public:
     int bbox_rate = 10;
     int count = 0;
 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
     double depth, width, height;
     Eigen::Affine3d bbox_pose;
 
@@ -47,9 +55,22 @@ public:
     {
       if (count % bbox_rate == 0)
       {
-        visual_tools_->publishAxis(pose);
-        pc_filter_ptr_->getBoundingBox(cloud, bbox_pose, depth, width, height);
+        visual_tools_->deleteAllMarkers();
+        
+        // show world CS
+        visual_tools_->publishAxis(Eigen::Affine3d::Identity());
+
+        // show region of interest and bounding box
+        visual_tools_->publishAxis(pc_filter_ptr_->roi_pose_);
+        pc_filter_ptr_->getBoundingBox(pc_filter_ptr_->roi_cloud_, bbox_pose, depth, width, height);
+        visual_tools_->publishCuboid(bbox_pose, depth, width, height, rviz_visual_tools::TRANSLUCENT);
+
+        aligned_cloud_pub_.publish(pc_filter_ptr_->aligned_cloud_);
+        roi_cloud_pub_.publish(pc_filter_ptr_->roi_cloud_);
+
+        count = 0;
       }
+
       pc_filter_ptr_->publishCameraTransform();
       rate.sleep();
 

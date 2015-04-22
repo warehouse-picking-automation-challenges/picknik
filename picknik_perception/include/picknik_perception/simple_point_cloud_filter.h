@@ -40,7 +40,7 @@ class SimplePointCloudFilter
 {
 public:
 
-  SimplePointCloudFilter(bool verbose);
+  SimplePointCloudFilter();
   ~SimplePointCloudFilter();
 
   /* 
@@ -59,34 +59,47 @@ public:
    */
   void processPointCloud(const sensor_msgs::PointCloud2ConstPtr& msg);
 
+  /*
+   * \brief
+   */
+  void printMenu();
+
   /* 
    * \brief 
    */
   void publishCameraTransform();
 
+  /* 
+   * \brief 
+   */
+  void setRegionOfInterest();
+
+  // point clouds
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr aligned_cloud_;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr roi_cloud_;
+
+  // region of interest pose
+  Eigen::Affine3d roi_pose_;
 
 private:
   bool verbose_;
   bool processing_;
   ros::NodeHandle nh_;
-  rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
+
+  // camera pose descriptors
   Eigen::Vector3d camera_translation_, camera_rotation_;
+
   tf::TransformListener tf_listener_;
 
-  ros::Publisher aligned_cloud_pub_;
-  ros::Publisher bin_cloud_pub_;
+  // Region of interest dimensions
+  double roi_depth_, roi_width_, roi_height_;
 
-  double bin_depth_, bin_width_, bin_height_;
-
+  // Variables for assembling the bounding box
   double bbox_depth_, bbox_width_, bbox_height_;
   bool get_bbox_;
-  std::size_t bbox_frames_;
   Eigen::Matrix3d bbox_rotation_;
   Eigen::Vector3d bbox_translation_;
   Eigen::Affine3d bbox_pose_;
-
-  Eigen::Affine3d bin_pose_, camera_pose_;
-
 }; // class
 
 

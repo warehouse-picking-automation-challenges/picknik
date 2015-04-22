@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(picknik_perception)
 
+set(CMAKE_CXX_FLAGS "-W -Wall")
+
 find_package(catkin REQUIRED COMPONENTS
   moveit_visual_tools
   cmake_modules
@@ -15,7 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen REQUIRED)
 find_package(Boost REQUIRED)
-find_package(PCL 1.8 REQUIRED)
+find_package(PCL 1.7 REQUIRED)
 
 catkin_package(
   CATKIN_DEPENDS
