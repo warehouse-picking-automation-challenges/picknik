@@ -12,12 +12,6 @@ SimplePointCloudFilter::SimplePointCloudFilter()
 {
   ROS_DEBUG_STREAM_NAMED("PC_filter.constructor","setting up simple point cloud filter");
 
-  // initialize bounding box variables
-  get_bbox_ = false;
-  bbox_rotation_ = Eigen::Matrix3d::Zero();
-  bbox_translation_ = Eigen::Vector3d::Zero();
-  bbox_pose_ = Eigen::Affine3d::Identity();
-  
   // set regoin of interest
   roi_depth_ = 1.0;
   roi_width_ = 1.0;
@@ -29,8 +23,6 @@ SimplePointCloudFilter::SimplePointCloudFilter()
   //-1.202   -0.23   1.28    0      0.03    0
   camera_translation_ = Eigen::Vector3d(-1.202, -0.23, 1.28);
   camera_rotation_ = Eigen::Vector3d(0, 0.03, 0);
-
-  printMenu();
 }
 
 SimplePointCloudFilter::~SimplePointCloudFilter()
@@ -235,22 +227,6 @@ void SimplePointCloudFilter::processPointCloud(const sensor_msgs::PointCloud2Con
     ROS_WARN_STREAM_NAMED("PC_filter.process","0 points left after filtering");
   }
 
-}
-
-void SimplePointCloudFilter::printMenu()
-{
-  // Print menu for manual alignment of point cloud
-  std::cout << "Manual alignment of camera to world CS:" << std::endl;
-  std::cout << "=======================================" << std::endl;
-  std::cout << "\nChoose Mode:" << std::endl;
-  std::cout << "s\tStart bounding box tracking" << std::endl;
-  std::cout << "b\tDisplay bounding box" << std::endl;
-  std::cout << "x\tAdjust X translation" << std::endl;
-  std::cout << "y\tAdjust Y translation" << std::endl;
-  std::cout << "z\tAdjust Z translation" << std::endl;    
-  std::cout << "r\tAdjust Roll (rotation about X)" << std::endl;
-  std::cout << "p\tAdjust Pitch (rotation about Y)" << std::endl;
-  std::cout << "w\tAdjust Yaw (rotation about Z)" << std::endl;
 }
 
 void SimplePointCloudFilter::publishCameraTransform()

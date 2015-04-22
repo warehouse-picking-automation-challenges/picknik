@@ -3,13 +3,13 @@
   Desc  : A simple filter for a static depth camera
 */
 
-#include <iostream>
-#include <fstream>
+//#include <iostream>
+//#include <fstream>
 #include <string>
 
 #include <ros/ros.h>
-#include <ros/package.h>
-#include <rviz_visual_tools/rviz_visual_tools.h>
+//#include <ros/package.h>
+//#include <rviz_visual_tools/rviz_visual_tools.h>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -18,7 +18,7 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 
-#include <keyboard/Key.h>
+//#include <keyboard/Key.h>
 #include <sensor_msgs/PointCloud2.h>
 
 #include <pcl_ros/point_cloud.h>
@@ -29,9 +29,6 @@
 #include <pcl/filters/voxel_grid.h>
 
 #include <boost/shared_ptr.hpp>
-
-
-
 
 namespace picknik_perception
 {
@@ -58,11 +55,6 @@ public:
    * \brief 
    */
   void processPointCloud(const sensor_msgs::PointCloud2ConstPtr& msg);
-
-  /*
-   * \brief
-   */
-  void printMenu();
 
   /* 
    * \brief 
@@ -94,12 +86,6 @@ private:
   // Region of interest dimensions
   double roi_depth_, roi_width_, roi_height_;
 
-  // Variables for assembling the bounding box
-  double bbox_depth_, bbox_width_, bbox_height_;
-  bool get_bbox_;
-  Eigen::Matrix3d bbox_rotation_;
-  Eigen::Vector3d bbox_translation_;
-  Eigen::Affine3d bbox_pose_;
 }; // class
 
 
