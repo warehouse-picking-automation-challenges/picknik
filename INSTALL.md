@@ -36,9 +36,11 @@ Also, to reduce debug output, add to your bashrc:
 
 ## Install Perception Pipeline
 
-Tested in MacOSX 10.09, 10.10, Ubuntu 14.04, Cuda 6.0, Cuda 6.5, Cuda 7.0
+* Tested in MacOSX 10.09, 10.10, Ubuntu 14.04, Cuda 6.0, Cuda 6.5, Cuda 7.0
 
 If use CUDA 6.0, 6.5, please use gcc-46 as the cuda host compiler.
+
+Recommended: [Cuda 7](https://developer.nvidia.com/cuda-downloads)
 
 ### Install CUDA and NVIDIA Driver
 

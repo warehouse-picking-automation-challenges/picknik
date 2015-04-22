@@ -214,10 +214,11 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to, std::siz
     if (!ros::ok())
       return false;
 
-    std::cout << std::endl;
+    std::cout << std::endl << MOVEIT_CONSOLE_COLOR_BROWN;
     std::cout << "=======================================================" << std::endl;
     ROS_INFO_STREAM_NAMED("apc_manager","Starting order " << i);
-    std::cout << "=======================================================" << std::endl;
+    std::cout << "=======================================================";
+    std::cout << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
 
     // Check every product if system is still ready
     if (!checkSystemReady())
@@ -1887,27 +1888,74 @@ bool APCManager::statusPublisher(const std::string &status)
   return true;
 }
 
+// Mode 23
 bool APCManager::unitTests()
 {
-  // Crayola test
-  const std::string test_name = "SuperSimple";
-  const std::string json_file = "crayola.json";
-  Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
-  product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.08);
-  product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
-    * Eigen::AngleAxisd(-1.57, Eigen::Vector3d::UnitY());
-
-  // Start test
-  if (!startUnitTest(json_file, test_name, product_pose))
+  // Test
+  if (true)
   {
-    return false;
+    const std::string test_name = "SuperSimple";
+    const std::string json_file = "crayola.json";
+    Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
+    product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.08);
+    product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
+      * Eigen::AngleAxisd(-1.57, Eigen::Vector3d::UnitY());
+    if (!startUnitTest(json_file, test_name, product_pose))
+      return false;
   }
+
+  // Test
+  if (true)
+  {
+    const std::string test_name = "SimpleRotated";
+    const std::string json_file = "crayola.json";
+    Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
+    product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.08);
+    product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
+      * Eigen::AngleAxisd(-1.87, Eigen::Vector3d::UnitY());  // slighlty rotated sideways
+    if (!startUnitTest(json_file, test_name, product_pose))
+      return false;
+  }
+
+  // Test
+  if (true)
+  {
+    const std::string test_name = "SimpleVeryRotated";
+    const std::string json_file = "crayola.json";
+    Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
+    product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.08);
+    product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
+      * Eigen::AngleAxisd(-2.0, Eigen::Vector3d::UnitY());  // rotated sideways
+    if (!startUnitTest(json_file, test_name, product_pose))
+      return false;
+  }
+
+  // Test
+  if (true)
+  {
+    const std::string test_name = "SimpleFarBack";
+    const std::string json_file = "crayola.json";
+    Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
+    product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.14);
+    product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
+      * Eigen::AngleAxisd(-1.57, Eigen::Vector3d::UnitY());  // rotated sideways
+    if (!startUnitTest(json_file, test_name, product_pose))
+      return false;
+  }
+
   return true;
 }
 
-// Mode 23
 bool APCManager::startUnitTest(const std::string &json_file, const std::string &test_name, const Eigen::Affine3d &product_pose)
 {
+  std::cout << std::endl << MOVEIT_CONSOLE_COLOR_BROWN;
+  std::cout << "------------------------------------------------------------------------------" << std::endl;
+  std::cout << "------------------------------------------------------------------------------" << std::endl;
+  std::cout << "STARTING UNIT TEST " << test_name << std::endl;
+  std::cout << "------------------------------------------------------------------------------" << std::endl;
+  std::cout << "------------------------------------------------------------------------------" << std::endl;
+  std::cout << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
+
   // Load json file
   std::string json_file_path = package_path_ + "/orders/" + json_file;
   loadShelfContents(json_file_path);

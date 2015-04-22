@@ -15,6 +15,12 @@ The installation instructions were to long, and have been moved to INSTALL.md (n
 
 ![Pipeline](https://bytebucket.org/cuamazonchallenge/picknik/raw/2d87e203d681d303616f7a8abbdff190b20d33c6/picknik_main/docs/apc_picknik_pipeline.png?token=e5bb167125b3e41ad534c539614c37974db3cc31)
 
+## Hardware
+
+ - [Kinova Jacob](kinovarobotics.com/products/jaco-robotics/)
+ - [Zaber](zaber.com/products/product_detail.php?detail=A-LST1000D)
+ - Asus Xtion Pro
+ 
 ## Run
 
 ### Generate Mock Amazon order
@@ -80,6 +86,10 @@ Testing
 ## Start Primesense Camera
 
     roslaunch openni_launch openni.launch depth_registration:=true
+
+
+    rosrun picknik_perception simple_point_cloud_filter.launch
+
 
 ## Start Robots
 

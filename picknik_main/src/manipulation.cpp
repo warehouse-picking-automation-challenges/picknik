@@ -199,7 +199,7 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
 
     if (!planApproachLiftRetreat(*grasp_it, verbose_cartesian_paths))
     {
-      ROS_WARN_STREAM_NAMED("manipulation","Grasp candidate  was unable to find valid cartesian waypoint path");
+      ROS_INFO_STREAM_NAMED("manipulation","Grasp candidate was unable to find valid cartesian waypoint path");
 
       grasp_it = grasp_candidates.erase(grasp_it); // not valid
     }
@@ -285,7 +285,7 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   moveit_grasps::GraspTrajectories segmented_cartesian_traj;
   if (!computeCartesianWaypointPath(grasp_candidate->grasp_data_->arm_jmg_, start_state, waypoints, segmented_cartesian_traj))
   {
-    ROS_WARN_STREAM_NAMED("manipulation.waypoints","Unable to plan approach lift retreat path");
+    ROS_INFO_STREAM_NAMED("manipulation.waypoints","Unable to plan approach lift retreat path");
     if (verbose_cartesian_paths)
       visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::RED, rvt::SMALL);
     return false;
@@ -401,7 +401,7 @@ bool Manipulation::computeCartesianWaypointPath(const robot_model::JointModelGro
 
   if (!valid_path_found)
   {
-    ROS_WARN_STREAM_NAMED("manipulation.waypoints","UNABLE to find valid waypoint cartesian path after " << MAX_IK_ATTEMPTS
+    ROS_INFO_STREAM_NAMED("manipulation.waypoints","UNABLE to find valid waypoint cartesian path after " << MAX_IK_ATTEMPTS
                           << " attempts");
     return false;
   }
@@ -1222,7 +1222,7 @@ bool Manipulation::executeVerticlePath(const moveit::core::JointModelGroup *arm_
   // Check joint limits
   if (!gantry_joint->satisfiesPositionBounds(new_gantry_positions))
   {
-    ROS_WARN_STREAM_NAMED("manipulation","New gantry position of " << new_gantry_positions[0] << " does not satisfy joint limit bounds. Falling back to IK-based solution");
+    ROS_INFO_STREAM_NAMED("manipulation","New gantry position of " << new_gantry_positions[0] << " does not satisfy joint limit bounds. Falling back to IK-based solution");
 
     return executeVerticlePathWithIK(arm_jmg, desired_lift_distance, up, ignore_collision);
   }

@@ -20,7 +20,7 @@
 
       <!-- red - roll, green pitch, blue yall -->
     <node pkg="tf" type="static_transform_publisher" name="jacob_camera_to_camera" 
-	    args="0.0215 0.017 -0.01 -1.5708 -1.71 0.0 /xtion /xtion_camera 50" />
+	    args="0.0215 0.017 -0.01 -1.5708 -1.71 0 /xtion /xtion_camera 50" />
 	    <!-- args="0.0215 0.017 -0.01 -1.5708 -1.5708 0 /xtion /xtion_camera 50" /> -->
 
   </group>
