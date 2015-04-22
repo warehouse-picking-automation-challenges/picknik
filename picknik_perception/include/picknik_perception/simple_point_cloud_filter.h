@@ -59,11 +59,6 @@ public:
   /* 
    * \brief 
    */
-  void publishCameraTransform();
-
-  /* 
-   * \brief 
-   */
   void setRegionOfInterest(Eigen::Affine3d pose, double depth, double width, double height);
 
   // point clouds
@@ -84,9 +79,6 @@ private:
   bool verbose_;
   bool processing_;
   ros::NodeHandle nh_;
-
-  // camera pose descriptors
-  Eigen::Vector3d camera_translation_, camera_rotation_;
 
   tf::TransformListener tf_listener_;
 

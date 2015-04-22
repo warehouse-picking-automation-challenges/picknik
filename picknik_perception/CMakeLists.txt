@@ -76,6 +76,7 @@ add_library(manual_tf_alignment
 )
 target_link_libraries(manual_tf_alignment
   ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 add_executable(simple_point_cloud_filter_test
@@ -83,6 +84,7 @@ add_executable(simple_point_cloud_filter_test
 )
 target_link_libraries(simple_point_cloud_filter_test
   simple_point_cloud_filter
+  manual_tf_alignment
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
   ${Boost_LIBRARIES}

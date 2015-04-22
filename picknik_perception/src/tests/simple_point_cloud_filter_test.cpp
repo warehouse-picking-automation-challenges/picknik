@@ -3,6 +3,7 @@
   Desc  : Test for SimplePointCloudFilter class
 */
 #include <picknik_perception/simple_point_cloud_filter.h>
+#include <picknik_perception/manual_tf_alignment.h>
 
 #include <rviz_visual_tools/rviz_visual_tools.h>
 
@@ -17,8 +18,10 @@ private:
   rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
 
   SimplePointCloudFilter* pc_filter_ptr_;
-
+  ManualTFAlignment* tf_align_ptr_;
+  
   ros::Subscriber pc_sub_;
+  ros::Subscriber keyboard_sub_;
   ros::Publisher aligned_cloud_pub_;
   ros::Publisher roi_cloud_pub_;
 
@@ -32,6 +35,19 @@ public:
     visual_tools_->deleteAllMarkers();
 
     pc_filter_ptr_ = new SimplePointCloudFilter();
+    tf_align_ptr_ = new ManualTFAlignment();
+
+    // set initial camera transform
+    // TODO: Should be read in from file or set in launch file
+    //-1.202   -0.23   1.28    0      0.03    0
+    tf_align_ptr_->setPose(Eigen::Vector3d(-1.202, -0.23, 1.28), Eigen::Vector3d(0, 0.03, 0));
+    tf_align_ptr_->from_ = "/world";
+    tf_align_ptr_->to_ = "/camera_link";
+
+    // listen to keyboard topic
+    keyboard_sub_ = nh_.subscribe("/keyboard/keydown", 100, 
+                                  &picknik_perception::ManualTFAlignment::keyboardCallback, tf_align_ptr_);
+    tf_align_ptr_->printMenu();
 
     // listen to point cloud topic
     // TODO: camera topic should be set in launch file
@@ -58,7 +74,7 @@ public:
     while ( ros::ok() )
     {
       // publish transform to camera
-      pc_filter_ptr_->publishCameraTransform();
+      tf_align_ptr_->publishTF();
 
       // get bounding box at specified interval
       if (count % bbox_rate == 0)

@@ -21,12 +21,6 @@ SimplePointCloudFilter::SimplePointCloudFilter()
   roi_height_ = 1.0;
   roi_pose_ = Eigen::Affine3d::Identity();
  
-  // set initial camera transform
-  // TODO: Should be read in from file or set in launch file
-  //-1.202   -0.23   1.28    0      0.03    0
-  camera_translation_ = Eigen::Vector3d(-1.202, -0.23, 1.28);
-  camera_rotation_ = Eigen::Vector3d(0, 0.03, 0);
-
   // initialize cloud pointers
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr aligned_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr roi_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -245,25 +239,6 @@ void SimplePointCloudFilter::processPointCloud(const sensor_msgs::PointCloud2Con
     getBoundingBox(roi_cloud_, bbox_pose_, bbox_depth_, bbox_width_, bbox_height_);
 
   get_bbox_ = false;
-}
-
-void SimplePointCloudFilter::publishCameraTransform()
-{
-  static tf::TransformBroadcaster br;
-  tf::Transform transform;
-  tf::Quaternion q;
-
-  // set camera pose translation
-  transform.setOrigin( tf::Vector3( camera_translation_[0],
-                                    camera_translation_[1],
-                                    camera_translation_[2]) );
-
-  // set camera pose rotation
-  q.setRPY(camera_rotation_[0], camera_rotation_[1], camera_rotation_[2]);
-  transform.setRotation(q);
-
-  // publish
-  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "/world" , "/camera_link"));
 }
 
 void SimplePointCloudFilter::setRegionOfInterest(Eigen::Affine3d pose, double depth, double width, double height)
