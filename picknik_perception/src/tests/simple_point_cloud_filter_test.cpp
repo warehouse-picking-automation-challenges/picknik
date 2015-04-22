@@ -36,25 +36,34 @@ public:
     // listen to point cloud topic
     // TODO: camera topic should be set in launch file
     pc_sub_ = nh_.subscribe("/camera/depth_registered/points", 1, 
-                            &picknik_perception::SimplePointCloudFilter::processPointCloud, pc_filter_ptr_);
+                            &picknik_perception::SimplePointCloudFilter::pointCloudCallback, pc_filter_ptr_);
 
     // publish aligned point cloud and bin point cloud
     aligned_cloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("aligned_cloud",1);
     roi_cloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("roi_cloud",1);
 
-    ROS_DEBUG_STREAM_NAMED("PC_filter.test","starting main filter test");
+    // define region of interest
+    Eigen::Affine3d roi_pose = Eigen::Affine3d::Identity();
+    double roi_depth = 0.3;
+    double roi_width = 0.25;
+    double roi_height = 0.2;
+    roi_pose.translation() += Eigen::Vector3d(roi_depth / 2.0 + 0.02, -0.25, 0.85 + roi_height / 2.0);
+    pc_filter_ptr_->setRegionOfInterest(roi_pose, roi_depth, roi_width, roi_height);
 
     ros::Rate rate(40.0);
     int bbox_rate = 10;
-    int count = 0;
+    int count = 1; // don't want a bounding box on first frame.
 
-    double depth, width, height;
-    Eigen::Affine3d bbox_pose;
-
+    ROS_DEBUG_STREAM_NAMED("PC_filter.test","starting main filter test");
     while ( ros::ok() )
     {
+      // publish transform to camera
+      pc_filter_ptr_->publishCameraTransform();
+
+      // get bounding box at specified interval
       if (count % bbox_rate == 0)
       {
+        ROS_DEBUG_STREAM_NAMED("PC_filter.test","getting bbox...");
         visual_tools_->deleteAllMarkers();
         
         // show world CS
@@ -62,16 +71,24 @@ public:
 
         // show region of interest and bounding box
         visual_tools_->publishAxis(pc_filter_ptr_->roi_pose_);
-        pc_filter_ptr_->getBoundingBox(pc_filter_ptr_->roi_cloud_, bbox_pose, depth, width, height);
-        visual_tools_->publishCuboid(bbox_pose, depth, width, height, rviz_visual_tools::TRANSLUCENT);
-
-        aligned_cloud_pub_.publish(pc_filter_ptr_->aligned_cloud_);
-        roi_cloud_pub_.publish(pc_filter_ptr_->roi_cloud_);
+        visual_tools_->publishWireframeCuboid(roi_pose, roi_depth, roi_width, roi_height, rviz_visual_tools::CYAN);
+        pc_filter_ptr_->get_bbox_ = true;
+        
+        visual_tools_->publishWireframeCuboid(pc_filter_ptr_->bbox_pose_, pc_filter_ptr_->bbox_depth_,
+                                              pc_filter_ptr_->bbox_width_, pc_filter_ptr_->bbox_height_,
+                                              rviz_visual_tools::MAGENTA);
 
         count = 0;
       }
+      
+      // publish point clouds for rviz
+      if (pc_filter_ptr_->aligned_cloud_->size() ==0)
+      {
+        continue;
+      }
+      aligned_cloud_pub_.publish(pc_filter_ptr_->aligned_cloud_);
+      roi_cloud_pub_.publish(pc_filter_ptr_->roi_cloud_);
 
-      pc_filter_ptr_->publishCameraTransform();
       rate.sleep();
 
       count++;

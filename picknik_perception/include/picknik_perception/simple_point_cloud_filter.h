@@ -64,7 +64,7 @@ public:
   /* 
    * \brief 
    */
-  void setRegionOfInterest();
+  void setRegionOfInterest(Eigen::Affine3d pose, double depth, double width, double height);
 
   // point clouds
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr aligned_cloud_;
@@ -72,6 +72,13 @@ public:
 
   // region of interest pose
   Eigen::Affine3d roi_pose_;
+
+  // process point cloud to get bounding box of item
+  bool get_bbox_;
+
+  // Bounding box pose and dimensions
+  Eigen::Affine3d bbox_pose_;
+  double bbox_depth_, bbox_width_, bbox_height_;
 
 private:
   bool verbose_;

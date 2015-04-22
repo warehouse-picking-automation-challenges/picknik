@@ -12,6 +12,9 @@ SimplePointCloudFilter::SimplePointCloudFilter()
 {
   ROS_DEBUG_STREAM_NAMED("PC_filter.constructor","setting up simple point cloud filter");
 
+  processing_ = false;
+  get_bbox_ = false;
+
   // set regoin of interest
   roi_depth_ = 1.0;
   roi_width_ = 1.0;
@@ -23,6 +26,13 @@ SimplePointCloudFilter::SimplePointCloudFilter()
   //-1.202   -0.23   1.28    0      0.03    0
   camera_translation_ = Eigen::Vector3d(-1.202, -0.23, 1.28);
   camera_rotation_ = Eigen::Vector3d(0, 0.03, 0);
+
+  // initialize cloud pointers
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr aligned_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr roi_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+  aligned_cloud_ = aligned_cloud;
+  roi_cloud_ = roi_cloud;
+  
 }
 
 SimplePointCloudFilter::~SimplePointCloudFilter()
@@ -151,6 +161,7 @@ bool SimplePointCloudFilter::getBoundingBox(pcl::PointCloud<pcl::PointXYZRGB>::P
 
 void SimplePointCloudFilter::pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
 {
+  ROS_DEBUG_STREAM_NAMED("PC_filter.test","pcCallback");
   if (processing_)
   {
     ROS_ERROR_STREAM_NAMED("PC_filter.pcCallback","skipped point cloud because currently busy");
@@ -164,18 +175,20 @@ void SimplePointCloudFilter::pointCloudCallback(const sensor_msgs::PointCloud2Co
 
 void SimplePointCloudFilter::processPointCloud(const sensor_msgs::PointCloud2ConstPtr& msg)
 {
+  ROS_DEBUG_STREAM_NAMED("PC_filter.test","start process cloud...");
   // turn message into point cloud
   pcl::PointCloud<pcl::PointXYZRGB> cloud;
   pcl::fromROSMsg(*msg, cloud);
 
   // publish aligned point cloud
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr aligned_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-  if (!pcl_ros::transformPointCloud("world", cloud, *aligned_cloud, tf_listener_))
+  // pcl::PointCloud<pcl::PointXYZRGB>::Ptr aligned_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+  if (!pcl_ros::transformPointCloud("world", cloud, *aligned_cloud_, tf_listener_))
   {
     ROS_ERROR_STREAM_NAMED("PC_filter.process","Error converting to desired frame");
   }  
-  aligned_cloud_ = aligned_cloud;
+  // aligned_cloud_ = aligned_cloud;
 
+  ROS_DEBUG_STREAM_NAMED("PC_filter.test","start filtering cloud...");
   /***** get point cloud that lies in region_of_interest *****/
   // (from Dave's baxter_experimental/flex_perception.cpp)
    
@@ -183,7 +196,7 @@ void SimplePointCloudFilter::processPointCloud(const sensor_msgs::PointCloud2Con
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr roi_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 
   // Transform point cloud to bin CS
-  pcl::transformPointCloud(*aligned_cloud, *roi_cloud, roi_pose_.inverse());
+  pcl::transformPointCloud(*aligned_cloud_, *roi_cloud, roi_pose_.inverse());
 
   // Filter based on bin location
   pcl::PassThrough<pcl::PointXYZRGB> pass_x;
@@ -218,15 +231,20 @@ void SimplePointCloudFilter::processPointCloud(const sensor_msgs::PointCloud2Con
   sor.filter(*roi_cloud);
 
   // Transform point cloud back to world CS
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr roi_cloud_final(new pcl::PointCloud<pcl::PointXYZRGB>);
-  pcl::transformPointCloud(*roi_cloud, *roi_cloud_final, roi_pose_);
-  roi_cloud_ = roi_cloud_final;
+  // pcl::PointCloud<pcl::PointXYZRGB>::Ptr roi_cloud_final(new pcl::PointCloud<pcl::PointXYZRGB>);
+  pcl::transformPointCloud(*roi_cloud, *roi_cloud_, roi_pose_);
+  // roi_cloud_ = roi_cloud_final;
 
-  if (roi_cloud_final->points.size() == 0)
+  if (roi_cloud_->points.size() == 0)
   {
     ROS_WARN_STREAM_NAMED("PC_filter.process","0 points left after filtering");
+    return;
   }
 
+  if (get_bbox_)
+    getBoundingBox(roi_cloud_, bbox_pose_, bbox_depth_, bbox_width_, bbox_height_);
+
+  get_bbox_ = false;
 }
 
 void SimplePointCloudFilter::publishCameraTransform()
@@ -246,6 +264,14 @@ void SimplePointCloudFilter::publishCameraTransform()
 
   // publish
   br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "/world" , "/camera_link"));
+}
+
+void SimplePointCloudFilter::setRegionOfInterest(Eigen::Affine3d pose, double depth, double width, double height)
+{
+  roi_pose_ = pose;
+  roi_depth_ = depth;
+  roi_width_ = width;
+  roi_height_ = height;
 }
 
 } // namespace
