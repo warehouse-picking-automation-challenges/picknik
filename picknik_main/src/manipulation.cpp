@@ -1106,7 +1106,7 @@ bool Manipulation::executeSavedCartesianPath(moveit_grasps::GraspCandidatePtr ch
 {
   // Get the already computed cartesian path
   const moveit_grasps::GraspTrajectories &segmented_cartesian_traj = chosen_grasp->segmented_cartesian_traj_;
-
+  
   // Error check
   if (segmented_cartesian_traj.size() != 3)
   {
@@ -1124,9 +1124,14 @@ bool Manipulation::executeSavedCartesianPath(moveit_grasps::GraspCandidatePtr ch
     return false;
   }
 
+  // Add the current state to the trajectory
+  std::vector<moveit::core::RobotStatePtr> trajectory = segmented_cartesian_traj[segment_id];
+  trajectory.insert(trajectory.begin(), getCurrentState());
+
+
   // Get trajectory message
   moveit_msgs::RobotTrajectory trajectory_msg;
-  if (!convertRobotStatesToTrajectory(segmented_cartesian_traj[segment_id], trajectory_msg, chosen_grasp->grasp_data_->arm_jmg_,
+  if (!convertRobotStatesToTrajectory(trajectory, trajectory_msg, chosen_grasp->grasp_data_->arm_jmg_,
                                       config_->approach_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");

@@ -11,6 +11,7 @@ Panels:
         - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
+        - /TF1
         - /TF1/Frames1
         - /PointCloud21
         - /DepthCloud1/Auto Size1
@@ -572,6 +573,7 @@ Visualization Manager:
       Name: Amazon Markers
       Namespaces:
         Axis: true
+        Collision: true
         Text: true
         goal_bin: true
       Queue Size: 100
@@ -597,7 +599,8 @@ Visualization Manager:
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
-        {}
+        Path: true
+        Sphere: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -903,7 +906,7 @@ Visualization Manager:
         camera_rgb_frame:
           Value: false
         camera_rgb_optical_frame:
-          Value: true
+          Value: false
         frame:
           Value: false
         gantry:
@@ -943,7 +946,7 @@ Visualization Manager:
         world:
           Value: false
         xtion:
-          Value: false
+          Value: true
         xtion_sensor_disabled:
           Value: false
       Marker Scale: 0.5
@@ -969,12 +972,7 @@ Visualization Manager:
                                     camera_mount:
                                       xtion:
                                         camera_link:
-                                          camera_depth_frame:
-                                            camera_depth_optical_frame:
-                                              {}
-                                          camera_rgb_frame:
-                                            camera_rgb_optical_frame:
-                                              {}
+                                          {}
                                         xtion_sensor_disabled:
                                           {}
                                     jaco2_end_effector:
@@ -1200,22 +1198,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.9059
+      Distance: 6.60196
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.48641
-        Y: -0.183603
-        Z: -1.01328e-06
+        X: 1.24537
+        Y: 2.41413
+        Z: -4.76837e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.270205
+      Pitch: 0.240399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.36219
+      Yaw: 4.5354
     Saved: ~
 Window Geometry:
   Displays:
@@ -1227,9 +1225,9 @@ Window Geometry:
   Hide Right Dock: false
   PickNik:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000001db000003e6fc020000000dfb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c006100790073010000000000000377000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000145000000cb000000b000fffffffb0000000c00430061006d0065007200610000000369000000160000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000230000001b60000000000000000fb0000000c00540065006c0065006f00700000000331000000b50000000000000000fb0000000e005000690063006b004e0069006b010000037d000000690000004300fffffffb0000000c00430061006d00650072006100000003d0000000160000000000000000fb0000000c00430061006d00650072006101000002d6000001100000000000000000000002c8000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000001db000003e6fc020000000dfb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c006100790073010000000000000377000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000145000000cb000000b000fffffffb0000000c00430061006d0065007200610000000369000000160000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000230000001b60000000000000000fb0000000c00540065006c0065006f00700000000331000000b50000000000000000fb0000000e005000690063006b004e0069006b010000037d000000690000004300fffffffb0000000c00430061006d00650072006100000003d0000000160000000000000000fb0000000c00430061006d00650072006101000002d6000001100000000000000000000002c5000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
   Views:
     collapsed: false
-  Width: 1193
-  X: 1900
+  Width: 1190
+  X: 1910
   Y: 14

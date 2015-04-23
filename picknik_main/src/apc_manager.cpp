@@ -216,7 +216,7 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to, std::siz
 
     std::cout << std::endl << MOVEIT_CONSOLE_COLOR_BROWN;
     std::cout << "=======================================================" << std::endl;
-    ROS_INFO_STREAM_NAMED("apc_manager","Starting order " << i);
+    std::cout << "Starting order " << i << std::endl;
     std::cout << "=======================================================";
     std::cout << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
 
