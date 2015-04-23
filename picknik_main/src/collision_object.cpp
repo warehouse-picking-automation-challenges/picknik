@@ -365,9 +365,9 @@ bool MeshObject::calculateBoundingBox(bool verbose)
   }
 
   // Get bounding box
-  Eigen::Affine3d cuboid_pose; // TODO what to do with this?
+  Eigen::Affine3d bounding_to_mesh;
   double depth, width, height;
-  if (!moveit_grasps::GraspGenerator::getBoundingBoxFromMesh(getCollisionMesh(), cuboid_pose, depth, width, height))
+  if (!moveit_grasps::GraspGenerator::getBoundingBoxFromMesh(getCollisionMesh(), bounding_to_mesh, depth, width, height))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to get bounding box");
     return false;
@@ -375,6 +375,10 @@ bool MeshObject::calculateBoundingBox(bool verbose)
   setDepth(depth);
   setWidth(width);
   setHeight(height);
+
+  Eigen::Affine3d mesh_to_bin = getCentroid(); // perception results (centroid of mesh to bin)
+  mesh_to_bin = bounding_to_mesh * mesh_to_bin;
+  setCentroid(mesh_to_bin);
 
   if (verbose)
   {

@@ -189,7 +189,7 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
   grasp_filter_->removeInvalidAndFilter(grasp_candidates);
 
   // For each remaining grasp, calculate entire approach, lift, and retreat path. Remove those that have no valid path
-  bool verbose_cartesian_paths = false;
+  bool verbose_cartesian_paths = true;
   std::size_t grasp_candidates_before_cartesian_path = grasp_candidates.size();
   for(std::vector<moveit_grasps::GraspCandidatePtr>::iterator grasp_it = grasp_candidates.begin();
       grasp_it != grasp_candidates.end(); )
@@ -250,28 +250,40 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   Eigen::Affine3d grasp_pose = visuals_->grasp_markers_->convertPose(grasp_pose_msg.pose);
   Eigen::Affine3d lifted_grasp_pose = grasp_pose;
   lifted_grasp_pose.translation().z() += grasp_candidate->grasp_data_->lift_distance_desired_;
-  Eigen::Affine3d lifted_pregrasp_pose = pregrasp_pose;
-  lifted_pregrasp_pose.translation().z() += grasp_candidate->grasp_data_->lift_distance_desired_;
+
+  // METHOD 1 - retreat in same direction as approach
+  // Eigen::Affine3d lifted_pregrasp_pose = pregrasp_pose;
+  // lifted_pregrasp_pose.translation().z() += grasp_candidate->grasp_data_->lift_distance_desired_;
+
+  // METHOD 2
+  Eigen::Affine3d retreat_pose = lifted_grasp_pose;
+  retreat_pose.translation().x() -= grasp_candidate->grasp_data_->retreat_distance_desired_;
 
   EigenSTL::vector_Affine3d waypoints;
   //waypoints.push_back(pregrasp_pose); // this is included in the robot_state being used to calculate cartesian path
   waypoints.push_back(grasp_pose);
   waypoints.push_back(lifted_grasp_pose);
-  waypoints.push_back(lifted_pregrasp_pose);
+  //waypoints.push_back(lifted_pregrasp_pose);
+  waypoints.push_back(retreat_pose);
 
   // Visualize waypoints
-  bool visualize_path_details = false;
+  bool visualize_path_details = true;
   if (visualize_path_details)
   {
     bool static_id = false;
-    //visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
-    visuals_->grasp_markers_->publishText(pregrasp_pose, "pregrasp", rvt::WHITE, rvt::SMALL, static_id);
-    //visuals_->grasp_markers_->publishZArrow(grasp_pose, rvt::YELLOW, rvt::SMALL);
-    visuals_->grasp_markers_->publishText(grasp_pose, "grasp", rvt::WHITE, rvt::SMALL, static_id);
+    // visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
+    // visuals_->grasp_markers_->publishText(pregrasp_pose, "pregrasp", rvt::WHITE, rvt::SMALL, static_id);
+
+    // visuals_->grasp_markers_->publishZArrow(grasp_pose, rvt::YELLOW, rvt::SMALL);
+    // visuals_->grasp_markers_->publishText(grasp_pose, "grasp", rvt::WHITE, rvt::SMALL, static_id);
+
     //visuals_->grasp_markers_->publishZArrow(lifted_grasp_pose, rvt::ORANGE, rvt::SMALL);
+    visuals_->grasp_markers_->publishAxis(lifted_grasp_pose);
     visuals_->grasp_markers_->publishText(lifted_grasp_pose, "lifted", rvt::WHITE, rvt::SMALL, static_id);
-    //visuals_->grasp_markers_->publishZArrow(lifted_pregrasp_pose, rvt::RED, rvt::SMALL);
-    visuals_->grasp_markers_->publishText(lifted_pregrasp_pose, "retreat", rvt::WHITE, rvt::SMALL, static_id);
+
+    //visuals_->grasp_markers_->publishZArrow(retreat_pose, rvt::RED, rvt::SMALL);
+    visuals_->grasp_markers_->publishAxis(retreat_pose);
+    visuals_->grasp_markers_->publishText(retreat_pose, "retreat", rvt::WHITE, rvt::SMALL, static_id);
   }
 
   // Starting state

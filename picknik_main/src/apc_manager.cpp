@@ -1533,11 +1533,11 @@ bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
 
   // Move camera to the bin
   ROS_INFO_STREAM_NAMED("apc_manager","Moving camera to bin '" << bin->getName() << "'");
-  if (!manipulation_->moveCameraToBin(bin))
-  {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
-    return false;
-  }
+  // if (!manipulation_->moveCameraToBin(bin))
+  // {
+  //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
+  //   return false;
+  // }
 
   // Communicate with perception pipeline
   std::cout << std::endl;
@@ -1894,10 +1894,12 @@ bool APCManager::statusPublisher(const std::string &status)
 // Mode 23
 bool APCManager::unitTests()
 {
+  std::string test_name;
+
   // Test
-  if (true)
+  test_name = "SuperSimple";
+  if (config_->isEnabled("unit_test/" + test_name))
   {
-    const std::string test_name = "SuperSimple";
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
     product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.08);
@@ -1908,9 +1910,9 @@ bool APCManager::unitTests()
   }
 
   // Test
-  if (true)
+  test_name = "SimpleRotated";
+  if (config_->isEnabled("unit_test/" + test_name))
   {
-    const std::string test_name = "SimpleRotated";
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
     product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.08);
@@ -1921,9 +1923,9 @@ bool APCManager::unitTests()
   }
 
   // Test
-  if (true)
+  test_name = "SimpleVeryRotated";
+  if (config_->isEnabled("unit_test/" + test_name))
   {
-    const std::string test_name = "SimpleVeryRotated";
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
     product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.08);
@@ -1934,9 +1936,9 @@ bool APCManager::unitTests()
   }
 
   // Test
-  if (true)
-  {
-    const std::string test_name = "SimpleFarBack";
+  test_name = "SimpleFarBack";
+  if (config_->isEnabled("unit_test/" + test_name))
+  {  
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
     product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.14);

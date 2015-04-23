@@ -85,7 +85,7 @@ Testing
 
 ## Start Primesense Camera
 
-    roslaunch openni_launch openni.launch depth_registration:=true
+    roslaunch openni_launch openni.launch depth_registration:=true tf_prefix:=0
 
 
     rosrun picknik_perception simple_point_cloud_filter.launch
@@ -186,7 +186,7 @@ Not in use at the moment...
 
 Button Mapings
 
-    1 - Next (not implemented in ros_control yet)
+    1 - Enable actuators EXPERIMENTAL aka it doesn't work
 	2 - Disable actuators (0 PID gains)
 	3 - Disable control (turn off PC controller)
 

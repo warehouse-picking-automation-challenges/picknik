@@ -29,7 +29,7 @@ public:
     : nh_("~")
   {
     // Load 
-    visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base"));
+    visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base", "/picknik_main/markers"));
     visual_tools_->deleteAllMarkers();
 
     pc_filter_ptr_ = new SimplePointCloudFilter();
@@ -50,6 +50,8 @@ public:
     double roi_height = 0.2;
     roi_pose.translation() += Eigen::Vector3d(roi_depth / 2.0 + 0.02, -0.25, 0.85 + roi_height / 2.0);
     pc_filter_ptr_->setRegionOfInterest(roi_pose, roi_depth, roi_width, roi_height);
+
+    //pc_filter_ptr_->setRegionOfInterest(bottom_left, top_right);
 
     ros::Rate rate(40.0);
     int bbox_rate = 10;
