@@ -317,6 +317,7 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
 
     // Save to the product's property
     product->setCentroid(bin_to_object);
+    product->setMeshCentroid(bin_to_object);
 
     // Show new mesh if possible
     const shape_msgs::Mesh& mesh = found_object.bounding_mesh;
@@ -328,15 +329,14 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
       ROS_INFO_STREAM_NAMED("perception_interface","Setting new bounding mesh");
       product->setCollisionMesh(mesh);
     }
+    else
+      ROS_ERROR_STREAM_NAMED("perception_interface","No mesh provided");
 
     // Show in collision and display Rvizs
     product->visualize(world_to_bin);
     product->createCollisionBodies(world_to_bin);
 
-    // TODO remove from here
-    bool verbose = true;
-    product->calculateBoundingBox(verbose, bin->getBinToWorld(shelf_));
-    // Visualize
+    product->calculateBoundingBox(bin->getBinToWorld(shelf_));
     product->visualizeWireframe(bin->getBinToWorld(shelf_));
 
   } // for each found product

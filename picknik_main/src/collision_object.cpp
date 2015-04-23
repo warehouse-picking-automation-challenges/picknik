@@ -220,6 +220,7 @@ const Eigen::Affine3d RectangleObject::getCentroid() const
 MeshObject::MeshObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name)
   : CollisionObject(visuals, color, name)
   , centroid_(Eigen::Affine3d::Identity())
+  , mesh_centroid_(Eigen::Affine3d::Identity())
   , height_(0.0)
   , width_(0.0)
   , depth_(0.0)
@@ -230,6 +231,7 @@ MeshObject::MeshObject(const MeshObject& copy)
   : CollisionObject( copy )
 {
   centroid_= copy.centroid_;
+  mesh_centroid_= copy.mesh_centroid_;
   height_ = copy.height_;
   width_ = copy.width_;
   depth_ = copy.depth_;
@@ -249,7 +251,7 @@ bool MeshObject::visualize(const Eigen::Affine3d& trans) const
   visuals_->visual_tools_display_->publishAxis(transform(centroid_, trans), 0.1/2, 0.01/2);
 
   // Show full resolution mesh - scale = 1, id = 1, namespace = collision object name
-  return visuals_->visual_tools_display_->publishMesh(transform(centroid_, trans), high_res_mesh_path_, rvt::CLEAR, 1,
+  return visuals_->visual_tools_display_->publishMesh(transform(mesh_centroid_, trans), high_res_mesh_path_, rvt::CLEAR, 1,
                                                       collision_object_name_, 1);
 }
 
@@ -307,7 +309,7 @@ bool MeshObject::createCollisionBodies(const Eigen::Affine3d &trans)
     if (!loadCollisionBodies())
       return false;
   }
-  return visuals_->visual_tools_->publishCollisionMesh(transform(centroid_, trans), collision_object_name_, mesh_msg_, color_);
+  return visuals_->visual_tools_->publishCollisionMesh(transform(mesh_centroid_, trans), collision_object_name_, mesh_msg_, color_);
 }
 
 double MeshObject::getHeight() const
@@ -350,8 +352,21 @@ void MeshObject::setCentroid(const Eigen::Affine3d& centroid)
   centroid_ = centroid;
 }
 
-bool MeshObject::calculateBoundingBox(bool verbose, const Eigen::Affine3d &bin_to_world)
+const Eigen::Affine3d& MeshObject::getMeshCentroid() const
 {
+  return mesh_centroid_;
+}
+
+void MeshObject::setMeshCentroid(const Eigen::Affine3d& centroid)
+{
+  mesh_centroid_ = centroid;
+}
+
+bool MeshObject::calculateBoundingBox(const Eigen::Affine3d &bin_to_world)
+{
+  bool verbose = visuals_->isEnabled("verbose_bounding_box");
+
+  // Debug
   if (verbose)
   {
     std::cout << std::endl;
@@ -377,7 +392,7 @@ bool MeshObject::calculateBoundingBox(bool verbose, const Eigen::Affine3d &bin_t
   setWidth(width);
   setHeight(height);
 
-  Eigen::Affine3d mesh_to_bin = getCentroid(); // perception results (centroid of mesh to bin)
+  const Eigen::Affine3d &mesh_to_bin = getMeshCentroid(); // perception results (centroid of mesh to bin)
 
   // Debug
   if (verbose)
@@ -389,13 +404,14 @@ bool MeshObject::calculateBoundingBox(bool verbose, const Eigen::Affine3d &bin_t
     printTransform(mesh_to_bin);
 
     // View
-    Eigen::Affine3d bounding_to_world = bounding_to_mesh * mesh_to_bin * bin_to_world;
+    const Eigen::Affine3d bounding_to_world = bounding_to_mesh * mesh_to_bin * bin_to_world;
     visuals_->visual_tools_->publishAxisLabeled(bounding_to_world, "bounding_to_world");
   }
 
-  mesh_to_bin = mesh_to_bin * bounding_to_mesh;
-  setCentroid(mesh_to_bin);
+  const Eigen::Affine3d bounding_to_bin = mesh_to_bin * bounding_to_mesh;
+  setCentroid(bounding_to_bin);
 
+  // Debug
   if (verbose)
   {
     std::cout << std::endl;

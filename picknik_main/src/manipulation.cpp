@@ -99,7 +99,7 @@ bool Manipulation::updateBoundingMesh(WorkOrder& work_order)
   ProductObjectPtr& product = work_order.product_;
 
   // Calculate dimensions
-  product->calculateBoundingBox(config_->isEnabled("verbose_bounding_box"), bin->getBinToWorld(shelf_));
+  product->calculateBoundingBox(bin->getBinToWorld(shelf_));
 
   // Visualize
   product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()));
@@ -175,7 +175,7 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
 
   // Filter grasps based on IK
   bool filter_pregrasps = true;
-  bool verbose_if_failed = config_->isEnabled("show_grasp_filter_collision_if_failed");
+  bool verbose_if_failed = visuals_->isEnabled("show_grasp_filter_collision_if_failed");
   bool grasp_verbose = false;
   if (!grasp_filter_->filterGrasps(grasp_candidates, planning_scene_monitor_, arm_jmg, seed_state,
                                    filter_pregrasps, grasp_verbose, verbose_if_failed))
@@ -222,7 +222,7 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
   }
 
   // Results
-  if (config_->isEnabled("verbose_cartesian_planning"))
+  if (visuals_->isEnabled("verbose_cartesian_planning"))
   {
     std::cout << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
@@ -860,7 +860,7 @@ bool Manipulation::plan(const moveit::core::RobotStatePtr& start, const moveit::
       = boost::dynamic_pointer_cast<ompl::tools::ExperienceSetup>(mbpc->getOMPLSimpleSetup());
 
     // Display logs
-    if (config_->isEnabled("verbose_experience_database_stats"))
+    if (visuals_->isEnabled("verbose_experience_database_stats"))
       experience_setup->printLogs();
 
     // Logging
@@ -1642,7 +1642,7 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
 bool Manipulation::getGraspingSeedState(BinObjectPtr bin, moveit::core::RobotStatePtr& seed_state,
                                         const robot_model::JointModelGroup* arm_jmg)
 {
-  bool visualize_grasping_seed_state = config_->isEnabled("show_grasping_seed_state");
+  bool visualize_grasping_seed_state = visuals_->isEnabled("show_grasping_seed_state");
 
   // Create pose to find IK solver
   Eigen::Affine3d ee_pose = transform(bin->getCentroid(), shelf_->getBottomRight()); // convert to world coordinates

@@ -109,6 +109,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
 
         // Set pose of product
         product->setCentroid(pose);
+        product->setMeshCentroid(pose);
 
         // Visualize and show in collision shelf
         world_to_bin_transform = transform(bin->getBottomRight(), shelf->getBottomRight());
@@ -123,6 +124,8 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
           {
             pose.translation().z() -= LOWER_SEARCH_DISCRETIZATION;
             product->setCentroid(pose);
+            product->setMeshCentroid(pose);
+
             if (verbose_)
               product->visualize(world_to_bin_transform);
             

@@ -99,9 +99,6 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool in_simu
   rvt::getStringParameter(parent_name, nh_, "left_arm_name", left_arm_name_);
   rvt::getStringParameter(parent_name, nh_, "both_arms_name", both_arms_name_);
 
-  // Load verbose/visualization settings
-  loadVerboseLevels(parent_name);
-
   // Decide on dual arm mode we are in
   int temp_value;
   rvt::getIntParameter(parent_name, nh_, "dual_arm", temp_value);
@@ -127,50 +124,5 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool in_simu
   return true;
 }
 
-bool ManipulationData::loadVerboseLevels(const std::string& parent_name)
-{
-  std::vector<std::string> setting_names;
-
-  // Populate what settings we want
-  setting_names.push_back("show_goal_bin_markers");
-  setting_names.push_back("verbose_bounding_box");
-  setting_names.push_back("verbose_experience_database_stats");
-  setting_names.push_back("verbose_cartesian_planning");
-  setting_names.push_back("show_grasping_seed_state");
-  setting_names.push_back("show_grasp_filter_collision_if_failed");
-  setting_names.push_back("show_simulated_paths_moving");
-  setting_names.push_back("generic_bool");
-  setting_names.push_back("unit_test/SuperSimple");
-  setting_names.push_back("unit_test/SimpleRotated");
-  setting_names.push_back("unit_test/SimpleVeryRotated");
-  setting_names.push_back("unit_test/SimpleFarBack");
-  //setting_names.push_back("");
-  //setting_names.push_back("");
-  //setting_names.push_back("");
-  //setting_names.push_back("");
-  //setting_names.push_back("");
-  //setting_names.push_back("");
-  //setting_names.push_back("");
-  //setting_names.push_back("");
-
-  // Load settings from rosparam
-  for (std::size_t i = 0; i < setting_names.size(); ++i)
-  {
-    rvt::getBoolParameter(parent_name, nh_, "apc_manager/" + setting_names[i], enabled_[setting_names[i]]);    
-  }
-  return true;
-}
-
-bool ManipulationData::isEnabled(const std::string& setting_name)
-{
-  std::map<std::string,bool>::iterator it = enabled_.find(setting_name);
-  if(it != enabled_.end())
-  {
-    // Element found;
-    return it->second;
-  }
-  ROS_ERROR_STREAM_NAMED("manipulation_data","Enabled setting key " << setting_name << " does not exist in the available configuration");
-  return false;
-}
 
 } // end namespace

@@ -16,10 +16,14 @@
 #include <picknik_main/visuals.h>
 #include <picknik_main/shelf.h>
 
+// Parameter loading
+#include <rviz_visual_tools/ros_param_utilities.h>
+
 namespace picknik_main
 {
 
 Visuals::Visuals(robot_model::RobotModelPtr robot_model, planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor)
+  : nh_("~")
 {
   // ------------------------------------------------------------------------------------------------------
   // Load the Robot Viz Tools for publishing to Rviz
@@ -60,6 +64,10 @@ Visuals::Visuals(robot_model::RobotModelPtr robot_model, planning_scene_monitor:
   goal_state_->deleteAllMarkers(); // clear all old markers
   goal_state_->hideRobot(); // show that things have been reset
   trajectory_lines_ = goal_state_; // same object just renamed
+
+  // Load verbose/visualization settings
+  const std::string parent_name = "visuals"; // for namespacing logging messages
+  loadVerboseLevels(parent_name);
 }
 
 bool Visuals::visualizeDisplayShelf(ShelfObjectPtr shelf)
@@ -80,6 +88,52 @@ bool Visuals::setSharedRobotState(moveit::core::RobotStatePtr current_state)
   start_state_->getSharedRobotState() = current_state; 
   goal_state_->getSharedRobotState() = current_state; 
   return true;
+}
+
+bool Visuals::loadVerboseLevels(const std::string& parent_name)
+{
+  std::vector<std::string> setting_names;
+
+  // Populate what settings we want
+  setting_names.push_back("show_goal_bin_markers");
+  setting_names.push_back("verbose_bounding_box");
+  setting_names.push_back("verbose_experience_database_stats");
+  setting_names.push_back("verbose_cartesian_planning");
+  setting_names.push_back("show_grasping_seed_state");
+  setting_names.push_back("show_grasp_filter_collision_if_failed");
+  setting_names.push_back("show_simulated_paths_moving");
+  setting_names.push_back("generic_bool");
+  setting_names.push_back("unit_test/SuperSimple");
+  setting_names.push_back("unit_test/SimpleRotated");
+  setting_names.push_back("unit_test/SimpleVeryRotated");
+  setting_names.push_back("unit_test/SimpleFarBack");
+  //setting_names.push_back("");
+  //setting_names.push_back("");
+  //setting_names.push_back("");
+  //setting_names.push_back("");
+  //setting_names.push_back("");
+  //setting_names.push_back("");
+  //setting_names.push_back("");
+  //setting_names.push_back("");
+
+  // Load settings from rosparam
+  for (std::size_t i = 0; i < setting_names.size(); ++i)
+  {
+    rvt::getBoolParameter(parent_name, nh_, "apc_manager/" + setting_names[i], enabled_[setting_names[i]]);    
+  }
+  return true;
+}
+
+bool Visuals::isEnabled(const std::string& setting_name)
+{
+  std::map<std::string,bool>::iterator it = enabled_.find(setting_name);
+  if(it != enabled_.end())
+  {
+    // Element found;
+    return it->second;
+  }
+  ROS_ERROR_STREAM_NAMED("manipulation_data","Enabled setting key " << setting_name << " does not exist in the available configuration");
+  return false;
 }
 
 } // end namespace

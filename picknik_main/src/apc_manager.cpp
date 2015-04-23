@@ -1591,6 +1591,7 @@ bool APCManager::perceiveObjectFake(WorkOrder work_order)
     * Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
     * Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitY());
   product->setCentroid(fake_centroid);
+  product->setMeshCentroid(fake_centroid);
 
   // Show in collision and display Rvizs
   product->visualize(world_to_bin);
@@ -1839,20 +1840,20 @@ bool APCManager::generateGoalBinLocations()
 
   // Calculate dimensions of goal bin
   bool verbose = false;
-  shelf_->getGoalBin()->calculateBoundingBox(verbose, Eigen::Affine3d::Identity());
+  shelf_->getGoalBin()->calculateBoundingBox();
 
   // Visualize
-  //shelf_->getGoalBin()->visualizeWireframe(shelf_->getBottomRight());
+  shelf_->getGoalBin()->visualizeWireframe(shelf_->getBottomRight());
 
   // Find starting location of dropoff
   Eigen::Affine3d overhead_goal_bin = shelf_->getBottomRight() * shelf_->getGoalBin()->getCentroid();
   overhead_goal_bin.translation().z() += shelf_->getGoalBin()->getHeight() + config_->goal_bin_clearance_;
 
   // Convert pose that has z arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
-  overhead_goal_bin = overhead_goal_bin * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitY());
-  //visuals_->visual_tools_->publishAxis(overhead_goal_bin);
+  overhead_goal_bin = overhead_goal_bin * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitX());
+  visuals_->visual_tools_->publishAxis(overhead_goal_bin);
 
-  bool visualize_dropoff_locations = config_->isEnabled("show_goal_bin_markers");
+  bool visualize_dropoff_locations = visuals_->isEnabled("show_goal_bin_markers");
 
   // Calculations
   const std::size_t num_cols = 2;
@@ -1906,7 +1907,7 @@ bool APCManager::unitTests()
 
   // Test
   test_name = "SuperSimple";
-  if (config_->isEnabled("unit_test/" + test_name))
+  if (visuals_->isEnabled("unit_test/" + test_name))
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
@@ -1919,7 +1920,7 @@ bool APCManager::unitTests()
 
   // Test
   test_name = "SimpleRotated";
-  if (config_->isEnabled("unit_test/" + test_name))
+  if (visuals_->isEnabled("unit_test/" + test_name))
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
@@ -1932,7 +1933,7 @@ bool APCManager::unitTests()
 
   // Test
   test_name = "SimpleVeryRotated";
-  if (config_->isEnabled("unit_test/" + test_name))
+  if (visuals_->isEnabled("unit_test/" + test_name))
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
@@ -1945,7 +1946,7 @@ bool APCManager::unitTests()
 
   // Test
   test_name = "SimpleFarBack";
-  if (config_->isEnabled("unit_test/" + test_name))
+  if (visuals_->isEnabled("unit_test/" + test_name))
   {  
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
@@ -1982,6 +1983,7 @@ bool APCManager::startUnitTest(const std::string &json_file, const std::string &
   {
     ProductObjectPtr &p = *product_it;
     p->setCentroid(product_pose);
+    p->setMeshCentroid(product_pose);
   }  
 
   // Display new shelf
@@ -1996,7 +1998,7 @@ bool APCManager::startUnitTest(const std::string &json_file, const std::string &
   ros::spinOnce();
 
   // Disable actual execution
-  if (!config_->isEnabled("show_simulated_paths_moving"))
+  if (!visuals_->isEnabled("show_simulated_paths_moving"))
     manipulation_->getExecutionInterface()->enableUnitTesting();
 
   // Start processing
@@ -2044,7 +2046,7 @@ bool APCManager::testIKSolver()
   visuals_->visual_tools_->publishAxisLabeled(ee_pose, "desired");
 
   // Transform from world frame to 'gantry' frame  
-  if (config_->isEnabled("generic_bool"))
+  if (visuals_->isEnabled("generic_bool"))
     ee_pose = goal_state->getGlobalLinkTransform("gantry") * ee_pose;
 
   for (std::size_t i = 0; i < 100; ++i)

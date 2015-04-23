@@ -50,6 +50,22 @@ public:
    */
   bool setSharedRobotState(moveit::core::RobotStatePtr current_state);
 
+  /**
+   * \brief Check if certain key is enabled
+   * \return true if enabled
+   */
+  bool isEnabled(const std::string& setting_name);
+
+private:
+
+  /**
+   * \brief Load verbose/visulization settings
+   * \return true on success
+   */
+  bool loadVerboseLevels(const std::string& parent_name);
+
+public:
+
   // Public vars
   mvt::MoveItVisualToolsPtr visual_tools_;
   mvt::MoveItVisualToolsPtr visual_tools_display_;
@@ -57,6 +73,14 @@ public:
   mvt::MoveItVisualToolsPtr goal_state_; // also used for trajectory lines
   mvt::MoveItVisualToolsPtr grasp_markers_; // also used for start state
   mvt::MoveItVisualToolsPtr trajectory_lines_; // also used for goal state
+
+private:
+
+  // Visualization settings
+  std::map<std::string, bool> enabled_;
+
+  // A shared node handle
+  ros::NodeHandle nh_;
 
 }; // end class
 

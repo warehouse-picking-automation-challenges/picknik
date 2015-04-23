@@ -317,6 +317,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   goal_bin_centroid.translation().y() = goal_bin_y_;
   goal_bin_centroid.translation().z() = goal_bin_z_;
   goal_bin_->setCentroid(goal_bin_centroid);
+  goal_bin_->setMeshCentroid(goal_bin_centroid);
 
   goal_bin_->setHighResMeshPath("file://" + package_path + "/meshes/goal_bin/goal_bin.stl");
   goal_bin_->setCollisionMeshPath("file://" + package_path + "/meshes/goal_bin/goal_bin.stl");
