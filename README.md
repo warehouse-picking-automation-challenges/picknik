@@ -85,8 +85,9 @@ Testing
 
 ## Start Primesense Camera
 
-    roslaunch openni_launch openni.launch depth_registration:=true tf_prefix:=0
+    roslaunch openni_launch openni.launch depth_registration:=true publish_tf:=0
 
+Filter from bounding box:
 
     rosrun picknik_perception simple_point_cloud_filter.launch
 
@@ -332,3 +333,12 @@ Reset USB stack without a reboot
     echo "0000:00:14.0" > bind
 
     This will re-enumerate all USB devices, including running udev rules, etc.
+
+
+### Syncing Time of Computers
+
+    # Check the offset of time of a IP address
+    alias btimeoffset="ntpdate -q 128.138.224.231"
+
+    ## Sync computer to standard syncing server
+    alias syncmytime="sudo ntpdate pool.ntp.org"

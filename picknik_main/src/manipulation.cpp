@@ -99,7 +99,7 @@ bool Manipulation::updateBoundingMesh(WorkOrder& work_order)
   ProductObjectPtr& product = work_order.product_;
 
   // Calculate dimensions
-  product->calculateBoundingBox(config_->isEnabled("verbose_bounding_box"));
+  product->calculateBoundingBox(config_->isEnabled("verbose_bounding_box"), bin->getBinToWorld(shelf_));
 
   // Visualize
   product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()));

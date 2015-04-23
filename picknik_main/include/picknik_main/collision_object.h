@@ -361,7 +361,7 @@ public:
    * \brief Get bounding box and corresponding height/width/depth
    * \return true on success
    */
-  bool calculateBoundingBox(bool verbose = true);
+  bool calculateBoundingBox(bool verbose, const Eigen::Affine3d &bin_to_world);
 
 protected:
 

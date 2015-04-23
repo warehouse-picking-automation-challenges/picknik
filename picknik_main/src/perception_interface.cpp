@@ -333,6 +333,12 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     product->visualize(world_to_bin);
     product->createCollisionBodies(world_to_bin);
 
+    // TODO remove from here
+    bool verbose = true;
+    product->calculateBoundingBox(verbose, bin->getBinToWorld(shelf_));
+    // Visualize
+    product->visualizeWireframe(bin->getBinToWorld(shelf_));
+
   } // for each found product
 
   visuals_->visual_tools_->triggerPlanningSceneUpdate();

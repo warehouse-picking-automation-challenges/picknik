@@ -1533,11 +1533,19 @@ bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
 
   // Move camera to the bin
   ROS_INFO_STREAM_NAMED("apc_manager","Moving camera to bin '" << bin->getName() << "'");
+
   // if (!manipulation_->moveCameraToBin(bin))
   // {
   //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
   //   return false;
   // }
+
+  // Move camera to bin using pre-recorded trajectory
+  if (!perceiveBinWithCamera(bin))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
+    return false;
+  }
 
   // Communicate with perception pipeline
   std::cout << std::endl;
@@ -1831,7 +1839,7 @@ bool APCManager::generateGoalBinLocations()
 
   // Calculate dimensions of goal bin
   bool verbose = false;
-  shelf_->getGoalBin()->calculateBoundingBox(verbose);
+  shelf_->getGoalBin()->calculateBoundingBox(verbose, Eigen::Affine3d::Identity());
 
   // Visualize
   //shelf_->getGoalBin()->visualizeWireframe(shelf_->getBottomRight());

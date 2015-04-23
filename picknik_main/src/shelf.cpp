@@ -100,6 +100,10 @@ ProductObjectPtr BinObject::getProduct(const std::string& name)
   return ProductObjectPtr();
 }
 
+Eigen::Affine3d BinObject::getBinToWorld(ShelfObjectPtr &shelf)
+{
+  return transform(getBottomRight(), shelf->getBottomRight());
+}
 
 // -------------------------------------------------------------------------------------------------
 // Shelf Object
@@ -579,7 +583,7 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
   goal_bin_->createCollisionBodies(bottom_right_);
 
   // Show axis
-  goal_bin_->visualizeAxis(bottom_right_);
+  //goal_bin_->visualizeAxis(bottom_right_);
 
   // Show all other environmental objects (walls, etc)
   createCollisionBodiesEnvironmentObjects();

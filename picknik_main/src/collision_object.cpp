@@ -350,7 +350,7 @@ void MeshObject::setCentroid(const Eigen::Affine3d& centroid)
   centroid_ = centroid;
 }
 
-bool MeshObject::calculateBoundingBox(bool verbose)
+bool MeshObject::calculateBoundingBox(bool verbose, const Eigen::Affine3d &bin_to_world)
 {
   if (verbose)
   {
@@ -362,6 +362,7 @@ bool MeshObject::calculateBoundingBox(bool verbose)
     std::cout << "  Height: " << getHeight() << std::endl;
     std::cout << "  Depth: " << getDepth() << std::endl;
     std::cout << "  Width: " << getWidth() << std::endl;
+    std::cout << std::endl;
   }
 
   // Get bounding box
@@ -377,11 +378,27 @@ bool MeshObject::calculateBoundingBox(bool verbose)
   setHeight(height);
 
   Eigen::Affine3d mesh_to_bin = getCentroid(); // perception results (centroid of mesh to bin)
-  mesh_to_bin = bounding_to_mesh * mesh_to_bin;
+
+  // Debug
+  if (verbose)
+  {
+    std::cout << "Bounding to Mesh: ";
+    printTransform(bounding_to_mesh);
+    
+    std::cout << "Mesh to bin:      ";
+    printTransform(mesh_to_bin);
+
+    // View
+    Eigen::Affine3d bounding_to_world = bounding_to_mesh * mesh_to_bin * bin_to_world;
+    visuals_->visual_tools_->publishAxisLabeled(bounding_to_world, "bounding_to_world");
+  }
+
+  mesh_to_bin = mesh_to_bin * bounding_to_mesh;
   setCentroid(mesh_to_bin);
 
   if (verbose)
   {
+    std::cout << std::endl;
     std::cout << "After getBoundingingBoxFromMesh(): " << std::endl;
     std::cout << "  Cuboid Pose: "; printTransform(getCentroid());
     std::cout << "  Height: " << getHeight() << std::endl;
