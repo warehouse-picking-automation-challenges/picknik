@@ -1,0 +1,10 @@
+initial_x: 0
+initial_y: -0.47
+initial_z: 1.4
+initial_roll: -1.5708
+initial_pitch: 0
+initial_yaw: -1.5708
+from: world
+to: kinect2_right_rgb_optical_frame
+file_name: tf_kinect_right
+topic_name: /keyboard_right/keydown

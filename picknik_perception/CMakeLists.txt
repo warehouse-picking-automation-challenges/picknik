@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   pcl_ros
+  tf
+  tf_conversions
 )
 
 find_package(Eigen REQUIRED)
@@ -99,5 +101,13 @@ add_executable(tf_keyboard
 )
 target_link_libraries(tf_keyboard
   manual_tf_alignment
+  ${catkin_LIBRARIES}
+)
+
+# Executable
+add_executable(multi_kinect_test
+  src/tests/multi_kinect_test.cpp
+)
+target_link_libraries(multi_kinect_test
   ${catkin_LIBRARIES}
 )

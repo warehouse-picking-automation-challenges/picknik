@@ -24,3 +24,9 @@ apc_manager:
 
   # Multi-use yes/no - can be used for anything
   generic_bool: false
+  unit_test:
+    SuperSimple: true
+    SimpleRotated: true
+    SimpleVeryRotated: true
+    SimpleFarBack: true
+    
