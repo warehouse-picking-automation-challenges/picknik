@@ -51,8 +51,8 @@ ManipulationInterface::ManipulationInterface()
   action_server_.start();
 
   // Register the stop command
-  stop_service_ = nh_.advertiseService("stop_perception", &ManipulationInterface::stopPerception, this);
-  reset_service_ = nh_.advertiseService("reset_perception", &ManipulationInterface::resetPerception, this);
+  stop_service_ = nh_.advertiseService("/perception/stop_perception", &ManipulationInterface::stopPerception, this);
+  reset_service_ = nh_.advertiseService("/perception/reset_perception", &ManipulationInterface::resetPerception, this);
 
   // Allow time to publish messages
   ros::Duration(0.1).sleep();
