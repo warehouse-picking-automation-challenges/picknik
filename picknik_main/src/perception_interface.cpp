@@ -98,6 +98,13 @@ bool PerceptionInterface::startPerception(ProductObjectPtr& product, BinObjectPt
   picknik_msgs::FindObjectsGoal find_object_goal;
   find_object_goal.desired_object_name = product->getName();
 
+  // Send region of interest
+  const Eigen::Affine3d bottom_right = picknik_main::transform(bin->getBottomRight(), shelf_->getBottomRight());
+  const Eigen::Affine3d top_left = picknik_main::transform(bin->getTopLeft(), shelf_->getBottomRight());
+  find_object_goal.bin_name = bin->getName();
+  find_object_goal.front_bottom_right = visuals_->visual_tools_->convertPose(bottom_right);
+  find_object_goal.back_top_left = visuals_->visual_tools_->convertPose(top_left);
+
   // Get all of the products in the bin
   bin->getProducts(find_object_goal.expected_objects_names);
 

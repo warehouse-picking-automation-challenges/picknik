@@ -80,7 +80,6 @@ add_executable(simple_point_cloud_filter_test
 )
 target_link_libraries(simple_point_cloud_filter_test
   simple_point_cloud_filter
-  manual_tf_alignment
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
   ${Boost_LIBRARIES}
@@ -98,6 +97,15 @@ target_link_libraries(tf_keyboard
 # Executable
 add_executable(fake_perception_server src/fake_perception_server.cpp)
 target_link_libraries(fake_perception_server
+  manipulation_interface
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
+# Executable
+add_executable(simple_perception_server src/simple_perception_server.cpp)
+target_link_libraries(simple_perception_server
+  simple_point_cloud_filter
   manipulation_interface
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}

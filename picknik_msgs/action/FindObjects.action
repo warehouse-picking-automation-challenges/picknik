@@ -10,7 +10,12 @@ string desired_object_name
 string[] expected_objects_names
 
 # Current pose of the camera that is to remain fixed until result returned
-geometry_msgs/Pose camera_pose
+#geometry_msgs/Pose camera_pose
+
+# Region of interest - coordinates of bin
+string bin_name
+geometry_msgs/Pose front_bottom_right
+geometry_msgs/Pose back_top_left
 
 ---
 # RESULT ====================================================
