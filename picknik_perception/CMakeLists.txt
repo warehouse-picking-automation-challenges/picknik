@@ -28,23 +28,23 @@ catkin_package(
     moveit_ros_perception
   DEPENDS
     Eigen
-  INCLUDE_DIRS 
+  INCLUDE_DIRS
     include
   LIBRARIES
-    point_cloud_filter
+    manipulation_interface
 )
 
 ###########
 ## Build ##
 ###########
 include_directories(
-  include 
+  include
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
 )
 
-include_directories(SYSTEM 
-  ${Boost_INCLUDE_DIR} 
+include_directories(SYSTEM
+  ${Boost_INCLUDE_DIR}
   ${EIGEN_INCLUDE_DIRS}
 )
 
@@ -97,9 +97,17 @@ target_link_libraries(tf_keyboard
 
 # Executable
 add_executable(fake_perception_server src/fake_perception_server.cpp)
-target_link_libraries(fake_perception_server 
+target_link_libraries(fake_perception_server
   manipulation_interface
-  ${catkin_LIBRARIES} 
+  ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
 )
 
+## Install
+
+# Install libraries
+install(TARGETS manipulation_interface
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+
+# Install header files
+install(DIRECTORY include/${PROJECT_NAME}/   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
