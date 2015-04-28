@@ -72,9 +72,11 @@ public:
   Eigen::Affine3d bbox_pose_;
   double bbox_depth_, bbox_width_, bbox_height_;
 
+  bool processing_;
+
 private:
   bool verbose_;
-  bool processing_;
+
   ros::NodeHandle nh_;
 
   tf::TransformListener tf_listener_;

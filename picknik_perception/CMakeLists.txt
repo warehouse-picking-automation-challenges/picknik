@@ -105,9 +105,12 @@ target_link_libraries(tf_keyboard
 )
 
 # Executable
-add_executable(multi_kinect_test
-  src/tests/multi_kinect_test.cpp
+add_executable(cloud_preprocessor
+  src/cloud_preprocessor.cpp
 )
-target_link_libraries(multi_kinect_test
+target_link_libraries(cloud_preprocessor
+  simple_point_cloud_filter
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
