@@ -1436,8 +1436,8 @@ bool APCManager::testPerceptionComm()
   perception_interface_->startPerception(product, bin);
 
   // Dummy wait
-  //ROS_WARN_STREAM_NAMED("apc_manager","dummy wait");
-  //ros::Duration(15).sleep();
+  ROS_WARN_STREAM_NAMED("apc_manager","dummy wait");
+  ros::Duration(2).sleep();
 
   // Get result from perception pipeline
   if (!perception_interface_->endPerception(product, bin))
@@ -2067,6 +2067,33 @@ bool APCManager::testIKSolver()
 
     ros::Duration(0.5).sleep();
     goal_state->setToRandomPositions(arm_jmg);
+  }
+
+  return true;
+}
+
+// Mode 26
+bool APCManager::unitTestPerceptionComm()
+{
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  ROS_INFO_STREAM_NAMED("apc_manager","FIRST ENSURE THAT SERVER IS OFF");
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  remote_control_->waitForNextStep("start with perception server off");
+
+  // Test if connected
+  if (perception_interface_->isPerceptionReady())
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Reports perception is ready when it should not!");
+  }
+
+  remote_control_->waitForNextStep("Now start perception server");
+
+  // Test if connected
+  if (!perception_interface_->isPerceptionReady())
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Reports perception is not ready when it should be!");
   }
 
   return true;

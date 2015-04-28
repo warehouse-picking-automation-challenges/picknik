@@ -55,6 +55,12 @@ public:
   ManipulationInterface();
 
   /**
+   * \brief Ability to clear all previous progress and reset system to new
+   * \return true if reset needed
+   */
+  bool resetIsNeeded();
+
+  /**
    * \brief Check if perception is ready to start processing
    * \param goal - the items to look for if system is ready to start perception
    * \return true if ready to start perception
@@ -90,19 +96,32 @@ private:
    */
   bool stopPerception(picknik_msgs::StopPerception::Request&, picknik_msgs::StopPerception::Response &res);
 
+  /**
+   * \brief Ability to clear all previous progress and reset system to new
+   * \return true on success
+   */
+  bool resetPerception(picknik_msgs::StopPerception::Request&, picknik_msgs::StopPerception::Response &res);
+
+  /**
+   * \brief Initialize state machine variables
+   * \return true on success
+   */
+  bool initialize();
+
   // A shared node handle
   ros::NodeHandle nh_;
 
   // Actionlib
   actionlib::SimpleActionServer<picknik_msgs::FindObjectsAction> action_server_;
 
-  // Service Server
+  // Stop and reset services
   ros::ServiceServer stop_service_;
+  ros::ServiceServer reset_service_;
 
   // State machine
-  bool start_perception_; // Weather we should start perception
-  bool perception_in_progress_; // Weather perpcetion is currently running
-  bool stop_perception_; // Weather perception should end
+  bool perception_running_; // whether we should start perception
+  bool stop_perception_; // whether perception should end
+  bool reset_perception_; // Whether to clear all previous progress and restart
 
 }; // end class
 

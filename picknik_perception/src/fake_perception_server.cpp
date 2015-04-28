@@ -57,37 +57,45 @@ int main(int argc, char** argv)
   // initialize random seed
   srand (time(NULL));
 
-  // Create the communication layer
-  picknik_perception::ManipulationInterface client;
+  // Create the ROS communication layer with the manipulation pipeline
+  picknik_perception::ManipulationInterfacePtr client;
+  client.reset(new picknik_perception::ManipulationInterface());
 
   // Main loop
   while (ros::ok())
   {
+    if (client->resetIsNeeded())
+      break;
 
     // Check if goal is recieved
     picknik_msgs::FindObjectsGoalConstPtr goal;
-    if (!client.isReadyToStartPerception(goal))
+    if (!client->isReadyToStartPerception(goal))
     {
-      ros::Duration(0.5).sleep();
+      ros::Duration(0.1).sleep();
       continue; // loop again
     }
 
-    std::cout << std::endl;
-    std::cout << "-------------------------------------------------------" << std::endl;
-    ROS_INFO_STREAM_NAMED("fake_perception_server","STARTING PERCEPTION");
-    std::cout << "-------------------------------------------------------" << std::endl;
+    ROS_INFO_STREAM_NAMED("fake_perception_server","Starting perception, waiting for stop command");
 
     while (ros::ok())
     {
-      // Do perception
-      // TODO
+      // Do perception processing HERE
 
       // Wait until camera is done moving
-      if (client.isReadyToStopPerception())
+      if (client->isReadyToStopPerception())
         break;
 
-      ros::Duration(0.5).sleep();
+      // Check if cancel is desired
+      if (client->resetIsNeeded())
+        break;
+
+      // Wait
+      ros::Duration(0.1).sleep();
     }
+
+    // Check if cancel is desired
+    if (client->resetIsNeeded())
+      break;
 
     // Finish up perception
     ROS_INFO_STREAM_NAMED("fake_perception_server","Finishing up perception");
@@ -120,9 +128,14 @@ int main(int argc, char** argv)
 
       // If the camera angle was bad or some other failure, return false
     result.succeeded = true;
-    ROS_INFO_STREAM_NAMED("fake_perception_server","Sending perception result:\n" << result);
+    //ROS_INFO_STREAM_NAMED("fake_perception_server","Sending perception result:\n" << result);
+    ROS_INFO_STREAM_NAMED("fake_perception_server","Sending perception result");
 
-    client.sendPerceptionResults(result);
+    // Check if cancel is desired
+    if (client->resetIsNeeded())
+      break;
+
+    client->sendPerceptionResults(result);
 
   } // end while each request
 

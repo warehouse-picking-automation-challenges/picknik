@@ -42,7 +42,9 @@
 
 // ROS
 #include <tf_conversions/tf_eigen.h>
-#include <std_msgs/Bool.h>
+
+// PickNik Msgs
+#include <picknik_msgs/StopPerception.h>
 
 // Parameter loading
 #include <rviz_visual_tools/ros_param_utilities.h>
@@ -62,9 +64,8 @@ PerceptionInterface::PerceptionInterface(bool verbose, VisualsPtr visuals, Shelf
   , is_processing_perception_(false)
 {
   // Load ROS publisher
-  std::size_t queue_size = 10;
-  stop_perception_pub_ = nh_.advertise<std_msgs::Bool>( "/perception/stop_perception", queue_size );
-
+  stop_perception_client_ = nh_.serviceClient<picknik_msgs::StopPerception>( "/perception/stop_perception" );
+  reset_perception_client_ = nh_.serviceClient<picknik_msgs::StopPerception>( "/perception/reset_perception" );  
 
   // Load caamera intrinsics
   const std::string parent_name = "perception_interface"; // for namespacing logging messages  
@@ -100,6 +101,20 @@ bool PerceptionInterface::startPerception(ProductObjectPtr& product, BinObjectPt
   // Get all of the products in the bin
   bin->getProducts(find_object_goal.expected_objects_names);
 
+  // Make sure perception is reset
+  if (false)
+  {
+    picknik_msgs::StopPerception srv;
+    srv.request.stop = true;
+    reset_perception_client_.call(srv);
+
+    if (!srv.response.stopped)
+    {
+      ROS_ERROR_STREAM_NAMED("perception_interface","Unable to reset perception pipeline!");
+      return false;
+    }    
+  }
+
   // Send request
   find_objects_action_.sendGoal(find_object_goal);
 
@@ -122,15 +137,15 @@ bool PerceptionInterface::endPerception(ProductObjectPtr& product, BinObjectPtr&
   if (use_stop_command)
   {
     ROS_INFO_STREAM_NAMED("perception_interface","Sending stop command to perception server");
-    std_msgs::Bool result;
-    result.data = true; // meaningless value
-    stop_perception_pub_.publish( result );
-    ros::spinOnce(); // repeat 3 times for guarantees
-    ros::Duration(0.1).sleep();
-    stop_perception_pub_.publish( result );
-    ros::spinOnce();
-    ros::Duration(0.1).sleep();
-    stop_perception_pub_.publish( result );
+    picknik_msgs::StopPerception srv;
+    srv.request.stop = true;
+    stop_perception_client_.call(srv);
+
+    if (!srv.response.stopped)
+    {
+      ROS_ERROR_STREAM_NAMED("perception_interface","Unable to stop perception pipeline!");
+      return false;
+    }
   }
   else
     ROS_WARN_STREAM_NAMED("pereption_interface","Not using stop command!");
@@ -407,16 +422,16 @@ bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera)
   return true;
 }
 
-bool PerceptionInterface::convertFrameCVToROS(const Eigen::Affine3d& cv_frame, Eigen::Affine3d& ros_frame)
-{
-  Eigen::Matrix3d rotation;
-  rotation = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
-    * Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitZ());
-  //std::cout << "Rotation: " << rotation << std::endl;                                                                                                                                                                                                                           
-  ros_frame = rotation * cv_frame;
+// bool PerceptionInterface::convertFrameCVToROS(const Eigen::Affine3d& cv_frame, Eigen::Affine3d& ros_frame)
+// {
+//   Eigen::Matrix3d rotation;
+//   rotation = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
+//     * Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitZ());
+//   //std::cout << "Rotation: " << rotation << std::endl;                                                                                                                                                                                                                           
+//   ros_frame = rotation * cv_frame;
 
-  return true;
-}
+//   return true;
+// }
 
 
 } // namespace

@@ -116,7 +116,7 @@ Camera calibration:
 
 Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
-	roslaunch picknik_main fake_perception_server.launch
+	roslaunch picknik_perception fake_perception_server.launch
 
 Run APC Manager (main program) for JACOB in simulation
 
@@ -145,7 +145,7 @@ Camera calibration (new!):
  
 Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
-	roslaunch picknik_main fake_perception_server.launch
+	roslaunch picknik_perception fake_perception_server.launch
 
 Run APC Manager (main program) for JACOB on hardware
 
@@ -237,6 +237,7 @@ Button Mapings
 		23. Unit tests for manipulation
 		24. Go to pose pose:=NAME
         25. Test IK solver with simple pose request
+		26. Unit test for perception communication
 		
 	jump_to - which step in the manipulation pipeline to start on
 	auto - whether to go into auto step mode, but does not allow trajectories to be executed without verification

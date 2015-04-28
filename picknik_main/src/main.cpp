@@ -294,6 +294,10 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Testing IK solver");
       manager.testIKSolver();
       break;      
+    case 26:
+      ROS_INFO_STREAM_NAMED("main","Unit test for perception communication");
+      manager.unitTestPerceptionComm();
+      break;
     default:
       ROS_WARN_STREAM_NAMED("main","Unkown mode: " << mode);
   }

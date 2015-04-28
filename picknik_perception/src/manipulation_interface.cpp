@@ -43,10 +43,8 @@ namespace picknik_perception
 
 ManipulationInterface::ManipulationInterface()
   : action_server_("recognize_objects", false) // Load the action server
-  , start_perception_(false)
-  , perception_in_progress_(false)
-  , stop_perception_(false)
 {
+  initialize();
 
   // Register the goal and feeback callbacks.
   action_server_.registerGoalCallback(boost::bind(&ManipulationInterface::goalCallback, this));
@@ -54,6 +52,7 @@ ManipulationInterface::ManipulationInterface()
 
   // Register the stop command
   stop_service_ = nh_.advertiseService("stop_perception", &ManipulationInterface::stopPerception, this);
+  reset_service_ = nh_.advertiseService("reset_perception", &ManipulationInterface::resetPerception, this);
 
   // Allow time to publish messages
   ros::Duration(0.1).sleep();
@@ -61,14 +60,23 @@ ManipulationInterface::ManipulationInterface()
   ROS_INFO_STREAM_NAMED("manipulation_interface","ManipulationInterface Ready.");
 }
 
+bool ManipulationInterface::resetIsNeeded()
+{
+  if (reset_perception_)
+  {
+    ROS_WARN_STREAM_NAMED("manipulation_interface","Reset of perception pipeline requested");
+    reset_perception_ = false;
+    return true;
+  }
+  return false;
+}
+
 bool ManipulationInterface::isReadyToStartPerception(picknik_msgs::FindObjectsGoalConstPtr& goal)
 {
-  if (start_perception_)
+  if (perception_running_)
   {
     // Accept the new goal
     goal = action_server_.acceptNewGoal();
-    start_perception_ = false; // we are no longer waiting to start
-    perception_in_progress_ = true;
     return true;
   }
   return false;
@@ -89,23 +97,17 @@ bool ManipulationInterface::sendPerceptionResults(picknik_msgs::FindObjectsResul
   ROS_INFO_STREAM_NAMED("manipulation_interface","Returning result back to manipulation pipeline");
 
   // Error check
-  if (!perception_in_progress_)
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation_interface","Perception is currently not in progress, unable to send results");
-    return false;
-  }
   if (stop_perception_)
   {
     ROS_ERROR_STREAM_NAMED("manipulation_interface","Perception is commanded to stop but this value has not been checked, unable to send results");
     return false;
   }
-  if (start_perception_)
+  if (!perception_running_)
   {
-    ROS_ERROR_STREAM_NAMED("manipulation_interface","Perception is commanded to start, unable to send results");
+    ROS_ERROR_STREAM_NAMED("manipulation_interface","Perception is not running, unable to send results");
     return false;
   }
-
-  perception_in_progress_ = false;
+  perception_running_ = false;
 
   // Mark action as completed
   action_server_.setSucceeded(result);
@@ -117,29 +119,18 @@ void ManipulationInterface::goalCallback()
   ROS_INFO_STREAM_NAMED("manipulation_interface","Recieved request to start perception");
 
   // Error check
-  if (perception_in_progress_)
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation_interface","Perception is currently in progress, unable to recieve new goal");
-    return;
-  }
   if (stop_perception_)
   {
     ROS_ERROR_STREAM_NAMED("manipulation_interface","Perception is currently in progress and is waiting to end, unable to recieve new goal");
     return;
   }
 
-  start_perception_ = true;
+  perception_running_ = true;
 }
 
 bool ManipulationInterface::stopPerception(picknik_msgs::StopPerception::Request&, picknik_msgs::StopPerception::Response &res)
 {
   // Error check
-  if (!perception_in_progress_)
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation_interface","Perception is currently not in progress, unable to stop");
-    res.stopped = false;
-    return false;
-  }
   if (stop_perception_)
   {
     ROS_ERROR_STREAM_NAMED("manipulation_interface","Perception is already commanded to stop, unable to stop");
@@ -151,6 +142,37 @@ bool ManipulationInterface::stopPerception(picknik_msgs::StopPerception::Request
   res.stopped = true;
   stop_perception_ = true;
   ROS_INFO_STREAM_NAMED("manipulation_inteface","Perception stop command has been recieved.");
+  return true;
+}
+
+bool ManipulationInterface::resetPerception(picknik_msgs::StopPerception::Request&, picknik_msgs::StopPerception::Response &res)
+{  
+  // Reset state machine
+  initialize();
+  reset_perception_ = true;
+
+  // Reset Action Server
+  if (action_server_.isActive())
+    action_server_.setAborted();
+
+  ros::Duration(0.1).sleep();
+  while (reset_perception_ && ros::ok())
+  {
+    ROS_INFO_STREAM_NAMED("manipulation_interface","Waiting for perception pipeline to finish resetting");
+    ros::Duration(0.1).sleep();
+  }
+
+  res.stopped = true;
+  ROS_INFO_STREAM_NAMED("manipulation_inteface","Manipulation interface has been reset");
+  return true;
+}
+
+bool ManipulationInterface::initialize()
+{
+  stop_perception_ = false;
+  perception_running_ = false;
+  reset_perception_ = false;
+
   return true;
 }
 
