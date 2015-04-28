@@ -42,7 +42,7 @@ namespace picknik_perception
 {
 
 ManipulationInterface::ManipulationInterface()
-  : action_server_("recognize_objects", false) // Load the action server
+  : action_server_("perception/recognize_objects", false) // Load the action server
 {
   initialize();
 
