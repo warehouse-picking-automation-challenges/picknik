@@ -96,6 +96,8 @@ public:
   bool processPerceptionResults(picknik_msgs::FindObjectsResultConstPtr result,
                                 ProductObjectPtr& product, BinObjectPtr& bin);
   
+private:
+
   /**
    * \brief Get the latest location of the camera on the robot from ROS
    * \param world_to_camera 4x4 matrix to fill in with transpose
@@ -110,9 +112,7 @@ public:
    */
   bool publishCameraFrame(Eigen::Affine3d camera_to_world);
 
-  bool convertFrameCVToROS(const Eigen::Affine3d& cv_frame, Eigen::Affine3d& ros_frame);
-
-private:
+  //bool convertFrameCVToROS(const Eigen::Affine3d& cv_frame, Eigen::Affine3d& ros_frame);
 
   // Show more visual and console output, with general slower run time.
   bool verbose_;
@@ -136,7 +136,8 @@ private:
   ros::NodeHandle nh_;
 
   // Tell the perception pipeline we are done moving the camera
-  ros::Publisher stop_perception_pub_;
+  ros::ServiceClient stop_perception_client_;
+  ros::ServiceClient reset_perception_client_;
 
   // Perception processing has started
   bool is_processing_perception_;

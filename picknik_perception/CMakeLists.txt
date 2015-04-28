@@ -50,22 +50,6 @@ include_directories(SYSTEM
   ${EIGEN_INCLUDE_DIRS}
 )
 
-#add_library(point_cloud_filter
-#  src/point_cloud_filter.cpp
-#)
-#target_link_libraries(point_cloud_filter
-#  ${catkin_LIBRARIES} 
-#  ${Boost_LIBRARIES}
-#)
-
-#add_executable(shape_filter
-#  src/shape_filter.cpp
-#)
-#target_link_libraries(shape_filter
-#  point_cloud_filter
-#  ${catkin_LIBRARIES} 
-#  ${Boost_LIBRARIES}
-
 # Library
 add_library(simple_point_cloud_filter
   src/simple_point_cloud_filter.cpp
@@ -79,6 +63,15 @@ add_library(manual_tf_alignment
   src/manual_tf_alignment.cpp
 )
 target_link_libraries(manual_tf_alignment
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
+# Library
+add_library(manipulation_interface
+  src/manipulation_interface.cpp
+)
+target_link_libraries(manipulation_interface
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
 )
@@ -121,4 +114,11 @@ add_executable(align_point_clouds
 target_link_libraries(align_point_clouds
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
+)
+
+add_executable(fake_perception_server src/fake_perception_server.cpp)
+target_link_libraries(fake_perception_server 
+  manipulation_interface
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
 )

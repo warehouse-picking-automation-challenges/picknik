@@ -65,25 +65,10 @@ public:
    */
   bool load(robot_model::RobotModelPtr robot_model, bool in_simulation);
 
-  /**
-   * \brief Check if certain key is enabled
-   * \return true if enabled
-   */
-  bool isEnabled(const std::string& setting_name);
-
 private:
-
-  /**
-   * \brief Load verbose/visulization settings
-   * \return true on success
-   */
-  bool loadVerboseLevels(const std::string& parent_name);
 
   // A shared node handle
   ros::NodeHandle nh_;
-
-  // Visualization settings
-  std::map<std::string, bool> enabled_;
 
 public:
 

@@ -10,7 +10,7 @@
   <group ns="perception">
 
     <!-- Main process -->
-    <node name="fake_perception_server" pkg="picknik_main" type="fake_perception_server" respawn="true" 
+    <node name="fake_perception_server" pkg="picknik_perception" type="fake_perception_server" respawn="true" 
 	  launch-prefix="$(arg launch_prefix)" output="screen" />
 
   </group>

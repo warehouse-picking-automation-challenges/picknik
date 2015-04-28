@@ -19,9 +19,11 @@ apc_manager:
   # Seed state
   show_grasping_seed_state: false
 
+  # Multi-use yes/no - can be used for anything
+  generic_bool: false
+
   # Unit testing / simulation
   show_simulated_paths_moving: true
-
   # Multi-use yes/no - can be used for anything
   generic_bool: false
   unit_test:
@@ -29,4 +31,3 @@ apc_manager:
     SimpleRotated: true
     SimpleVeryRotated: true
     SimpleFarBack: true
-    

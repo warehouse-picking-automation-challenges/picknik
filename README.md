@@ -85,8 +85,9 @@ Testing
 
 ## Start Primesense Camera
 
-    roslaunch openni_launch openni.launch depth_registration:=true
+    roslaunch openni_launch openni.launch depth_registration:=true publish_tf:=0
 
+Filter from bounding box:
 
     rosrun picknik_perception simple_point_cloud_filter.launch
 
@@ -115,7 +116,7 @@ Camera calibration:
 
 Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
-	roslaunch picknik_main fake_perception_server.launch
+	roslaunch picknik_perception fake_perception_server.launch
 
 Run APC Manager (main program) for JACOB in simulation
 
@@ -137,13 +138,14 @@ Rviz Visualizers of robot states and debug markers
 
     roslaunch picknik_main rviz.launch
 
-Camera calibration:
+Camera calibration (new!):
 
-    roslaunch picknik_main camera_calibration.launch
-	
+    #OLD roslaunch picknik_main camera_calibration.launch
+    roslaunch picknik_perception tf_keyboard.launch
+ 
 Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
-	roslaunch picknik_main fake_perception_server.launch
+	roslaunch picknik_perception fake_perception_server.launch
 
 Run APC Manager (main program) for JACOB on hardware
 
@@ -155,7 +157,7 @@ Adjust the values in ``config/apc_jacob.yaml`` for ``world_to_shelf_transform``:
 
 To quickly view updates yaml settings:
 
-     roslaunch picknik_main jacob_apc.launch mode:=13
+    roslaunch picknik_main jacob_apc.launch mode:=13
 	 
 Calibrate z axis
 
@@ -185,7 +187,7 @@ Not in use at the moment...
 
 Button Mapings
 
-    1 - Next (not implemented in ros_control yet)
+    1 - Enable actuators EXPERIMENTAL aka it doesn't work
 	2 - Disable actuators (0 PID gains)
 	3 - Disable control (turn off PC controller)
 
@@ -222,7 +224,7 @@ Button Mapings
 		12. Playback bin observing trajectory (perceive)
 
         13. Visualize shelf
-		14. SRDF: Get the current pose of the robot for the SRDF
+        14. SRDF: Get the current pose of the robot for the SRDF
 		15. Check if current state is in collision
 		16. Test grasp generator abilities and score results
 		17. Test joint limits
@@ -235,6 +237,7 @@ Button Mapings
 		23. Unit tests for manipulation
 		24. Go to pose pose:=NAME
         25. Test IK solver with simple pose request
+		26. Unit test for perception communication
 		
 	jump_to - which step in the manipulation pipeline to start on
 	auto - whether to go into auto step mode, but does not allow trajectories to be executed without verification
@@ -266,6 +269,19 @@ Load meshes
 
     rosrun picknik_main mesh_publisher
 
+## Running ROS -> HAL Bridge
+
+HAL git branch features/ros_bridge includes a ROS connector to consume imagery from ROS
+
+    Run like: ./SensorViewer -cam ros:[topics=/camera/image_raw+/camera/depth/image_raw]
+
+    This will publish a Protobuf with one image per topic. The ROS bridge knows about mono16, bgr8, rgb8, mono8, and 32FC1 images.
+
+    Restrictions:
+
+	Images must be 640x480, this is a statically compiled thing
+    	ROS_MASTER must be set in the environment since the command-line args are buried within HAL
+	
 ## Debugging Tools
 
 ### Record CSV Files of Controller Data
@@ -295,3 +311,35 @@ See what is connected
 Change device ID
 
     rosed jacob_control jacob_joy.launch
+
+### Debugging USB Things
+
+ASUS Xtion node doesn't start
+
+    Xtion backend process XnSensorServer stopped,
+    'ps -aux' to find PID, kill -9 it, then restart
+
+    When one runs 'strace /usr/bin/Sample-NiSimpleViewer', recvmsg() calls will fail, indicating a lack of comm with the Xtion backend. 
+
+Reset USB stack without a reboot
+    WARNING: If your keyboard is plugged in via this USB node, you will lose control of the console
+    As root:
+
+    cd /sys/bus/pci/drivers/xhci_hcd
+    ls -l
+    echo "0000:00:14.0" > unbind
+
+    This will unbind the driver from the hardware. To reset:
+
+    echo "0000:00:14.0" > bind
+
+    This will re-enumerate all USB devices, including running udev rules, etc.
+
+
+### Syncing Time of Computers
+
+    # Check the offset of time of a IP address
+    alias btimeoffset="ntpdate -q 128.138.224.231"
+
+    ## Sync computer to standard syncing server
+    alias syncmytime="sudo ntpdate pool.ntp.org"

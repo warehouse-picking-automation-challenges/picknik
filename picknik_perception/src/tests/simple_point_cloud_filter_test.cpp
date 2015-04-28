@@ -18,7 +18,6 @@ private:
   rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
 
   SimplePointCloudFilter* pc_filter_ptr_;
-  ManualTFAlignment* tf_align_ptr_;
   
   ros::Subscriber pc_sub_;
   ros::Publisher aligned_cloud_pub_;
@@ -30,21 +29,10 @@ public:
     : nh_("~")
   {
     // Load 
-    visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base"));
+    visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base", "/picknik_main/markers"));
     visual_tools_->deleteAllMarkers();
 
     pc_filter_ptr_ = new SimplePointCloudFilter();
-    tf_align_ptr_ = new ManualTFAlignment();
-
-    // set initial camera transform
-    // TODO: Should be read in from file or set in launch file
-    //-1.202   -0.23   1.28    0      0.03    0
-    tf_align_ptr_->setPose(Eigen::Vector3d(-1.202, -0.23, 1.28), Eigen::Vector3d(0, 0.03, 0));
-    tf_align_ptr_->from_ = "/world";
-    tf_align_ptr_->to_ = "/camera_link";
-
-
-    tf_align_ptr_->printMenu();
 
     // listen to point cloud topic
     // TODO: camera topic should be set in launch file
@@ -63,6 +51,8 @@ public:
     roi_pose.translation() += Eigen::Vector3d(roi_depth / 2.0 + 0.02, -0.25, 0.85 + roi_height / 2.0);
     pc_filter_ptr_->setRegionOfInterest(roi_pose, roi_depth, roi_width, roi_height);
 
+    //pc_filter_ptr_->setRegionOfInterest(bottom_left, top_right);
+
     ros::Rate rate(40.0);
     int bbox_rate = 10;
     int count = 1; // don't want a bounding box on first frame.
@@ -70,9 +60,6 @@ public:
     ROS_DEBUG_STREAM_NAMED("PC_filter.test","starting main filter test");
     while ( ros::ok() )
     {
-      // publish transform to camera
-      tf_align_ptr_->publishTF();
-
       // get bounding box at specified interval
       if (count % bbox_rate == 0)
       {

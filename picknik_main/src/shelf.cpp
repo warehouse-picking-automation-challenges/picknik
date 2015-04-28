@@ -100,6 +100,10 @@ ProductObjectPtr BinObject::getProduct(const std::string& name)
   return ProductObjectPtr();
 }
 
+Eigen::Affine3d BinObject::getBinToWorld(ShelfObjectPtr &shelf)
+{
+  return transform(getBottomRight(), shelf->getBottomRight());
+}
 
 // -------------------------------------------------------------------------------------------------
 // Shelf Object
@@ -313,6 +317,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   goal_bin_centroid.translation().y() = goal_bin_y_;
   goal_bin_centroid.translation().z() = goal_bin_z_;
   goal_bin_->setCentroid(goal_bin_centroid);
+  goal_bin_->setMeshCentroid(goal_bin_centroid);
 
   goal_bin_->setHighResMeshPath("file://" + package_path + "/meshes/goal_bin/goal_bin.stl");
   goal_bin_->setCollisionMeshPath("file://" + package_path + "/meshes/goal_bin/goal_bin.stl");
@@ -579,7 +584,7 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
   goal_bin_->createCollisionBodies(bottom_right_);
 
   // Show axis
-  goal_bin_->visualizeAxis(bottom_right_);
+  //goal_bin_->visualizeAxis(bottom_right_);
 
   // Show all other environmental objects (walls, etc)
   createCollisionBodiesEnvironmentObjects();

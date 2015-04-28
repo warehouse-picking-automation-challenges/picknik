@@ -365,6 +365,12 @@ public:
    */
   bool testIKSolver();
 
+  /**
+   * \brief Simple tests for bad modes of perception communication
+   * \return true on success
+   */
+  bool unitTestPerceptionComm();
+
 private:
 
   // A shared node handle

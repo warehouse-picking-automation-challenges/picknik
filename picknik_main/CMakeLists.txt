@@ -226,13 +226,6 @@ target_link_libraries(main
   ${Boost_LIBRARIES}
 )
 
-# Demo code
-add_executable(fake_perception_server src/fake_perception_server.cpp)
-target_link_libraries(fake_perception_server 
-  ${catkin_LIBRARIES} 
-  ${Boost_LIBRARIES}
-)
-
 # TESTS
 add_executable(mesh_publisher tests/mesh_publisher.cpp)
 target_link_libraries(mesh_publisher 

@@ -216,7 +216,7 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to, std::siz
 
     std::cout << std::endl << MOVEIT_CONSOLE_COLOR_BROWN;
     std::cout << "=======================================================" << std::endl;
-    ROS_INFO_STREAM_NAMED("apc_manager","Starting order " << i);
+    std::cout << "Starting order " << i << std::endl;
     std::cout << "=======================================================";
     std::cout << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
 
@@ -1125,6 +1125,9 @@ bool APCManager::calibrateCamera()
 {
   ROS_DEBUG_STREAM_NAMED("apc_manager","Calibrating camera");
 
+  // Display planning scene
+  planning_scene_manager_->displayShelfWithOpenBins();
+
   // Close fingers
   if (!manipulation_->openEndEffectors(false))
   {
@@ -1433,8 +1436,8 @@ bool APCManager::testPerceptionComm()
   perception_interface_->startPerception(product, bin);
 
   // Dummy wait
-  //ROS_WARN_STREAM_NAMED("apc_manager","dummy wait");
-  //ros::Duration(15).sleep();
+  ROS_WARN_STREAM_NAMED("apc_manager","dummy wait");
+  ros::Duration(2).sleep();
 
   // Get result from perception pipeline
   if (!perception_interface_->endPerception(product, bin))
@@ -1530,7 +1533,15 @@ bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
 
   // Move camera to the bin
   ROS_INFO_STREAM_NAMED("apc_manager","Moving camera to bin '" << bin->getName() << "'");
-  if (!manipulation_->moveCameraToBin(bin))
+
+  // if (!manipulation_->moveCameraToBin(bin))
+  // {
+  //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
+  //   return false;
+  // }
+
+  // Move camera to bin using pre-recorded trajectory
+  if (!perceiveBinWithCamera(bin))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
     return false;
@@ -1580,6 +1591,7 @@ bool APCManager::perceiveObjectFake(WorkOrder work_order)
     * Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
     * Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitY());
   product->setCentroid(fake_centroid);
+  product->setMeshCentroid(fake_centroid);
 
   // Show in collision and display Rvizs
   product->visualize(world_to_bin);
@@ -1828,20 +1840,20 @@ bool APCManager::generateGoalBinLocations()
 
   // Calculate dimensions of goal bin
   bool verbose = false;
-  shelf_->getGoalBin()->calculateBoundingBox(verbose);
+  shelf_->getGoalBin()->calculateBoundingBox();
 
   // Visualize
-  //shelf_->getGoalBin()->visualizeWireframe(shelf_->getBottomRight());
+  shelf_->getGoalBin()->visualizeWireframe(shelf_->getBottomRight());
 
   // Find starting location of dropoff
   Eigen::Affine3d overhead_goal_bin = shelf_->getBottomRight() * shelf_->getGoalBin()->getCentroid();
   overhead_goal_bin.translation().z() += shelf_->getGoalBin()->getHeight() + config_->goal_bin_clearance_;
 
   // Convert pose that has z arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
-  overhead_goal_bin = overhead_goal_bin * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitY());
-  //visuals_->visual_tools_->publishAxis(overhead_goal_bin);
+  overhead_goal_bin = overhead_goal_bin * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitX());
+  visuals_->visual_tools_->publishAxis(overhead_goal_bin);
 
-  bool visualize_dropoff_locations = config_->isEnabled("show_goal_bin_markers");
+  bool visualize_dropoff_locations = visuals_->isEnabled("show_goal_bin_markers");
 
   // Calculations
   const std::size_t num_cols = 2;
@@ -1891,10 +1903,12 @@ bool APCManager::statusPublisher(const std::string &status)
 // Mode 23
 bool APCManager::unitTests()
 {
+  std::string test_name;
+
   // Test
-  if (true)
+  test_name = "SuperSimple";
+  if (visuals_->isEnabled("unit_test/" + test_name))
   {
-    const std::string test_name = "SuperSimple";
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
     product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.08);
@@ -1905,9 +1919,9 @@ bool APCManager::unitTests()
   }
 
   // Test
-  if (true)
+  test_name = "SimpleRotated";
+  if (visuals_->isEnabled("unit_test/" + test_name))
   {
-    const std::string test_name = "SimpleRotated";
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
     product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.08);
@@ -1918,9 +1932,9 @@ bool APCManager::unitTests()
   }
 
   // Test
-  if (true)
+  test_name = "SimpleVeryRotated";
+  if (visuals_->isEnabled("unit_test/" + test_name))
   {
-    const std::string test_name = "SimpleVeryRotated";
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
     product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.08);
@@ -1931,9 +1945,9 @@ bool APCManager::unitTests()
   }
 
   // Test
-  if (true)
-  {
-    const std::string test_name = "SimpleFarBack";
+  test_name = "SimpleFarBack";
+  if (visuals_->isEnabled("unit_test/" + test_name))
+  {  
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
     product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.14);
@@ -1969,6 +1983,7 @@ bool APCManager::startUnitTest(const std::string &json_file, const std::string &
   {
     ProductObjectPtr &p = *product_it;
     p->setCentroid(product_pose);
+    p->setMeshCentroid(product_pose);
   }  
 
   // Display new shelf
@@ -1983,7 +1998,7 @@ bool APCManager::startUnitTest(const std::string &json_file, const std::string &
   ros::spinOnce();
 
   // Disable actual execution
-  if (!config_->isEnabled("show_simulated_paths_moving"))
+  if (!visuals_->isEnabled("show_simulated_paths_moving"))
     manipulation_->getExecutionInterface()->enableUnitTesting();
 
   // Start processing
@@ -2031,7 +2046,7 @@ bool APCManager::testIKSolver()
   visuals_->visual_tools_->publishAxisLabeled(ee_pose, "desired");
 
   // Transform from world frame to 'gantry' frame  
-  if (config_->isEnabled("generic_bool"))
+  if (visuals_->isEnabled("generic_bool"))
     ee_pose = goal_state->getGlobalLinkTransform("gantry") * ee_pose;
 
   for (std::size_t i = 0; i < 100; ++i)
@@ -2052,6 +2067,33 @@ bool APCManager::testIKSolver()
 
     ros::Duration(0.5).sleep();
     goal_state->setToRandomPositions(arm_jmg);
+  }
+
+  return true;
+}
+
+// Mode 26
+bool APCManager::unitTestPerceptionComm()
+{
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  ROS_INFO_STREAM_NAMED("apc_manager","FIRST ENSURE THAT SERVER IS OFF");
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  remote_control_->waitForNextStep("start with perception server off");
+
+  // Test if connected
+  if (perception_interface_->isPerceptionReady())
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Reports perception is ready when it should not!");
+  }
+
+  remote_control_->waitForNextStep("Now start perception server");
+
+  // Test if connected
+  if (!perception_interface_->isPerceptionReady())
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Reports perception is not ready when it should be!");
   }
 
   return true;

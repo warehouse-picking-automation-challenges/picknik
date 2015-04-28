@@ -99,7 +99,7 @@ bool Manipulation::updateBoundingMesh(WorkOrder& work_order)
   ProductObjectPtr& product = work_order.product_;
 
   // Calculate dimensions
-  product->calculateBoundingBox(config_->isEnabled("verbose_bounding_box"));
+  product->calculateBoundingBox(bin->getBinToWorld(shelf_));
 
   // Visualize
   product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()));
@@ -175,7 +175,7 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
 
   // Filter grasps based on IK
   bool filter_pregrasps = true;
-  bool verbose_if_failed = config_->isEnabled("show_grasp_filter_collision_if_failed");
+  bool verbose_if_failed = visuals_->isEnabled("show_grasp_filter_collision_if_failed");
   bool grasp_verbose = false;
   if (!grasp_filter_->filterGrasps(grasp_candidates, planning_scene_monitor_, arm_jmg, seed_state,
                                    filter_pregrasps, grasp_verbose, verbose_if_failed))
@@ -189,7 +189,7 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
   grasp_filter_->removeInvalidAndFilter(grasp_candidates);
 
   // For each remaining grasp, calculate entire approach, lift, and retreat path. Remove those that have no valid path
-  bool verbose_cartesian_paths = false;
+  bool verbose_cartesian_paths = true;
   std::size_t grasp_candidates_before_cartesian_path = grasp_candidates.size();
   for(std::vector<moveit_grasps::GraspCandidatePtr>::iterator grasp_it = grasp_candidates.begin();
       grasp_it != grasp_candidates.end(); )
@@ -222,7 +222,7 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
   }
 
   // Results
-  if (config_->isEnabled("verbose_cartesian_planning"))
+  if (visuals_->isEnabled("verbose_cartesian_planning"))
   {
     std::cout << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
@@ -250,28 +250,40 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   Eigen::Affine3d grasp_pose = visuals_->grasp_markers_->convertPose(grasp_pose_msg.pose);
   Eigen::Affine3d lifted_grasp_pose = grasp_pose;
   lifted_grasp_pose.translation().z() += grasp_candidate->grasp_data_->lift_distance_desired_;
-  Eigen::Affine3d lifted_pregrasp_pose = pregrasp_pose;
-  lifted_pregrasp_pose.translation().z() += grasp_candidate->grasp_data_->lift_distance_desired_;
+
+  // METHOD 1 - retreat in same direction as approach
+  // Eigen::Affine3d lifted_pregrasp_pose = pregrasp_pose;
+  // lifted_pregrasp_pose.translation().z() += grasp_candidate->grasp_data_->lift_distance_desired_;
+
+  // METHOD 2
+  Eigen::Affine3d retreat_pose = lifted_grasp_pose;
+  retreat_pose.translation().x() -= grasp_candidate->grasp_data_->retreat_distance_desired_;
 
   EigenSTL::vector_Affine3d waypoints;
   //waypoints.push_back(pregrasp_pose); // this is included in the robot_state being used to calculate cartesian path
   waypoints.push_back(grasp_pose);
   waypoints.push_back(lifted_grasp_pose);
-  waypoints.push_back(lifted_pregrasp_pose);
+  //waypoints.push_back(lifted_pregrasp_pose);
+  waypoints.push_back(retreat_pose);
 
   // Visualize waypoints
-  bool visualize_path_details = false;
+  bool visualize_path_details = true;
   if (visualize_path_details)
   {
     bool static_id = false;
-    //visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
-    visuals_->grasp_markers_->publishText(pregrasp_pose, "pregrasp", rvt::WHITE, rvt::SMALL, static_id);
-    //visuals_->grasp_markers_->publishZArrow(grasp_pose, rvt::YELLOW, rvt::SMALL);
-    visuals_->grasp_markers_->publishText(grasp_pose, "grasp", rvt::WHITE, rvt::SMALL, static_id);
+    // visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
+    // visuals_->grasp_markers_->publishText(pregrasp_pose, "pregrasp", rvt::WHITE, rvt::SMALL, static_id);
+
+    // visuals_->grasp_markers_->publishZArrow(grasp_pose, rvt::YELLOW, rvt::SMALL);
+    // visuals_->grasp_markers_->publishText(grasp_pose, "grasp", rvt::WHITE, rvt::SMALL, static_id);
+
     //visuals_->grasp_markers_->publishZArrow(lifted_grasp_pose, rvt::ORANGE, rvt::SMALL);
+    visuals_->grasp_markers_->publishAxis(lifted_grasp_pose);
     visuals_->grasp_markers_->publishText(lifted_grasp_pose, "lifted", rvt::WHITE, rvt::SMALL, static_id);
-    //visuals_->grasp_markers_->publishZArrow(lifted_pregrasp_pose, rvt::RED, rvt::SMALL);
-    visuals_->grasp_markers_->publishText(lifted_pregrasp_pose, "retreat", rvt::WHITE, rvt::SMALL, static_id);
+
+    //visuals_->grasp_markers_->publishZArrow(retreat_pose, rvt::RED, rvt::SMALL);
+    visuals_->grasp_markers_->publishAxis(retreat_pose);
+    visuals_->grasp_markers_->publishText(retreat_pose, "retreat", rvt::WHITE, rvt::SMALL, static_id);
   }
 
   // Starting state
@@ -848,7 +860,7 @@ bool Manipulation::plan(const moveit::core::RobotStatePtr& start, const moveit::
       = boost::dynamic_pointer_cast<ompl::tools::ExperienceSetup>(mbpc->getOMPLSimpleSetup());
 
     // Display logs
-    if (config_->isEnabled("verbose_experience_database_stats"))
+    if (visuals_->isEnabled("verbose_experience_database_stats"))
       experience_setup->printLogs();
 
     // Logging
@@ -1106,7 +1118,7 @@ bool Manipulation::executeSavedCartesianPath(moveit_grasps::GraspCandidatePtr ch
 {
   // Get the already computed cartesian path
   const moveit_grasps::GraspTrajectories &segmented_cartesian_traj = chosen_grasp->segmented_cartesian_traj_;
-
+  
   // Error check
   if (segmented_cartesian_traj.size() != 3)
   {
@@ -1124,9 +1136,14 @@ bool Manipulation::executeSavedCartesianPath(moveit_grasps::GraspCandidatePtr ch
     return false;
   }
 
+  // Add the current state to the trajectory
+  std::vector<moveit::core::RobotStatePtr> trajectory = segmented_cartesian_traj[segment_id];
+  trajectory.insert(trajectory.begin(), getCurrentState());
+
+
   // Get trajectory message
   moveit_msgs::RobotTrajectory trajectory_msg;
-  if (!convertRobotStatesToTrajectory(segmented_cartesian_traj[segment_id], trajectory_msg, chosen_grasp->grasp_data_->arm_jmg_,
+  if (!convertRobotStatesToTrajectory(trajectory, trajectory_msg, chosen_grasp->grasp_data_->arm_jmg_,
                                       config_->approach_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
@@ -1625,7 +1642,7 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
 bool Manipulation::getGraspingSeedState(BinObjectPtr bin, moveit::core::RobotStatePtr& seed_state,
                                         const robot_model::JointModelGroup* arm_jmg)
 {
-  bool visualize_grasping_seed_state = config_->isEnabled("show_grasping_seed_state");
+  bool visualize_grasping_seed_state = visuals_->isEnabled("show_grasping_seed_state");
 
   // Create pose to find IK solver
   Eigen::Affine3d ee_pose = transform(bin->getCentroid(), shelf_->getBottomRight()); // convert to world coordinates

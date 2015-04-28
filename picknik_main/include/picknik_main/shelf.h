@@ -82,7 +82,12 @@ public:
    * \brief Getter for a product
    */ 
   ProductObjectPtr getProduct(const std::string& name);
-  
+
+  /**
+   * \brief Helper to get the parent transform
+   */
+  Eigen::Affine3d getBinToWorld(ShelfObjectPtr &parent);
+
 }; // class
 
 typedef std::map<std::string, BinObjectPtr> BinObjectMap;

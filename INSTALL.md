@@ -36,15 +36,30 @@ Also, to reduce debug output, add to your bashrc:
 
 ## Install Perception Pipeline
 
+### Install CUDA and NVIDIA Driver
+
 * Tested in MacOSX 10.09, 10.10, Ubuntu 14.04, Cuda 6.0, Cuda 6.5, Cuda 7.0
 
 If use CUDA 6.0, 6.5, please use gcc-46 as the cuda host compiler.
 
 Recommended: [Cuda 7](https://developer.nvidia.com/cuda-downloads)
 
-### Install CUDA and NVIDIA Driver
+Switch virtual terminal (Ctrl Alt F1)
 
-Make sure your cuda driver works correctlly by runing any of the cuda example demo:
+    sudo service lightdm stop
+	~/Downloads
+	chmod -x CUDA_FILE
+	./CUDA_FILE
+
+Say yes to everything... restart.
+
+
+Make sure your cuda driver works correctly by runing any of the cuda example demo:
+
+    cd ~/NVIDIA_CUDA-7.0_Samples/
+	make
+
+[Getting Started Documentation](http://www.google.com/url?q=http%3A%2F%2Fdeveloper.download.nvidia.com%2Fcompute%2Fcuda%2F7_0%2FProd%2Fdoc%2FCUDA_Getting_Started_Linux.pdf&sa=D&sntz=1&usg=AFQjCNH-aytZIB1ufyiMTTi-okbCJXSYrg)
 
 ### Install dependencies:
 
@@ -54,29 +69,31 @@ Make sure your cuda driver works correctlly by runing any of the cuda example de
 
  1, install protobuf
  
-    https://github.com/google/protobuf.git
+    git clone https://github.com/google/protobuf.git
+	cd protobuf
     ./autogen.sh
-    run ./configure
+    ./configure
     make -j3
     sudo make install all
     cp /usr/local/lib/libproto* /usr/lib/
     
- 2, install google ceres solver: (you don't need to do this if you have ros installed)
+ 2, OPTIONAL install google ceres solver: (you don't need to do this if you have ros installed)
  
     sudo apt-get install libceres-dev 
     
- 3, install google log and google flags: (you don't need to do this if you have ros installed)
+ 3, OPTIONAL install google log and google flags: (you don't need to do this if you have ros installed)
  
     sudo apt-get install libgoogle-glog-dev
     sudo apt-get install libgflags-dev 
   
- 4, also make sure you have opencv, boost (you don't need to do this if you have ros installed)  
+ 4, also make sure you have opencv, boost (you don't need to do this if you have ros installed)
 
 ### Install CoreDev
 
     cd CoreDev
     mkdir build
     cd build
+	cmake ..
     make -j4
 
 ### Install kangaroo (for SDF fusion, ray casting):
@@ -84,8 +101,8 @@ Make sure your cuda driver works correctlly by runing any of the cuda example de
 	cd kangaroo
 	mkdir build
     cd build
-	ccmake ..
-	make -j
+	cmake ..
+	make -j4
 	
 ### Install wallaby (for grid sdf fusion and voxel hashing):
 
@@ -96,8 +113,8 @@ Make sure your cuda driver works correctlly by runing any of the cuda example de
 
 ### Install DDTR
 
-	git init submodule
-	git update submodule
+	git submodule init
+	git submodule update
 	mkdir build
 	cd build
 	cmake ..

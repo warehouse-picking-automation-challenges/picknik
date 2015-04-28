@@ -358,10 +358,23 @@ public:
   void setCentroid(const Eigen::Affine3d& centroid);
 
   /**
+   * \brief Getter for mesh-specific centroid
+   */ 
+  const Eigen::Affine3d& getMeshCentroid() const;
+
+
+  /**
+   * \brief Setter for centroid of mesh, which is often different than the calculated bounding box
+  */
+  void setMeshCentroid(const Eigen::Affine3d& centroid);
+
+  /**
    * \brief Get bounding box and corresponding height/width/depth
+   * \param verbose
+   * \param bin_to_world - optional transform to help with debugging
    * \return true on success
    */
-  bool calculateBoundingBox(bool verbose = true);
+  bool calculateBoundingBox(const Eigen::Affine3d &bin_to_world = Eigen::Affine3d::Identity());
 
 protected:
 
@@ -375,6 +388,7 @@ protected:
 
   // Pose relative to parent object
   Eigen::Affine3d centroid_;
+  Eigen::Affine3d mesh_centroid_;
 };
 
 } // namespace
