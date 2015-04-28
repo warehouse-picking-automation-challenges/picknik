@@ -8,30 +8,24 @@
   <!-- NOTE: will open two tiny windows... keyboard presses register when this is in focus -->
   <node pkg="keyboard" type="keyboard" name="keyboard_right" />
   <node pkg="picknik_perception" type="tf_keyboard" name="tf_keyboard_right" output="screen">
-    <rosparam command="load" file="$(find picknik_perception)/config/tf_xtion_right.yaml"/>
+    <rosparam command="load" file="$(find picknik_perception)/config/tf_kinect_right.yaml"/>
   </node>
 
   <node pkg="keyboard" type="keyboard" name="keyboard_left" />
   <node pkg="picknik_perception" type="tf_keyboard" name="tf_keyboard_left" output="screen">
-    <rosparam command="load" file="$(find picknik_perception)/config/tf_xtion_left.yaml"/>
+    <rosparam command="load" file="$(find picknik_perception)/config/tf_kinect_left.yaml"/>
   </node>
 
   <!-- Publish world frame -->
   <node pkg="tf" type="static_transform_publisher" name="kinect_right" args="0 0 0 0 0 0 /world /base 25" />
 
   <!-- Start Kinect2 Bridge -->
-  <!-- <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch"> -->
-  <!--   <arg name="base_name" value="xtion_left" /> -->
-  <!-- </include> -->
-
-  <!-- Start Xtion -->
-  <include file="$(find openni_launch)/launch/openni.launch">
-    <arg name="camera" value="xtion_left" />
-    <arg name="depth_registration" value="true" />
+  <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch">
+    <arg name="base_name" value="kinect2_right" />
   </include>
 
   <!-- Preprocess the cloud -->
-  <node pkg="picknik_perception" type="cloud_preprocessor" name="left_preprocessor" />
+  <!-- <node pkg="picknik_perception" type="cloud_preprocessor" name="left_preprocessor" /> -->
 
 
 

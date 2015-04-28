@@ -73,6 +73,7 @@ public:
   double bbox_depth_, bbox_width_, bbox_height_;
 
   bool processing_;
+  bool outlier_removal_;
 
 private:
   bool verbose_;

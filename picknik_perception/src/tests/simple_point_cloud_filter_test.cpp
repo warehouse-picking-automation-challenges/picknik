@@ -36,7 +36,7 @@ public:
 
     // listen to point cloud topic
     // TODO: camera topic should be set in launch file
-    pc_sub_ = nh_.subscribe("/camera/depth_registered/points", 1, 
+    pc_sub_ = nh_.subscribe("/left_preprocessor/roi_cloud", 1, 
                             &picknik_perception::SimplePointCloudFilter::pointCloudCallback, pc_filter_ptr_);
 
     // publish aligned point cloud and bin point cloud
@@ -48,16 +48,25 @@ public:
     double roi_depth = 0.3;
     double roi_width = 0.25;
     double roi_height = 0.2;
-    roi_pose.translation() += Eigen::Vector3d(roi_depth / 2.0 + 0.02, -0.25, 0.85 + roi_height / 2.0);
-    pc_filter_ptr_->setRegionOfInterest(roi_pose, roi_depth, roi_width, roi_height);
+    roi_pose.translation() += Eigen::Vector3d( 0.7 + roi_depth / 2.0, 
+                                              0.42 - roi_width / 2.0, 
+                                               0.805 + roi_height / 2.0);
+
+    double padding = 0.02;
+    pc_filter_ptr_->setRegionOfInterest(roi_pose, roi_depth - padding, roi_width - padding, roi_height - padding);
+    visual_tools_->publishWireframeCuboid(roi_pose, roi_depth, roi_width, roi_height, rviz_visual_tools::CYAN);
 
     //pc_filter_ptr_->setRegionOfInterest(bottom_left, top_right);
 
     ros::Rate rate(40.0);
-    int bbox_rate = 10;
+    int bbox_rate = 30;
     int count = 1; // don't want a bounding box on first frame.
 
+    pc_filter_ptr_->outlier_removal_ = true;
+
     ROS_DEBUG_STREAM_NAMED("PC_filter.test","starting main filter test");
+    std::size_t id = 0;
+
     while ( ros::ok() )
     {
       // get bounding box at specified interval
@@ -65,35 +74,24 @@ public:
       {
         ROS_DEBUG_STREAM_NAMED("PC_filter.test","getting bbox...");
         visual_tools_->deleteAllMarkers();
-        
-        // show world CS
-        visual_tools_->publishAxis(Eigen::Affine3d::Identity());
-
-        // show region of interest and bounding box
-        visual_tools_->publishAxis(pc_filter_ptr_->roi_pose_);
         visual_tools_->publishWireframeCuboid(roi_pose, roi_depth, roi_width, roi_height, rviz_visual_tools::CYAN);
-        pc_filter_ptr_->get_bbox_ = true;
         
+        // show region of interest and bounding box
+        pc_filter_ptr_->get_bbox_ = true;
         visual_tools_->publishWireframeCuboid(pc_filter_ptr_->bbox_pose_, pc_filter_ptr_->bbox_depth_,
                                               pc_filter_ptr_->bbox_width_, pc_filter_ptr_->bbox_height_,
                                               rviz_visual_tools::MAGENTA);
-
       }
       
-      // publish point clouds for rviz
-      if (pc_filter_ptr_->aligned_cloud_->size() ==0)
-      {
-        continue;
-      }
-      aligned_cloud_pub_.publish(pc_filter_ptr_->aligned_cloud_);
-      roi_cloud_pub_.publish(pc_filter_ptr_->roi_cloud_);
+      if (pc_filter_ptr_->aligned_cloud_->size() == 0)
+        ROS_DEBUG_STREAM_NAMED("PC_filter.test","skipping aligned pub. zero size");
+      else 
+        aligned_cloud_pub_.publish(pc_filter_ptr_->aligned_cloud_);
 
-
-      if (count % (bbox_rate * 5) == 0)
-      {
-        ROS_DEBUG_STREAM_NAMED("PC_filter.match","trying to match glue to cloud...");
-
-      }
+      if (pc_filter_ptr_->roi_cloud_->size() == 0)
+        ROS_DEBUG_STREAM_NAMED("PC_filter.test","skipping roi pub. zero size");
+      else 
+        roi_cloud_pub_.publish(pc_filter_ptr_->roi_cloud_);
 
       count++;
       rate.sleep();

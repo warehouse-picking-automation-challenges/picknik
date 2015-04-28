@@ -14,6 +14,7 @@ SimplePointCloudFilter::SimplePointCloudFilter()
 
   processing_ = false;
   get_bbox_ = false;
+  outlier_removal_ = false;
 
   // set regoin of interest
   roi_depth_ = 1.0;
@@ -197,17 +198,20 @@ void SimplePointCloudFilter::processPointCloud(const sensor_msgs::PointCloud2Con
 
   // slowish
 
-  // pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> rad;
-  // rad.setInputCloud(roi_cloud);
-  // rad.setRadiusSearch(0.03);
-  // rad.setMinNeighborsInRadius(200);
-  // rad.filter(*roi_cloud);
-
-  // pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
-  // sor.setInputCloud(roi_cloud);
-  // sor.setMeanK(50);
-  // sor.setStddevMulThresh(1.0);
-  // sor.filter(*roi_cloud);
+  if (outlier_removal_)
+  {
+    pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> rad;
+    rad.setInputCloud(roi_cloud_);
+    rad.setRadiusSearch(0.03);
+    rad.setMinNeighborsInRadius(200);
+    rad.filter(*roi_cloud_);
+    
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
+    sor.setInputCloud(roi_cloud_);
+    sor.setMeanK(50);
+    sor.setStddevMulThresh(1.0);
+    sor.filter(*roi_cloud_);
+  }
 
   if (roi_cloud_->points.size() == 0)
   {
