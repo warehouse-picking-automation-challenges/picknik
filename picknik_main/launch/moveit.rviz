@@ -573,9 +573,12 @@ Visualization Manager:
       Name: Amazon Markers
       Namespaces:
         Axis: true
-        Collision: true
+        Line: true
         Text: true
-        goal_bin: true
+        Wireframe Rectangle: true
+        crayola_64_ct: true
+        world_to_bin: true
+        world_to_camera: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -599,8 +602,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
-        Path: true
-        Sphere: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -887,107 +889,19 @@ Visualization Manager:
         Show Robot Visual: false
       Value: true
     - Class: rviz/TF
-      Enabled: true
+      Enabled: false
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        arm_mount:
-          Value: false
-        base:
-          Value: false
-        camera_depth_frame:
-          Value: false
-        camera_depth_optical_frame:
-          Value: false
-        camera_link:
-          Value: false
-        camera_mount:
-          Value: false
-        camera_rgb_frame:
-          Value: false
-        camera_rgb_optical_frame:
-          Value: false
-        frame:
-          Value: false
-        gantry:
-          Value: false
-        gantry_plate:
-          Value: false
-        jaco2_end_effector:
-          Value: false
-        jaco2_link_1:
-          Value: false
-        jaco2_link_2:
-          Value: false
-        jaco2_link_3:
-          Value: false
-        jaco2_link_4:
-          Value: false
-        jaco2_link_5:
-          Value: false
-        jaco2_link_base:
-          Value: false
-        jaco2_link_finger_1:
-          Value: false
-        jaco2_link_finger_1_tip:
-          Value: false
-        jaco2_link_finger_2:
-          Value: false
-        jaco2_link_finger_2_tip:
-          Value: false
-        jaco2_link_finger_3:
-          Value: false
-        jaco2_link_finger_3_tip:
-          Value: false
-        jaco2_link_hand:
-          Value: false
-        jaco2_wrist:
-          Value: false
-        world:
-          Value: false
-        xtion:
-          Value: true
-        xtion_sensor_disabled:
-          Value: false
       Marker Scale: 0.5
       Name: TF
       Show Arrows: false
       Show Axes: true
       Show Names: true
       Tree:
-        world:
-          base:
-            frame:
-              gantry:
-                gantry_plate:
-                  arm_mount:
-                    jaco2_link_base:
-                      jaco2_link_1:
-                        jaco2_link_2:
-                          jaco2_link_3:
-                            jaco2_link_4:
-                              jaco2_link_5:
-                                jaco2_wrist:
-                                  jaco2_link_hand:
-                                    camera_mount:
-                                      xtion:
-                                        camera_link:
-                                          {}
-                                        xtion_sensor_disabled:
-                                          {}
-                                    jaco2_end_effector:
-                                      {}
-                                    jaco2_link_finger_1:
-                                      jaco2_link_finger_1_tip:
-                                        {}
-                                    jaco2_link_finger_2:
-                                      jaco2_link_finger_2_tip:
-                                        {}
-                                    jaco2_link_finger_3:
-                                      jaco2_link_finger_3_tip:
-                                        {}
+        {}
       Update Interval: 0
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -1198,22 +1112,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 6.60196
+      Distance: 3.24033
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.24537
-        Y: 2.41413
+        X: 1.17203
+        Y: 0.252822
         Z: -4.76837e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.240399
+      Pitch: 0.350399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 4.5354
+      Yaw: 3.67039
     Saved: ~
 Window Geometry:
   Displays:
@@ -1229,5 +1143,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1190
-  X: 1910
-  Y: 14
+  X: 1901
+  Y: 15

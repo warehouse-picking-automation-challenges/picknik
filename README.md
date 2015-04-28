@@ -112,7 +112,8 @@ Rviz Visualizers of robot states and debug markers
 
 Camera calibration:
 
-    roslaunch picknik_main camera_calibration.launch
+	#OLD roslaunch picknik_main camera_calibration.launch
+    roslaunch picknik_perception tf_keyboard.launch
 
 Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
