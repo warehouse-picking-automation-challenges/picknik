@@ -112,5 +112,13 @@ target_link_libraries(cloud_preprocessor
   simple_point_cloud_filter
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
-  ${Boost_LIBRARIES}
+)
+
+# Executable
+add_executable(align_point_clouds
+  src/align_point_clouds.cpp
+)
+target_link_libraries(align_point_clouds
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )

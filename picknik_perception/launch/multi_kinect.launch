@@ -24,6 +24,17 @@
   <!--   <arg name="base_name" value="xtion_left" /> -->
   <!-- </include> -->
 
+  <!-- Start Xtion -->
+  <include file="$(find openni_launch)/launch/openni.launch">
+    <arg name="camera" value="xtion_left" />
+    <arg name="depth_registration" value="true" />
+  </include>
+
+  <!-- Preprocess the cloud -->
+  <node pkg="picknik_perception" type="cloud_preprocessor" name="left_preprocessor" />
+
+
+
   <!-- TODO: Make this launch kincec2_bridge on other machine -->
 
 </launch>
