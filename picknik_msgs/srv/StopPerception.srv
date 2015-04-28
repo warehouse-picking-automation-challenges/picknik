@@ -1,0 +1,5 @@
+# Request
+bool stop
+---
+# Response
+bool stopped

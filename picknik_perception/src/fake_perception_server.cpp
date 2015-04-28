@@ -41,6 +41,7 @@
 #include <ros/ros.h>
 #include <actionlib/server/simple_action_server.h>
 #include <picknik_msgs/FindObjectsAction.h>
+#include <picknik_perception/manipulation_interface.h>
 
 #include <rviz_visual_tools/rviz_visual_tools.h>
 

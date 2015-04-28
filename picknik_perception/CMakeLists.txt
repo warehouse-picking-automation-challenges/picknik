@@ -65,6 +65,15 @@ target_link_libraries(manual_tf_alignment
   ${Boost_LIBRARIES}
 )
 
+# Library
+add_library(manipulation_interface
+  src/manipulation_interface.cpp
+)
+target_link_libraries(manipulation_interface
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
 # Executable
 add_executable(simple_point_cloud_filter_test
   src/tests/simple_point_cloud_filter_test.cpp
@@ -85,3 +94,12 @@ target_link_libraries(tf_keyboard
   manual_tf_alignment
   ${catkin_LIBRARIES}
 )
+
+# Executable
+add_executable(fake_perception_server src/fake_perception_server.cpp)
+target_link_libraries(fake_perception_server 
+  manipulation_interface
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
