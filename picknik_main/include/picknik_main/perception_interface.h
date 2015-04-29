@@ -107,6 +107,14 @@ private:
   bool getCameraPose(Eigen::Affine3d& world_to_camera, ros::Time& time_stamp);
 
   /**
+   * \brief Get offset to correct product locations
+   * \param world_to_camera 4x4 matrix to fill in with transpose
+   * \param time_stamp - the time that the arm was in this location
+   * \return true on success
+   */
+  bool getHackOffsetPose(Eigen::Affine3d& world_to_camera, ros::Time& time_stamp);
+
+  /**
    * \brief Display a visualization of a camera view frame
    * \return true on success
    */

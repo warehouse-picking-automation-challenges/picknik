@@ -228,13 +228,45 @@ public:
                             bool verbose);
 
   /**
+   * \brief Helper for getting the joint that is the gantry, with error checks
+   * \return NULL on failure, the joint on success
+   */
+  const moveit::core::JointModel* getGantryJoint();
+
+  /**
    * \brief After grasping an object, lift object up slightly
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \param desired_lift_distance
+   * \param velocity_scaling_factor
+   * \param up
+   * \param ignore_collision
    * \return true on success
    */
   bool executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, const double &velocity_scaling_factor,
                            bool up, bool ignore_collision = false);
 
+  /**
+   * \brief After grasping an object, lift object up slightly
+   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \param desired_lift_distance
+   * \param velocity_scaling_factor
+   * \param up
+   * \param ignore_collision
+   * \param best_attempt - even if we can't achieve the desired_list_distance, execute anyway as much as possible
+   * \return true on success
+   */
+  bool executeVerticlePathGantryOnly(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance,
+                                     const double &velocity_scaling_factor, bool up, bool ignore_collision, bool best_attempt = false);
+
+  /**
+   * \brief After grasping an object, lift object up slightly using IK
+   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \param desired_lift_distance
+   * \param velocity_scaling_factor
+   * \param up
+   * \param ignore_collision
+   * \return true on success
+   */
   bool executeVerticlePathWithIK(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up,
                                  bool ignore_collision = false);
 
@@ -294,6 +326,7 @@ public:
    * \return true on success
    */
   bool perturbCamera(BinObjectPtr bin);
+  bool perturbCameraGantryOnly(BinObjectPtr bin, const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Create the initial guess for a grasp
@@ -306,6 +339,7 @@ public:
    * \return true on success
    */
   bool moveCameraToBin(BinObjectPtr bin);
+  bool moveCameraToBinGantryOnly(BinObjectPtr bin, const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Move a pose in a specified direction and specified length, where all poses are in the world frame

@@ -53,7 +53,7 @@ namespace picknik_main
 {
 
 PerceptionInterface::PerceptionInterface(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf, ManipulationDataPtr config,
-                                 boost::shared_ptr<tf::TransformListener> tf, ros::NodeHandle nh)
+                                         boost::shared_ptr<tf::TransformListener> tf, ros::NodeHandle nh)
   : verbose_(verbose)
   , visuals_(visuals)
   , shelf_(shelf)
@@ -65,10 +65,10 @@ PerceptionInterface::PerceptionInterface(bool verbose, VisualsPtr visuals, Shelf
 {
   // Load ROS publisher
   stop_perception_client_ = nh_.serviceClient<picknik_msgs::StopPerception>( "/perception/stop_perception" );
-  reset_perception_client_ = nh_.serviceClient<picknik_msgs::StopPerception>( "/perception/reset_perception" );  
+  reset_perception_client_ = nh_.serviceClient<picknik_msgs::StopPerception>( "/perception/reset_perception" );
 
   // Load caamera intrinsics
-  const std::string parent_name = "perception_interface"; // for namespacing logging messages  
+  const std::string parent_name = "perception_interface"; // for namespacing logging messages
   rvt::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_fx_);
   rvt::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_fy_);
   rvt::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_cx_);
@@ -119,7 +119,7 @@ bool PerceptionInterface::startPerception(ProductObjectPtr& product, BinObjectPt
     {
       ROS_ERROR_STREAM_NAMED("perception_interface","Unable to reset perception pipeline!");
       return false;
-    }    
+    }
   }
 
   // Send request
@@ -160,9 +160,7 @@ bool PerceptionInterface::endPerception(ProductObjectPtr& product, BinObjectPtr&
   ROS_INFO_STREAM_NAMED("perception_interface","Waiting for response from perception server");
 
   // Wait for the action to return with product pose
-  double timeout = 60;
-  if (timeout > 30)
-    ROS_WARN_STREAM_NAMED("perception_interface","Perception timeout is set to a high value");
+  double timeout = 25;
   if (!find_objects_action_.waitForResult(ros::Duration(timeout)))
   {
     ROS_ERROR_STREAM_NAMED("perception_interface","Percetion action did not finish before the time out.");
@@ -272,13 +270,16 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
 
   // Get camera position
   Eigen::Affine3d world_to_camera = Eigen::Affine3d::Identity();
-
+  ros::Time time_stamp;
   if (!result_is_in_world_frame)
   {
-    ros::Time time_stamp;
     getCameraPose(world_to_camera, time_stamp);
     visuals_->visual_tools_->publishAxisLabeled(world_to_camera, "world_to_camera");
   }
+
+  // Get camera position
+  Eigen::Affine3d object_pose_offset = Eigen::Affine3d::Identity();
+  getHackOffsetPose(object_pose_offset, time_stamp);
 
   // Show camera view
   //publishCameraFrame(world_to_camera);
@@ -292,18 +293,21 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   {
     const picknik_msgs::FoundObject& found_object = result->found_objects[i];
 
-    // Get object's transform    
+    // Get object's transform
     Eigen::Affine3d camera_to_object = visuals_->visual_tools_->convertPose(found_object.object_pose);
 
     // // Convert to ROS frame
     // convertFrameCVToROS(visuals_->visual_tools_->convertPose(found_object.object_pose), camera_to_object);
-      
+
     // Convert to world frame
     const Eigen::Affine3d world_to_object = world_to_camera * camera_to_object;
     visuals_->visual_tools_->publishAxisLabeled(world_to_object, found_object.object_name);
 
     // Convert to pose of bin
-    const Eigen::Affine3d bin_to_object = world_to_bin.inverse() * world_to_object;
+    Eigen::Affine3d bin_to_object = world_to_bin.inverse() * world_to_object;
+    
+    // Apply small hack offset
+    bin_to_object = bin_to_object * object_pose_offset;
 
     std::cout << std::endl;
     std::cout << "=============== Found Object =============== " << std::endl;
@@ -381,8 +385,7 @@ bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::T
 {
   tf::StampedTransform camera_transform;
   static const std::string parent_frame = "/world";
-  //static const std::string camera_frame = "/camera_link";
-  static const std::string camera_frame = "/camera_depth_optical_frame";
+  static const std::string camera_frame = "/camera_depth_frame";
 
   try
   {
@@ -400,18 +403,43 @@ bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::T
   // Copy results
   tf::transformTFToEigen(camera_transform, world_to_camera);
   time_stamp = camera_transform.stamp_;
-    return true;
+  return true;
 }
 
-bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera) 
+bool PerceptionInterface::getHackOffsetPose(Eigen::Affine3d& world_to_camera, ros::Time& time_stamp)
 {
-  // get the pose of the top left point which depth is 0.5 meters away 
+  tf::StampedTransform camera_transform;
+  static const std::string parent_frame = "/world";
+  static const std::string camera_frame = "/object_offset_hack";
+
+  try
+  {
+    // Wait to make sure a transform message has arrived
+    tf_->waitForTransform(parent_frame, camera_frame, ros::Time(0), ros::Duration(1));
+    // Get latest transform available
+    tf_->lookupTransform(parent_frame, camera_frame, ros::Time(0), camera_transform);
+  }
+  catch (tf::TransformException ex)
+  {
+    ROS_ERROR_STREAM_NAMED("perception_interface", "Error: " << ex.what());
+    return false;
+  }
+
+  // Copy results
+  tf::transformTFToEigen(camera_transform, world_to_camera);
+  time_stamp = camera_transform.stamp_;
+  return true;
+}
+
+bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera)
+{
+  // get the pose of the top left point which depth is 0.5 meters away
   Eigen::Vector3d top_left, top_right, bottom_left, bottom_right;
-  // top left (0,0) 
+  // top left (0,0)
   top_left << -camera_min_depth_ * (camera_cy_ - 0) / camera_fx_ , -camera_min_depth_ * (camera_cx_ - 0) / camera_fy_ , camera_min_depth_;
-  // top right (640,0) 
+  // top right (640,0)
   top_right << -camera_min_depth_ * (camera_cy_ - 640) / camera_fx_ , -camera_min_depth_ * (camera_cx_ - 0) / camera_fy_ , camera_min_depth_;
-  // bot right (640.480) 
+  // bot right (640.480)
   bottom_right << -camera_min_depth_ * (camera_cy_ - 640) / camera_fx_ , -camera_min_depth_ * (camera_cx_ - 480) / camera_fy_ , camera_min_depth_;
   // bot left (0,480)
   bottom_left << -camera_min_depth_ * (camera_cy_ - 0) / camera_fx_ , -camera_min_depth_ * (camera_cx_ - 480) / camera_fy_ , camera_min_depth_;
@@ -440,7 +468,7 @@ bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera)
 //   Eigen::Matrix3d rotation;
 //   rotation = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
 //     * Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitZ());
-//   //std::cout << "Rotation: " << rotation << std::endl;                                                                                                                                                                                                                           
+//   //std::cout << "Rotation: " << rotation << std::endl;
 //   ros_frame = rotation * cv_frame;
 
 //   return true;

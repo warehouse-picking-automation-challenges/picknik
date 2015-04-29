@@ -1,12 +1,16 @@
 <launch>
+  <!-- This launch file is made by Dave -->
 
-  <!-- listen to keyboard presses -->
-  <!-- NOTE: will open a tiny window... keyboard presses register when this is in focus -->
-  <node pkg="keyboard" type="keyboard" name="keyboard" />
+  <!-- Manual calibration of gantry to camera -->
+  <node pkg="keyboard" type="keyboard" name="keyboard_camera_pose" />
+  <node pkg="picknik_perception" type="tf_keyboard" name="tf_keyboard_camera_pose" output="screen">
+    <rosparam command="load" file="$(find picknik_perception)/config/tf_keyboard_camera_pose.yaml"/>
+  </node>
 
-  <!-- Get registered poitn cloud -->
-  <node pkg="picknik_perception" type="tf_keyboard" name="tf_keyboard" output="screen">
-    <rosparam command="load" file="$(find picknik_perception)/config/dave_test_tf_keyboard.yaml"/>
+  <!-- Manual calibration of product hack offset -->
+  <node pkg="keyboard" type="keyboard" name="keyboard_hack" />
+  <node pkg="picknik_perception" type="tf_keyboard" name="tf_keyboard_hack" output="screen">
+    <rosparam command="load" file="$(find picknik_perception)/config/tf_keyboard_hack_offset.yaml"/>
   </node>
 
   <arg name="camera" default="camera" />

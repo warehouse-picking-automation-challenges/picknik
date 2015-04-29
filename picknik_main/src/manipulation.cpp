@@ -1206,23 +1206,41 @@ bool Manipulation::generateApproachPath(moveit_grasps::GraspCandidatePtr chosen_
   return true;
 }
 
+const moveit::core::JointModel* Manipulation::getGantryJoint()
+{
+  const moveit::core::JointModel* gantry_joint = robot_model_->getJointModel("gantry_joint");
+  if (!gantry_joint)
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to get joint link");
+    return NULL;
+  }
+  if (gantry_joint->getVariableCount() != 1)
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Invalid number of joints in " << gantry_joint->getName());
+    return NULL;
+  }
+  return gantry_joint;
+}
+
 bool Manipulation::executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance,
                                        const double &velocity_scaling_factor, bool up, bool ignore_collision)
 {
   ROS_INFO_STREAM_NAMED("apc_manager","Executing verticle path " << (up ? "up" : "down"));
 
+  // Attempt to only use gantry, then fall back to IK
+  if (!executeVerticlePathGantryOnly(arm_jmg, desired_lift_distance, velocity_scaling_factor, up, ignore_collision))
+  {
+    ROS_INFO_STREAM_NAMED("manipulation","Falling back to IK-based solution");
+    return executeVerticlePathWithIK(arm_jmg, desired_lift_distance, up, ignore_collision);
+  }
+  return true;
+}
+
+bool Manipulation::executeVerticlePathGantryOnly(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance,
+                                                 const double &velocity_scaling_factor, bool up, bool ignore_collision, bool best_attempt)
+{
   // Find joint property
-  const moveit::core::JointModel* gantry_joint = robot_model_->getJointModel("gantry_joint");
-  if (!gantry_joint)
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Failed to get joint link");
-    return false;
-  }
-  if (gantry_joint->getVariableCount() != 1)
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Invalid number of joints in " << gantry_joint->getName());
-    return false;
-  }
+  const moveit::core::JointModel* gantry_joint = getGantryJoint();
 
   // Get latest state
   getCurrentState();
@@ -1243,9 +1261,10 @@ bool Manipulation::executeVerticlePath(const moveit::core::JointModelGroup *arm_
   // Check joint limits
   if (!gantry_joint->satisfiesPositionBounds(new_gantry_positions))
   {
-    ROS_INFO_STREAM_NAMED("manipulation","New gantry position of " << new_gantry_positions[0] << " does not satisfy joint limit bounds. Falling back to IK-based solution");
+    ROS_INFO_STREAM_NAMED("manipulation","New gantry position of " << new_gantry_positions[0] << " does not satisfy joint limit bounds.");
 
-    return executeVerticlePathWithIK(arm_jmg, desired_lift_distance, up, ignore_collision);
+    if (!best_attempt)
+      return false;
   }
 
   // Create new movemenet state
@@ -1636,6 +1655,39 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   return true;
 }
 
+bool Manipulation::perturbCameraGantryOnly(BinObjectPtr bin, const robot_model::JointModelGroup* arm_jmg)
+{
+  // Note: assumes arm is already pointing at centroid of desired bin
+  ROS_INFO_STREAM_NAMED("manipulation","Perturbing camera for perception - moving gantry up and down");
+
+  // Move gantry down
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  ROS_INFO_STREAM_NAMED("manipulation","Moving camera down distance " << config_->camera_lift_distance_);
+  bool up = false;
+  bool best_attempt = true; // even if we can't achieve the desired_list_distance, execute anyway as much as possible
+  if (!executeVerticlePathGantryOnly(arm_jmg, config_->camera_lift_distance_, config_->lift_velocity_scaling_factor_, up, 
+                                     best_attempt))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move down");
+  }
+  
+  // Move gantry up
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  ROS_INFO_STREAM_NAMED("manipulation","Moving camera up distance " << config_->camera_lift_distance_);
+  up = true;
+  if (!executeVerticlePathGantryOnly(arm_jmg, config_->camera_lift_distance_, config_->lift_velocity_scaling_factor_, up, 
+                                     best_attempt))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move up");
+  }
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  
+  return true;
+}
+
 bool Manipulation::getGraspingSeedState(BinObjectPtr bin, moveit::core::RobotStatePtr& seed_state,
                                         const robot_model::JointModelGroup* arm_jmg)
 {
@@ -1721,6 +1773,51 @@ bool Manipulation::moveCameraToBin(BinObjectPtr bin)
   ee_pose = ee_pose * Eigen::AngleAxisd(config_->camera_y_rotation_from_standard_grasp_, Eigen::Vector3d::UnitY());
 
   return moveEEToPose(ee_pose, config_->main_velocity_scaling_factor_, arm_jmg);
+}
+
+bool Manipulation::moveCameraToBinGantryOnly(BinObjectPtr bin, const robot_model::JointModelGroup* arm_jmg)
+{
+  // Set new state to current state
+  getCurrentState();
+
+  // Set goal state to initial pose
+  static const std::string POSE_NAME = "collapsed";
+  moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_)); // Allocate robot states
+  if (!goal_state->setToDefaultValues(arm_jmg, POSE_NAME))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to set pose '" << POSE_NAME << "' for planning group '" << arm_jmg->getName() << "'");
+    return false;
+  }
+
+  // Find gantry joint
+  const moveit::core::JointModel* gantry_joint = getGantryJoint();
+
+  // Set gantry to correct location
+  Eigen::Affine3d bin_pose = transform(bin->getCentroid(), shelf_->getBottomRight()); // convert to world coordinates
+  double new_gantry_positions[1];
+  new_gantry_positions[0] = bin_pose.translation().z() + config_->camera_z_translation_from_bin_;
+
+  // Check joint limits
+  if (!gantry_joint->satisfiesPositionBounds(new_gantry_positions))
+  {
+    ROS_INFO_STREAM_NAMED("manipulation","New gantry position of " << new_gantry_positions[0] << " does not satisfy joint limit bounds.");
+    return false;
+  }
+
+  // Create new movemenet state
+  goal_state->setJointPositions(gantry_joint, new_gantry_positions);
+
+  // Plan
+  bool execute_trajectory = true;
+  bool check_validity = true;
+  if (!move(current_state_, goal_state, arm_jmg, config_->main_velocity_scaling_factor_,
+            verbose_, execute_trajectory, check_validity))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move to new position");
+    return false;
+  }
+
+  return true;
 }
 
 bool Manipulation::straightProjectPose( const Eigen::Affine3d& original_pose, Eigen::Affine3d& new_pose,

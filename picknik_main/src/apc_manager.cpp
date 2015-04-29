@@ -38,6 +38,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
   , skip_homing_step_(true)
   , next_dropoff_location_(0)
   , order_file_path_(order_file_path)
+  , super_auto_(true)
 {
   // Warn of fake modes
   if (fake_perception)
@@ -191,7 +192,7 @@ bool APCManager::checkSystemReady(bool remove_from_shelf)
 
 // Mode 1
 bool APCManager::mainOrderProcessor(std::size_t order_start, std::size_t jump_to, std::size_t num_orders)
-                          
+
 {
   // Load JSON file
   loadShelfContents(order_file_path_);
@@ -202,7 +203,7 @@ bool APCManager::mainOrderProcessor(std::size_t order_start, std::size_t jump_to
   return runOrder(order_start, jump_to, num_orders);
 }
 
-bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to, std::size_t num_orders)                          
+bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to, std::size_t num_orders)
 {
   // Decide how many products to pick
   if (num_orders == 0)
@@ -233,14 +234,11 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to, std::siz
     {
       ROS_WARN_STREAM_NAMED("apc_manager","An error occured in last product order.");
 
-      if (false)
+      if (!super_auto_)
       {
         // remote_control_->setAutonomous(false);
         // remote_control_->setFullAutonomous(false);
         // remote_control_->waitForNextStep();
-      }
-      else
-      {
         ROS_ERROR_STREAM_NAMED("apc_manager","Shutting down for debug purposes only (it could continue on)");
         return false;
       }
@@ -297,10 +295,6 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
   // Jump to a particular step in the manipulation pipeline
   std::size_t step = jump_to;
 
-  // Don't move to initial position
-  if (skip_homing_step_ && step == 0)
-    step = 1;
-
   while(ros::ok())
   {
 
@@ -318,22 +312,24 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
     switch (step)
     {
       // #################################################################################################################
-      case 0: statusPublisher("Moving to initial position");
+      case 0:
+        //statusPublisher("Moving to initial position");
 
-        // Clear the temporary purple robot state image
-        visuals_->visual_tools_->hideRobot();
+        //   // Clear the temporary purple robot state image
+        //   visuals_->visual_tools_->hideRobot();
 
-        // Set planning scene
-        planning_scene_manager_->displayShelfAsWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
+        //   // Set planning scene
+        //   planning_scene_manager_->displayShelfAsWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
 
-        // Move
-        if (!moveToStartPosition())
-        {
-          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to initial position");
-          return false;
-        }
+        //   // Move
+        //   if (!moveToStartPosition())
+        //   {
+        //     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to initial position");
+        //     return false;
+        //   }
 
-        break;
+        //   break;
+        step++;
 
         // #################################################################################################################
       case 1: statusPublisher("Open end effectors");
@@ -476,7 +472,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move through approach path");
           return false;
         }
-        
+
         // Wait
         ROS_INFO_STREAM_NAMED("apc_manager","Waiting " << config_->wait_before_grasp_ << " seconds before grasping");
         ros::Duration(config_->wait_after_grasp_).sleep();
@@ -521,7 +517,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
           return false;
         }
 
-        // if (!manipulation_->executeVerticlePath(arm_jmg, grasp_datas_[arm_jmg]->lift_distance_desired_, 
+        // if (!manipulation_->executeVerticlePath(arm_jmg, grasp_datas_[arm_jmg]->lift_distance_desired_,
         //                                         config_->lift_velocity_scaling_factor_, true /* up */ ))
         // {
         //ROS_ERROR_STREAM_NAMED("apc_manager","Unable to execute lift path after grasping");
@@ -1082,45 +1078,26 @@ bool APCManager::testCameraPositions()
   // Generate random product poses and visualize the shelf
   createRandomProductPoses();
 
-  std::size_t bin_skipper = 0;
-  for (BinObjectMap::const_iterator bin_it = shelf_->getBins().begin(); bin_it != shelf_->getBins().end(); bin_it++)
+  // Grasps things in the work order
+  for (std::size_t i = 0; i < orders_.size(); ++i)
   {
-    bool process_all_bins = false;
-    if (process_all_bins)
-    {
-      remote_control_->waitForNextStep();
-    }
-    else
-    {
-      bin_skipper++;
-      if (bin_skipper != 4) // only do bin 4 (bin_D)
-        continue;
-    }
-
     if (!ros::ok())
-      return true;
-
-    // Get bin and product
-    const BinObjectPtr bin = bin_it->second;
-    if (bin->getProducts().size() == 0) // Check if there are any objects to get
-    {
-      ROS_ERROR_STREAM_NAMED("apc_manager","No products in bin");
       return false;
-    }
-    const ProductObjectPtr product = bin->getProducts()[0]; // Choose first object
-    WorkOrder work_order(bin, product);
+
+    ROS_INFO_STREAM_NAMED("apc_manager","Starting order " << i);
+    WorkOrder& work_order = orders_[i];
 
     // Get pose
-    Eigen::Affine3d object_pose;
     bool verbose = true;
     if (!perceiveObject(work_order, verbose))
     {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to get product");
-      return false;
+      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to get pose");
+      continue;
     }
 
     // Wait before going to next bin
     ros::Duration(1.0).sleep();
+    remote_control_->waitForNextStep("percieve next bin");    
   }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done moving to each bin");
@@ -1439,17 +1416,24 @@ bool APCManager::testPerceptionComm()
   }
   ProductObjectPtr& product = bin->getProducts().front();
 
-  // Communicate with perception pipeline
-  perception_interface_->startPerception(product, bin);
-
-  ROS_INFO_STREAM_NAMED("apc_manager","Waiting 1 second");
-  ros::Duration(1).sleep();
-
-  // Get result from perception pipeline
-  if (!perception_interface_->endPerception(product, bin))
+  while (ros::ok())
   {
-    ROS_ERROR_STREAM_NAMED("apc_manager","End perception failed");
-    return false;
+
+    // Communicate with perception pipeline
+    perception_interface_->startPerception(product, bin);
+
+    ROS_INFO_STREAM_NAMED("apc_manager","Waiting 1 second");
+    ros::Duration(1).sleep();
+
+    // Get result from perception pipeline
+    if (!perception_interface_->endPerception(product, bin))
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","End perception failed");
+      return false;
+    }
+
+    ros::Duration(2.0).sleep();
+    remote_control_->waitForNextStep("request perception again");
   }
 
   return true;
@@ -1537,21 +1521,24 @@ bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
   BinObjectPtr& bin = work_order.bin_;
   ProductObjectPtr& product = work_order.product_;
 
+  // Choose which planning group to use
+  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+
   // Move camera to the bin
   ROS_INFO_STREAM_NAMED("apc_manager","Moving camera to bin '" << bin->getName() << "'");
 
-  // if (!manipulation_->moveCameraToBin(bin))
-  // {
-  //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
-  //   return false;
-  // }
-
-  // Move camera to bin using pre-recorded trajectory
-  if (!perceiveBinWithCamera(bin))
+  if (!manipulation_->moveCameraToBinGantryOnly(bin, arm_jmg))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
     return false;
   }
+
+  // Move camera to bin using pre-recorded trajectory
+  // if (!perceiveBinWithCamera(bin))
+  // {
+  //   ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera to bin " << bin->getName());
+  //   return false;
+  // }
 
   // Communicate with perception pipeline
   std::cout << std::endl;
@@ -1559,19 +1546,24 @@ bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
   perception_interface_->startPerception(product, bin);
 
   // Perturb camera
-  // if (!manipulation_->perturbCamera(bin))
+  // if (!manipulation_->perturbCameraGantryOnly(bin, arm_jmg))
   // {
   //   ROS_ERROR_STREAM_NAMED("apc_manager","Failed to perturb camera around product");
   // }
 
   // Run pre-recorded camera trajectory
   if (false)
+  {
     if (!perceiveBinWithCamera(bin))
       ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move camera around bin");
+  }
 
   // Let arm come to rest
   double timeout = 20;
   manipulation_->waitForRobotToStop(timeout);
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Sleeping for fun");
+  ros::Duration(1.0).sleep();
 
   // Get result from perception pipeline
   if (!perception_interface_->endPerception(product, bin))
@@ -1617,7 +1609,7 @@ bool APCManager::placeObjectInGoalBin(const robot_model::JointModelGroup* arm_jm
 
   // Drop down
   bool up = false;
-  if (!manipulation_->executeVerticlePath(arm_jmg, config_->place_goal_down_distance_desired_, 
+  if (!manipulation_->executeVerticlePath(arm_jmg, config_->place_goal_down_distance_desired_,
                                           config_->main_velocity_scaling_factor_, up))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Failed to lower product into goal bin, using distance "
@@ -1631,7 +1623,7 @@ bool APCManager::placeObjectInGoalBin(const robot_model::JointModelGroup* arm_jm
 bool APCManager::liftFromGoalBin(const robot_model::JointModelGroup* arm_jmg)
 {
   bool up = true;
-  if (!manipulation_->executeVerticlePath(arm_jmg, config_->place_goal_down_distance_desired_, 
+  if (!manipulation_->executeVerticlePath(arm_jmg, config_->place_goal_down_distance_desired_,
                                           config_->main_velocity_scaling_factor_, up))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Failed to raise arm back up from goal, using distance "
@@ -1801,7 +1793,7 @@ bool APCManager::allowCollisions()
                                                         "frame", true);
     ROS_WARN_STREAM_NAMED("apc_manager","Disabled collisions between v_camera_mount");
     scene->getAllowedCollisionMatrixNonConst().setEntry(shelf_->getGoalBin()->getCollisionName(), "v_camera_mount", true);
-                                                        
+
   }
 
   return true;
@@ -1955,7 +1947,7 @@ bool APCManager::unitTests()
   // Test
   test_name = "SimpleFarBack";
   if (visuals_->isEnabled("unit_test/" + test_name))
-  {  
+  {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
     product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.14);
@@ -1992,7 +1984,7 @@ bool APCManager::startUnitTest(const std::string &json_file, const std::string &
     ProductObjectPtr &p = *product_it;
     p->setCentroid(product_pose);
     p->setMeshCentroid(product_pose);
-  }  
+  }
 
   // Display new shelf
   visuals_->visualizeDisplayShelf(shelf_);
@@ -2005,7 +1997,7 @@ bool APCManager::startUnitTest(const std::string &json_file, const std::string &
   ros::Duration(2.0).sleep();
   ros::spinOnce();
 
-  // Disable actual execution  
+  // Disable actual execution
   if (config_->fake_execution_ && !visuals_->isEnabled("show_simulated_paths_moving"))
     manipulation_->getExecutionInterface()->enableUnitTesting();
 
@@ -2053,7 +2045,7 @@ bool APCManager::testIKSolver()
 
   visuals_->visual_tools_->publishAxisLabeled(ee_pose, "desired");
 
-  // Transform from world frame to 'gantry' frame  
+  // Transform from world frame to 'gantry' frame
   if (visuals_->isEnabled("generic_bool"))
     ee_pose = goal_state->getGlobalLinkTransform("gantry") * ee_pose;
 
