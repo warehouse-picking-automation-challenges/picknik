@@ -60,10 +60,10 @@ public:
   /**
    * \brief Load the configuration from rosparam
    * \param robot_model
-   * \param in_simulation - whether to load full speed velocity constraints (simulation goes faster)
+   * \param fake_execution - whether to load full speed velocity constraints (simulation goes faster)
    * \return true on success
    */
-  bool load(robot_model::RobotModelPtr robot_model, bool in_simulation);
+  bool load(robot_model::RobotModelPtr robot_model, bool fake_execution);
 
 private:
 
@@ -113,7 +113,7 @@ public:
   double camera_frame_display_scale_;
 
   // Load planning configs
-  bool use_experience_;
+  bool use_experience_setup_;
   std::string experience_type_;
   double planning_time_;
 
@@ -124,6 +124,10 @@ public:
 
   // Logic on type of robot
   bool dual_arm_;
+
+  // Execution mode
+  bool fake_execution_;
+
 }; // end class
 
 // Create boost pointers for this class

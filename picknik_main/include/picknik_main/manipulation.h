@@ -87,7 +87,7 @@ public:
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool chooseGrasp(WorkOrder work_order, const robot_model::JointModelGroup* arm_jmg,                   
+  bool chooseGrasp(WorkOrder work_order, const robot_model::JointModelGroup* arm_jmg,
                    std::vector<moveit_grasps::GraspCandidatePtr> &qgrasp_candidates,
                    bool verbose, moveit::core::RobotStatePtr seed_state = moveit::core::RobotStatePtr());
 
@@ -161,6 +161,14 @@ public:
             bool verbose, bool execute_trajectory = true, bool check_validity = true);
 
   /**
+   * \brief Helper for planning
+   * \return true on success
+   */
+  bool createPlanningRequest(planning_interface::MotionPlanRequest& request, const moveit::core::RobotStatePtr& start,
+                             const moveit::core::RobotStatePtr& goal, const robot_model::JointModelGroup* arm_jmg,
+                             double velocity_scaling_factor);
+
+  /**
    * \brief Helper for move() command to allow easy re-planning
    * \return true on success
    */
@@ -224,9 +232,9 @@ public:
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, const double &velocity_scaling_factor, 
+  bool executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, const double &velocity_scaling_factor,
                            bool up, bool ignore_collision = false);
-                           
+
   bool executeVerticlePathWithIK(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up,
                                  bool ignore_collision = false);
 
@@ -393,18 +401,17 @@ public:
   bool statesEqual(const moveit::core::RobotState &s1, const moveit::core::RobotState &s2, const robot_model::JointModelGroup* arm_jmg);
 
   /**
-   * \brief Show the trajectories saved in the experience database, handles loading expeirence setup without needing to first plan
-   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
-   * \return true on success
+   * \brief Helper to access the experience database
+   * \return pointer to a loaded expience database
    */
-  bool displayExperienceDatabaseStandAlone(const robot_model::JointModelGroup* arm_jmg);
+  ompl::tools::ExperienceSetupPtr getExperienceSetup(const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Show the trajectories saved in the experience database
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool displayExperiencePlans(ompl::tools::ExperienceSetupPtr experience_setup, const robot_model::JointModelGroup* arm_jmg);
+  bool displayExperienceDatabase(const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Visulization function

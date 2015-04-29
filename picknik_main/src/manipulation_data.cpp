@@ -50,8 +50,9 @@ ManipulationData::ManipulationData()
 {
 }
 
-bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool in_simulation)
+bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_execution)
 {
+  fake_execution_ = fake_execution;
   const std::string parent_name = "manipulation_data"; // for namespacing logging messages
 
   // Load performance variables
@@ -61,7 +62,7 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool in_simu
   rvt::getDoubleParameter(parent_name, nh_, "retreat_velocity_scaling_factor", retreat_velocity_scaling_factor_);
   rvt::getDoubleParameter(parent_name, nh_, "calibration_velocity_scaling_factor", calibration_velocity_scaling_factor_);
 
-  if (in_simulation)
+  if (fake_execution_)
   {
     ROS_WARN_STREAM_NAMED("manipulation_data","In simulation mode - velocity set to 100%");
     main_velocity_scaling_factor_ = 1.0;
@@ -99,9 +100,9 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool in_simu
   rvt::getStringParameter(parent_name, nh_, "both_arms_name", both_arms_name_);
 
   // Load planning configs
-  rvt::getBoolParameter(parent_name, nh_, "planning/use_experience", use_experience_);
-  rvt::getStringParameter(parent_name, nh_, "planning/experience_type", experience_type_);
-  rvt::getDoubleParameter(parent_name, nh_, "planning/planning_time", planning_time_);
+  rvt::getBoolParameter(parent_name, nh_, "moveit_ompl/use_experience_setup", use_experience_setup_);
+  rvt::getStringParameter(parent_name, nh_, "moveit_ompl/experience_type", experience_type_);
+  rvt::getDoubleParameter(parent_name, nh_, "moveit_ompl/planning_time", planning_time_);
 
   // Decide on dual arm mode we are in
   int temp_value;

@@ -28,11 +28,6 @@
   <arg name="fake_perception" default="false"/>
   <arg name="pose" default=""/>
 
-  <!-- Ignore for now -->
-  <arg name="saving_enabled" default="1" />
-  <arg name="use_scratch" default="1" />
-
-
   <!-- Planning Functionality -->
   <include ns="picknik_main" file="$(find jacob_moveit_config)/launch/planning_pipeline.launch.xml">
     <arg name="pipeline" value="ompl" />
@@ -75,12 +70,8 @@
     <!-- Camera settings -->
     <rosparam command="load" file="$(find picknik_main)/config/camera_intrinsics.yaml"/>
 
-    <!-- Only used by Thunder, read within moveit_ompl -->
-    <param name="use_scratch"     if="$(arg use_scratch)" value="true"/>
-    <param name="use_scratch" unless="$(arg use_scratch)" value="false"/>
-    <param name="saving_enabled"     if="$(arg saving_enabled)" value="true"/>
-    <param name="saving_enabled" unless="$(arg saving_enabled)" value="false"/>
-
+    <!-- Planner settings -->
+    <rosparam command="load" file="$(find picknik_main)/config/moveit_ompl.yaml"/>
   </node>
 
 </launch>

@@ -1,10 +1,10 @@
 # Note: Name of file should match name of robot in URDF
 
 # Robot Execution Speed
-main_velocity_scaling_factor: 0.5 # during planning
-approach_velocity_scaling_factor: 0.1
-lift_velocity_scaling_factor: 0.05
-retreat_velocity_scaling_factor: 0.4
+main_velocity_scaling_factor: 0.6 # moving between cartesian paths
+approach_velocity_scaling_factor: 0.2
+lift_velocity_scaling_factor: 0.1
+retreat_velocity_scaling_factor: 0.6
 calibration_velocity_scaling_factor: 0.3  #0.1
 
 # Sleep timers
@@ -75,10 +75,4 @@ camera:
 # Test data
 test:
   test_joint_limit_joint: 5  # starts at 0, negative number means test all
-
-# Planner OMPL Settings
-planning:
-  use_experience: true
-  experience_type: thunder
-  planning_time: 60
 

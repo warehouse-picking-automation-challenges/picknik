@@ -74,7 +74,7 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
 
 
   // Load logging capability
-  if (use_logging_ && config_->use_experience_)
+  if (use_logging_ && config_->use_experience_setup_)
   {
     if (config_->experience_type_ == "thunder")
       logging_file_.open("/home/dave/ompl_storage/thunder_logging.csv", std::ios::out | std::ios::app);
@@ -783,45 +783,54 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   return true;
 }
 
-bool Manipulation::plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
-                        const robot_model::JointModelGroup* arm_jmg, double velocity_scaling_factor, bool verbose,
-                        moveit_msgs::RobotTrajectory& trajectory_msg)
+bool Manipulation::createPlanningRequest(planning_interface::MotionPlanRequest& request, const moveit::core::RobotStatePtr& start, 
+                                         const moveit::core::RobotStatePtr& goal, const robot_model::JointModelGroup* arm_jmg, 
+                                         double velocity_scaling_factor)                                         
 {
-  // Create motion planning request
-  planning_interface::MotionPlanRequest req;
-  planning_interface::MotionPlanResponse res;
-
-  moveit::core::robotStateToRobotStateMsg(*start, req.start_state);
+  moveit::core::robotStateToRobotStateMsg(*start, request.start_state);
 
   // Create Goal constraint
   double tolerance_pose = 0.0001;
   moveit_msgs::Constraints goal_constraint = kinematic_constraints::constructGoalConstraints(*goal, arm_jmg,
                                                                                              tolerance_pose, tolerance_pose);
-  req.goal_constraints.push_back(goal_constraint);
+  request.goal_constraints.push_back(goal_constraint);
 
   // Other settings e.g. OMPL
-  req.planner_id = "RRTConnectkConfigDefault";
-  //req.planner_id = "RRTstarkConfigDefault";
-  req.group_name = arm_jmg->getName();
-  if (config_->use_experience_)
-    req.num_planning_attempts = 1; // this must be one else it threads and doesn't use lightning/thunder correctly
+  request.planner_id = "RRTConnectkConfigDefault";
+  //request.planner_id = "RRTstarkConfigDefault";
+  request.group_name = arm_jmg->getName();
+  if (config_->use_experience_setup_)
+    request.num_planning_attempts = 1; // this must be one else it threads and doesn't use lightning/thunder correctly
   else
-    req.num_planning_attempts = 3; // this is also the number of threads to use
-  req.allowed_planning_time = config_->planning_time_; // seconds
-  req.use_experience = config_->use_experience_;
-  req.experience_method = config_->experience_type_;
-  req.max_velocity_scaling_factor = velocity_scaling_factor;
+    request.num_planning_attempts = 3; // this is also the number of threads to use
+  request.allowed_planning_time = config_->planning_time_; // seconds
+  request.use_experience = config_->use_experience_setup_;
+  request.experience_method = config_->experience_type_;
+  request.max_velocity_scaling_factor = velocity_scaling_factor;
 
   // Parameters for the workspace that the planner should work inside relative to center of robot
   double workspace_size = 1;
-  req.workspace_parameters.header.frame_id = robot_model_->getModelFrame();
-  req.workspace_parameters.min_corner.x = start->getVariablePosition("virtual_joint/trans_x") - workspace_size;
-  req.workspace_parameters.min_corner.y = start->getVariablePosition("virtual_joint/trans_y") - workspace_size;
-  req.workspace_parameters.min_corner.z = 0; //floor start->getVariablePosition("virtual_joint/trans_z") - workspace_size;
-  req.workspace_parameters.max_corner.x = start->getVariablePosition("virtual_joint/trans_x") + workspace_size;
-  req.workspace_parameters.max_corner.y = start->getVariablePosition("virtual_joint/trans_y") + workspace_size;
-  req.workspace_parameters.max_corner.z = start->getVariablePosition("virtual_joint/trans_z") + workspace_size;
-  //visuals_->visual_tools_->publishWorkspaceParameters(req.workspace_parameters);
+  request.workspace_parameters.header.frame_id = robot_model_->getModelFrame();
+  request.workspace_parameters.min_corner.x = start->getVariablePosition("virtual_joint/trans_x") - workspace_size;
+  request.workspace_parameters.min_corner.y = start->getVariablePosition("virtual_joint/trans_y") - workspace_size;
+  request.workspace_parameters.min_corner.z = 0; //floor start->getVariablePosition("virtual_joint/trans_z") - workspace_size;
+  request.workspace_parameters.max_corner.x = start->getVariablePosition("virtual_joint/trans_x") + workspace_size;
+  request.workspace_parameters.max_corner.y = start->getVariablePosition("virtual_joint/trans_y") + workspace_size;
+  request.workspace_parameters.max_corner.z = start->getVariablePosition("virtual_joint/trans_z") + workspace_size;
+  //visuals_->visual_tools_->publishWorkspaceParameters(request.workspace_parameters);  
+
+  return true;
+}
+
+bool Manipulation::plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
+                        const robot_model::JointModelGroup* arm_jmg, double velocity_scaling_factor, bool verbose,
+                        moveit_msgs::RobotTrajectory& trajectory_msg)
+{
+  // Create motion planning request
+  planning_interface::MotionPlanRequest request;
+  planning_interface::MotionPlanResponse result;
+
+  createPlanningRequest(request, start, goal, arm_jmg, config_->main_velocity_scaling_factor_);
 
   // Call pipeline
   std::vector<std::size_t> dummy;
@@ -833,24 +842,25 @@ bool Manipulation::plan(const moveit::core::RobotStatePtr& start, const moveit::
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
     cloned_scene = planning_scene::PlanningScene::clone(scene);
   } // end scoped pointer of locked planning scene
-  planning_pipeline_->generatePlan(cloned_scene, req, res, dummy, planning_context_handle_);
+
+  planning_pipeline_->generatePlan(cloned_scene, request, result, dummy, planning_context_handle_);
 
   // Get the trajectory
   moveit_msgs::MotionPlanResponse response;
   response.trajectory = moveit_msgs::RobotTrajectory();
-  res.getMessage(response);
+  result.getMessage(response);
   trajectory_msg = response.trajectory;
 
   // Check that the planning was successful
-  bool error = (res.error_code_.val != res.error_code_.SUCCESS);
+  bool error = (result.error_code_.val != result.error_code_.SUCCESS);
   if (error)
   {
-    ROS_ERROR_STREAM_NAMED("manipulation","Planning failed:: " << getActionResultString(res.error_code_, trajectory_msg.joint_trajectory.points.empty()));
+    ROS_ERROR_STREAM_NAMED("manipulation","Planning failed:: " << getActionResultString(result.error_code_, trajectory_msg.joint_trajectory.points.empty()));
     return false;
   }
 
   // Save Experience Database
-  if (config_->use_experience_)
+  if (config_->use_experience_setup_)
   {
     moveit_ompl::ModelBasedPlanningContextPtr mbpc
       = boost::dynamic_pointer_cast<moveit_ompl::ModelBasedPlanningContext>(planning_context_handle_);
@@ -878,7 +888,7 @@ bool Manipulation::plan(const moveit::core::RobotStatePtr& start, const moveit::
 
 bool Manipulation::printExperienceLogs()
 {
-  if (!planning_context_handle_ || !config_->use_experience_)
+  if (!planning_context_handle_ || !config_->use_experience_setup_)
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to print experience logs");
     return false;
@@ -2159,37 +2169,19 @@ bool Manipulation::statesEqual(const moveit::core::RobotState &s1, const moveit:
   return true;
 }
 
-bool Manipulation::displayExperienceDatabaseStandAlone(const robot_model::JointModelGroup* arm_jmg)
+ompl::tools::ExperienceSetupPtr Manipulation::getExperienceSetup(const robot_model::JointModelGroup* arm_jmg)
 {
   // Get manager
   loadPlanningPipeline(); // always call before using planning_pipeline_
   const planning_interface::PlannerManagerPtr planner_manager = planning_pipeline_->getPlannerManager();
 
   // Create dummy request
-  planning_interface::MotionPlanRequest req;
-  moveit::core::robotStateToRobotStateMsg(*current_state_, req.start_state);
-  req.planner_id = "RRTConnectkConfigDefault";
-  req.group_name = arm_jmg->getName();
-  req.num_planning_attempts = 1; // this must be one else it threads and doesn't use lightning/thunder correctly
-  req.allowed_planning_time = 30; // seconds
-  req.use_experience = true;
-  req.experience_method = config_->experience_type_;
-  double workspace_size = 1;
-  req.workspace_parameters.header.frame_id = robot_model_->getModelFrame();
-  req.workspace_parameters.min_corner.x = current_state_->getVariablePosition("virtual_joint/trans_x") - workspace_size;
-  req.workspace_parameters.min_corner.y = current_state_->getVariablePosition("virtual_joint/trans_y") - workspace_size;
-  req.workspace_parameters.min_corner.z = 0; //floor current_state_->getVariablePosition("virtual_joint/trans_z") - workspace_size;
-  req.workspace_parameters.max_corner.x = current_state_->getVariablePosition("virtual_joint/trans_x") + workspace_size;
-  req.workspace_parameters.max_corner.y = current_state_->getVariablePosition("virtual_joint/trans_y") + workspace_size;
-  req.workspace_parameters.max_corner.z = current_state_->getVariablePosition("virtual_joint/trans_z") + workspace_size;
-  double tolerance_pose = 0.0001;
-  moveit_msgs::Constraints goal_constraint = kinematic_constraints::constructGoalConstraints(*current_state_, arm_jmg,
-                                                                                             tolerance_pose, tolerance_pose);
-  req.goal_constraints.push_back(goal_constraint);
+  planning_interface::MotionPlanRequest request;
+  createPlanningRequest(request, current_state_, current_state_, arm_jmg, config_->main_velocity_scaling_factor_);
 
   // Get context
   moveit_msgs::MoveItErrorCodes error_code;
-  planning_context_handle_ = planner_manager->getPlanningContext(planning_scene_monitor_->getPlanningScene(), req, error_code);
+  planning_context_handle_ = planner_manager->getPlanningContext(planning_scene_monitor_->getPlanningScene(), request, error_code);
 
   // Convert to model based planning context
   moveit_ompl::ModelBasedPlanningContextPtr mbpc
@@ -2198,13 +2190,14 @@ bool Manipulation::displayExperienceDatabaseStandAlone(const robot_model::JointM
   // Get experience setup
   ompl::tools::ExperienceSetupPtr experience_setup
     = boost::dynamic_pointer_cast<ompl::tools::ExperienceSetup>(mbpc->getOMPLSimpleSetup());
-
-  // Display database
-  return displayExperiencePlans(experience_setup, arm_jmg);
+  
+  return experience_setup;
 }
 
-bool Manipulation::displayExperiencePlans(ompl::tools::ExperienceSetupPtr experience_setup, const robot_model::JointModelGroup* arm_jmg)
+bool Manipulation::displayExperienceDatabase(const robot_model::JointModelGroup* arm_jmg)
 {
+  ompl::tools::ExperienceSetupPtr experience_setup = getExperienceSetup(arm_jmg);
+
   // Create a state space describing our robot's planning group
   moveit_ompl::ModelBasedStateSpacePtr model_state_space
     = boost::dynamic_pointer_cast<moveit_ompl::ModelBasedStateSpace>(experience_setup->getStateSpace());

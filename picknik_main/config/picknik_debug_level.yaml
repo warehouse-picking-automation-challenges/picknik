@@ -23,10 +23,10 @@ apc_manager:
   generic_bool: false
 
   # Unit testing / simulation
-  show_simulated_paths_moving: true
+  show_simulated_paths_moving: false
   unit_test:
-    SuperSimple: false
-    SimpleRotated: true
-    SimpleVeryRotated: true
-    SimpleFarBack: true
+    SuperSimple: true
+    SimpleRotated: false
+    SimpleVeryRotated: false
+    SimpleFarBack: false
     

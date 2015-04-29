@@ -642,7 +642,7 @@ bool APCManager::testEndEffectors()
       if (config_->dual_arm_)
         manipulation_->openEndEffectorWithVelocity(open, config_->left_arm_);
 
-      ros::Duration(4.0).sleep();
+      ros::Duration(2.0).sleep();
     }
     else
     {
@@ -655,7 +655,7 @@ bool APCManager::testEndEffectors()
       manipulation_->openEndEffectorWithVelocity(open, config_->right_arm_);
       if (config_->dual_arm_)
         manipulation_->openEndEffectorWithVelocity(open, config_->left_arm_);
-      ros::Duration(4.0).sleep();
+      ros::Duration(2.0).sleep();
     }
     ++i;
   }
@@ -1830,7 +1830,7 @@ bool APCManager::displayExperienceDatabase()
   // Choose which planning group to use
   const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
-  return manipulation_->displayExperienceDatabaseStandAlone(arm_jmg);
+  return manipulation_->displayExperienceDatabase(arm_jmg);
 }
 
 bool APCManager::generateGoalBinLocations()
@@ -1999,8 +1999,8 @@ bool APCManager::startUnitTest(const std::string &json_file, const std::string &
   ros::Duration(2.0).sleep();
   ros::spinOnce();
 
-  // Disable actual execution
-  if (!visuals_->isEnabled("show_simulated_paths_moving"))
+  // Disable actual execution  
+  if (config_->fake_execution_ && !visuals_->isEnabled("show_simulated_paths_moving"))
     manipulation_->getExecutionInterface()->enableUnitTesting();
 
   // Start processing
