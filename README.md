@@ -210,35 +210,41 @@ Button Mapings
     mode - what program to run inside the apc_manager, defaults to 1
 	  Available Modes:
 	    1. Actual APC contest mode
-		
+
+        MOVEMENT
 		2. GO home
 		3. GO goal bin
 		4. GO each bin location and request ObjectRecognitionServer
 		5. GO up and down with arms
 		6. GO to random valid locations
 		7. GO to verify shelf locaiton
-		8. Open and close end effector(s)
-		
-		9. Record a calibration trajectory
-		10. Playback calibration trajectory				
-		11. Record a bin observing trajectory
-		12. Playback bin observing trajectory (perceive)
+		8. GO to open and close end effector(s)
+		9. GO to pose pose:=NAME
+        10. GO in and out of bin
 
-        13. Visualize shelf
-        14. SRDF: Get the current pose of the robot for the SRDF
-		15. Check if current state is in collision
+        TESTING
 		16. Test grasp generator abilities and score results
 		17. Test joint limits
 		18. Test requesting preception results
-		19. Train experience database mode / workspace analysis
-
-        20. GO in and out of bin
-		21. Show experience database
 		22. Test approach, lift, and retreat motion for random objects
-		23. Unit tests for manipulation
-		24. Go to pose pose:=NAME
+		23. Unit tests for manipulation		
         25. Test IK solver with simple pose request
 		26. Unit test for perception communication
+
+        TRAJECTORY HANDLING
+		30. Record a calibration trajectory
+		31. Playback calibration trajectory				
+		32. Record a bin observing trajectory
+		33. Playback bin observing trajectory (perceive)
+
+        DEBUGGING
+        40. Visualize shelf
+        41. SRDF: Get the current pose of the robot for the SRDF
+		42. Check if current state is in collision
+
+        EXPERIENCE PLANNING
+		50. Train experience database mode / workspace analysis
+		51. Show experience database		
 		
 	jump_to - which step in the manipulation pipeline to start on
 	auto - whether to go into auto step mode, but does not allow trajectories to be executed without verification
@@ -246,10 +252,9 @@ Button Mapings
     order - which json file to use, defaults to orders/simple.json
 	order_start - specify the index of the product to skip to, based on the ordering in the json file
 	num_orders -how many products to pick from the order, 0 = all
-	use_experience - whether to use cached planned (Lightning Database) or not
-	saving_enabled - allow new plans to be saved to experience database
 	debug - slower and more verbose
 	fake_execution - runs at higher speeds and uses simulated controllers
+	fake_perception - do not use perception server
 	bin_id - specify which bin to look at, as a index number, starting at 0, e.g A=0, B=1
 	
 ## Mesh Test

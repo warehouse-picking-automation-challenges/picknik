@@ -88,8 +88,6 @@ public:
   double goal_bin_clearance_;
   double jump_threshold_;
   
-  double planning_time_;
-
   // Robot semantics
   std::string start_pose_; // where to move robot to initially. should be for both arms if applicable
 
@@ -113,6 +111,11 @@ public:
   double camera_lift_distance_;
   double camera_left_distance_;
   double camera_frame_display_scale_;
+
+  // Load planning configs
+  bool use_experience_;
+  std::string experience_type_;
+  double planning_time_;
 
   // Group for each arm
   const robot_model::JointModelGroup* right_arm_;

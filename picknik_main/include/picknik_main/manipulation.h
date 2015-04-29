@@ -74,7 +74,7 @@ public:
                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                ManipulationDataPtr config, moveit_grasps::GraspDatas grasp_datas,
                RemoteControlPtr remote_control, const std::string& package_path,
-               ShelfObjectPtr shelf, bool use_experience, bool fake_execution);
+               ShelfObjectPtr shelf, bool fake_execution);
 
   /**
    * \brief Calculate the bouding mesh for a product
@@ -397,14 +397,14 @@ public:
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool displayLightningPlansStandAlone(const robot_model::JointModelGroup* arm_jmg);
+  bool displayExperienceDatabaseStandAlone(const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Show the trajectories saved in the experience database
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup, const robot_model::JointModelGroup* arm_jmg);
+  bool displayExperiencePlans(ompl::tools::ExperienceSetupPtr experience_setup, const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Visulization function

@@ -30,7 +30,7 @@
 namespace picknik_main
 {
 
-APCManager::APCManager(bool verbose, std::string order_file_path, bool use_experience, bool autonomous, bool full_autonomous,
+APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomous, bool full_autonomous,
                        bool fake_execution, bool fake_perception)
   : nh_private_("~")
   , verbose_(verbose)
@@ -106,7 +106,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool use_exper
 
   // Create manipulation manager
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
-                                       remote_control_, package_path_, shelf_, use_experience, fake_execution));
+                                       remote_control_, package_path_, shelf_, fake_execution));
 
   // Load perception layer
   perception_interface_.reset(new PerceptionInterface(verbose_, visuals_, shelf_, config_, tf_, nh_private_));
@@ -601,7 +601,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
   return true;
 }
 
-// Mode 19
+// Mode 50
 bool APCManager::trainExperienceDatabase()
 {
   ROS_ERROR_STREAM_NAMED("apc_manager","disabled");
@@ -664,7 +664,7 @@ bool APCManager::testEndEffectors()
   return true;
 }
 
-// Mode 13
+// Mode 40
 bool APCManager::testVisualizeShelf()
 {
   ROS_INFO_STREAM_NAMED("apc_manager","Testing all planning scene manager modes");
@@ -717,7 +717,7 @@ bool APCManager::testUpAndDown()
   return true;
 }
 
-// Mode 20
+// Mode 10
 bool APCManager::testInAndOut()
 {
   // Set planning scene
@@ -892,7 +892,7 @@ bool APCManager::testApproachLiftRetreat()
   return true;
 }
 
-// Mode 14
+// Mode 41
 bool APCManager::getSRDFPose()
 {
   ROS_DEBUG_STREAM_NAMED("apc_manager","Get SRDF pose");
@@ -975,7 +975,7 @@ bool APCManager::testGoalBinPose()
   return true;
 }
 
-// Mode 15
+// Mode 42
 bool APCManager::testInCollision()
 {
   // Choose which planning group to use
@@ -1120,7 +1120,7 @@ bool APCManager::testCameraPositions()
   return true;
 }
 
-// Mode 10
+// Mode 31
 bool APCManager::calibrateCamera()
 {
   ROS_DEBUG_STREAM_NAMED("apc_manager","Calibrating camera");
@@ -1154,7 +1154,7 @@ bool APCManager::calibrateCamera()
   return true;
 }
 
-// Mode 9
+// Mode 30
 bool APCManager::recordCalibrationTrajectory()
 {
   ROS_INFO_STREAM_NAMED("apc_manager","Recoding calibration trajectory");
@@ -1449,13 +1449,13 @@ bool APCManager::testPerceptionComm()
   return true;
 }
 
-// Mode 11
+// Mode 32
 bool APCManager::recordBinWithCamera(std::size_t bin_id)
 {
   return recordBinWithCamera(shelf_->getBin(bin_id));
 }
 
-// Mode 12
+// Mode 33
 bool APCManager::perceiveBinWithCamera(std::size_t bin_id)
 {
   // Load JSON file
@@ -1793,6 +1793,9 @@ bool APCManager::allowCollisions()
     planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning
     scene->getAllowedCollisionMatrixNonConst().setEntry(shelf_->getEnvironmentCollisionObject("floor_wall")->getCollisionName(),
                                                         "frame", true);
+    ROS_WARN_STREAM_NAMED("apc_manager","Disabled collisions between v_camera_mount");
+    scene->getAllowedCollisionMatrixNonConst().setEntry(shelf_->getGoalBin()->getCollisionName(), "v_camera_mount", true);
+                                                        
   }
 
   return true;
@@ -1821,13 +1824,13 @@ bool APCManager::attachProduct(ProductObjectPtr product, const robot_model::Join
   return true;
 }
 
-// Mode 21
+// Mode 51
 bool APCManager::displayExperienceDatabase()
 {
   // Choose which planning group to use
   const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
-  return manipulation_->displayLightningPlansStandAlone(arm_jmg);
+  return manipulation_->displayExperienceDatabaseStandAlone(arm_jmg);
 }
 
 bool APCManager::generateGoalBinLocations()
@@ -1839,7 +1842,6 @@ bool APCManager::generateGoalBinLocations()
   static std::size_t NUM_DROPOFF_LOCATIONS = 8;
 
   // Calculate dimensions of goal bin
-  bool verbose = false;
   shelf_->getGoalBin()->calculateBoundingBox();
 
   // Visualize
@@ -2010,7 +2012,7 @@ bool APCManager::startUnitTest(const std::string &json_file, const std::string &
   return true;
 }
 
-// Mode 23
+// Mode 9
 bool APCManager::gotoPose(const std::string& pose_name)
 {
   ROS_INFO_STREAM_NAMED("apc_manager","Going to pose " << pose_name);

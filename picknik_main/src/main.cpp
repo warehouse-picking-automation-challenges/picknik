@@ -39,7 +39,6 @@ int main(int argc, char** argv)
   std::size_t num_orders = 0;
   std::size_t bin_id = 0;
   bool verbose = false;
-  bool use_experience = true;
   bool fake_execution = true;
   bool fake_perception = true;
   bool autonomous = false;
@@ -91,14 +90,6 @@ int main(int argc, char** argv)
       ++i;
       full_autonomous = atoi(argv[i]);
       ROS_DEBUG_STREAM_NAMED("main","Using full_autonomous: " << full_autonomous);
-      continue;
-    }
-
-    if( std::string(argv[i]).compare("--use_experience") == 0 )
-    {
-      ++i;
-      use_experience = atoi(argv[i]);
-      ROS_DEBUG_STREAM_NAMED("main","Using experience: " << use_experience);
       continue;
     }
 
@@ -161,7 +152,7 @@ int main(int argc, char** argv)
     return 1; // error
   }
 
-  picknik_main::APCManager manager(verbose, order_file, use_experience, autonomous, full_autonomous, fake_execution, fake_perception);
+  picknik_main::APCManager manager(verbose, order_file, autonomous, full_autonomous, fake_execution, fake_perception);
 
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
@@ -209,42 +200,22 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Test end effectors mode");
       manager.testEndEffectors();
       break;
-
     case 9:
-      //if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Recording a trajectory for calibration");
-      manager.recordCalibrationTrajectory();
-      break;
+      remove_from_shelf = false;
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Going to pose " << pose);
+      manager.gotoPose(pose);
+      break;      
     case 10:
+      remove_from_shelf = false;
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Playback trajectory for calibration");
-      manager.calibrateCamera();
-      break;
-    case 11:
-      //if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Recording bin observing trajectory");
-      manager.recordBinWithCamera(bin_id);
-      break;
-    case 12:
-      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Playing back bin observing trajectory");
-      manager.perceiveBinWithCamera(bin_id);
+      ROS_INFO_STREAM_NAMED("main","Going in and out of bin");
+      manager.testInAndOut();
       break;
 
-    case 13:
-      ROS_INFO_STREAM_NAMED("main","Only visualizing shelf... ready to shutdown.");
-      manager.testVisualizeShelf();
-      ros::spin();
-      break;
-    case 14:
-      ROS_INFO_STREAM_NAMED("main","Get SRDF pose");
-      manager.getSRDFPose();
-      break;
-    case 15:
-      ROS_INFO_STREAM_NAMED("main","Check if current state is in collision");
-      manager.testInCollision();
-      ros::Duration(5.0).sleep();
-      break;
+
+
+
     case 16:
       ROS_INFO_STREAM_NAMED("main","Testing grasp generator abilities and scoring results");
       manager.testGraspGenerator();
@@ -259,20 +230,6 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Requesting perception test");
       manager.testPerceptionComm();
       break;
-    case 19:
-      ROS_INFO_STREAM_NAMED("main","Train experience database mode");
-      manager.trainExperienceDatabase();
-      break;
-    case 20:
-      remove_from_shelf = false;
-      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Going in and out of bin");
-      manager.testInAndOut();
-      break;
-    case 21:
-      ROS_INFO_STREAM_NAMED("main","Show experience database");
-      manager.displayExperienceDatabase();
-      break;
     case 22:
       remove_from_shelf = false;
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
@@ -284,12 +241,6 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Unit tests for manipulation");
       manager.unitTests();
       break;      
-    case 24:
-      remove_from_shelf = false;
-      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Going to pose " << pose);
-      manager.gotoPose(pose);
-      break;      
     case 25:
       ROS_INFO_STREAM_NAMED("main","Testing IK solver");
       manager.testIKSolver();
@@ -298,6 +249,52 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Unit test for perception communication");
       manager.unitTestPerceptionComm();
       break;
+
+    case 30:
+      //if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Recording a trajectory for calibration");
+      manager.recordCalibrationTrajectory();
+      break;
+    case 31:
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Playback trajectory for calibration");
+      manager.calibrateCamera();
+      break;
+    case 32:
+      //if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Recording bin observing trajectory");
+      manager.recordBinWithCamera(bin_id);
+      break;
+    case 33:
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Playing back bin observing trajectory");
+      manager.perceiveBinWithCamera(bin_id);
+      break;
+
+    case 40:
+      ROS_INFO_STREAM_NAMED("main","Only visualizing shelf... ready to shutdown.");
+      manager.testVisualizeShelf();
+      ros::spin();
+      break;
+    case 41:
+      ROS_INFO_STREAM_NAMED("main","Get SRDF pose");
+      manager.getSRDFPose();
+      break;
+    case 42:
+      ROS_INFO_STREAM_NAMED("main","Check if current state is in collision");
+      manager.testInCollision();
+      ros::Duration(5.0).sleep();
+      break;
+
+    case 50:
+      ROS_INFO_STREAM_NAMED("main","Train experience database mode");
+      manager.trainExperienceDatabase();
+      break;
+    case 51:
+      ROS_INFO_STREAM_NAMED("main","Show experience database");
+      manager.displayExperienceDatabase();
+      break;
+
     default:
       ROS_WARN_STREAM_NAMED("main","Unkown mode: " << mode);
   }

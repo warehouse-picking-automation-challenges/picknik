@@ -76,7 +76,6 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool in_simu
   rvt::getDoubleParameter(parent_name, nh_, "place_goal_down_distance_desired", place_goal_down_distance_desired_);
   rvt::getDoubleParameter(parent_name, nh_, "goal_bin_clearance", goal_bin_clearance_);
   rvt::getDoubleParameter(parent_name, nh_, "jump_threshold", jump_threshold_);
-  rvt::getDoubleParameter(parent_name, nh_, "planning_time", planning_time_);
 
   // Load perception variables
   rvt::getDoubleParameter(parent_name, nh_, "camera/x_translation_from_bin", camera_x_translation_from_bin_);
@@ -98,6 +97,11 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool in_simu
   rvt::getStringParameter(parent_name, nh_, "right_arm_name", right_arm_name_);
   rvt::getStringParameter(parent_name, nh_, "left_arm_name", left_arm_name_);
   rvt::getStringParameter(parent_name, nh_, "both_arms_name", both_arms_name_);
+
+  // Load planning configs
+  rvt::getBoolParameter(parent_name, nh_, "planning/use_experience", use_experience_);
+  rvt::getStringParameter(parent_name, nh_, "planning/experience_type", experience_type_);
+  rvt::getDoubleParameter(parent_name, nh_, "planning/planning_time", planning_time_);
 
   // Decide on dual arm mode we are in
   int temp_value;

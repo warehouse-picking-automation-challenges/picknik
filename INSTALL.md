@@ -19,6 +19,10 @@ Unzip the file and build
 
 NOTE: before running ``catkin build`` you might need to use ``catkin config --install`` to have the ARPG code link correctly. Not sure yet.
 
+Setup udev rules to connect USB hardware to computer: see ``README.md`` in ``kinova_control`` and ``zaber_control`` packages.
+
+## Recommended Configurations for Manipulation Pipeline
+
 To run simulation on your computer, add to your bashrc:
 
     export ROS_MASTER_URI=http://localhost:11311
@@ -48,16 +52,27 @@ Switch virtual terminal (Ctrl Alt F1)
 
     sudo service lightdm stop
 	~/Downloads
-	chmod -x CUDA_FILE
+	chmod +x CUDA_FILE
 	./CUDA_FILE
 
-Say yes to everything... restart.
+Say yes to everything... ensure that it succeeds at the end. Restart computer.
 
+Add this to your bashrc (or use the other method NVIDIA's instructions recommend):
+
+    export PATH=/usr/local/cuda-7.0/bin:$PATH
+    export LD_LIBRARY_PATH=/usr/local/cuda-7.0/lib64:$LD_LIBRARY_PATH
 
 Make sure your cuda driver works correctly by runing any of the cuda example demo:
 
-    cd ~/NVIDIA_CUDA-7.0_Samples/
+    cd ~/NVIDIA_CUDA-7.0_Samples/1_Utilities/deviceQuery
 	make
+
+Debug tools
+
+    glxinfo
+	lsmod | grep nv
+
+Also install ``nvidia-settings``
 
 [Getting Started Documentation](http://www.google.com/url?q=http%3A%2F%2Fdeveloper.download.nvidia.com%2Fcompute%2Fcuda%2F7_0%2FProd%2Fdoc%2FCUDA_Getting_Started_Linux.pdf&sa=D&sntz=1&usg=AFQjCNH-aytZIB1ufyiMTTi-okbCJXSYrg)
 

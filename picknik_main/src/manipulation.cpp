@@ -25,6 +25,7 @@
 
 // OMPL
 #include <ompl/tools/lightning/Lightning.h>
+#include <ompl_thunder/Thunder.h>
 
 // C++
 #include <algorithm>
@@ -43,7 +44,7 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
                            planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                            ManipulationDataPtr config, moveit_grasps::GraspDatas grasp_datas,
                            RemoteControlPtr remote_control, const std::string& package_path,
-                           ShelfObjectPtr shelf, bool use_experience, bool fake_execution)
+                           ShelfObjectPtr shelf, bool fake_execution)
   : nh_("~")
   , verbose_(verbose)
   , visuals_(visuals)
@@ -53,7 +54,6 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   , remote_control_(remote_control)
   , package_path_(package_path)
   , shelf_(shelf)
-  , use_experience_(use_experience)
   , use_logging_(true)
 {
   // Create initial robot state
@@ -74,14 +74,14 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
 
 
   // Load logging capability
-  if (use_logging_ && use_experience)
+  if (use_logging_ && config_->use_experience_)
   {
-    /*    if (use_thunder_ && use_experience)
-          logging_file_.open("/home/dave/ompl_storage/thunder_whole_body_logging.csv", std::ios::out | std::ios::app);
-          else if (use_thunder_ && !use_experience)
-          logging_file_.open("/home/dave/ompl_storage/scratch_whole_body_logging.csv", std::ios::out | std::ios::app);
-          else*/
-    logging_file_.open("/home/dave/ompl_storage/lightning_whole_body_logging.csv", std::ios::out | std::ios::app);
+    if (config_->experience_type_ == "thunder")
+      logging_file_.open("/home/dave/ompl_storage/thunder_logging.csv", std::ios::out | std::ios::app);
+    else if (config_->experience_type_ == "lightning")
+      logging_file_.open("/home/dave/ompl_storage/lightning_logging.csv", std::ios::out | std::ios::app);
+    else
+      ROS_ERROR_STREAM_NAMED("manipulation","Unsupported experience type: " << config_->experience_type_);
   }
 
   // Load grasp generator
@@ -313,11 +313,11 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   if (verbose_cartesian_paths || true)
   {
     ROS_INFO_STREAM_NAMED("manipulation.waypoints","Visualize end effector position of cartesian path for " << segmented_cartesian_traj.size() << " segments");
-    visuals_->grasp_markers_->publishTrajectoryPoints(segmented_cartesian_traj[moveit_grasps::APPROACH], 
+    visuals_->grasp_markers_->publishTrajectoryPoints(segmented_cartesian_traj[moveit_grasps::APPROACH],
                                                       grasp_datas_[arm_jmg]->parent_link_, rvt::YELLOW);
-    visuals_->grasp_markers_->publishTrajectoryPoints(segmented_cartesian_traj[moveit_grasps::LIFT], 
+    visuals_->grasp_markers_->publishTrajectoryPoints(segmented_cartesian_traj[moveit_grasps::LIFT],
                                                       grasp_datas_[arm_jmg]->parent_link_, rvt::ORANGE);
-    visuals_->grasp_markers_->publishTrajectoryPoints(segmented_cartesian_traj[moveit_grasps::RETREAT], 
+    visuals_->grasp_markers_->publishTrajectoryPoints(segmented_cartesian_traj[moveit_grasps::RETREAT],
                                                       grasp_datas_[arm_jmg]->parent_link_, rvt::RED);
   }
   // Turn off auto mode
@@ -329,7 +329,7 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   return true;
 }
 
-bool Manipulation::computeCartesianWaypointPath(const robot_model::JointModelGroup* arm_jmg, 
+bool Manipulation::computeCartesianWaypointPath(const robot_model::JointModelGroup* arm_jmg,
                                                 const moveit::core::RobotStatePtr start_state,
                                                 const EigenSTL::vector_Affine3d &waypoints,
                                                 moveit_grasps::GraspTrajectories &segmented_cartesian_traj)
@@ -631,8 +631,6 @@ bool Manipulation::moveToPose(const robot_model::JointModelGroup* arm_jmg, const
 bool Manipulation::moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_scaling_factor,
                                 const robot_model::JointModelGroup* arm_jmg)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","moveEEToPose()");
-
   // Create start and goal
   getCurrentState();
   moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_));
@@ -805,13 +803,13 @@ bool Manipulation::plan(const moveit::core::RobotStatePtr& start, const moveit::
   req.planner_id = "RRTConnectkConfigDefault";
   //req.planner_id = "RRTstarkConfigDefault";
   req.group_name = arm_jmg->getName();
-  if (use_experience_)
+  if (config_->use_experience_)
     req.num_planning_attempts = 1; // this must be one else it threads and doesn't use lightning/thunder correctly
   else
     req.num_planning_attempts = 3; // this is also the number of threads to use
   req.allowed_planning_time = config_->planning_time_; // seconds
-  req.use_experience = use_experience_;
-  req.experience_method = "lightning";
+  req.use_experience = config_->use_experience_;
+  req.experience_method = config_->experience_type_;
   req.max_velocity_scaling_factor = velocity_scaling_factor;
 
   // Parameters for the workspace that the planner should work inside relative to center of robot
@@ -852,7 +850,7 @@ bool Manipulation::plan(const moveit::core::RobotStatePtr& start, const moveit::
   }
 
   // Save Experience Database
-  if (use_experience_)
+  if (config_->use_experience_)
   {
     moveit_ompl::ModelBasedPlanningContextPtr mbpc
       = boost::dynamic_pointer_cast<moveit_ompl::ModelBasedPlanningContext>(planning_context_handle_);
@@ -880,7 +878,7 @@ bool Manipulation::plan(const moveit::core::RobotStatePtr& start, const moveit::
 
 bool Manipulation::printExperienceLogs()
 {
-  if (!planning_context_handle_ || !use_experience_)
+  if (!planning_context_handle_ || !config_->use_experience_)
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to print experience logs");
     return false;
@@ -1006,8 +1004,6 @@ std::string Manipulation::getActionResultString(const moveit_msgs::MoveItErrorCo
 bool Manipulation::executeState(const moveit::core::RobotStatePtr goal_state, const moveit::core::JointModelGroup *jmg,
                                 double velocity_scaling_factor)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeState()");
-
   // Get the start state
   getCurrentState();
 
@@ -1118,7 +1114,7 @@ bool Manipulation::executeSavedCartesianPath(moveit_grasps::GraspCandidatePtr ch
 {
   // Get the already computed cartesian path
   const moveit_grasps::GraspTrajectories &segmented_cartesian_traj = chosen_grasp->segmented_cartesian_traj_;
-  
+
   // Error check
   if (segmented_cartesian_traj.size() != 3)
   {
@@ -1166,8 +1162,6 @@ bool Manipulation::generateApproachPath(moveit_grasps::GraspCandidatePtr chosen_
                                         const moveit::core::RobotStatePtr the_grasp_state,
                                         bool verbose)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","generateApproachPath()");
-
   Eigen::Vector3d approach_direction = grasp_generator_->getPreGraspDirection(chosen_grasp->grasp_,
                                                                               chosen_grasp->grasp_data_->parent_link_->getName());
   bool reverse_path = true;
@@ -1271,8 +1265,6 @@ bool Manipulation::executeVerticlePath(const moveit::core::JointModelGroup *arm_
 bool Manipulation::executeVerticlePathWithIK(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool up,
                                              bool ignore_collision)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeVerticlePath()");
-
   Eigen::Vector3d approach_direction;
   approach_direction << 0, 0, (up ? 1 : -1); // 1 is up, -1 is down
   bool reverse_path = false;
@@ -1289,8 +1281,6 @@ bool Manipulation::executeVerticlePathWithIK(const moveit::core::JointModelGroup
 bool Manipulation::executeHorizontalPath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance, bool left,
                                          bool ignore_collision)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeHorizontalPath()");
-
   Eigen::Vector3d approach_direction;
   approach_direction << 0, (left ? 1 : -1), 0; // 1 is left, -1 is right
   bool reverse_path = false;
@@ -1307,8 +1297,6 @@ bool Manipulation::executeHorizontalPath(const moveit::core::JointModelGroup *ar
 bool Manipulation::executeRetreatPath(const moveit::core::JointModelGroup *arm_jmg, double desired_retreat_distance, bool retreat,
                                       bool ignore_collision)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeRetreatPath()");
-
   // Compute straight line in reverse from grasp
   Eigen::Vector3d approach_direction;
   approach_direction << (retreat ? -1 : 1), 0, 0; // backwards towards robot body
@@ -1327,7 +1315,6 @@ bool Manipulation::executeCartesianPath(const moveit::core::JointModelGroup *arm
                                         double desired_distance, double velocity_scaling_factor,
                                         bool reverse_path, bool ignore_collision)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","executeCartesianPath()");
   getCurrentState();
 
   // Debug
@@ -2172,7 +2159,7 @@ bool Manipulation::statesEqual(const moveit::core::RobotState &s1, const moveit:
   return true;
 }
 
-bool Manipulation::displayLightningPlansStandAlone(const robot_model::JointModelGroup* arm_jmg)
+bool Manipulation::displayExperienceDatabaseStandAlone(const robot_model::JointModelGroup* arm_jmg)
 {
   // Get manager
   loadPlanningPipeline(); // always call before using planning_pipeline_
@@ -2186,7 +2173,7 @@ bool Manipulation::displayLightningPlansStandAlone(const robot_model::JointModel
   req.num_planning_attempts = 1; // this must be one else it threads and doesn't use lightning/thunder correctly
   req.allowed_planning_time = 30; // seconds
   req.use_experience = true;
-  req.experience_method = "lightning";
+  req.experience_method = config_->experience_type_;
   double workspace_size = 1;
   req.workspace_parameters.header.frame_id = robot_model_->getModelFrame();
   req.workspace_parameters.min_corner.x = current_state_->getVariablePosition("virtual_joint/trans_x") - workspace_size;
@@ -2213,29 +2200,27 @@ bool Manipulation::displayLightningPlansStandAlone(const robot_model::JointModel
     = boost::dynamic_pointer_cast<ompl::tools::ExperienceSetup>(mbpc->getOMPLSimpleSetup());
 
   // Display database
-  return displayLightningPlans(experience_setup, arm_jmg);
+  return displayExperiencePlans(experience_setup, arm_jmg);
 }
 
-bool Manipulation::displayLightningPlans(ompl::tools::ExperienceSetupPtr experience_setup,
-                                         const robot_model::JointModelGroup* arm_jmg)
+bool Manipulation::displayExperiencePlans(ompl::tools::ExperienceSetupPtr experience_setup, const robot_model::JointModelGroup* arm_jmg)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","displayLightningPlans()");
-
   // Create a state space describing our robot's planning group
   moveit_ompl::ModelBasedStateSpacePtr model_state_space
     = boost::dynamic_pointer_cast<moveit_ompl::ModelBasedStateSpace>(experience_setup->getStateSpace());
 
-  //ROS_DEBUG_STREAM_NAMED("manipulation","Model Based State Space has dimensions: " << model_state_space->getDimension());
+  // Get all of the graphs in the database
+  std::vector<ompl::base::PlannerDataPtr> graphs;
+  experience_setup->getAllPlannerDatas(graphs);
 
-  // Load lightning and its database
-  ompl::tools::LightningPtr lightning = boost::dynamic_pointer_cast<ompl::tools::Lightning>(experience_setup);
-  //7lightning.setFile(arm_jmg->getName());
+  ROS_INFO_STREAM_NAMED("manipulation","Number of paths/graphs to publish: " << graphs.size());
 
-  // Get all of the paths in the database
-  std::vector<ompl::base::PlannerDataPtr> paths;
-  lightning->getAllPlannerDatas(paths);
-
-  ROS_INFO_STREAM_NAMED("manipulation","Number of paths to publish: " << paths.size());
+  // Error check
+  if (!graphs.size())
+  {
+    ROS_WARN_STREAM_NAMED("manipulation","Unable to show first state of robot because graph is empty");
+    return false;
+  }
 
   // Load the OMPL visualizer
   if (!ompl_visual_tools_)
@@ -2251,13 +2236,32 @@ bool Manipulation::displayLightningPlans(ompl::tools::ExperienceSetupPtr experie
   std::vector<const robot_model::LinkModel*> tips;
   arm_jmg->getEndEffectorTips(tips);
 
-  bool show_trajectory_animated = false;//verbose_;
-
-  // Loop through each path
-  for (std::size_t path_id = 0; path_id < paths.size(); ++path_id)
+  if (config_->experience_type_ == "lightning")
   {
-    //std::cout << "Processing path " << path_id << std::endl;
-    ompl_visual_tools_->publishRobotPath(paths[path_id], arm_jmg, tips, show_trajectory_animated);
+    bool show_trajectory_animated = false;
+
+    // Loop through each path
+    for (std::size_t path_id = 0; path_id < graphs.size(); ++path_id)
+    {
+      //std::cout << "Processing path " << path_id << std::endl;
+      ompl_visual_tools_->publishRobotPath(graphs[path_id], arm_jmg, tips, show_trajectory_animated);
+    }
+  }
+  else if (config_->experience_type_ == "thunder")
+  {
+    ompl_visual_tools_->publishRobotGraph(graphs[0], tips);
+
+    // Show HRP2 in some pose
+    // for (std::size_t i = 0; i < graphs[0]->numVertices() && ros::ok(); ++i)
+    // {
+    //   ompl_visual_tools_->publishRobotState(graphs[0]->getVertex(i).getState());
+    //   ros::Duration(0.1).sleep();
+    // }
+  }
+  else
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Unrecognized experience type");
+    return false;
   }
 
   return true;
@@ -2266,7 +2270,6 @@ bool Manipulation::displayLightningPlans(ompl::tools::ExperienceSetupPtr experie
 bool Manipulation::visualizeGrasps(std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates,
                                    const moveit::core::JointModelGroup *arm_jmg, bool show_cartesian_path)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","visualizeGrasps()");
   ROS_INFO_STREAM_NAMED("manipulation","Showing " << grasp_candidates.size() << " valid filtered grasp poses");
 
   // Publish in batch
