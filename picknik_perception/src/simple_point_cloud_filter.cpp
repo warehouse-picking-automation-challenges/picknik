@@ -14,6 +14,7 @@ SimplePointCloudFilter::SimplePointCloudFilter()
 
   processing_ = false;
   get_bbox_ = false;
+  outlier_removal_ = false;
 
   // set regoin of interest
   roi_depth_ = 1.0;
@@ -155,7 +156,6 @@ bool SimplePointCloudFilter::getBoundingBox(pcl::PointCloud<pcl::PointXYZRGB>::P
 
 void SimplePointCloudFilter::pointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
 {
-  ROS_DEBUG_STREAM_NAMED("PC_filter.test","pcCallback");
   if (processing_)
   {
     ROS_ERROR_STREAM_NAMED("PC_filter.pcCallback","skipped point cloud because currently busy");
@@ -169,65 +169,49 @@ void SimplePointCloudFilter::pointCloudCallback(const sensor_msgs::PointCloud2Co
 
 void SimplePointCloudFilter::processPointCloud(const sensor_msgs::PointCloud2ConstPtr& msg)
 {
-  ROS_DEBUG_STREAM_NAMED("PC_filter.test","start process cloud...");
-  // turn message into point cloud
-  pcl::PointCloud<pcl::PointXYZRGB> cloud;
-  pcl::fromROSMsg(*msg, cloud);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+  pcl::fromROSMsg(*msg, *cloud);
 
-  // publish aligned point cloud
-  // pcl::PointCloud<pcl::PointXYZRGB>::Ptr aligned_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-  if (!pcl_ros::transformPointCloud("world", cloud, *aligned_cloud_, tf_listener_))
+  if (!pcl_ros::transformPointCloud("world", *cloud, *roi_cloud_, tf_listener_))
   {
     ROS_ERROR_STREAM_NAMED("PC_filter.process","Error converting to desired frame");
   }  
-  // aligned_cloud_ = aligned_cloud;
-
-  ROS_DEBUG_STREAM_NAMED("PC_filter.test","start filtering cloud...");
-  /***** get point cloud that lies in region_of_interest *****/
-  // (from Dave's baxter_experimental/flex_perception.cpp)
-   
-  // create new output cloud and place to save filtered results
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr roi_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-
-  // Transform point cloud to bin CS
-  pcl::transformPointCloud(*aligned_cloud_, *roi_cloud, roi_pose_.inverse());
-
+ 
   // Filter based on bin location
   pcl::PassThrough<pcl::PointXYZRGB> pass_x;
-  pass_x.setInputCloud(roi_cloud);
+  pass_x.setInputCloud(roi_cloud_);
   pass_x.setFilterFieldName("x");
-  pass_x.setFilterLimits(-roi_depth_ / 2.0, roi_depth_ / 2.0);
-  pass_x.filter(*roi_cloud);
+  pass_x.setFilterLimits(roi_pose_.translation()[0]-roi_depth_ / 2.0, roi_pose_.translation()[0] + roi_depth_ / 2.0);
+  pass_x.filter(*roi_cloud_);
 
   pcl::PassThrough<pcl::PointXYZRGB> pass_y;
-  pass_y.setInputCloud(roi_cloud);
+  pass_y.setInputCloud(roi_cloud_);
   pass_y.setFilterFieldName("y");
-  pass_y.setFilterLimits(-roi_width_ / 2.0, roi_width_ / 2.0);
-  pass_y.filter(*roi_cloud);
+  pass_y.setFilterLimits(roi_pose_.translation()[1] - roi_width_ / 2.0, roi_pose_.translation()[1] + roi_width_ / 2.0);
+  pass_y.filter(*roi_cloud_);
 
   pcl::PassThrough<pcl::PointXYZRGB> pass_z;
-  pass_z.setInputCloud(roi_cloud);
+  pass_z.setInputCloud(roi_cloud_);
   pass_z.setFilterFieldName("z");
-  pass_z.setFilterLimits(-roi_height_ / 2.0, roi_height_ / 2.0);
-  pass_z.filter(*roi_cloud);
+  pass_z.setFilterLimits(roi_pose_.translation()[2] - roi_height_ / 2.0, roi_pose_.translation()[2] + roi_height_ / 2.0);
+  pass_z.filter(*roi_cloud_);
 
   // slowish
-  pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> rad;
-  rad.setInputCloud(roi_cloud);
-  rad.setRadiusSearch(0.03);
-  rad.setMinNeighborsInRadius(200);
-  rad.filter(*roi_cloud);
 
-  pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
-  sor.setInputCloud(roi_cloud);
-  sor.setMeanK(50);
-  sor.setStddevMulThresh(1.0);
-  sor.filter(*roi_cloud);
-
-  // Transform point cloud back to world CS
-  // pcl::PointCloud<pcl::PointXYZRGB>::Ptr roi_cloud_final(new pcl::PointCloud<pcl::PointXYZRGB>);
-  pcl::transformPointCloud(*roi_cloud, *roi_cloud_, roi_pose_);
-  // roi_cloud_ = roi_cloud_final;
+  if (outlier_removal_)
+  {
+    pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> rad;
+    rad.setInputCloud(roi_cloud_);
+    rad.setRadiusSearch(0.03);
+    rad.setMinNeighborsInRadius(200);
+    rad.filter(*roi_cloud_);
+    
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
+    sor.setInputCloud(roi_cloud_);
+    sor.setMeanK(50);
+    sor.setStddevMulThresh(1.0);
+    sor.filter(*roi_cloud_);
+  }
 
   if (roi_cloud_->points.size() == 0)
   {

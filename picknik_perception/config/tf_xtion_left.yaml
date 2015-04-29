@@ -1,0 +1,10 @@
+initial_x: -0.64
+initial_y: 0.32
+initial_z: 1.33
+initial_roll: -3.12159
+initial_pitch: 0
+initial_yaw: -0.05
+from: world
+to: xtion_left_link
+file_name: tf_xtion_left
+topic_name: /keyboard_left/keydown

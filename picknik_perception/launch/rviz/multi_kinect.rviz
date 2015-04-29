@@ -8,6 +8,7 @@ Panels:
         - /Status1
         - /PointCloud21
         - /MarkerArray1
+        - /MarkerArray1/Namespaces1
         - /PointCloud22
       Splitter Ratio: 0.5
     Tree Height: 746
@@ -76,16 +77,18 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.002
       Style: Flat Squares
-      Topic: /kinect2/depth_lowres/points
+      Topic: /kinect2_left/depth_lowres/points
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /rviz_visual_tools
+      Marker Topic: /picknik_main/markers
       Name: MarkerArray
       Namespaces:
-        {}
+        Axis: true
+        kinect_left: true
+        kinect_right: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -113,7 +116,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.002
       Style: Flat Squares
-      Topic: /kinect2a/depth_lowres/points
+      Topic: /kinect2_right/depth_lowres/points
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
@@ -141,22 +144,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.9566
+      Distance: 10
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.603586
-        Y: 0.681202
-        Z: 1.57891
+        X: 0
+        Y: 0
+        Z: 0
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: -0.0352024
+      Pitch: 0.785398
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.67041
+      Yaw: 0.785398
     Saved: ~
 Window Geometry:
   Displays:

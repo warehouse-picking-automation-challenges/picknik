@@ -14,11 +14,6 @@ namespace picknik_perception
 ManualTFAlignment::ManualTFAlignment()
   : nh_("~")
 {
-  // default, save in picknik_perception/data
-  std::string package_path = ros::package::getPath("picknik_perception");
-  save_path_ = package_path + "/config/tf_keyboard.yaml";
-  ROS_INFO_STREAM_NAMED("manualTF","Will save TF data to: " << save_path_);
-
   // set defaults
   mode_ = 1;
   delta_ = 0.010;
@@ -34,15 +29,27 @@ ManualTFAlignment::ManualTFAlignment()
   rviz_visual_tools::getDoubleParameter(parent_name, nh_, "initial_roll", roll);
   rviz_visual_tools::getDoubleParameter(parent_name, nh_, "initial_pitch", pitch);
   rviz_visual_tools::getDoubleParameter(parent_name, nh_, "initial_yaw", yaw);
+  rviz_visual_tools::getStringParameter(parent_name, nh_, "file_name", file_name_);
+  rviz_visual_tools::getStringParameter(parent_name, nh_, "topic_name", topic_name_);
   setPose(Eigen::Vector3d(x, y, z), Eigen::Vector3d(roll, pitch, yaw));
 
   // get frame names
   rviz_visual_tools::getStringParameter(parent_name, nh_, "from", from_);
   rviz_visual_tools::getStringParameter(parent_name, nh_, "to", to_);
 
+  // default, save in picknik_perception/data
+  std::string package_path = ros::package::getPath("picknik_perception");
+  save_path_ = package_path + "/config/" + file_name_ + ".yaml";
+
   // listen to keyboard topic
-  keyboard_sub_ = nh_.subscribe("/keyboard/keydown", 100,
+  keyboard_sub_ = nh_.subscribe(topic_name_, 100,
                                 &ManualTFAlignment::keyboardCallback, this);
+
+  // Echo info
+  ROS_INFO_STREAM_NAMED("manualTF","Listening to topic : " << topic_name_);
+  ROS_INFO_STREAM_NAMED("manualTF","Transform from     : " << from_);
+  ROS_INFO_STREAM_NAMED("manualTF","Transform to       : " << to_);
+  ROS_INFO_STREAM_NAMED("manualTF","Will save TF data to: " << save_path_);
 }
 
 void ManualTFAlignment::keyboardCallback(const keyboard::Key::ConstPtr& msg)
@@ -217,6 +224,8 @@ void ManualTFAlignment::writeTFToFile()
     file << "initial_yaw: " << rotation_[2] << std::endl;
     file << "from: " << from_ << std::endl;
     file << "to: " << to_ << std::endl;
+    file << "file_name: " << file_name_ << std::endl;
+    file << "topic_name: " << topic_name_ << std::endl;
   }
   file.close();
 

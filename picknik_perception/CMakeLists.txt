@@ -11,6 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   pcl_ros
+  tf
+  tf_conversions
 )
 
 find_package(Eigen REQUIRED)
@@ -93,6 +95,24 @@ target_link_libraries(tf_keyboard
 )
 
 # Executable
+add_executable(cloud_preprocessor
+  src/cloud_preprocessor.cpp
+)
+target_link_libraries(cloud_preprocessor
+  simple_point_cloud_filter
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+)
+
+# Executable
+add_executable(align_point_clouds
+  src/align_point_clouds.cpp
+)
+target_link_libraries(align_point_clouds
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+)
+
 add_executable(fake_perception_server src/fake_perception_server.cpp)
 target_link_libraries(fake_perception_server
   manipulation_interface
@@ -117,3 +137,4 @@ install(TARGETS manipulation_interface
 
 # Install header files
 install(DIRECTORY include/${PROJECT_NAME}/   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+
