@@ -31,7 +31,7 @@ public:
     visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base"));
     visual_tools_->deleteAllMarkers();
 
-    filter_ptr_ = new SimplePointCloudFilter();
+    filter_ptr_ = new SimplePointCloudFilter(visual_tools_);
 
     // TODO: read from config file or pass as arg
     pc_sub_ = nh_.subscribe("/xtion_left/depth_registered/points", 1, 

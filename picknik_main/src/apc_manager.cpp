@@ -676,6 +676,13 @@ bool APCManager::testVisualizeShelf()
   createRandomProductPoses();
 
   //planning_scene_manager_->testAllModes();
+
+  // Get shelf region of interst
+  std::cout << "Shelf Bottom Right: " << std::endl;
+  printTransform(shelf_->getBottomRight());
+  std::cout << "Shelf Top Left: " << std::endl;
+  printTransform(shelf_->getTopLeft());
+
   ros::spin();
   return true;
 }

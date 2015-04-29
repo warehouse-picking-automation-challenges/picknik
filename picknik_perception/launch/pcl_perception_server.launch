@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+
+  <!-- GDB Debug Option -->
+  <arg name="debug" default="false" />
+  <arg unless="$(arg debug)" name="launch_prefix" value="" />
+  <arg     if="$(arg debug)" name="launch_prefix" 
+	   value="gdb -x $(find picknik_main)/launch/debug_settings.gdb --ex run --args" />
+
+  <!-- Main process -->
+  <node name="pcl_perception_server" pkg="picknik_perception" type="pcl_perception_server" respawn="false" 
+	launch-prefix="$(arg launch_prefix)" output="screen" />
+
+</launch>

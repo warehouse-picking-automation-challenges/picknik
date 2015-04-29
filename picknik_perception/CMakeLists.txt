@@ -32,6 +32,9 @@ catkin_package(
     include
   LIBRARIES
     manipulation_interface
+    simple_point_cloud_filter
+    manual_tf_aligment
+    bounding_box
 )
 
 ###########
@@ -49,16 +52,26 @@ include_directories(SYSTEM
 )
 
 # Library
+add_library(bounding_box
+  src/tools/bounding_box.cpp
+)
+target_link_libraries(bounding_box
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
+# Library
 add_library(simple_point_cloud_filter
   src/simple_point_cloud_filter.cpp
 )
 target_link_libraries(simple_point_cloud_filter
+  bounding_box
   ${catkin_LIBRARIES}
 )
 
 # Library
 add_library(manual_tf_alignment
-  src/manual_tf_alignment.cpp
+  src/tools/manual_tf_alignment.cpp
 )
 target_link_libraries(manual_tf_alignment
   ${catkin_LIBRARIES}
@@ -75,19 +88,8 @@ target_link_libraries(manipulation_interface
 )
 
 # Executable
-add_executable(simple_point_cloud_filter_test
-  src/tests/simple_point_cloud_filter_test.cpp
-)
-target_link_libraries(simple_point_cloud_filter_test
-  simple_point_cloud_filter
-  ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
-  ${Boost_LIBRARIES}
-)
-
-# Executable
 add_executable(tf_keyboard
-  src/tf_keyboard.cpp
+  src/tools/tf_keyboard.cpp
 )
 target_link_libraries(tf_keyboard
   manual_tf_alignment
@@ -121,8 +123,8 @@ target_link_libraries(fake_perception_server
 )
 
 # Executable
-add_executable(simple_perception_server src/simple_perception_server.cpp)
-target_link_libraries(simple_perception_server
+add_executable(pcl_perception_server src/pcl_perception_server.cpp)
+target_link_libraries(pcl_perception_server
   simple_point_cloud_filter
   manipulation_interface
   ${catkin_LIBRARIES}

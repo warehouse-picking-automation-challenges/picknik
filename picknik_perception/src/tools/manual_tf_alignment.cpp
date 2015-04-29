@@ -64,7 +64,6 @@ void ManualTFAlignment::keyboardCallback(const keyboard::Key::ConstPtr& msg)
   switch(entry)
   {
     case 112: //
-      std::cout << "Writing transformation to file..." << std::endl;
       writeTFToFile();
       break;
     case 117: // (very coarse delta)
@@ -208,6 +207,7 @@ void ManualTFAlignment::updateTF(int mode, double delta)
 void ManualTFAlignment::writeTFToFile()
 {
   std::ofstream file (save_path_.c_str()); //, std::ios::app);
+  ROS_INFO_STREAM_NAMED("tf_align.write","Writing transformation to file " << save_path_);
 
   if (!file.is_open())
     ROS_ERROR_STREAM_NAMED("tf_align.write","Output file could not be opened: " << save_path_);
