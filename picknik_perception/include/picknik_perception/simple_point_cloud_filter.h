@@ -53,7 +53,7 @@ public:
    * \brief
    */
   void setRegionOfInterest(Eigen::Affine3d pose, double depth, double width, double height);
-  void setRegionOfInterest(Eigen::Affine3d bottom_right_front_corner, Eigen::Affine3d top_left_back_corner);
+  void setRegionOfInterest(Eigen::Affine3d bottom_right_front_corner, Eigen::Affine3d top_left_back_corner, double reduction_padding_x, double reduction_padding_y, double reduction_padding_z);
 
   /**
    * \brief After percieving a particular bin, switch back to showing entire shelf
@@ -65,6 +65,11 @@ public:
    * \brief Enable bounding box calculatons
    */
   void enableBoundingBox(bool enable = true);
+
+  /**
+   * \brief Get object pose
+   */
+  void getObjectPose(geometry_msgs::Pose &pose);
 
   bool processing_;
 

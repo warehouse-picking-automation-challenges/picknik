@@ -268,14 +268,20 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     return false;
   }
 
+  bool result_is_in_world_frame = true; // if false, result is in camera frame
+
   // Get camera position
-  Eigen::Affine3d world_to_camera;
-  ros::Time time_stamp;
-  getCameraPose(world_to_camera, time_stamp);
-  visuals_->visual_tools_->publishAxisLabeled(world_to_camera, "world_to_camera");
+  Eigen::Affine3d world_to_camera = Eigen::Affine3d::Identity();
+
+  if (!result_is_in_world_frame)
+  {
+    ros::Time time_stamp;
+    getCameraPose(world_to_camera, time_stamp);
+    visuals_->visual_tools_->publishAxisLabeled(world_to_camera, "world_to_camera");
+  }
 
   // Show camera view
-  publishCameraFrame(world_to_camera);
+  //publishCameraFrame(world_to_camera);
 
   // Get bin location
   const Eigen::Affine3d& world_to_bin = picknik_main::transform(bin->getBottomRight(), shelf_->getBottomRight());
@@ -288,7 +294,6 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
 
     // Get object's transform    
     Eigen::Affine3d camera_to_object = visuals_->visual_tools_->convertPose(found_object.object_pose);
-    // Eigen::Affine3d camera_to_object;
 
     // // Convert to ROS frame
     // convertFrameCVToROS(visuals_->visual_tools_->convertPose(found_object.object_pose), camera_to_object);
@@ -377,6 +382,7 @@ bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::T
   tf::StampedTransform camera_transform;
   static const std::string parent_frame = "/world";
   static const std::string camera_frame = "/camera_link";
+  //static const std::string camera_frame = "/camera_depth_optical_frame";
 
   try
   {

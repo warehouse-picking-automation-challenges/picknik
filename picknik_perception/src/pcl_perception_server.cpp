@@ -40,23 +40,17 @@
 #include <picknik_perception/manual_tf_alignment.h>
 #include <picknik_perception/manipulation_interface.h>
 
+// Visualization
 #include <rviz_visual_tools/rviz_visual_tools.h>
+
+// Parameter loading
+#include <rviz_visual_tools/ros_param_utilities.h>
 
 namespace picknik_perception
 {
 
 class PCLPerceptionServer
 {
-private:
-  ros::NodeHandle nh_;
-
-  rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
-
-  SimplePointCloudFilterPtr pointcloud_filter_;
-
-  ros::Subscriber pointcloud_sub_;
-
-  picknik_perception::ManipulationInterfacePtr manipulation_interface_;
 
 public:
 
@@ -77,7 +71,13 @@ public:
     ros::Duration(1.0).sleep();
     ros::spinOnce();
     pointcloud_sub_ = nh_.subscribe("/camera/depth_registered/points", 1,
-                            &picknik_perception::SimplePointCloudFilter::pointCloudCallback, pointcloud_filter_);
+                                    &picknik_perception::SimplePointCloudFilter::pointCloudCallback, pointcloud_filter_);
+
+    // Load parameters
+    const std::string parent_name = "pcl_perception_server"; // for namespacing logging messages
+    rviz_visual_tools::getDoubleParameter(parent_name, nh_, "roi_reduction_padding_x", roi_reduction_padding_x_);
+    rviz_visual_tools::getDoubleParameter(parent_name, nh_, "roi_reduction_padding_y", roi_reduction_padding_y_);
+    rviz_visual_tools::getDoubleParameter(parent_name, nh_, "roi_reduction_padding_z", roi_reduction_padding_z_);
 
     // Show whole shelf
     loadShelfROI();
@@ -105,7 +105,7 @@ public:
 
       // Set regions of interest
       pointcloud_filter_->setRegionOfInterest(visual_tools_->convertPose(goal->front_bottom_right),
-                                              visual_tools_->convertPose(goal->back_top_left));
+                                              visual_tools_->convertPose(goal->back_top_left), roi_reduction_padding_x_, roi_reduction_padding_y_, roi_reduction_padding_z_);
 
 
       // TODO: this stop command is not really applicable to this method of perception
@@ -117,6 +117,9 @@ public:
         if (manipulation_interface_->isReadyToStopPerception())
           break;
 
+        // show bounding box
+        pointcloud_filter_->enableBoundingBox();
+
         // Wait
         rate.sleep();
       }
@@ -124,14 +127,11 @@ public:
       // Finish up perception
       ROS_INFO_STREAM_NAMED("pcl_perception_server","Finishing up perception");
 
-      // show bounding box
-      pointcloud_filter_->enableBoundingBox();
-
-      ROS_WARN_STREAM_NAMED("pcl_perception_server","sleeping");
-      ros::Duration(10).sleep();
-
       // Create results
       picknik_msgs::FindObjectsResult result;
+
+      if (goal->expected_objects_names.size() > 1)
+        ROS_WARN_STREAM_NAMED("pcl_perception_server","Perception can currently only handle one product");
 
       // For each object in the bin
       for (std::size_t i = 0; i < goal->expected_objects_names.size(); ++i)
@@ -139,20 +139,16 @@ public:
         picknik_msgs::FoundObject new_product;
         new_product.object_name = goal->expected_objects_names[i];
 
-        // TODO Object pose 
-        new_product.object_pose.position.x = 0.45;
-        new_product.object_pose.position.y = 0;
-        new_product.object_pose.position.z = 0;
-        new_product.object_pose.orientation.x = 0;
-        new_product.object_pose.orientation.y = 0;
-        new_product.object_pose.orientation.z = 0;
-        new_product.object_pose.orientation.w = 1;
+        // TODO Object pose
+        pointcloud_filter_->getObjectPose(new_product.object_pose);
 
         // Value between 0 and 1 for each expected object's confidence of its pose
         new_product.expected_object_confidence = 1.0;
 
         // Add object to result
         result.found_objects.push_back(new_product);
+
+        break; // for now we only handle one prodcut
       } // end for each product
 
       // If the camera angle was bad or some other failure, return false
@@ -169,7 +165,8 @@ public:
       ROS_INFO_STREAM_NAMED("pcl_perception_server","Ready for next perception request");
 
       // Show whole shelf
-      loadShelfROI();
+      //loadShelfROI();
+
     } // end main while loop
 
   } // end function
@@ -181,10 +178,27 @@ public:
     top_left_back_corner.translation() = Eigen::Vector3d(1.531, 0.4365, 2.37);
     Eigen::Affine3d bottom_right_front_corner = Eigen::Affine3d::Identity();
     bottom_right_front_corner.translation() = Eigen::Vector3d(0.656, -0.445, 0.002);
-    pointcloud_filter_->setRegionOfInterest( bottom_right_front_corner, top_left_back_corner);
+    double reduction_padding = 0;
+    pointcloud_filter_->setRegionOfInterest( bottom_right_front_corner, top_left_back_corner, reduction_padding, reduction_padding, reduction_padding);
 
     return true;
   }
+
+private:
+  ros::NodeHandle nh_;
+
+  rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
+
+  SimplePointCloudFilterPtr pointcloud_filter_;
+
+  ros::Subscriber pointcloud_sub_;
+
+  picknik_perception::ManipulationInterfacePtr manipulation_interface_;
+
+  // Amount to reduce the shelf region of interest by for error compensation
+  double roi_reduction_padding_x_;
+  double roi_reduction_padding_y_;
+  double roi_reduction_padding_z_;
 
 }; // class
 
@@ -204,5 +218,5 @@ int main(int argc, char** argv)
   ros::waitForShutdown();
 
   ROS_INFO_STREAM_NAMED("main", "Shutting down.");
-  ros::shutdown();  
+  ros::shutdown();
 }

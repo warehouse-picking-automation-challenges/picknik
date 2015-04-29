@@ -1,0 +1,3 @@
+roi_reduction_padding_x: 0.02
+roi_reduction_padding_y: 0.01
+roi_reduction_padding_z: 0.01

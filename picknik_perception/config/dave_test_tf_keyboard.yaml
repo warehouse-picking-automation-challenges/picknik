@@ -1,9 +1,9 @@
-initial_x: -0.1185
+initial_x: -0.1285
 initial_y: -0.173
-initial_z: 0.81
-initial_roll: 0.0092
-initial_pitch: 0.2
-initial_yaw: 0.35
+initial_z: 0.77
+initial_roll: -0.0108
+initial_pitch: 0.13
+initial_yaw: 0.26
 from: gantry_plate
 to: camera_link
 file_name: dave_test_tf_keyboard

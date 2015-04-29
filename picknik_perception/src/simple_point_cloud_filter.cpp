@@ -160,16 +160,18 @@ void SimplePointCloudFilter::setRegionOfInterest(Eigen::Affine3d pose, double de
 }
 
 void SimplePointCloudFilter::setRegionOfInterest(Eigen::Affine3d bottom_right_front_corner, 
-                                                 Eigen::Affine3d top_left_back_corner)
+                                                 Eigen::Affine3d top_left_back_corner, double reduction_padding_x, double reduction_padding_y, double reduction_padding_z)
 {
   Eigen::Vector3d delta = top_left_back_corner.translation() - bottom_right_front_corner.translation();
-  roi_depth_ = std::abs(delta[0]);
-  roi_width_ = std::abs(delta[1]);
-  roi_height_ = std::abs(delta[2]);
+  roi_depth_ = std::abs(delta[0]) - reduction_padding_x * 2.0;
+  roi_width_ = std::abs(delta[1]) - reduction_padding_y * 2.0;
+  roi_height_ = std::abs(delta[2])- reduction_padding_z * 2.0;
   has_roi_ = true;
 
   roi_pose_ = bottom_right_front_corner;
-  roi_pose_.translation() += Eigen::Vector3d(roi_depth_ / 2.0, roi_width_ / 2.0, roi_height_ / 2.0);
+  roi_pose_.translation() += Eigen::Vector3d(roi_depth_ / 2.0 + reduction_padding_x, 
+                                             roi_width_ / 2.0 + reduction_padding_y, 
+                                             roi_height_ / 2.0 + reduction_padding_z);
 
   // Visualize
   publishRegionOfInterest();
@@ -183,6 +185,11 @@ void SimplePointCloudFilter::resetRegionOfInterst()
 void SimplePointCloudFilter::enableBoundingBox(bool enable)
 {
   get_bbox_ = enable;
+}
+
+void SimplePointCloudFilter::getObjectPose(geometry_msgs::Pose &pose)
+{
+  pose = visual_tools_->convertPose(bbox_pose_);
 }
 
 } // namespace
