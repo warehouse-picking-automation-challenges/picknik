@@ -1442,9 +1442,8 @@ bool APCManager::testPerceptionComm()
   // Communicate with perception pipeline
   perception_interface_->startPerception(product, bin);
 
-  // Dummy wait
-  ROS_WARN_STREAM_NAMED("apc_manager","dummy wait");
-  ros::Duration(10).sleep();
+  ROS_INFO_STREAM_NAMED("apc_manager","Waiting 1 second");
+  ros::Duration(1).sleep();
 
   // Get result from perception pipeline
   if (!perception_interface_->endPerception(product, bin))

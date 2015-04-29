@@ -268,7 +268,7 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     return false;
   }
 
-  bool result_is_in_world_frame = true; // if false, result is in camera frame
+  bool result_is_in_world_frame = false; // if false, result is in camera frame
 
   // Get camera position
   Eigen::Affine3d world_to_camera = Eigen::Affine3d::Identity();
@@ -381,8 +381,8 @@ bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::T
 {
   tf::StampedTransform camera_transform;
   static const std::string parent_frame = "/world";
-  static const std::string camera_frame = "/camera_link";
-  //static const std::string camera_frame = "/camera_depth_optical_frame";
+  //static const std::string camera_frame = "/camera_link";
+  static const std::string camera_frame = "/camera_depth_optical_frame";
 
   try
   {

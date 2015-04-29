@@ -9,7 +9,8 @@
 #include <pcl/filters/passthrough.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/radius_outlier_removal.h>
-//#include <pcl/filters/voxel_grid.h>
+
+#include <bounding_box/bounding_box.h>
 
 namespace picknik_perception
 {
@@ -136,7 +137,7 @@ void SimplePointCloudFilter::processPointCloud(const sensor_msgs::PointCloud2Con
   // optionally get the bounding box of the point cloud
   if (get_bbox_)
   {
-    bounding_box_.getBoundingBox(roi_cloud_, bbox_pose_, bbox_depth_, bbox_width_, bbox_height_);
+    bounding_box::BoundingBox::getBoundingBoxFromPointCloud(roi_cloud_, bbox_pose_, bbox_depth_, bbox_width_, bbox_height_);
     
     // Visualize
     visual_tools_->publishWireframeCuboid(bbox_pose_, bbox_depth_, bbox_width_, bbox_height_,                                          

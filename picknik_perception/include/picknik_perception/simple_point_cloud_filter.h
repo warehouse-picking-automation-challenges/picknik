@@ -12,9 +12,6 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
 
-// picknik_percpetion
-#include <picknik_perception/bounding_box.h>
-
 // Rviz
 #include <rviz_visual_tools/rviz_visual_tools.h>
 
@@ -103,9 +100,6 @@ private:
 
   // Publish bin point cloud
   ros::Publisher roi_cloud_pub_;
-
-  // Calculate bounding box
-  BoundingBox bounding_box_;
 
 }; // class
 

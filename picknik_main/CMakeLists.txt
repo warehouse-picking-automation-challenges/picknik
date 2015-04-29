@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   cmake_modules
   picknik_msgs
   controller_manager_msgs
+  bounding_box
 )
 
 find_package(Eigen REQUIRED)
@@ -24,6 +25,7 @@ catkin_package(
     moveit_ompl
     picknik_msgs
     controller_manager_msgs
+    bounding_box
   DEPENDS
     Eigen
   INCLUDE_DIRS 

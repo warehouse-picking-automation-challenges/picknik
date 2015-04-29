@@ -6,13 +6,12 @@ find_package(catkin REQUIRED COMPONENTS
   cmake_modules
   eigen_conversions
   picknik_msgs
-  picknik_main
-  moveit_ros_perception
   sensor_msgs
   std_msgs
   pcl_ros
   tf
   tf_conversions
+  bounding_box
 )
 
 find_package(Eigen REQUIRED)
@@ -24,8 +23,7 @@ catkin_package(
     moveit_visual_tools
     cmake_modules
     picknik_msgs
-    picknik_main
-    moveit_ros_perception
+    bounding_box
   DEPENDS
     Eigen
   INCLUDE_DIRS
@@ -34,7 +32,6 @@ catkin_package(
     manipulation_interface
     simple_point_cloud_filter
     manual_tf_aligment
-    bounding_box
 )
 
 ###########
@@ -52,20 +49,10 @@ include_directories(SYSTEM
 )
 
 # Library
-add_library(bounding_box
-  src/tools/bounding_box.cpp
-)
-target_link_libraries(bounding_box
-  ${catkin_LIBRARIES}
-  ${Boost_LIBRARIES}
-)
-
-# Library
 add_library(simple_point_cloud_filter
   src/simple_point_cloud_filter.cpp
 )
 target_link_libraries(simple_point_cloud_filter
-  bounding_box
   ${catkin_LIBRARIES}
 )
 
