@@ -1,0 +1,8 @@
+initial_x: -0.1285
+initial_y: -0.183
+initial_z: 1.68
+initial_roll: 0.0092
+initial_pitch: 0.2
+initial_yaw: 0.35
+from: frame
+to: camera_link

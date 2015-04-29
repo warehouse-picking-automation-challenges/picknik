@@ -48,8 +48,11 @@ ManualTFAlignment::ManualTFAlignment()
 void ManualTFAlignment::keyboardCallback(const keyboard::Key::ConstPtr& msg)
 {
   int entry = msg->code;
-  double fine = 0.001;
-  double coarse = 0.01;
+  const double fine = 0.001;
+  const double coarse = 0.01;
+  const double very_coarse = 0.1;
+
+  //std::cout << "key: " << entry << std::endl;
 
   switch(entry)
   {
@@ -57,11 +60,15 @@ void ManualTFAlignment::keyboardCallback(const keyboard::Key::ConstPtr& msg)
       std::cout << "Writing transformation to file..." << std::endl;
       writeTFToFile();
       break;
+    case 117: // (very coarse delta)
+      std::cout << "Delta = very coarse (0.1)" << std::endl;
+      delta_ = very_coarse;
+      break;
     case 105: // (coarse delta)
-      std::cout << "Delta = coarse (0.010)" << std::endl;
+      std::cout << "Delta = coarse (0.01)" << std::endl;
       delta_ = coarse;
       break;
-    case 107: // (fine delta)
+    case 111: // (fine delta)
       std::cout << "Delta = fine (0.001)" << std::endl;
       delta_ = fine;
       break;
@@ -130,11 +137,9 @@ void ManualTFAlignment::printMenu()
   std::cout << "down  a  s  d  f  g  h " << std::endl;
   std::cout << std::endl;
   std::cout << "Fast: u " << std::endl;
-  std::cout << "Slow: j " << std::endl;
+  std::cout << "Med:  i " << std::endl;
+  std::cout << "Slow: o " << std::endl;
   std::cout << "Save: p " << std::endl;
-  // std::cout << "c\tSet adjustment delta to COARSE (0.010)" << std::endl;
-  // std::cout << "f\tSet adjustment delta to FINE (0.001)" << std::endl;
-  // std::cout << "e\tWrite transform values to file" << std::endl;
 }
 
 void ManualTFAlignment::publishTF()
