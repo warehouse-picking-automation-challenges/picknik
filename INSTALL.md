@@ -53,9 +53,11 @@ Switch virtual terminal (Ctrl Alt F1)
     sudo service lightdm stop
 	~/Downloads
 	chmod +x CUDA_FILE
-	./CUDA_FILE
+	sudo ./CUDA_FILE
 
 Say yes to everything... ensure that it succeeds at the end. Restart computer.
+
+You will likely need to run installation again after NOVEU has been disabled.
 
 Add this to your bashrc (or use the other method NVIDIA's instructions recommend):
 
@@ -64,8 +66,10 @@ Add this to your bashrc (or use the other method NVIDIA's instructions recommend
 
 Make sure your cuda driver works correctly by runing any of the cuda example demo:
 
+    sudo apt-get install -y g++
     cd ~/NVIDIA_CUDA-7.0_Samples/1_Utilities/deviceQuery
 	make
+	./deviceQuery
 
 Debug tools
 
@@ -78,11 +82,11 @@ Also install ``nvidia-settings``
 
 ### Install dependencies:
 
- 0, pre-request:
+Pre-request:
  
-    sudo apt-get install autoconf2.13 libglm-dev libtinyxml2-dev
+    sudo apt-get install -y autoconf2.13 libglm-dev libtinyxml2-dev
 
- 1, install protobuf
+Install protobuf
  
     git clone https://github.com/google/protobuf.git
 	cd protobuf
@@ -90,50 +94,53 @@ Also install ``nvidia-settings``
     ./configure
     make -j3
     sudo make install all
-    cp /usr/local/lib/libproto* /usr/lib/
+    sudo cp /usr/local/lib/libproto* /usr/lib/
     
- 2, OPTIONAL install google ceres solver: (you don't need to do this if you have ros installed)
+OPTIONAL install google ceres solver: (you don't need to do this if you have ros installed)
  
     sudo apt-get install libceres-dev 
     
- 3, OPTIONAL install google log and google flags: (you don't need to do this if you have ros installed)
+OPTIONAL install google log and google flags: (you don't need to do this if you have ros installed)
  
     sudo apt-get install libgoogle-glog-dev
     sudo apt-get install libgflags-dev 
   
- 4, also make sure you have opencv, boost (you don't need to do this if you have ros installed)
+Also make sure you have opencv, boost (you don't need to do this if you have ros installed)
+
+### Add building shortcut
+
+If you want, add this to your bashrc or just to the command line:
+
+	function cmaker()
+	{
+	  rm -rf build
+	  mkdir build
+	  cd build
+	  cmake ..
+	  make -j
+	}
 
 ### Install CoreDev
 
     cd CoreDev
-    mkdir build
-    cd build
-	cmake ..
-    make -j4
+	cmaker
 
 ### Install kangaroo (for SDF fusion, ray casting):
 
-	cd kangaroo
-	mkdir build
-    cd build
-	cmake ..
-	make -j4
+	cd Kangaroo
+	cmaker
 	
 ### Install wallaby (for grid sdf fusion and voxel hashing):
 
-	cd/wallaby
-	mkdir build
-	cmake ..
-	make -j4
+	cd wallaby
+	cmaker
 
 ### Install DDTR
 
+    cd DDTR
 	git submodule init
 	git submodule update
-	mkdir build
-	cd build
-	cmake ..
-	make -j4
+	cmaker
 
 ## Applications:
 
