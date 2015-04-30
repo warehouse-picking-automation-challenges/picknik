@@ -78,6 +78,8 @@ Debug tools
 
 Also install ``nvidia-settings``
 
+Note: whenever kernel is updated, be sure to rerun the cuda install script.
+
 [CUDA Getting Started Documentation](http://www.google.com/url?q=http%3A%2F%2Fdeveloper.download.nvidia.com%2Fcompute%2Fcuda%2F7_0%2FProd%2Fdoc%2FCUDA_Getting_Started_Linux.pdf&sa=D&sntz=1&usg=AFQjCNH-aytZIB1ufyiMTTi-okbCJXSYrg)
 
 ### Perception Auto Install Script
