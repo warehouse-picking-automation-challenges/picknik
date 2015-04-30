@@ -349,3 +349,33 @@ Reset USB stack without a reboot
 
     ## Sync computer to standard syncing server
     alias syncmytime="sudo ntpdate pool.ntp.org"
+
+
+  
+### How To run Perception Software
+
+go to the build dir where you build the DDTR:
+
+   cd /home/robots/code/ARPG/DDTR-build/
+ 
+   # 1, Run Shelf Calibration  
+
+go to the dir of RGFusion app:
+   
+   cd Application/RGFusion
+   
+now, run RGFusion:
+
+   ./RollingGridFusion -wsp /home/robots/code/ARPG/DDTR/ -mode 6
+  
+   # 2, Run Perception
+
+go to the dir of Amazon app:
+
+   cd Application/Amazon
+
+now, run Amazon app:
+
+   ./Amazon -wsp /home/robots/code/ARPG/DDTR/ -mode 3
+   
+Here, -wsp gives the dir of the source code of DDTR, -mode select the running mode of the application.   
