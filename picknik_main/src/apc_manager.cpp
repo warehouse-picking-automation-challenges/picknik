@@ -38,7 +38,6 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
   , skip_homing_step_(true)
   , next_dropoff_location_(0)
   , order_file_path_(order_file_path)
-  , super_auto_(true)
 {
   // Warn of fake modes
   if (fake_perception)
@@ -234,7 +233,7 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to, std::siz
     {
       ROS_WARN_STREAM_NAMED("apc_manager","An error occured in last product order.");
 
-      if (!super_auto_)
+      if (!config_->super_auto_)
       {
         // remote_control_->setAutonomous(false);
         // remote_control_->setFullAutonomous(false);

@@ -103,6 +103,10 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   rvt::getBoolParameter(parent_name, nh_, "moveit_ompl/use_experience_setup", use_experience_setup_);
   rvt::getStringParameter(parent_name, nh_, "moveit_ompl/experience_type", experience_type_);
   rvt::getDoubleParameter(parent_name, nh_, "moveit_ompl/planning_time", planning_time_);
+  
+  // Behavior configs
+  rvt::getBoolParameter(parent_name, nh_, "behavior/end_effector_enabled", end_effector_enabled_);
+  rvt::getBoolParameter(parent_name, nh_, "behavior/super_auto", super_auto_);
 
   // Decide on dual arm mode we are in
   int temp_value;

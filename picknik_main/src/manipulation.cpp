@@ -1895,6 +1895,13 @@ bool Manipulation::openEndEffector(bool open, const robot_model::JointModelGroup
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","openEndEffector()");
   ROS_ERROR_STREAM_NAMED("temp","THIS FUNCTION IS DPERECATED");
 
+  // Check status
+  if (!config_->end_effector_enabled_)
+  {
+    ROS_WARN_STREAM_NAMED("manipulation","Gripping is disabled");
+    return true;
+  }
+
   getCurrentState();
   const robot_model::JointModelGroup* ee_jmg = grasp_datas_[arm_jmg]->ee_jmg_;
 
@@ -1941,10 +1948,16 @@ bool Manipulation::openEndEffector(bool open, const robot_model::JointModelGroup
 
 bool Manipulation::openEndEffectorWithVelocity(bool open, const robot_model::JointModelGroup* arm_jmg)
 {
+  // Check status
+  if (!config_->end_effector_enabled_)
+  {
+    ROS_WARN_STREAM_NAMED("manipulation","Gripping is disabled");
+    return true;
+  }
+
   getCurrentState();
   robot_trajectory::RobotTrajectoryPtr ee_trajectory(new robot_trajectory::RobotTrajectory(robot_model_,
                                                                                            grasp_datas_[arm_jmg]->ee_jmg_));
-
   // Add goal state to trajectory
   if (open)
   {

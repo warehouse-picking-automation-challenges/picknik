@@ -31,7 +31,7 @@ catkin_package(
   LIBRARIES
     manipulation_interface
     simple_point_cloud_filter
-    manual_tf_aligment
+    #manual_tf_aligment
 )
 
 ###########

@@ -53,50 +53,50 @@
 
     "work_order":
     [
+	// {
+	//     "bin": "bin_A",
+	//     "item": "crayola_64_ct"
+	// },
+	// {
+	//     "bin": "bin_B",
+	//     "item": "crayola_64_ct"
+	// },
 	{
-	    "bin": "bin_A",
-	    "item": "crayola_64_ct"
-	},
-	{
-	    "bin": "bin_B",
-	    "item": "crayola_64_ct"
-	},
- 	{
 	    "bin": "bin_C",
 	    "item": "crayola_64_ct"
 	},
-	{
-	    "bin": "bin_D",
-	    "item": "crayola_64_ct"
-	},
-	{
-	    "bin": "bin_E",
-	    "item": "crayola_64_ct"
-	},
+	// {
+	//     "bin": "bin_D",
+	//     "item": "crayola_64_ct"
+	// },
+	// {
+	//     "bin": "bin_E",
+	//     "item": "crayola_64_ct"
+	// },
 	{
 	    "bin": "bin_F",
 	    "item": "crayola_64_ct"
 	},
-	{
-	    "bin": "bin_G",
-	    "item": "crayola_64_ct"
-	},
-	{
-	    "bin": "bin_H",
-	    "item": "crayola_64_ct"
-	},
+	// {
+	//     "bin": "bin_G",
+	//     "item": "crayola_64_ct"
+	// },
+	// {
+	//     "bin": "bin_H",
+	//     "item": "crayola_64_ct"
+	// },
 	{
 	    "bin": "bin_I",
 	    "item": "crayola_64_ct"
 	},
-	{
-	    "bin": "bin_J",
-	    "item": "crayola_64_ct"
-	},
-	{
-	    "bin": "bin_K",
-	    "item": "crayola_64_ct"
-	},
+	// {
+	//     "bin": "bin_J",
+	//     "item": "crayola_64_ct"
+	// },
+	// {
+	//     "bin": "bin_K",
+	//     "item": "crayola_64_ct"
+	// },
 	{
 	    "bin": "bin_L",
 	    "item": "crayola_64_ct"

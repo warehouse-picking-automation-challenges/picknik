@@ -128,6 +128,10 @@ public:
   // Execution mode
   bool fake_execution_;
 
+  // Behavior configs
+  bool end_effector_enabled_;
+  bool super_auto_;
+
 }; // end class
 
 // Create boost pointers for this class

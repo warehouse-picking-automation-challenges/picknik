@@ -77,3 +77,6 @@ camera:
 test:
   test_joint_limit_joint: 5  # starts at 0, negative number means test all
 
+behavior:
+  end_effector_enabled: false
+  super_auto: false

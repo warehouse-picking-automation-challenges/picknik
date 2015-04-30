@@ -379,7 +379,6 @@ private:
 
   // Show more visual and console output, with general slower run time.
   bool verbose_;
-  bool super_auto_;
 
   // For visualizing things in rviz
   VisualsPtr visuals_;
