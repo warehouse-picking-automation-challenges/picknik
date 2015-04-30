@@ -78,9 +78,11 @@ Debug tools
 
 Also install ``nvidia-settings``
 
-[Getting Started Documentation](http://www.google.com/url?q=http%3A%2F%2Fdeveloper.download.nvidia.com%2Fcompute%2Fcuda%2F7_0%2FProd%2Fdoc%2FCUDA_Getting_Started_Linux.pdf&sa=D&sntz=1&usg=AFQjCNH-aytZIB1ufyiMTTi-okbCJXSYrg)
+[CUDA Getting Started Documentation](http://www.google.com/url?q=http%3A%2F%2Fdeveloper.download.nvidia.com%2Fcompute%2Fcuda%2F7_0%2FProd%2Fdoc%2FCUDA_Getting_Started_Linux.pdf&sa=D&sntz=1&usg=AFQjCNH-aytZIB1ufyiMTTi-okbCJXSYrg)
 
-### Install dependencies:
+### Perception Auto Install Script
+
+Run the file ``perception_install.sh`` to configure everything in the zip file.
 
 Pre-request:
  
@@ -96,17 +98,6 @@ Install protobuf
     sudo make install all
     sudo cp /usr/local/lib/libproto* /usr/lib/
     
-OPTIONAL install google ceres solver: (you don't need to do this if you have ros installed)
- 
-    sudo apt-get install libceres-dev 
-    
-OPTIONAL install google log and google flags: (you don't need to do this if you have ros installed)
- 
-    sudo apt-get install libgoogle-glog-dev
-    sudo apt-get install libgflags-dev 
-  
-Also make sure you have opencv, boost (you don't need to do this if you have ros installed)
-
 ### Add building shortcut
 
 If you want, add this to your bashrc or just to the command line:
