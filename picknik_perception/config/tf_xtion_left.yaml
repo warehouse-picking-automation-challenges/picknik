@@ -4,7 +4,7 @@ initial_z: 1.33
 initial_roll: -3.12159
 initial_pitch: 0
 initial_yaw: -0.05
-from: world
+from: gantry_plate
 to: xtion_left_link
 file_name: tf_xtion_left
 topic_name: /keyboard_left/keydown
