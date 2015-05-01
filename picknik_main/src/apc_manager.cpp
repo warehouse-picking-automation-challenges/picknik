@@ -1359,7 +1359,7 @@ bool APCManager::testJointLimits()
         return false;
 
       const moveit::core::VariableBounds& bound = joints[i]->getVariableBounds()[0];
-      double reduce_bound = 0.5;
+      double reduce_bound = 0.01;
 
       // Move to min bound
       std::cout << std::endl;
@@ -1790,9 +1790,6 @@ bool APCManager::allowCollisions()
     planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning
     scene->getAllowedCollisionMatrixNonConst().setEntry(shelf_->getEnvironmentCollisionObject("floor_wall")->getCollisionName(),
                                                         "frame", true);
-    ROS_WARN_STREAM_NAMED("apc_manager","Disabled collisions between v_camera_mount");
-    scene->getAllowedCollisionMatrixNonConst().setEntry(shelf_->getGoalBin()->getCollisionName(), "v_camera_mount", true);
-
   }
 
   return true;
