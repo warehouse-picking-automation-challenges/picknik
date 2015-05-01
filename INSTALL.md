@@ -17,8 +17,6 @@ Unzip the file and build
 	rosdep install -y --from-paths src --ignore-src --rosdistro indigo
 	catkin build
 
-NOTE: before running ``catkin build`` you might need to use ``catkin config --install`` to have the ARPG code link correctly. Not sure yet.
-
 Setup udev rules to connect USB hardware to computer: see ``README.md`` in ``kinova_control`` and ``zaber_control`` packages.
 
 ## Recommended Configurations for Manipulation Pipeline
