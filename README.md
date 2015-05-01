@@ -348,3 +348,42 @@ Reset USB stack without a reboot
 
     ## Sync computer to standard syncing server
     alias syncmytime="sudo ntpdate pool.ntp.org"
+
+
+  
+### How To Run The Perception Software
+Go to the build dir where you build the DDTR (e.g.):
+
+    cd /home/robots/code/ARPG/DDTR-build/
+    
+   # 1, Run Shelf Calibration  
+   
+Go to the dir of RGFusion app:
+
+    cd Application/RGFusion
+    
+Now, run RGFusion:
+
+    ./RollingGridFusion -wsp /home/robots/code/ARPG/DDTR/ -mode 6
+    
+   # 2, Run Perception
+   
+Go to the dir of Amazon app:
+
+    cd Application/Amazon
+    
+Now, run Amazon app:
+
+    ./Amazon -wsp /home/robots/code/ARPG/DDTR/ -mode 3
+    
+Here, -wsp gives the dir of the source code of DDTR, -mode select the running mode of the application.   
+    
+### Debug Perception
+If you use linux to run the application, make sure use the opengl shipped with Nvidia. To Check it, run
+
+    glxinfo | grep "OpenGL version"
+And you should see something like:
+
+    OpenGL version string: 4.5.0 NVIDIA 346.46
+
+If you see something like "mesa", please install Nvidia Video Card Driver Again.
