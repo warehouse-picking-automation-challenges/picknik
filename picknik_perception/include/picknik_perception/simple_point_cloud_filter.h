@@ -69,6 +69,7 @@ public:
   void getObjectPose(geometry_msgs::Pose &pose);
 
   bool processing_;
+  bool outlier_removal_;
 
   // point clouds
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr roi_cloud_;
@@ -82,7 +83,7 @@ private:
   Eigen::Affine3d bbox_pose_;
   double bbox_depth_, bbox_width_, bbox_height_;
 
-  bool outlier_removal_;
+
 
   bool verbose_;
 

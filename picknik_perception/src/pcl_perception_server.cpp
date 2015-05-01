@@ -118,11 +118,13 @@ public:
           break;
 
         // show bounding box
+        pointcloud_filter_->outlier_removal_ = true;
         pointcloud_filter_->enableBoundingBox();
 
         // Wait
         rate.sleep();
       }
+      pointcloud_filter_->outlier_removal_ = false;
 
       // Finish up perception
       ROS_INFO_STREAM_NAMED("pcl_perception_server","Finishing up perception");
