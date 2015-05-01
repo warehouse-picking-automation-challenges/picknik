@@ -37,7 +37,7 @@ int main(int argc, char** argv)
   std::size_t order_start = 0;
   std::size_t jump_to = 0;
   std::size_t num_orders = 0;
-  std::size_t bin_id = 0;
+  std::size_t id = 0;
   bool verbose = false;
   bool fake_execution = true;
   bool fake_perception = true;
@@ -137,11 +137,11 @@ int main(int argc, char** argv)
       ROS_DEBUG_STREAM_NAMED("main","Number of products to process for the order: " << num_orders);
       continue;
     }
-    if( std::string(argv[i]).compare("--bin_id") == 0 )
+    if( std::string(argv[i]).compare("--id") == 0 )
     {
       ++i;
-      bin_id = atoi(argv[i]);
-      ROS_DEBUG_STREAM_NAMED("main","Focusing on bin index: " << bin_id);
+      id = atoi(argv[i]);
+      ROS_DEBUG_STREAM_NAMED("main","Using mode with index: " << id);
       continue;
     }
   }
@@ -253,22 +253,22 @@ int main(int argc, char** argv)
     case 30:
       //if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Recording a trajectory for calibration");
-      manager.recordCalibrationTrajectory();
+      manager.recordCalibrationTrajectory(id);
       break;
     case 31:
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Playback trajectory for calibration");
-      manager.calibrateCamera();
+      manager.calibrateCamera(id);
       break;
     case 32:
       //if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Recording bin observing trajectory");
-      manager.recordBinWithCamera(bin_id);
+      manager.recordBinWithCamera(id);
       break;
     case 33:
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Playing back bin observing trajectory");
-      manager.perceiveBinWithCamera(bin_id);
+      manager.perceiveBinWithCamera(id);
       break;
 
     case 40:

@@ -91,11 +91,11 @@ Filter from bounding box:
 
     rosrun picknik_perception simple_point_cloud_filter.launch
 
-## Run The Perception Software
+## Run DDTR Perception Pipeline
 
 Go to the build dir where you build the DDTR (e.g.):
 
-    cd /home/robots/code/ARPG/DDTR-build/
+	cd ~/ros/perception/DDTR/build	
     
 ### Run Shelf Calibration
    
@@ -105,8 +105,16 @@ Go to the dir of RGFusion app:
     
 Now, run RGFusion:
 
-    ./RollingGridFusion -wsp /home/robots/code/ARPG/DDTR/ -mode 6
-    
+    ./RollingGridFusion -wsp ~/ros/perception/DDTR/ -mode 6
+
+Now, you should be able to see the live camera images in the top left GUI. Press key 'f' to start Kinect Fusion.
+press 'space' to stop building the shelf model when you got the 3D model you want.
+
+Press the button 'Clean Host (Del SDFs/Poses files)' on the control panel (left side) of the application to clean the old shelf model files.
+
+Press button 'Save Pose' and 'Save SDF' to save the latest 3D model of the shelf.
+Now you are safe the leave the application and run the Amazon app .
+
 ### Run Perception
    
 Go to the dir of Amazon app:
@@ -115,7 +123,7 @@ Go to the dir of Amazon app:
     
 Now, run Amazon app:
 
-    ./Amazon -wsp /home/robots/code/ARPG/DDTR/ -mode 3
+    ./Amazon -wsp ~/ros/perception/DDTR/ -mode 3
     
 Here, -wsp gives the dir of the source code of DDTR, -mode select the running mode of the application.   
 
@@ -123,7 +131,7 @@ Here, -wsp gives the dir of the source code of DDTR, -mode select the running mo
 
 Baxter documentation has been moved ot BAXTER.md
 	
-### Setup Simulation of JACOB
+### Run Simulation of JACOB
 
 Start roscore:
 
@@ -150,7 +158,7 @@ Run APC Manager (main program) for JACOB in simulation
 
 	roslaunch picknik_main jacob_apc.launch fake_execution:=1 fake_perception:=1 mode:=1 auto:=1
 
-### Setup HARDWARE of Jacob
+### Run HARDWARE of Jacob
 
 Start roscore:
 
@@ -258,10 +266,10 @@ Button Mapings
 		26. Unit test for perception communication
 
         TRAJECTORY HANDLING
-		30. Record a calibration trajectory
-		31. Playback calibration trajectory				
-		32. Record a bin observing trajectory
-		33. Playback bin observing trajectory (perceive)
+		30. Record a calibration trajectory, using id:=[0 left |1 right]
+		31. Playback calibration trajectory, using id:=[0 left |1 right]
+		32. Record a bin observing trajectory, using id:=[0-11]
+		33. Playback bin observing trajectory, using id:=[0-11]
 
         DEBUGGING
         40. Visualize shelf
@@ -281,7 +289,8 @@ Button Mapings
 	debug - slower and more verbose
 	fake_execution - runs at higher speeds and uses simulated controllers
 	fake_perception - do not use perception server
-	bin_id - specify which bin to look at, as a index number, starting at 0, e.g A=0, B=1
+	id - specify which bin to look at, as a index number, starting at 0, e.g A=0, B=1,
+	     or id of camera 0 (left) or 1 (right)
 	
 ## Mesh Test
 

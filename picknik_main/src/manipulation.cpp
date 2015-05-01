@@ -453,6 +453,9 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
     return false;
   }
 
+  // Unwrap joint values if needed
+  
+
   // Interpolate between each point
   double discretization = 0.25;
   interpolate(robot_trajectory, discretization);
@@ -2509,7 +2512,7 @@ bool Manipulation::waitForRobotToStop(const double& timeout)
 
 bool Manipulation::fixCurrentCollisionAndBounds(const robot_model::JointModelGroup* arm_jmg)
 {
-  ROS_INFO_STREAM_NAMED("manipulation","Checking current collision and bounds");
+  //ROS_INFO_STREAM_NAMED("manipulation","Checking current collision and bounds");
 
   bool result = true;
 

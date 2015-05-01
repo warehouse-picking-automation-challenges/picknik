@@ -150,6 +150,12 @@ public:
   bool testInCollision();
 
   /**
+   * \brief Debug visualization tool for joint limits
+   * \return true on success
+   */
+  bool showJointLimits();
+
+  /**
    * \brief Plan to random valid motions
    * \return true on success
    */
@@ -167,12 +173,6 @@ public:
    * \return true on success
    */
   bool testCameraPositions();
-
-  /**
-   * \brief Test moving the camera around for calibration
-   * \return true on success
-   */
-  bool calibrateCamera();
 
   /**
    * \brief Test moving joints to extreme limits
@@ -238,9 +238,17 @@ public:
 
   /**
    * \brief Record a trajectory for calibration
+   * \param id - left camera (0) right camera (1)
    * \return true on success
    */
-  bool recordCalibrationTrajectory();
+  bool recordCalibrationTrajectory(std::size_t id = 0);
+
+  /**
+   * \brief Test moving the camera around for calibration
+   * \param id - left camera (0) right camera (1)
+   * \return true on success
+   */
+  bool calibrateCamera(std::size_t id = 0);
 
   /**
    * \brief Get the pose of a requested object

@@ -985,11 +985,69 @@ bool APCManager::testInCollision()
 
   while (ros::ok())
   {
-    manipulation_->fixCurrentCollisionAndBounds(arm_jmg);
-    ros::Duration(1).sleep();
+    std::cout << std::endl;
+
+    // For debugging in console
+    showJointLimits();
+
+    //manipulation_->fixCurrentCollisionAndBounds(arm_jmg);
+    manipulation_->checkCollisionAndBounds(manipulation_->getCurrentState());
+    ros::Duration(0.1).sleep();
   }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done checking if in collision");
+  return true;
+}
+
+bool APCManager::showJointLimits()
+{
+  const std::vector<const moveit::core::JointModel*> &joints = config_->right_arm_->getActiveJointModels();
+
+  // Loop through joints
+  for (std::size_t i = 0; i < joints.size(); ++i)
+  {
+    // Assume all joints have only one variable
+    if (joints[i]->getVariableCount() > 1)
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Unable to handle joints with more than one var");
+      return false;
+    }    
+    moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
+    double current_value = current_state->getVariablePosition(joints[i]->getName());
+
+    // check if bad position
+    bool out_of_bounds = !current_state->satisfiesBounds(joints[i]);
+
+    const moveit::core::VariableBounds& bound = joints[i]->getVariableBounds()[0];
+    
+    if (out_of_bounds)
+      std::cout << MOVEIT_CONSOLE_COLOR_RED;
+
+    std::cout << "   " << std::fixed << std::setprecision(5) << bound.min_position_ << "\t";
+    double delta = bound.max_position_ - bound.min_position_;
+    //std::cout << "delta: " << delta << " ";
+    double step = delta / 20.0;
+
+    bool marker_shown = false;
+    for (double value = bound.min_position_; value < bound.max_position_; value += step)
+    {
+      // show marker of current value
+      if (!marker_shown && current_value < value)
+      {
+        std::cout << "|";
+        marker_shown = true;
+      }
+      else
+        std::cout << "-";
+    }
+    // show max position
+    std::cout << " " << std::setprecision(5) << bound.max_position_ << "  " << joints[i]->getName() << std::endl;
+
+    if (out_of_bounds)
+      std::cout << MOVEIT_CONSOLE_COLOR_RESET;
+  }
+
+
   return true;
 }
 
@@ -1104,7 +1162,7 @@ bool APCManager::testCameraPositions()
 }
 
 // Mode 31
-bool APCManager::calibrateCamera()
+bool APCManager::calibrateCamera(std::size_t id)
 {
   ROS_DEBUG_STREAM_NAMED("apc_manager","Calibrating camera");
 
@@ -1123,7 +1181,8 @@ bool APCManager::calibrateCamera()
 
   // Start playing back file
   std::string file_path;
-  const std::string file_name = "calibration_trajectory";
+  const std::string camera = id ? "right" : "left";
+  const std::string file_name = "calibration_trajectory_" + camera;
   manipulation_->getFilePath(file_path, file_name);
 
   //  if (!manipulation_->playbackTrajectoryFromFileInteractive(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
@@ -1138,16 +1197,14 @@ bool APCManager::calibrateCamera()
 }
 
 // Mode 30
-bool APCManager::recordCalibrationTrajectory()
+bool APCManager::recordCalibrationTrajectory(std::size_t id)
 {
   ROS_INFO_STREAM_NAMED("apc_manager","Recoding calibration trajectory");
 
   std::string file_path;
-  const std::string file_name = "calibration_trajectory";
+  const std::string camera = id ? "right" : "left";
+  const std::string file_name = "calibration_trajectory_" + camera;
   manipulation_->getFilePath(file_path, file_name);
-
-  // Wait
-  remote_control_->waitForNextStep("start recording calibration trajectory");
 
   // Start recording
   manipulation_->recordTrajectoryToFile(file_path);
