@@ -75,7 +75,7 @@ camera:
 
 # Test data
 test:
-  test_joint_limit_joint: 5  # starts at 0, negative number means test all
+  test_joint_limit_joint: 1  # starts at 0, negative number means test all
 
 behavior:
   end_effector_enabled: false
