@@ -88,6 +88,8 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   rvt::getDoubleParameter(parent_name, nh_, "camera/lift_distance", camera_lift_distance_);
   rvt::getDoubleParameter(parent_name, nh_, "camera/left_distance", camera_left_distance_);
   rvt::getDoubleParameter(parent_name, nh_, "camera/camera_frame_display_scale", camera_frame_display_scale_);
+  rvt::getStringParameter(parent_name, nh_, "camera/left_camera_frame", left_camera_frame_);
+  rvt::getStringParameter(parent_name, nh_, "camera/right_camera_frame", right_camera_frame_);
 
   // Load robot semantics
   rvt::getStringParameter(parent_name, nh_, "start_pose", start_pose_);
@@ -127,6 +129,9 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
     // Load arm groups
     right_arm_ = robot_model->getJointModelGroup(right_arm_name_);
   }
+
+  // Set world frame
+  world_frame_ = robot_model->getModelFrame();
 
   ROS_INFO_STREAM_NAMED("manipulation_data","ManipulationData Ready.");
 

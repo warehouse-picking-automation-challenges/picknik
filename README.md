@@ -186,25 +186,31 @@ Run APC Manager (main program) for JACOB on hardware
 
 	roslaunch picknik_main jacob_apc.launch mode:=1
 
+### Move Robot to Shutdown Mode
+
+Safe for power-off:
+
+    roslaunch picknik_main jacob_apc.launch fake_perception:=1 mode:=9 pose:=collapsed
+
 ### Shelf to Robot Calibration
 
 Adjust the values in ``config/apc_jacob.yaml`` for ``world_to_shelf_transform``:
 
 To quickly view updates yaml settings:
 
-    roslaunch picknik_main jacob_apc.launch mode:=13
+    roslaunch picknik_main jacob_apc.launch mode:=40
 	 
 Calibrate z axis
 
-    roslaunch picknik_main jacob_apc.launch fake_execution:=0 fake_perception:=1 mode:=24 pose:=z_calibration
+    roslaunch picknik_main jacob_apc.launch fake_perception:=1 mode:=9 pose:=z_calibration
 
 Calibrate y axis
 
-    roslaunch picknik_main jacob_apc.launch fake_execution:=0 fake_perception:=1 mode:=24 pose:=y_calibration
+    roslaunch picknik_main jacob_apc.launch fake_perception:=1 mode:=9 pose:=y_calibration
 
 Calibrate x axis
 
-    roslaunch picknik_main jacob_apc.launch fake_execution:=0 fake_perception:=1 mode:=24 pose:=x_calibration
+    roslaunch picknik_main jacob_apc.launch fake_perception:=1 mode:=9 pose:=x_calibration
 
 ### Shelf to Camera Calibration
 
@@ -255,13 +261,14 @@ Button Mapings
 		8. GO to open and close end effector(s)
 		9. GO to pose pose:=NAME
         10. GO in and out of bin
+		11. GO in circle for calibration
 
         TESTING
 		16. Test grasp generator abilities and score results
 		17. Test joint limits
 		18. Test requesting preception results
 		22. Test approach, lift, and retreat motion for random objects
-		23. Unit tests for manipulation		
+		23. UNIT TESTS for manipulation		
         25. Test IK solver with simple pose request
 		26. Unit test for perception communication
 

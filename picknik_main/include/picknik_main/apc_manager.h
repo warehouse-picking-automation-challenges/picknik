@@ -378,6 +378,12 @@ public:
    */
   bool unitTestPerceptionComm();
 
+  /**
+   * \brief Move arm in circle for calibration
+   * \return true on success
+   */
+  bool calibrateInCircle();
+
 private:
 
   // A shared node handle

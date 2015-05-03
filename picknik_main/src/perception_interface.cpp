@@ -384,19 +384,18 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
 bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::Time& time_stamp)
 {
   tf::StampedTransform camera_transform;
-  static const std::string parent_frame = "/world";
-  static const std::string camera_frame = "/camera_depth_frame";
+  static const std::string camera_frame = config_->right_camera_frame_; // TODO accomiate right
 
   try
   {
     // Wait to make sure a transform message has arrived
-    tf_->waitForTransform(parent_frame, camera_frame, ros::Time(0), ros::Duration(1));
+    tf_->waitForTransform(config_->world_frame_, camera_frame, ros::Time(0), ros::Duration(1));
     // Get latest transform available
-    tf_->lookupTransform(parent_frame, camera_frame, ros::Time(0), camera_transform);
+    tf_->lookupTransform(config_->world_frame_, camera_frame, ros::Time(0), camera_transform);
   }
   catch (tf::TransformException ex)
   {
-    ROS_ERROR_STREAM_NAMED("perception_interface", "Error: " << ex.what());
+    ROS_ERROR_STREAM_NAMED("perception_interface", "TF error: " << ex.what());
     return false;
   }
 
@@ -409,19 +408,18 @@ bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::T
 bool PerceptionInterface::getHackOffsetPose(Eigen::Affine3d& world_to_camera, ros::Time& time_stamp)
 {
   tf::StampedTransform camera_transform;
-  static const std::string parent_frame = "/world";
   static const std::string camera_frame = "/object_offset_hack";
 
   try
   {
     // Wait to make sure a transform message has arrived
-    tf_->waitForTransform(parent_frame, camera_frame, ros::Time(0), ros::Duration(1));
+    tf_->waitForTransform(config_->world_frame_, camera_frame, ros::Time(0), ros::Duration(1));
     // Get latest transform available
-    tf_->lookupTransform(parent_frame, camera_frame, ros::Time(0), camera_transform);
+    tf_->lookupTransform(config_->world_frame_, camera_frame, ros::Time(0), camera_transform);
   }
   catch (tf::TransformException ex)
   {
-    ROS_ERROR_STREAM_NAMED("perception_interface", "Error: " << ex.what());
+    ROS_ERROR_STREAM_NAMED("perception_interface", "TF error: " << ex.what());
     return false;
   }
 

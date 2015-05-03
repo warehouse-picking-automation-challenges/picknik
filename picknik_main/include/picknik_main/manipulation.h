@@ -139,7 +139,7 @@ public:
    * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
    * \return true on success
    */
-  bool moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name, double velocity_scaling_factor,
+  bool moveToSRDFPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name, double velocity_scaling_factor,
                   bool check_validity = true);
 
   /**
@@ -148,7 +148,7 @@ public:
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_scaling_factor, const robot_model::JointModelGroup* arm_jmg);
+  bool moveToEEPose(const Eigen::Affine3d& ee_pose, double velocity_scaling_factor, const robot_model::JointModelGroup* arm_jmg);
 
   /**
    * \brief Send a planning request to moveit and execute
@@ -221,6 +221,13 @@ public:
    * \return true on success
    */
   bool executeSavedCartesianPath(moveit_grasps::GraspCandidatePtr chosen, std::size_t segment_id);
+
+  /**
+   * \brief Using the current EE pose and the goal grasp pose, move forward into the target object
+   * \return true on success
+   */
+  bool executeSavedCartesianPath(const moveit_grasps::GraspTrajectories &segmented_cartesian_traj,
+                                 const moveit::core::JointModelGroup *arm_jmg, std::size_t segment_id);
 
   /**
    * \brief Generate the straight line path from pregrasp to grasp
@@ -513,6 +520,12 @@ public:
    * \return true on success
    */
   bool generateRandomProductPoses();
+
+  /**
+   * \brief Get pose from TF for any frame
+   * \return true on success
+   */
+  bool getPose(Eigen::Affine3d &pose, const std::string& frame_name);
 
 protected:
 

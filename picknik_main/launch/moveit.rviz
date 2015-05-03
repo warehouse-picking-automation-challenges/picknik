@@ -5,12 +5,14 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Grid1/Offset1
+        - /Amazon Markers1
         - /Amazon Markers1/Namespaces1
-        - /Amazon Trajectory Markers1
         - /Amazon Trajectory Markers1/Namespaces1
         - /OMPL Experience1
+        - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
+        - /TF1
         - /TF1/Frames1
         - /PointCloud21
         - /PointCloud22
@@ -496,7 +498,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Markers
       Namespaces:
-        Axis: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -660,7 +662,7 @@ Visualization Manager:
         Scene Alpha: 1
         Scene Color: 255; 170; 0
         Scene Display Time: 0.2
-        Show Scene Geometry: true
+        Show Scene Geometry: false
         Voxel Coloring: Z-Axis
         Voxel Rendering: Occupied Voxels
       Scene Robot:
@@ -769,19 +771,116 @@ Visualization Manager:
         Show Robot Visual: false
       Value: true
     - Class: rviz/TF
-      Enabled: false
+      Enabled: true
       Frame Timeout: 15
       Frames:
         All Enabled: false
+        base:
+          Value: true
+        frame:
+          Value: true
+        gantry:
+          Value: true
+        gantry_plate:
+          Value: true
+        jaco2_end_effector:
+          Value: true
+        jaco2_link_1:
+          Value: true
+        jaco2_link_2:
+          Value: true
+        jaco2_link_3:
+          Value: true
+        jaco2_link_4:
+          Value: true
+        jaco2_link_5:
+          Value: true
+        jaco2_link_base:
+          Value: true
+        jaco2_link_finger_1:
+          Value: true
+        jaco2_link_finger_1_tip:
+          Value: true
+        jaco2_link_finger_2:
+          Value: true
+        jaco2_link_finger_2_tip:
+          Value: true
+        jaco2_link_finger_3:
+          Value: true
+        jaco2_link_finger_3_tip:
+          Value: true
+        jaco2_link_hand:
+          Value: true
+        jaco2_wrist:
+          Value: true
+        world:
+          Value: true
+        xtion_left_depth_frame:
+          Value: true
+        xtion_left_depth_optical_frame:
+          Value: true
+        xtion_left_link:
+          Value: true
+        xtion_left_rgb_frame:
+          Value: true
+        xtion_left_rgb_optical_frame:
+          Value: true
+        xtion_right_depth_frame:
+          Value: true
+        xtion_right_depth_optical_frame:
+          Value: true
+        xtion_right_link:
+          Value: true
+        xtion_right_rgb_frame:
+          Value: true
+        xtion_right_rgb_optical_frame:
+          Value: true
       Marker Scale: 0.5
       Name: TF
       Show Arrows: false
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        world:
+          base:
+            frame:
+              gantry:
+                gantry_plate:
+                  jaco2_link_base:
+                    jaco2_link_1:
+                      jaco2_link_2:
+                        jaco2_link_3:
+                          jaco2_link_4:
+                            jaco2_link_5:
+                              jaco2_wrist:
+                                jaco2_link_hand:
+                                  jaco2_end_effector:
+                                    {}
+                                  jaco2_link_finger_1:
+                                    jaco2_link_finger_1_tip:
+                                      {}
+                                  jaco2_link_finger_2:
+                                    jaco2_link_finger_2_tip:
+                                      {}
+                                  jaco2_link_finger_3:
+                                    jaco2_link_finger_3_tip:
+                                      {}
+                  xtion_left_link:
+                    xtion_left_depth_frame:
+                      xtion_left_depth_optical_frame:
+                        {}
+                    xtion_left_rgb_frame:
+                      xtion_left_rgb_optical_frame:
+                        {}
+                  xtion_right_link:
+                    xtion_right_depth_frame:
+                      xtion_right_depth_optical_frame:
+                        {}
+                    xtion_right_rgb_frame:
+                      xtion_right_rgb_optical_frame:
+                        {}
       Update Interval: 0
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -894,6 +993,13 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
+    - Class: rviz/Axes
+      Enabled: true
+      Length: 0.1
+      Name: Axes
+      Radius: 0.01
+      Reference Frame: <Fixed Frame>
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 227; 227; 227
@@ -909,22 +1015,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 16.1613
+      Distance: 4.31162
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 3.07102
-        Y: 0.666453
-        Z: -9.53674e-07
+        X: 0.130327
+        Y: -0.258486
+        Z: 2.6226e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.265399
+      Pitch: 0.780399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.9522
+      Yaw: 5.0609
     Saved: ~
 Window Geometry:
   Displays:
@@ -940,5 +1046,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1190
-  X: 1894
+  X: 1864
   Y: 14

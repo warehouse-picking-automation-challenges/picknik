@@ -212,6 +212,12 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Going in and out of bin");
       manager.testInAndOut();
       break;
+    case 11:
+      remove_from_shelf = false;
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Going in circle for calibration");
+      manager.calibrateInCircle();
+      break;
 
 
 

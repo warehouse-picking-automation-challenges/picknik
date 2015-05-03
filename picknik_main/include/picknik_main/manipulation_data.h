@@ -111,6 +111,8 @@ public:
   double camera_lift_distance_;
   double camera_left_distance_;
   double camera_frame_display_scale_;
+  std::string left_camera_frame_;
+  std::string right_camera_frame_;  
 
   // Load planning configs
   bool use_experience_setup_;
@@ -131,6 +133,9 @@ public:
   // Behavior configs
   bool end_effector_enabled_;
   bool super_auto_;
+
+  // World frame / base frame / model frame
+  std::string world_frame_;
 
 }; // end class
 

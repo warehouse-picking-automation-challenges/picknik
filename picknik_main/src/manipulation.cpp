@@ -454,7 +454,7 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
   }
 
   // Unwrap joint values if needed
-  
+
 
   // Interpolate between each point
   double discretization = 0.25;
@@ -603,10 +603,10 @@ bool Manipulation::recordTrajectoryToFile(const std::string &file_path)
   return true;
 }
 
-bool Manipulation::moveToPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name,
+bool Manipulation::moveToSRDFPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name,
                               double velocity_scaling_factor, bool check_validity)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","moveToPose()");
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","moveToSRDFPose()");
 
   // Set new state to current state
   getCurrentState();
@@ -631,7 +631,7 @@ bool Manipulation::moveToPose(const robot_model::JointModelGroup* arm_jmg, const
   return true;
 }
 
-bool Manipulation::moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_scaling_factor,
+bool Manipulation::moveToEEPose(const Eigen::Affine3d& ee_pose, double velocity_scaling_factor,
                                 const robot_model::JointModelGroup* arm_jmg)
 {
   // Create start and goal
@@ -642,7 +642,7 @@ bool Manipulation::moveEEToPose(const Eigen::Affine3d& ee_pose, double velocity_
   {
     bool collision_checking_verbose = false;
     if (collision_checking_verbose)
-      ROS_WARN_STREAM_NAMED("manipulation","moveEEToPose() has collision_checking_verbose turned on");
+      ROS_WARN_STREAM_NAMED("manipulation","moveToEEPose() has collision_checking_verbose turned on");
     boost::scoped_ptr<planning_scene_monitor::LockedPlanningSceneRO> ls;
     ls.reset(new planning_scene_monitor::LockedPlanningSceneRO(planning_scene_monitor_));
     bool only_check_self_collision = false;
@@ -793,16 +793,16 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
     if (!execution_interface_->waitForExecution())
     {
       ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
-      return false;      
+      return false;
     }
   }
 
   return true;
 }
 
-bool Manipulation::createPlanningRequest(planning_interface::MotionPlanRequest& request, const moveit::core::RobotStatePtr& start, 
-                                         const moveit::core::RobotStatePtr& goal, const robot_model::JointModelGroup* arm_jmg, 
-                                         double velocity_scaling_factor)                                         
+bool Manipulation::createPlanningRequest(planning_interface::MotionPlanRequest& request, const moveit::core::RobotStatePtr& start,
+                                         const moveit::core::RobotStatePtr& goal, const robot_model::JointModelGroup* arm_jmg,
+                                         double velocity_scaling_factor)
 {
   moveit::core::robotStateToRobotStateMsg(*start, request.start_state);
 
@@ -834,7 +834,7 @@ bool Manipulation::createPlanningRequest(planning_interface::MotionPlanRequest& 
   request.workspace_parameters.max_corner.x = start->getVariablePosition("virtual_joint/trans_x") + workspace_size;
   request.workspace_parameters.max_corner.y = start->getVariablePosition("virtual_joint/trans_y") + workspace_size;
   request.workspace_parameters.max_corner.z = start->getVariablePosition("virtual_joint/trans_z") + workspace_size;
-  //visuals_->visual_tools_->publishWorkspaceParameters(request.workspace_parameters);  
+  //visuals_->visual_tools_->publishWorkspaceParameters(request.workspace_parameters);
 
   return true;
 }
@@ -907,6 +907,14 @@ bool Manipulation::planPostProcessing()
     {
       experience_setup->saveDataLog(logging_file_);
       logging_file_.flush();
+    }
+
+    // Show experience database
+    if (visuals_->isEnabled("show_experience_database"))
+    {
+      const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+
+      displayExperienceDatabase(arm_jmg);
     }
   }
 }
@@ -1147,18 +1155,17 @@ bool Manipulation::executeApproachPath(moveit_grasps::GraspCandidatePtr chosen_g
 
 bool Manipulation::executeSavedCartesianPath(moveit_grasps::GraspCandidatePtr chosen_grasp, std::size_t segment_id)
 {
-  // Get the already computed cartesian path
-  const moveit_grasps::GraspTrajectories &segmented_cartesian_traj = chosen_grasp->segmented_cartesian_traj_;
+  return executeSavedCartesianPath(chosen_grasp->segmented_cartesian_traj_, chosen_grasp->grasp_data_->arm_jmg_,
+                                   segment_id);
+}
 
+bool Manipulation::executeSavedCartesianPath(const moveit_grasps::GraspTrajectories &segmented_cartesian_traj,
+                                             const moveit::core::JointModelGroup *arm_jmg, std::size_t segment_id)
+{
   // Error check
-  if (segmented_cartesian_traj.size() != 3)
+  if (segment_id >= segmented_cartesian_traj.size())
   {
-    ROS_ERROR_STREAM_NAMED("manipulation","There should be three subtrajectories in this path");
-    return false;
-  }
-  if (segment_id > 2)
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","This function can only handle segments 0-2");
+    ROS_ERROR_STREAM_NAMED("manipulation","Requested segment id does not exist");
     return false;
   }
   if (segmented_cartesian_traj[segment_id].empty())
@@ -1174,7 +1181,7 @@ bool Manipulation::executeSavedCartesianPath(moveit_grasps::GraspCandidatePtr ch
 
   // Get trajectory message
   moveit_msgs::RobotTrajectory trajectory_msg;
-  if (!convertRobotStatesToTrajectory(trajectory, trajectory_msg, chosen_grasp->grasp_data_->arm_jmg_,
+  if (!convertRobotStatesToTrajectory(trajectory, trajectory_msg, arm_jmg,
                                       config_->approach_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
@@ -1182,7 +1189,7 @@ bool Manipulation::executeSavedCartesianPath(moveit_grasps::GraspCandidatePtr ch
   }
 
   // Execute
-  if( !execution_interface_->executeTrajectory(trajectory_msg, chosen_grasp->grasp_data_->arm_jmg_) )
+  if( !execution_interface_->executeTrajectory(trajectory_msg, arm_jmg) )
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
     return false;
@@ -1194,11 +1201,10 @@ bool Manipulation::executeSavedCartesianPath(moveit_grasps::GraspCandidatePtr ch
 bool Manipulation::generateApproachPath(moveit_grasps::GraspCandidatePtr chosen_grasp,
                                         moveit_msgs::RobotTrajectory &approach_trajectory_msg,
                                         const moveit::core::RobotStatePtr pre_grasp_state,
-                                        const moveit::core::RobotStatePtr the_grasp_state,
-                                        bool verbose)
+                                        const moveit::core::RobotStatePtr the_grasp_state, bool verbose)
 {
-  Eigen::Vector3d approach_direction = grasp_generator_->getPreGraspDirection(chosen_grasp->grasp_,
-                                                                              chosen_grasp->grasp_data_->parent_link_->getName());
+  Eigen::Vector3d approach_direction = 
+    grasp_generator_->getPreGraspDirection(chosen_grasp->grasp_, chosen_grasp->grasp_data_->parent_link_->getName());
   bool reverse_path = true;
 
   double path_length;
@@ -1691,25 +1697,25 @@ bool Manipulation::perturbCameraGantryOnly(BinObjectPtr bin, const robot_model::
   ROS_INFO_STREAM_NAMED("manipulation","Moving camera down distance " << config_->camera_lift_distance_);
   bool up = false;
   bool best_attempt = true; // even if we can't achieve the desired_list_distance, execute anyway as much as possible
-  if (!executeVerticlePathGantryOnly(arm_jmg, config_->camera_lift_distance_, config_->lift_velocity_scaling_factor_, up, 
+  if (!executeVerticlePathGantryOnly(arm_jmg, config_->camera_lift_distance_, config_->lift_velocity_scaling_factor_, up,
                                      best_attempt))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to move down");
   }
-  
+
   // Move gantry up
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
   ROS_INFO_STREAM_NAMED("manipulation","Moving camera up distance " << config_->camera_lift_distance_);
   up = true;
-  if (!executeVerticlePathGantryOnly(arm_jmg, config_->camera_lift_distance_, config_->lift_velocity_scaling_factor_, up, 
+  if (!executeVerticlePathGantryOnly(arm_jmg, config_->camera_lift_distance_, config_->lift_velocity_scaling_factor_, up,
                                      best_attempt))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to move up");
   }
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
-  
+
   return true;
 }
 
@@ -1739,7 +1745,7 @@ bool Manipulation::getGraspingSeedState(BinObjectPtr bin, moveit::core::RobotSta
   {
     bool collision_checking_verbose = false;
     if (collision_checking_verbose)
-      ROS_WARN_STREAM_NAMED("manipulation","moveEEToPose() has collision_checking_verbose turned on");
+      ROS_WARN_STREAM_NAMED("manipulation","moveToEEPose() has collision_checking_verbose turned on");
     boost::scoped_ptr<planning_scene_monitor::LockedPlanningSceneRO> ls;
     ls.reset(new planning_scene_monitor::LockedPlanningSceneRO(planning_scene_monitor_));
     bool only_check_self_collision = true;
@@ -1797,7 +1803,7 @@ bool Manipulation::moveCameraToBin(BinObjectPtr bin)
   // Yaw Angle
   ee_pose = ee_pose * Eigen::AngleAxisd(config_->camera_y_rotation_from_standard_grasp_, Eigen::Vector3d::UnitY());
 
-  return moveEEToPose(ee_pose, config_->main_velocity_scaling_factor_, arm_jmg);
+  return moveToEEPose(ee_pose, config_->main_velocity_scaling_factor_, arm_jmg);
 }
 
 bool Manipulation::moveCameraToBinGantryOnly(BinObjectPtr bin, const robot_model::JointModelGroup* arm_jmg)
@@ -2223,7 +2229,7 @@ bool Manipulation::moveToStartPosition(const robot_model::JointModelGroup* arm_j
   // Choose which planning group to use
   if (arm_jmg == NULL)
     arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
-  return moveToPose(arm_jmg, config_->start_pose_, config_->main_velocity_scaling_factor_, check_validity);
+  return moveToSRDFPose(arm_jmg, config_->start_pose_, config_->main_velocity_scaling_factor_, check_validity);
 }
 
 bool Manipulation::allowFingerTouch(const std::string& object_name, const robot_model::JointModelGroup* arm_jmg)
@@ -2325,7 +2331,7 @@ ompl::tools::ExperienceSetupPtr Manipulation::getExperienceSetup(const robot_mod
   // Get experience setup
   ompl::tools::ExperienceSetupPtr experience_setup
     = boost::dynamic_pointer_cast<ompl::tools::ExperienceSetup>(mbpc->getOMPLSimpleSetup());
-  
+
   return experience_setup;
 }
 
@@ -2697,6 +2703,28 @@ bool Manipulation::getFilePath(std::string &file_path, const std::string &file_n
   return true;
 }
 
+bool Manipulation::getPose(Eigen::Affine3d &pose, const std::string& frame_name)
+{
+  tf::StampedTransform camera_transform;
+  try
+  {
+    // Wait to make sure a transform message has arrived
+    planning_scene_monitor_->getTFClient()->waitForTransform(config_->world_frame_, frame_name, ros::Time(0), ros::Duration(1));
+    // Get latest transform available
+    planning_scene_monitor_->getTFClient()->lookupTransform(config_->world_frame_, frame_name, ros::Time(0), camera_transform);
+  }
+  catch (tf::TransformException ex)
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation", "TF error: " << ex.what());
+    return false;
+  }
+
+  // Copy results
+  tf::transformTFToEigen(camera_transform, pose);
+
+  return true;
+}
+
 } // end namespace
 
 namespace
@@ -2738,4 +2766,5 @@ bool isStateValid(const planning_scene::PlanningScene *planning_scene, bool verb
   }
   return false;
 }
-}
+
+} // end annonymous namespace
