@@ -40,7 +40,7 @@
 #include <picknik_main/execution_interface.h>
 
 // MoveIt
-#include <moveit/plan_execution/plan_execution.h>
+#include <moveit/trajectory_execution_manager/trajectory_execution_manager.h>
 
 // ros_control
 #include <controller_manager_msgs/ListControllers.h>
@@ -54,7 +54,7 @@ namespace picknik_main
 ExecutionInterface::ExecutionInterface(bool verbose, RemoteControlPtr remote_control, VisualsPtr visuals,
                                        moveit_grasps::GraspDatas grasp_datas,
                                        planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                                       ManipulationDataPtr config, const std::string& package_path, 
+                                       ManipulationDataPtr config, const std::string& package_path,
                                        moveit::core::RobotStatePtr current_state, bool fake_execution)
   : verbose_(verbose)
   , remote_control_(remote_control)
@@ -75,12 +75,13 @@ ExecutionInterface::ExecutionInterface(bool verbose, RemoteControlPtr remote_con
   ROS_INFO_STREAM_NAMED("execution_interface","ExecutionInterface Ready.");
 }
 
-bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg, 
-                                           const robot_model::JointModelGroup* jmg, bool ignore_collision)
+bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg,
+                                           const robot_model::JointModelGroup* jmg, bool wait_for_execution)
 {
   trajectory_msgs::JointTrajectory& trajectory = trajectory_msg.joint_trajectory;
 
-  ROS_INFO_STREAM_NAMED("execution_interface","Executing trajectory with " << trajectory.points.size() << " waypoints");
+  ROS_INFO_STREAM_NAMED("execution_interface","Executing trajectory with " << trajectory.points.size()
+                        << " waypoints");
 
   // Remove acceleration command, not to be used with Baxter
   if (false)
@@ -99,7 +100,8 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
     if (trajectory.joint_names.size() > 3)
     {
       static std::size_t trajectory_count = 0;
-      saveTrajectory(trajectory_msg, jmg->getName() + "_trajectory_"+ boost::lexical_cast<std::string>(trajectory_count++)+".csv");
+      saveTrajectory(trajectory_msg, jmg->getName() + "_trajectory_"
+                     + boost::lexical_cast<std::string>(trajectory_count++)+".csv");
       //saveTrajectory(trajectory_msg, "trajectory.csv");
     }
   }
@@ -109,7 +111,7 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
   {
     visuals_->trajectory_lines_->deleteAllMarkers();
     ros::spinOnce(); // TODO remove?
-    
+
     visuals_->trajectory_lines_->publishTrajectoryLine(trajectory_msg, grasp_datas_[jmg]->parent_link_,
                                                        config_->right_arm_, rvt::LIME_GREEN);
   }
@@ -141,7 +143,7 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
 
       remote_control_->setAutonomous(false);
       remote_control_->setFullAutonomous(false);
-      
+
       //return false;
     }
     else if (diff > warn_time_step)
@@ -160,15 +162,14 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
   {
     trajectory_execution_manager_.reset(new trajectory_execution_manager::
                                         TrajectoryExecutionManager(planning_scene_monitor_->getRobotModel()));
-    plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
   }
 
   // Check if in unit testing mode
   if (unit_testing_enabled_)
   {
-    robot_trajectory::RobotTrajectoryPtr 
+    robot_trajectory::RobotTrajectoryPtr
       robot_trajectory(new robot_trajectory::RobotTrajectory(planning_scene_monitor_->getRobotModel(), jmg));
-                                                             
+
     robot_trajectory->setRobotTrajectoryMsg(*current_state_, trajectory_msg);
     *current_state_ = robot_trajectory->getLastWayPoint();
     return true;
@@ -183,37 +184,22 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
     ROS_INFO_STREAM_NAMED("execution_interface","Executing trajectory....");
   }
 
-  // Clear
-  plan_execution_->getTrajectoryExecutionManager()->clear();
+  // Reset trajectory manager
+  trajectory_execution_manager_->clear();
 
-  if(plan_execution_->getTrajectoryExecutionManager()->push(trajectory_msg))
+  // Send new trajectory
+  if(trajectory_execution_manager_->push(trajectory_msg))
   {
-    plan_execution_->getTrajectoryExecutionManager()->execute();
+    trajectory_execution_manager_->execute();
 
-    bool wait_exection = true;
-    if (wait_exection)
+    // Optionally wait for completion
+    if (wait_for_execution)
     {
-      // wait for the trajectory to complete
-      moveit_controller_manager::ExecutionStatus es = plan_execution_->getTrajectoryExecutionManager()->waitForExecution();
-      if (es == moveit_controller_manager::ExecutionStatus::SUCCEEDED)
-      {
-        ROS_DEBUG_STREAM_NAMED("execution_interface","Trajectory execution succeeded");
-      }
-      else // Failed
-      {
-        if (es == moveit_controller_manager::ExecutionStatus::PREEMPTED)
-          ROS_INFO_STREAM_NAMED("execution_interface","Trajectory execution preempted");
-        else
-          if (es == moveit_controller_manager::ExecutionStatus::TIMED_OUT)
-            ROS_ERROR_STREAM_NAMED("execution_interface","Trajectory execution timed out");
-          else
-            ROS_ERROR_STREAM_NAMED("execution_interface","Trajectory execution control failed");
-
-        // Disable autonomous mode because something went wrong
-        remote_control_->setAutonomous(false);
-
-        return false;
-      }
+      waitForExecution();
+    }
+    else
+    {
+      ROS_WARN_STREAM_NAMED("exceution_interface","Not waiting for execution to finish");
     }
   }
   else
@@ -223,6 +209,28 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
   }
 
   return true;
+}
+
+bool ExecutionInterface::waitForExecution()
+{
+  ROS_INFO_STREAM_NAMED("execution_interface","Waiting for executing trajectory to finish");
+
+  // wait for the trajectory to complete
+  moveit_controller_manager::ExecutionStatus execution_status = trajectory_execution_manager_->waitForExecution();
+  if (execution_status == moveit_controller_manager::ExecutionStatus::SUCCEEDED)
+  {
+    ROS_DEBUG_STREAM_NAMED("execution_interface","Trajectory execution succeeded");
+    return true;
+  }
+
+  if (execution_status == moveit_controller_manager::ExecutionStatus::PREEMPTED)
+    ROS_INFO_STREAM_NAMED("execution_interface","Trajectory execution preempted");
+  else if (execution_status == moveit_controller_manager::ExecutionStatus::TIMED_OUT)
+    ROS_ERROR_STREAM_NAMED("execution_interface","Trajectory execution timed out");
+  else
+    ROS_ERROR_STREAM_NAMED("execution_interface","Trajectory execution control failed");
+
+  return false;
 }
 
 bool ExecutionInterface::checkExecutionManager()
@@ -235,8 +243,6 @@ bool ExecutionInterface::checkExecutionManager()
     trajectory_execution_manager_.reset(new trajectory_execution_manager::
                                         TrajectoryExecutionManager(planning_scene_monitor_->getRobotModel()));
   }
-  if (!plan_execution_)
-    plan_execution_.reset(new plan_execution::PlanExecution(planning_scene_monitor_, trajectory_execution_manager_));
 
   const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
@@ -288,8 +294,8 @@ bool ExecutionInterface::checkTrajectoryController(ros::ServiceClient& service_c
   controller_manager_msgs::ListControllers service;
   if (!service_client.call(service))
   {
-    ROS_ERROR_STREAM_THROTTLE_NAMED(2, "execution_interface","Unable to check if controllers for " << hardware_name 
-                                    << " are loaded, failing. Using nh namespace " << nh_.getNamespace() 
+    ROS_ERROR_STREAM_THROTTLE_NAMED(2, "execution_interface","Unable to check if controllers for " << hardware_name
+                                    << " are loaded, failing. Using nh namespace " << nh_.getNamespace()
                                     << ". Service response: " << service.response);
     return false;
   }

@@ -177,6 +177,12 @@ public:
             moveit_msgs::RobotTrajectory& trajectory_msg);
 
   /**
+   * \brief Allow accumlated experiences to be processed by OMPL
+   * \return true on success
+   */
+  bool planPostProcessing();
+
+  /**
    * \brief Print experience logs
    * \return true on success
    */

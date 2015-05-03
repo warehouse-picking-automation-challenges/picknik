@@ -83,7 +83,13 @@ public:
    * \return true on success
    */
   bool executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg, const robot_model::JointModelGroup* jmg, 
-                         bool ignore_collision = false);
+                         bool wait_for_execution = true);
+
+  /**
+   * \brief Wait for trajectory to finish being executed
+   * \return true on success
+   */
+  bool waitForExecution();
 
   /**
    * \brief Ensure controllers are ready and in correct state
@@ -137,7 +143,6 @@ private:
 
   // Trajectory execution
   trajectory_execution_manager::TrajectoryExecutionManagerPtr trajectory_execution_manager_;
-  boost::shared_ptr<plan_execution::PlanExecution> plan_execution_;
 
   // Check which controllers are loaded
   ros::ServiceClient zaber_list_controllers_client_;

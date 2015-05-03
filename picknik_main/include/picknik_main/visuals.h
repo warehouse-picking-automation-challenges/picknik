@@ -40,7 +40,8 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  Visuals(robot_model::RobotModelPtr robot_model, planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor);
+  Visuals(moveit::core::RobotModelPtr robot_model, 
+          planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor);
 
   bool visualizeDisplayShelf(ShelfObjectPtr shelf);
 

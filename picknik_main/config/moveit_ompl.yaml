@@ -1,6 +1,6 @@
 # OMPL Planner Settings, Mostly for Experience Planning
 moveit_ompl:
-  use_experience_setup: false
+  use_experience_setup: true
   experience_type: thunder
   planning_time: 60
   use_scratch: true

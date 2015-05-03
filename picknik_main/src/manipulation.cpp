@@ -770,9 +770,10 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   }
 
   // Execute trajectory
+  bool wait_for_execution = false;
   if (execute_trajectory)
   {
-    if( !execution_interface_->executeTrajectory(trajectory_msg, arm_jmg) )
+    if( !execution_interface_->executeTrajectory(trajectory_msg, arm_jmg, wait_for_execution) )
     {
       ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
       return false;
@@ -781,6 +782,19 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   else
   {
     ROS_WARN_STREAM_NAMED("manipulation","Execute trajectory currently disabled by user");
+  }
+
+  // Do processing while trajectory is execute
+  planPostProcessing();
+
+  // Wait for trajectory execution to finish
+  if (!wait_for_execution)
+  {
+    if (!execution_interface_->waitForExecution())
+    {
+      ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
+      return false;      
+    }
   }
 
   return true;
@@ -862,13 +876,27 @@ bool Manipulation::plan(const moveit::core::RobotStatePtr& start, const moveit::
     return false;
   }
 
+  return true;
+}
+
+bool Manipulation::planPostProcessing()
+{
   // Save Experience Database
   if (config_->use_experience_setup_)
   {
+    ROS_INFO_STREAM_NAMED("manipulation","Performing planner post-processing");
+
     moveit_ompl::ModelBasedPlanningContextPtr mbpc
       = boost::dynamic_pointer_cast<moveit_ompl::ModelBasedPlanningContext>(planning_context_handle_);
     ompl::tools::ExperienceSetupPtr experience_setup
       = boost::dynamic_pointer_cast<ompl::tools::ExperienceSetup>(mbpc->getOMPLSimpleSetup());
+
+    // Process new experience into database
+    experience_setup->doPostProcessing();
+
+    // Save database
+    ROS_DEBUG_STREAM_NAMED("manipulation","Saving experience db...");
+    experience_setup->saveIfChanged();
 
     // Display logs
     if (visuals_->isEnabled("verbose_experience_database_stats"))
@@ -880,13 +908,7 @@ bool Manipulation::plan(const moveit::core::RobotStatePtr& start, const moveit::
       experience_setup->saveDataLog(logging_file_);
       logging_file_.flush();
     }
-
-    // Save database
-    ROS_DEBUG_STREAM_NAMED("manipulation","Saving experience db...");
-    experience_setup->saveIfChanged();
   }
-
-  return true;
 }
 
 bool Manipulation::printExperienceLogs()
@@ -1285,7 +1307,7 @@ bool Manipulation::executeVerticlePathGantryOnly(const moveit::core::JointModelG
   }
 
   // Execute
-  if( !execution_interface_->executeTrajectory(cartesian_trajectory_msg, arm_jmg, ignore_collision) )
+  if( !execution_interface_->executeTrajectory(cartesian_trajectory_msg, arm_jmg) )
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
     return false;
@@ -1373,7 +1395,7 @@ bool Manipulation::executeCartesianPath(const moveit::core::JointModelGroup *arm
   }
 
   // Execute
-  if( !execution_interface_->executeTrajectory(cartesian_trajectory_msg, arm_jmg, ignore_collision) )
+  if( !execution_interface_->executeTrajectory(cartesian_trajectory_msg, arm_jmg) )
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
     return false;
@@ -2161,7 +2183,7 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   else if (reverse_out)
   {
     ROS_INFO_STREAM_NAMED("manipulation","Reversing out");
-    double desired_distance = 0.2;
+    double desired_distance = 0.1;
     bool restreat = true;
     bool ignore_collision = true;
     if (!executeRetreatPath(arm_jmg, desired_distance, restreat, ignore_collision))
