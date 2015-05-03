@@ -638,36 +638,11 @@ bool Manipulation::moveToEEPose(const Eigen::Affine3d& ee_pose, double velocity_
   getCurrentState();
   moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_));
 
-  // Setup collision checking with a locked planning scene
+  if (!getRobotStateFromPose(ee_pose, goal_state, arm_jmg))
   {
-    bool collision_checking_verbose = false;
-    if (collision_checking_verbose)
-      ROS_WARN_STREAM_NAMED("manipulation","moveToEEPose() has collision_checking_verbose turned on");
-    boost::scoped_ptr<planning_scene_monitor::LockedPlanningSceneRO> ls;
-    ls.reset(new planning_scene_monitor::LockedPlanningSceneRO(planning_scene_monitor_));
-    bool only_check_self_collision = false;
-    moveit::core::GroupStateValidityCallbackFn constraint_fn
-      = boost::bind(&isStateValid, static_cast<const planning_scene::PlanningSceneConstPtr&>(*ls).get(),
-                    collision_checking_verbose, only_check_self_collision, visuals_, _1, _2, _3);
-
-    // Solve IK problem for arm
-    std::size_t attempts = 0; // use default
-    double timeout = 0; // use default
-    if (!goal_state->setFromIK(arm_jmg, ee_pose, attempts, timeout, constraint_fn))
-    {
-      ROS_ERROR_STREAM_NAMED("manipulation","Unable to find arm solution for desired pose");
-      return false;
-    }
-  } // end scoped pointer of locked planning scene
-
-  ROS_INFO_STREAM_NAMED("manipulation","Found solution to pose request");
-
-  // // Debug
-  // visuals_->visual_tools_->publishRobotState( goal_state, rvt::PURPLE );
-  // visuals_->goal_state_->hideRobot();
-  // visuals_->start_state_->hideRobot();
-  // std::cout << "sleep " << std::endl;
-  // ros::Duration(10.0).sleep();
+    ROS_ERROR_STREAM_NAMED("manipulation", "Unable to get robot state from pose");
+    return false;
+  }
 
   // Plan to this position
   bool verbose = true;
@@ -771,7 +746,7 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
 
   // Execute trajectory
   bool wait_for_execution = false;
-  if (execute_trajectory)
+  if (execute_trajectory) // TODO remove this feature and replace with the unit testing ability?
   {
     if( !execution_interface_->executeTrajectory(trajectory_msg, arm_jmg, wait_for_execution) )
     {
@@ -781,14 +756,14 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
   }
   else
   {
-    ROS_WARN_STREAM_NAMED("manipulation","Execute trajectory currently disabled by user");
+    ROS_WARN_STREAM_NAMED("manipulation","Trajectory not executed as because was requested not to");
   }
 
   // Do processing while trajectory is execute
   planPostProcessing();
 
   // Wait for trajectory execution to finish
-  if (!wait_for_execution)
+  if (execute_trajectory && !wait_for_execution)
   {
     if (!execution_interface_->waitForExecution())
     {
@@ -1741,6 +1716,21 @@ bool Manipulation::getGraspingSeedState(BinObjectPtr bin, moveit::core::RobotSta
   if (visualize_grasping_seed_state)
     visuals_->visual_tools_->publishAxisLabeled(ee_pose, "ee_pose");
 
+  if (!getRobotStateFromPose(ee_pose, seed_state, arm_jmg))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation", "Unable to get robot state from pose");
+    return false;
+  }
+
+  if (visualize_grasping_seed_state)
+    visuals_->visual_tools_->publishRobotState(seed_state, rvt::BLUE);
+
+  return true;
+}
+
+bool Manipulation::getRobotStateFromPose(const Eigen::Affine3d &ee_pose, moveit::core::RobotStatePtr& robot_state,
+                                         const robot_model::JointModelGroup* arm_jmg)
+{
   // Setup collision checking with a locked planning scene
   {
     bool collision_checking_verbose = false;
@@ -1756,7 +1746,7 @@ bool Manipulation::getGraspingSeedState(BinObjectPtr bin, moveit::core::RobotSta
     // Solve IK problem for arm
     std::size_t attempts = 0; // use default
     double timeout = 0; // use default
-    if (!seed_state->setFromIK(arm_jmg, ee_pose, attempts, timeout, constraint_fn))
+    if (!robot_state->setFromIK(arm_jmg, ee_pose, attempts, timeout, constraint_fn))
     {
       ROS_ERROR_STREAM_NAMED("manipulation","Unable to find arm solution for desired pose");
       return false;
@@ -1764,10 +1754,6 @@ bool Manipulation::getGraspingSeedState(BinObjectPtr bin, moveit::core::RobotSta
   } // end scoped pointer of locked planning scene
 
   ROS_INFO_STREAM_NAMED("manipulation","Found solution to pose request");
-
-  if (visualize_grasping_seed_state)
-    visuals_->visual_tools_->publishRobotState(seed_state, rvt::BLUE);
-
   return true;
 }
 
@@ -2365,6 +2351,8 @@ bool Manipulation::displayExperienceDatabase(const robot_model::JointModelGroup*
   }
   ompl_visual_tools_->deleteAllMarkers(); // clear all old markers
   ompl_visual_tools_->setStateSpace(model_state_space);
+  ros::Duration(0.1).sleep();
+  ros::spinOnce();
 
   // Get tip links for this setup
   std::vector<const robot_model::LinkModel*> tips;

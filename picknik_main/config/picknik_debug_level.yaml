@@ -11,7 +11,7 @@ apc_manager:
   
   # Experience planning
   verbose_experience_database_stats: false
-  show_experience_database: false
+  show_experience_database: true
 
   # Cartesian planning
   verbose_cartesian_planning: false
@@ -26,7 +26,7 @@ apc_manager:
   # Unit testing / simulation
   show_simulated_paths_moving: true
   unit_test:
-    SuperSimple: true
-    SimpleRotated: false
+    SuperSimple: false
+    SimpleRotated: true
     SimpleVeryRotated: false
     SimpleFarBack: false

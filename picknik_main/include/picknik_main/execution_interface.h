@@ -101,7 +101,7 @@ public:
    * \brief Turn on unit testingn
    * \return true on success
    */
-  bool enableUnitTesting();
+  bool enableUnitTesting(bool enable = true);
 
   /**
    * \brief Get the current state of the robot

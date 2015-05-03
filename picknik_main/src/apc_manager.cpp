@@ -101,9 +101,12 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
 
   // Load grasp data specific to our robot
   grasp_datas_[config_->right_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_->right_hand_name_, robot_model_));
+  // special for jaco
+  grasp_datas_[config_->arm_only_].reset(new moveit_grasps::GraspData(nh_private_, config_->right_hand_name_, robot_model_));
+
   if (config_->dual_arm_)
     grasp_datas_[config_->left_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_->left_hand_name_, robot_model_));
-
+  
   // Create manipulation manager
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
                                        remote_control_, package_path_, shelf_, fake_execution));
@@ -2236,6 +2239,181 @@ bool APCManager::calibrateInCircle()
     }
   }
 
+  return true;
+}
+
+// Mode 12
+bool APCManager::calibrateInSquare()
+{
+  // Choose which planning group to use
+  const robot_model::JointModelGroup* arm_jmg = config_->arm_only_;
+  if (!arm_jmg)
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","No joint model group for arm");
+    return false;
+  }
+
+  // Get location of camera
+  Eigen::Affine3d camera_pose;
+  manipulation_->getPose(camera_pose, config_->right_camera_frame_);
+
+  // Move camera pose forward away from camera
+  Eigen::Affine3d translate_forward = Eigen::Affine3d::Identity();
+  translate_forward.translation().x() += config_->camera_x_translation_from_bin_;
+  translate_forward.translation().z() -= config_->test_double_;
+  camera_pose = translate_forward * camera_pose;
+
+  // Debug
+  visuals_->visual_tools_->publishSphere(camera_pose, rvt::GREEN, rvt::LARGE);
+  visuals_->visual_tools_->publishXArrow(camera_pose, rvt::GREEN);
+
+  // Collection of goal positions
+  EigenSTL::vector_Affine3d waypoints;
+
+  // Create circle of poses around center
+  double radius = 0.05;
+  double increment = 2 * M_PI / 4;
+  visuals_->visual_tools_->enableBatchPublishing(true);
+  for (double angle = 0; angle <= 2*M_PI; angle += increment)
+  {
+    // Rotate around circle
+    Eigen::Affine3d rotation_transform = Eigen::Affine3d::Identity();
+    rotation_transform.translation().z() += radius * cos( angle );
+    rotation_transform.translation().y() += radius * sin( angle );
+
+    Eigen::Affine3d new_point = rotation_transform * camera_pose;
+
+    // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
+    new_point = new_point * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitY());
+    //new_point = new_point * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ());
+
+    // Debug
+    //visuals_->visual_tools_->publishZArrow(new_point, rvt::RED);
+
+    // Translate to custom end effector geometry
+    Eigen::Affine3d grasp_pose = new_point * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
+    //visuals_->visual_tools_->publishZArrow(grasp_pose, rvt::PURPLE);
+    visuals_->visual_tools_->publishAxis(grasp_pose);
+
+    // Add to trajectory
+    waypoints.push_back(grasp_pose);
+  }
+  visuals_->visual_tools_->triggerBatchPublishAndDisable();
+
+  // Move to first position
+  if (!manipulation_->moveToEEPose(waypoints.front(), config_->main_velocity_scaling_factor_, arm_jmg))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to starting pose");
+    return false;
+  }
+
+  // Calculate remaining trajectory
+  moveit_grasps::GraspTrajectories segmented_cartesian_traj;
+  if (!manipulation_->computeCartesianWaypointPath(arm_jmg, manipulation_->getCurrentState(), waypoints, 
+                                                   segmented_cartesian_traj))
+  {
+    ROS_INFO_STREAM_NAMED("apc_manager","Unable to plan circular path");
+    return false;
+  }
+
+  // Combine segmented trajectory into single trajectory
+  moveit_grasps::GraspTrajectories single_cartesian_traj;
+  single_cartesian_traj.resize(1);
+  for (std::size_t i = 0; i < segmented_cartesian_traj.size(); ++i)
+  {
+    single_cartesian_traj[0].insert(single_cartesian_traj[0].end(), segmented_cartesian_traj[i].begin(), 
+                                    segmented_cartesian_traj[i].end());
+  }
+
+  // ROS_INFO_STREAM_NAMED("apc_manager","Created " << segmented_cartesian_traj.size() << " segmented trajectories");
+  // for (std::size_t i = 0; i < segmented_cartesian_traj.size(); ++i)
+  // {   
+  //   visuals_->visual_tools_->publishTrajectoryPoints(segmented_cartesian_traj[i],
+  //                                                    grasp_datas_[arm_jmg]->parent_link_, rvt::RAND);
+  // }
+
+  // for (std::size_t i = 0; i < segmented_cartesian_traj.size(); ++i)
+  // { 
+  //   if (!manipulation_->executeSavedCartesianPath(segmented_cartesian_traj, arm_jmg, i))
+  //   {
+  //     ROS_ERROR_STREAM_NAMED("apc_manager","Error executing trajectory segment " << i);
+  //     return false;
+  //   }
+  // }
+
+  visuals_->visual_tools_->publishTrajectoryPoints(single_cartesian_traj[0],
+                                                   grasp_datas_[arm_jmg]->parent_link_, rvt::RAND);
+
+  if (!manipulation_->executeSavedCartesianPath(single_cartesian_traj, arm_jmg, 0))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Error executing trajectory segment " << 0);
+    return false;
+  }
+
+  return true;
+}
+
+// Mode 26
+bool APCManager::testPlanningSimple()
+{
+  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+
+  // Create start state at top left bin
+  moveit::core::RobotStatePtr start(new moveit::core::RobotState(*manipulation_->getCurrentState()));
+  BinObjectPtr bin = shelf_->getBin(0); // first bin, bin_A
+
+  if (!manipulation_->getGraspingSeedState(bin, start, arm_jmg))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get shelf bin seed state");
+    return false;
+  }
+  
+  // Create goal state at goal bin
+  // Create locations if necessary
+  generateGoalBinLocations();
+
+  // Error check
+  if (next_dropoff_location_ >= dropoff_locations_.size())
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","This should never happen");
+    return false;
+  }
+
+  // Translate to custom end effector geometry
+  Eigen::Affine3d dropoff_location = dropoff_locations_[next_dropoff_location_];
+  dropoff_location = dropoff_location * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
+
+  moveit::core::RobotStatePtr goal(new moveit::core::RobotState(*start));
+  if (!manipulation_->getRobotStateFromPose(dropoff_location, goal, arm_jmg))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get goal bin state");
+    return false;
+  }
+
+  // Settings
+  bool verbose = false;
+  bool execute_trajectory = true;
+  manipulation_->getExecutionInterface()->enableUnitTesting(true); // don't actually send to controllers
+
+  // Repeatidly plan from a start and goal state
+  for (std::size_t i = 0; i < 3; ++i)
+  {
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;    
+    std::cout << "-------------------------------------------------------" << std::endl;
+    std::cout << "Planning run " << i << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+    std::cout << std::endl;
+
+    if (!manipulation_->move(start, goal, arm_jmg, config_->main_velocity_scaling_factor_, verbose, execute_trajectory))                        
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to plan from start to goal");
+      return false;
+    }
+    remote_control_->waitForNextStep("plan again");
+  }
   return true;
 }
 

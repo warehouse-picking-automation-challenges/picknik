@@ -123,6 +123,7 @@ public:
   const robot_model::JointModelGroup* right_arm_;
   const robot_model::JointModelGroup* left_arm_;
   const robot_model::JointModelGroup* both_arms_; // TODO remove?
+  const robot_model::JointModelGroup* arm_only_; // with jacob, this does not include the gantry
 
   // Logic on type of robot
   bool dual_arm_;
@@ -136,6 +137,9 @@ public:
 
   // World frame / base frame / model frame
   std::string world_frame_;
+
+  // Generic variable adjustment
+  double test_double_;
 
 }; // end class
 

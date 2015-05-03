@@ -218,6 +218,12 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Going in circle for calibration");
       manager.calibrateInCircle();
       break;
+    case 12:
+      remove_from_shelf = false;
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Going in square for calibration");
+      manager.calibrateInSquare();
+      break;
 
 
 
@@ -254,6 +260,10 @@ int main(int argc, char** argv)
     case 26:
       ROS_INFO_STREAM_NAMED("main","Unit test for perception communication");
       manager.unitTestPerceptionComm();
+      break;
+    case 27:
+      ROS_INFO_STREAM_NAMED("main","Testing planning ONLY from a shelf bin to the goal bin");
+      manager.testPlanningSimple();
       break;
 
     case 30:

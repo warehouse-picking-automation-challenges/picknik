@@ -383,6 +383,13 @@ public:
    * \return true on success
    */
   bool calibrateInCircle();
+  bool calibrateInSquare();
+
+  /**
+   * \brief Test planning ONLY from a shelf bin to the goal bin
+   * \return true on success
+   */
+  bool testPlanningSimple();
 
 private:
 

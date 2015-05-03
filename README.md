@@ -271,6 +271,7 @@ Button Mapings
 		23. UNIT TESTS for manipulation		
         25. Test IK solver with simple pose request
 		26. Unit test for perception communication
+		27. Test planning ONLY from a shelf bin to the goal bin
 
         TRAJECTORY HANDLING
 		30. Record a calibration trajectory, using id:=[0 left |1 right]
@@ -338,6 +339,9 @@ HAL git branch features/ros_bridge includes a ROS connector to consume imagery f
 	rosrun ros_control_boilerplate controller_state_to_csv /home/dave/ros/combined_analysis/gantry_trajectory_1.csv /jacob/zaber/velocity_trajectory_controller/state
 
 
+
+## Debugging USB Things
+
 ### Debug Kinova Connection
 
 See what is connected
@@ -360,28 +364,26 @@ Change device ID
 
     rosed jacob_control jacob_joy.launch
 
-### Debugging USB Things
+### Debug ASUS Xtion
 
-ASUS Xtion node doesn't start
+Xtion backend process XnSensorServer stopped, 'ps -aux' to find PID, kill -9 it, then restart
+    
+When one runs 'strace /usr/bin/Sample-NiSimpleViewer', recvmsg() calls will fail, indicating a lack of comm with the Xtion backend. 
 
-    Xtion backend process XnSensorServer stopped,
-    'ps -aux' to find PID, kill -9 it, then restart
+### Reset USB stack without a reboot
 
-    When one runs 'strace /usr/bin/Sample-NiSimpleViewer', recvmsg() calls will fail, indicating a lack of comm with the Xtion backend. 
-
-Reset USB stack without a reboot
-    WARNING: If your keyboard is plugged in via this USB node, you will lose control of the console
-    As root:
+WARNING: If your keyboard is plugged in via this USB node, you will lose control of the console
+As root:
 
     cd /sys/bus/pci/drivers/xhci_hcd
     ls -l
     echo "0000:00:14.0" > unbind
 
-    This will unbind the driver from the hardware. To reset:
+This will unbind the driver from the hardware. To reset:
 
     echo "0000:00:14.0" > bind
 
-    This will re-enumerate all USB devices, including running udev rules, etc.
+This will re-enumerate all USB devices, including running udev rules, etc.
 
 
 ### Syncing Time of Computers

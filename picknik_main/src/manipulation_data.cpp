@@ -105,7 +105,7 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   rvt::getBoolParameter(parent_name, nh_, "moveit_ompl/use_experience_setup", use_experience_setup_);
   rvt::getStringParameter(parent_name, nh_, "moveit_ompl/experience_type", experience_type_);
   rvt::getDoubleParameter(parent_name, nh_, "moveit_ompl/planning_time", planning_time_);
-  
+
   // Behavior configs
   rvt::getBoolParameter(parent_name, nh_, "behavior/end_effector_enabled", end_effector_enabled_);
   rvt::getBoolParameter(parent_name, nh_, "behavior/super_auto", super_auto_);
@@ -115,6 +115,9 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   rvt::getIntParameter(parent_name, nh_, "dual_arm", temp_value);
   dual_arm_ = temp_value;
 
+  // Generic test variable
+  rvt::getDoubleParameter(parent_name, nh_, "test/test_double", test_double_);
+  
   // Load proper groups
   // TODO - check if joint model group exists
   if (dual_arm_)
@@ -128,6 +131,7 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   {
     // Load arm groups
     right_arm_ = robot_model->getJointModelGroup(right_arm_name_);
+    arm_only_ = robot_model->getJointModelGroup("jaco_arm"); // hack
   }
 
   // Set world frame

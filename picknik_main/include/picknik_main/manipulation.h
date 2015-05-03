@@ -348,6 +348,13 @@ public:
   bool getGraspingSeedState(BinObjectPtr bin, moveit::core::RobotStatePtr& seed_state, const robot_model::JointModelGroup* arm_jmg);
 
   /**
+   * \brief Get the robot state that accomplished a desired end effector pose
+   * \return true on success
+   */
+  bool getRobotStateFromPose(const Eigen::Affine3d &ee_pose, moveit::core::RobotStatePtr& robot_state,
+                             const robot_model::JointModelGroup* arm_jmg);
+
+  /**
    * \brief Move camera to in front of bin
    * \return true on success
    */

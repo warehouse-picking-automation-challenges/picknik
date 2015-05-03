@@ -442,9 +442,9 @@ moveit::core::RobotStatePtr ExecutionInterface::getCurrentState()
   return current_state_;
 }
 
-bool ExecutionInterface::enableUnitTesting()
+bool ExecutionInterface::enableUnitTesting(bool enable)
 {
-  unit_testing_enabled_ = true;
+  unit_testing_enabled_ = enable;
   return true;
 }
 
