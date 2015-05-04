@@ -1467,7 +1467,7 @@ bool APCManager::testPerceptionComm(std::size_t bin_id)
   // Display planning scene
   planning_scene_manager_->displayShelfWithOpenBins();
 
-  BinObjectPtr& bin = shelf_->getBin(bin_id);
+  BinObjectPtr bin = shelf_->getBin(bin_id);
   if (bin->getProducts().size() == 0)
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","No products in bin "<< bin->getName());
@@ -1620,9 +1620,6 @@ bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
   // Let arm come to rest
   double timeout = 20;
   manipulation_->waitForRobotToStop(timeout);
-
-  ROS_INFO_STREAM_NAMED("apc_manager","Sleeping for fun");
-  ros::Duration(1.0).sleep();
 
   // Get result from perception pipeline
   if (!perception_interface_->endPerception(product, bin))

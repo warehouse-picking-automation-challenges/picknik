@@ -280,7 +280,7 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
 
   // Get camera position
   Eigen::Affine3d object_pose_offset = Eigen::Affine3d::Identity();
-  getHackOffsetPose(object_pose_offset, time_stamp);
+  //getHackOffsetPose(object_pose_offset, time_stamp);
 
   // Show camera view
   //publishCameraFrame(world_to_camera);

@@ -111,7 +111,7 @@ int main(int argc, char** argv)
       new_product.object_name = goal->expected_objects_names[i];
 
       // Object pose
-      new_product.object_pose.header.frame_id = "world"
+      new_product.object_pose.header.frame_id = "world";
       new_product.object_pose.pose.position.x = 1.2;
       new_product.object_pose.pose.position.y = 0;
       new_product.object_pose.pose.position.z = 0;

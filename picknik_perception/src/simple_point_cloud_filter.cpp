@@ -108,6 +108,8 @@ void SimplePointCloudFilter::processPointCloud(const sensor_msgs::PointCloud2Con
     // slowish
     if (outlier_removal_)
     {
+      ROS_WARN_STREAM_NAMED("simple_point_cloud_filter","Performing outlier removal");
+
       pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> rad;
       rad.setInputCloud(roi_cloud_);
       rad.setRadiusSearch(0.03);

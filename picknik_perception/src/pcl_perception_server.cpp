@@ -117,8 +117,8 @@ public:
         if (manipulation_interface_->isReadyToStopPerception())
           break;
 
-        // show bounding box
-        pointcloud_filter_->outlier_removal_ = true;
+        // show bounding box        
+        //pointcloud_filter_->outlier_removal_ = true;
         pointcloud_filter_->enableBoundingBox();
 
         // Wait
