@@ -5,8 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Grid1/Offset1
-        - /Planning Start State1
-        - /Planning Goal State1
         - /Amazon Markers1/Namespaces1
         - /Amazon Grasp Markers1
         - /Amazon Trajectory Markers1/Namespaces1
@@ -14,7 +12,7 @@ Panels:
         - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
         - /TF1/Frames1
-        - /Left Point Cloud1/Status1
+        - /Region of Interest1
         - /DepthCloud1/Auto Size1
       Splitter Ratio: 0.619256
     Tree Height: 681
@@ -50,7 +48,7 @@ Visualization Manager:
       Value: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
-      Collision Enabled: true
+      Collision Enabled: false
       Enabled: true
       Links:
         All Links Enabled: true
@@ -158,10 +156,10 @@ Visualization Manager:
       Show All Links: true
       Show Highlights: true
       Value: true
-      Visual Enabled: false
+      Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
-      Collision Enabled: true
+      Collision Enabled: false
       Enabled: true
       Links:
         All Links Enabled: true
@@ -269,7 +267,7 @@ Visualization Manager:
       Show All Links: true
       Show Highlights: true
       Value: true
-      Visual Enabled: false
+      Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
@@ -497,13 +495,13 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Markers
       Namespaces:
-        Arrow: true
         Axis: true
-        Collision: true
         Line: true
-        Sphere: true
         Text: true
         bin: true
+        crayola_64_ct: true
+        world_to_bin: true
+        world_to_camera: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -519,10 +517,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/grasping_markers
       Name: Amazon Grasp Markers
       Namespaces:
-        Arrow: true
-        Axis: true
-        Sphere: true
-        Text: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -530,11 +525,8 @@ Visualization Manager:
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
-        Arrow: true
-        Axis: true
         Path: true
         Sphere: true
-        Text: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -837,7 +829,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -853,7 +845,7 @@ Visualization Manager:
       Topic: /xtion_left/depth_registered/points
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -864,7 +856,7 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: ""
+      Color Transformer: RGB8
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -873,7 +865,7 @@ Visualization Manager:
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: Region of Interest
-      Position Transformer: ""
+      Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
@@ -959,22 +951,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 5.38591
+      Distance: 6.52909
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.956972
-        Y: 0.181058
-        Z: 5.2452e-06
+        X: 3.55328
+        Y: -0.432513
+        Z: 5.96046e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.484798
+      Pitch: 0.169798
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 4.53274
+      Yaw: 2.87273
     Saved: ~
 Window Geometry:
   Displays:
@@ -990,5 +982,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1190
-  X: 1864
+  X: 1854
   Y: 14

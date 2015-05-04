@@ -209,6 +209,11 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   {
     ROS_WARN_STREAM_NAMED("perception_interface","The list of found objects does not have the same size as the expected bin contents");
   }
+  if (result->found_objects.empty())
+  {
+    ROS_ERROR_STREAM_NAMED("percetion","No objects found");
+    return false;
+  }
 
   // Check that each product in our bin was found by perception
   // Also check for our desired product
@@ -266,16 +271,12 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     return false;
   }
 
-  bool result_is_in_world_frame = false; // if false, result is in camera frame
-
   // Get camera position
+  std::string frame_id = result->found_objects.front().object_pose.header.frame_id;
   Eigen::Affine3d world_to_camera = Eigen::Affine3d::Identity();
   ros::Time time_stamp;
-  if (!result_is_in_world_frame)
-  {
-    getCameraPose(world_to_camera, time_stamp);
-    visuals_->visual_tools_->publishAxisLabeled(world_to_camera, "world_to_camera");
-  }
+  getCameraPose(world_to_camera, time_stamp, frame_id);
+  visuals_->visual_tools_->publishAxisLabeled(world_to_camera, "world_to_camera");
 
   // Get camera position
   Eigen::Affine3d object_pose_offset = Eigen::Affine3d::Identity();
@@ -293,8 +294,14 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   {
     const picknik_msgs::FoundObject& found_object = result->found_objects[i];
 
+    // Error check
+    if (frame_id != found_object.object_pose.header.frame_id)
+    {
+      ROS_ERROR_STREAM_NAMED("perception_interface","frame_id has changed between found objects in same perception results message");
+    }
+
     // Get object's transform
-    Eigen::Affine3d camera_to_object = visuals_->visual_tools_->convertPose(found_object.object_pose);
+    Eigen::Affine3d camera_to_object = visuals_->visual_tools_->convertPose(found_object.object_pose.pose);
 
     // // Convert to ROS frame
     // convertFrameCVToROS(visuals_->visual_tools_->convertPose(found_object.object_pose), camera_to_object);
@@ -381,10 +388,10 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   return true;
 }
 
-bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::Time& time_stamp)
+bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::Time& time_stamp, 
+                                        const std::string& camera_frame)
 {
   tf::StampedTransform camera_transform;
-  static const std::string camera_frame = config_->right_camera_frame_; // TODO accomiate right
 
   try
   {

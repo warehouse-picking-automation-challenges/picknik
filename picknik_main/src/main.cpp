@@ -240,7 +240,7 @@ int main(int argc, char** argv)
     case 18:
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Requesting perception test");
-      manager.testPerceptionComm();
+      manager.testPerceptionComm(id);
       break;
     case 22:
       remove_from_shelf = false;

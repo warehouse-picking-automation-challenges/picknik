@@ -142,7 +142,8 @@ public:
         new_product.object_name = goal->expected_objects_names[i];
 
         // TODO Object pose
-        pointcloud_filter_->getObjectPose(new_product.object_pose);
+        pointcloud_filter_->getObjectPose(new_product.object_pose.pose);
+        new_product.object_pose.header.frame_id = "world";
 
         // Value between 0 and 1 for each expected object's confidence of its pose
         new_product.expected_object_confidence = 1.0;

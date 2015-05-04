@@ -111,13 +111,14 @@ int main(int argc, char** argv)
       new_product.object_name = goal->expected_objects_names[i];
 
       // Object pose
-      new_product.object_pose.position.x = 1.2;
-      new_product.object_pose.position.y = 0;
-      new_product.object_pose.position.z = 0;
-      new_product.object_pose.orientation.x = 0;
-      new_product.object_pose.orientation.y = 0;
-      new_product.object_pose.orientation.z = 0;
-      new_product.object_pose.orientation.w = 1;
+      new_product.object_pose.header.frame_id = "world"
+      new_product.object_pose.pose.position.x = 1.2;
+      new_product.object_pose.pose.position.y = 0;
+      new_product.object_pose.pose.position.z = 0;
+      new_product.object_pose.pose.orientation.x = 0;
+      new_product.object_pose.pose.orientation.y = 0;
+      new_product.object_pose.pose.orientation.z = 0;
+      new_product.object_pose.pose.orientation.w = 1;
 
       // Value between 0 and 1 for each expected object's confidence of its pose
       new_product.expected_object_confidence = 1.0;

@@ -14,9 +14,11 @@ Start their calibration
 
 Run the perception server:
     
-    roslaunch picknik_perception perception_server_pcl.launch	
+    roslaunch picknik_perception perception_server_pcl.launch
 
-And in Rviz subscribe to ``/pcl_perception_server/roi_cloud``
+Test perception server:
+
+    roslaunch picknik_main jacob_apc.launch fake_perception:=0 fake_execution:=0 mode:=18
 
 ## Notes on Filtering
 

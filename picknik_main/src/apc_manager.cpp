@@ -1456,7 +1456,7 @@ bool APCManager::testJointLimits()
 }
 
 // Mode 18
-bool APCManager::testPerceptionComm()
+bool APCManager::testPerceptionComm(std::size_t bin_id)
 {
   // Load JSON file
   loadShelfContents(order_file_path_);
@@ -1467,7 +1467,7 @@ bool APCManager::testPerceptionComm()
   // Display planning scene
   planning_scene_manager_->displayShelfWithOpenBins();
 
-  BinObjectPtr& bin = shelf_->getBins()["bin_I"];
+  BinObjectPtr& bin = shelf_->getBin(bin_id);
   if (bin->getProducts().size() == 0)
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","No products in bin "<< bin->getName());

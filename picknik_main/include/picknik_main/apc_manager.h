@@ -208,7 +208,7 @@ public:
    * \brief Requesting perception test
    * \return true on success
    */
-  bool testPerceptionComm();
+  bool testPerceptionComm(std::size_t bin_id);
 
   /**
    * \brief Given an id of a bin (starting at 0=A) record the trajectory of a camera observing it

@@ -73,8 +73,8 @@ camera:
   lift_distance: 0.05
   left_distance: 0.05
   camera_frame_display_scale: 0.0005
-  left_camera_frame: /xtion_left_depth_frame
-  right_camera_frame: /xtion_right_depth_frame
+  left_camera_frame: /xtion_left_depth_frame  # Deprecated
+  right_camera_frame: /xtion_right_depth_frame # Deprecated
 
 # Test data
 test:

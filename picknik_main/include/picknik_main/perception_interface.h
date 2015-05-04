@@ -104,7 +104,7 @@ private:
    * \param time_stamp - the time that the arm was in this location
    * \return true on success
    */
-  bool getCameraPose(Eigen::Affine3d& world_to_camera, ros::Time& time_stamp);
+  bool getCameraPose(Eigen::Affine3d& world_to_camera, ros::Time& time_stamp, const std::string& camera_frame);
 
   /**
    * \brief Get offset to correct product locations
