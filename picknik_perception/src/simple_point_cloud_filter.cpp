@@ -1,7 +1,40 @@
-/*
-  Author: Andy McEvoy (mcevoy.andy@gmail.com)
-  Desc  : Implementation of SimplePointCloudFilter, see *.h for details
-*/
+/*********************************************************************
+ * Software License Agreement ("Modified BSD License")
+ *
+ * Copyright (c) 2014, University of Colorado, Boulder
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following
+ * disclaimer in the documentation and/or other materials provided
+ * with the distribution.
+ * * Neither the name of the Univ of CO, Boulder nor the names of its
+ * contributors may be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *********************************************************************/
+/**
+ * Authors : Andy Mcevoy
+ * Desc    : Simple perception based on point cloud data
+ */
 
 #include <picknik_perception/simple_point_cloud_filter.h>
 
@@ -46,7 +79,7 @@ bool SimplePointCloudFilter::createPlyMsg()
 
 }
 
-bool SimplePointCloudFilter::createPlyFile(std::string file_name)
+void SimplePointCloudFilter::createPlyFile(std::string file_name, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud)
 {
   
   std::string file_path = ros::package::getPath("picknik_perception");
@@ -54,21 +87,19 @@ bool SimplePointCloudFilter::createPlyFile(std::string file_name)
 
   ROS_INFO_STREAM_NAMED("point_cloud_filter.savePLY","saving point cloud to: " << full_path);
 
-  if (roi_cloud_->size() == 0)
+  if (cloud->size() == 0)
   {
     ROS_WARN_STREAM_NAMED("point_cloud_filter.savePLY","Point cloud has no points. Aborting.");
-    return false;
+    return;
   }
 
   pcl::PLYWriter writer;
   pcl::PCLPointCloud2 cloud2_msg;
-  pcl::toPCLPointCloud2(*roi_cloud_, cloud2_msg);
+  pcl::toPCLPointCloud2(*cloud, cloud2_msg);
 
   // write to ply binary file
   writer.write(full_path, cloud2_msg, Eigen::Vector4f::Zero(), Eigen::Quaternionf::Identity(), true, true);
-  ROS_INFO_STREAM_NAMED("point_cloud_filter.savePLY","Saved point cloud with " << roi_cloud_->size() << "points");
-
-  return true;
+  ROS_INFO_STREAM_NAMED("point_cloud_filter.savePLY","Saved point cloud with " << cloud->size() << "points");
 }
 
 

@@ -37,9 +37,13 @@
  */
 
 #include <ros/ros.h>
+
 #include <picknik_perception/simple_point_cloud_filter.h>
+
 #include <rviz_visual_tools/rviz_visual_tools.h>
 #include <sensor_msgs/PointCloud2.h>
+
+#include <pcl/common/common_headers.h>
 
 #include <Eigen/Core>
 
@@ -56,14 +60,121 @@ private:
   ros::Publisher pc_pub_;
 
   sensor_msgs::PointCloud2 pc_msg_;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_;
+  rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
 
-}
+public:
+
+  PlyGenerationTest()
+    : nh_("~")
+  {
+    // Load
+    visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base"));
+    visual_tools_->deleteAllMarkers();
+
+    // publish point cloud
+    pc_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("point_cloud",1);
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+    point_cloud_ = cloud;
+
+    // show origin
+    visual_tools_->publishAxis(Eigen::Affine3d::Identity());
+
+    // generate a point cloud for a cube
+    addBoxToPointCloud(1.0, 1.0, 1.0, 10.0);
+
+    // publish generated cloud
+    std::size_t id = 0;
+    point_cloud_->header.frame_id = "/world";
+    point_cloud_->header.seq = id++;
+
+    // generate ply file
+    SimplePointCloudFilter::createPlyFile("test.ply", point_cloud_);
+    
+    ROS_DEBUG_STREAM_NAMED("ply_generation","starting main loop...");
+
+
+    while (ros::ok())
+    {
+      pc_pub_.publish(point_cloud_);      
+      
+
+      ros::Duration(1.0).sleep();      
+    }
+  }
+
+  void addBoxToPointCloud(float depth, float width, float height, float size)
+  {
+    // x faces at +/- depth/2
+    // y faces at +/- width/2
+    // z faces at +/- height/2
+    pcl::PointXYZRGB point;
+    float delta_x = depth / size;
+    float delta_y = width / size;
+    float delta_z = height / size;
+    float x, y, z;
+    uint8_t r, g, b;
+
+    // x faces
+    y = -width / 2.0;
+    z = -height / 2.0;
+    for (int i = 0; i < size +1; i++) // y direction
+    {
+      for (int j = 0; j < size +1; j++) // z direction
+      {
+        point.x = depth / 2.0;
+        point.y = y + i * delta_y;
+        point.z = z + j * delta_z;
+        point_cloud_->points.push_back(point);
+
+        point.x *= -1;
+        point_cloud_->points.push_back(point);
+      }
+    }
+
+    // y faces (already did edges with x faces)
+    x = -depth / 2.0 + delta_x;
+    z = -height / 2.0;
+    for (int i = 0; i < size - 1; i++) // x direction
+    {
+      for (int j = 0; j < size + 1; j++) // z direction
+      {
+        point.x = x + i * delta_x;
+        point.y = width / 2.0;
+        point.z = z + j * delta_z;
+        point_cloud_->points.push_back(point);
+
+        point.y *= -1;
+        point_cloud_->points.push_back(point);
+      }
+    }
+
+    // z faces (already did edges with x & y faces)
+    x = -depth / 2.0 + delta_x;
+    y = -width / 2.0 + delta_y;
+    for (int i = 0; i < size - 1; i++) // x direction
+    {
+      for (int j = 0; j < size - 1; j++) // y direction
+      {
+        point.x = x + i * delta_x;
+        point.y = y + j * delta_y;
+        point.z = height / 2.0;
+        point_cloud_->points.push_back(point);
+
+        point.z *= -1;
+        point_cloud_->points.push_back(point);
+      }
+    } 
+  }
+
+}; // class
 
 } // namespace
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "ply_generation_test");
+  ros::init(argc, argv, "ply_test");
   ROS_INFO_STREAM_NAMED("ply_generation.test","Starting ply generation test");
 
   ros::AsyncSpinner spinner(2);
