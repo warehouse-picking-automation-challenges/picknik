@@ -5,6 +5,7 @@
 
 // ROS
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <tf/transform_listener.h>
 #include <sensor_msgs/PointCloud2.h>
 
@@ -27,11 +28,19 @@ public:
 
   SimplePointCloudFilter(rviz_visual_tools::RvizVisualToolsPtr& visual_tools);
 
-  /*
-   * \brief
+  /**
+   * \brief Create a mesh message from the region of interest point cloud (roi_cloud_)
+   * \return true on success
    */
-  bool getBoundingBox(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, Eigen::Affine3d& cuboid_pose,
-                      double& depth, double& width, double& height);
+  bool createPlyMsg();
+
+  /**
+   * \brief Create a *.ply file from the region of interest point cloud (roi_cloud_)
+   *  will be saved in picknik_perception/data
+   * \param file name
+   * \return true on success
+   */
+  bool createPlyFile(std::string file_name);
 
   /**
    * \brief Visualize region of interest

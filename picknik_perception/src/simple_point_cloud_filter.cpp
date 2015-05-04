@@ -9,6 +9,7 @@
 #include <pcl/filters/passthrough.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/radius_outlier_removal.h>
+#include <pcl/io/ply_io.h>
 
 namespace picknik_perception
 {
@@ -37,6 +38,33 @@ SimplePointCloudFilter::SimplePointCloudFilter(rviz_visual_tools::RvizVisualTool
 
   ROS_DEBUG_STREAM_NAMED("point_cloud_filter","Simple point cloud filter ready.");
 }
+
+bool SimplePointCloudFilter::createPlyMsg()
+{
+
+}
+
+bool SimplePointCloudFilter::createPlyFile(std::string file_name)
+{
+  
+  std::string file_path = ros::package::getPath("picknik_perception");
+  std::string full_path = file_path + "/data/" + file_name;
+
+  ROS_INFO_STREAM_NAMED("point_cloud_filter.savePLY","saving point cloud to: " << full_path);
+
+  if (roi_cloud_->size() == 0)
+  {
+    ROS_WARN_STREAM_NAMED("point_cloud_filter.savePLY","Point cloud has no points. Aborting.");
+    return false;
+  }
+
+  pcl::PLYWriter writer;
+  writer.write(full_path, roi_cloud_, Eigen::Vector4f::Zero(), Eigen::Quaternionf::Identity(), binary, use_camera);
+  ROS_INFO_STREAM_NAMED("point_cloud_filter.savePLY","Saved point cloud with " << roi_cloud_->size() << "points");
+
+  return true;
+}
+
 
 bool SimplePointCloudFilter::publishRegionOfInterest()
 {
