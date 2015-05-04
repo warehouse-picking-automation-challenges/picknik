@@ -2,15 +2,23 @@
 
 ## PCL-Based Perception Server
 
-Startup Jacob hardware or simulation stack as usual, but run the main process in mode ``18``. Use right side of shelf camera (close to desk). To calibrate use
+Startup Jacob hardware or simulation stack as usual, but run the main process in mode ``18``. Use right side of shelf camera (close to desk).
 
-    roslaunch picknik_perception dave_test_tf_keyboard.launch
+Start cameras (on correct computer):
 
-Then run the perception server:
+    roslaunch picknik_perception multi_xtion.launch
+
+Start their calibration
+
+    roslaunch picknik_perception multi_xtion_calibrate.launch
+
+Run the perception server:
     
-    roslaunch picknik_percpetion pcl_perception_server
+    roslaunch picknik_perception perception_server_pcl.launch	
 
-And subscribe to ``/pcl_perception_server/roi_cloud``
+And in Rviz subscribe to ``/pcl_perception_server/roi_cloud``
+
+## Notes on Filtering
 
 **NOTE: the simple preprocessor assumes that the camera has already been aligned**
 

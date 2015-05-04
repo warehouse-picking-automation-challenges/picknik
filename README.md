@@ -85,7 +85,7 @@ Testing
 
 ## Start Primesense Camera
 
-    roslaunch openni_launch openni.launch depth_registration:=true publish_tf:=0
+    roslaunch openni_launch openni.launch depth_registration:=true publish_tf:=1
 
 Filter from bounding box:
 
@@ -152,7 +152,7 @@ Camera calibration:
 
 Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
-	roslaunch picknik_perception fake_perception_server.launch
+	roslaunch picknik_perception perception_server_fake.launch
 
 Run APC Manager (main program) for JACOB in simulation
 
@@ -180,7 +180,7 @@ Camera calibration:
  
 Run the fake object recognition server: (or real one if you have Lu Ma skillz)
 
-	roslaunch picknik_perception fake_perception_server.launch
+	roslaunch picknik_perception perception_server_fake.launch
 
 Run APC Manager (main program) for JACOB on hardware
 

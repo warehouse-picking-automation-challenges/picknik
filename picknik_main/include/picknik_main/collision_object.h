@@ -22,6 +22,9 @@
 #include <picknik_main/namespaces.h>
 #include <picknik_main/visuals.h>
 
+// bounding_box
+#include <bounding_box/bounding_box.h>
+
 namespace picknik_main
 {
 
@@ -389,6 +392,8 @@ protected:
   // Pose relative to parent object
   Eigen::Affine3d centroid_;
   Eigen::Affine3d mesh_centroid_;
+
+  bounding_box::BoundingBox bounding_box_;
 };
 
 } // namespace

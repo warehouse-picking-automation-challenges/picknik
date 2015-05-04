@@ -15,8 +15,6 @@
 #include <picknik_main/collision_object.h>
 #include <moveit_grasps/grasp_generator.h> // get bounding box
 
-#include <bounding_box/bounding_box.h>
-
 namespace picknik_main
 {
 
@@ -385,7 +383,7 @@ bool MeshObject::calculateBoundingBox(const Eigen::Affine3d &bin_to_world)
   // Get bounding box
   Eigen::Affine3d bounding_to_mesh;
   double depth, width, height;
-  if (!bounding_box::BoundingBox::getBoundingBoxFromMesh(getCollisionMesh(), bounding_to_mesh, depth, width, height))
+  if (!bounding_box_.getBodyAlignedBoundingBox(getCollisionMesh(), bounding_to_mesh, depth, width, height))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to get bounding box");
     return false;
@@ -401,7 +399,7 @@ bool MeshObject::calculateBoundingBox(const Eigen::Affine3d &bin_to_world)
   {
     std::cout << "Bounding to Mesh: ";
     printTransform(bounding_to_mesh);
-    
+
     std::cout << "Mesh to bin:      ";
     printTransform(mesh_to_bin);
 

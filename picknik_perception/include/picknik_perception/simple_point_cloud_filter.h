@@ -15,6 +15,9 @@
 // Rviz
 #include <rviz_visual_tools/rviz_visual_tools.h>
 
+// bounding_box
+#include <bounding_box/bounding_box.h>
+
 namespace picknik_perception
 {
 
@@ -102,6 +105,7 @@ private:
   // Publish bin point cloud
   ros::Publisher roi_cloud_pub_;
 
+  bounding_box::BoundingBox bounding_box_;
 }; // class
 
 // Create boost pointers for this class

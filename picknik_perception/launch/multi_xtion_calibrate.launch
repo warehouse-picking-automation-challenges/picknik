@@ -11,17 +11,4 @@
     <rosparam command="load" file="$(find picknik_perception)/config/tf_xtion_left.yaml"/>
   </node>
 
-  <!-- Start Xtions -->
-  <include file="$(find openni_launch)/launch/openni.launch">
-    <arg name="camera" value="xtion_right" />
-    <arg name="device_id" value="1@0" />
-    <arg name="depth_registration" value="true" />
-  </include>
-
-  <include file="$(find openni_launch)/launch/openni.launch">
-    <arg name="camera" value="xtion_left" />
-    <arg name="device_id" value="2@0" />
-    <arg name="depth_registration" value="true" />
-  </include>
-
 </launch>

@@ -216,7 +216,6 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
 
     if (verbose_cartesian_paths)
     {
-      ros::Duration(1).sleep();
       visuals_->trajectory_lines_->deleteAllMarkers();
     }
   }
@@ -2351,6 +2350,8 @@ bool Manipulation::displayExperienceDatabase(const robot_model::JointModelGroup*
   }
   ompl_visual_tools_->deleteAllMarkers(); // clear all old markers
   ompl_visual_tools_->setStateSpace(model_state_space);
+
+  // Ensure visual tools is loaded
   ros::Duration(0.1).sleep();
   ros::spinOnce();
 
@@ -2373,7 +2374,7 @@ bool Manipulation::displayExperienceDatabase(const robot_model::JointModelGroup*
   {
     ompl_visual_tools_->publishRobotGraph(graphs[0], tips);
 
-    // Show HRP2 in some pose
+    // Show robot in some pose
     // for (std::size_t i = 0; i < graphs[0]->numVertices() && ros::ok(); ++i)
     // {
     //   ompl_visual_tools_->publishRobotState(graphs[0]->getVertex(i).getState());

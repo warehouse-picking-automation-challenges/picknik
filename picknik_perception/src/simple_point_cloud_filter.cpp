@@ -10,8 +10,6 @@
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/radius_outlier_removal.h>
 
-#include <bounding_box/bounding_box.h>
-
 namespace picknik_perception
 {
 
@@ -20,8 +18,6 @@ SimplePointCloudFilter::SimplePointCloudFilter(rviz_visual_tools::RvizVisualTool
   , nh_("~")
   , has_roi_(false)
 {
-  ROS_DEBUG_STREAM_NAMED("point_cloud_filter.constructor","setting up simple point cloud filter");
-
   processing_ = false;
   get_bbox_ = false;
   outlier_removal_ = false;
@@ -31,13 +27,15 @@ SimplePointCloudFilter::SimplePointCloudFilter(rviz_visual_tools::RvizVisualTool
   roi_width_ = 1.0;
   roi_height_ = 1.0;
   roi_pose_ = Eigen::Affine3d::Identity();
- 
+
   // initialize cloud pointers
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr roi_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
   roi_cloud_ = roi_cloud;
 
   // publish bin point cloud
-  roi_cloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("roi_cloud",1);  
+  roi_cloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("roi_cloud",1);
+
+  ROS_DEBUG_STREAM_NAMED("point_cloud_filter","Simple point cloud filter ready.");
 }
 
 bool SimplePointCloudFilter::publishRegionOfInterest()
@@ -47,7 +45,7 @@ bool SimplePointCloudFilter::publishRegionOfInterest()
     ROS_ERROR_STREAM_NAMED("point_cloud_filter","No region of interest specified");
     return false;
   }
-  // show region of interest 
+  // show region of interest
   visual_tools_->publishAxisLabeled(roi_pose_, "bin");
   visual_tools_->publishWireframeCuboid(roi_pose_, roi_depth_, roi_width_, roi_height_, rviz_visual_tools::CYAN);
 }
@@ -79,12 +77,12 @@ void SimplePointCloudFilter::processPointCloud(const sensor_msgs::PointCloud2Con
   if (!pcl_ros::transformPointCloud(BASE_LINK, *cloud, *roi_cloud_, tf_listener_))
   {
     ROS_ERROR_STREAM_NAMED("point_cloud_filter.process","Error converting to desired frame");
-  }  
+  }
 
   if (!has_roi_)
   {
     ROS_DEBUG_STREAM_THROTTLE_NAMED(2, "point_cloud_filter","No region of interest specified yet, showing all points");
-  }  
+  }
   else
   {
 
@@ -115,7 +113,7 @@ void SimplePointCloudFilter::processPointCloud(const sensor_msgs::PointCloud2Con
       rad.setRadiusSearch(0.03);
       rad.setMinNeighborsInRadius(200);
       rad.filter(*roi_cloud_);
-    
+
       pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
       sor.setInputCloud(roi_cloud_);
       sor.setMeanK(50);
@@ -137,11 +135,11 @@ void SimplePointCloudFilter::processPointCloud(const sensor_msgs::PointCloud2Con
   // optionally get the bounding box of the point cloud
   if (get_bbox_)
   {
-    bounding_box::BoundingBox::getBoundingBoxFromPointCloud(roi_cloud_, bbox_pose_, bbox_depth_, bbox_width_, bbox_height_);
-    
+    bounding_box_.getBodyAlignedBoundingBox(roi_cloud_, bbox_pose_, bbox_depth_, bbox_width_, bbox_height_);
+
     // Visualize
-    visual_tools_->publishWireframeCuboid(bbox_pose_, bbox_depth_, bbox_width_, bbox_height_,                                          
-                                          rviz_visual_tools::MAGENTA);    
+    visual_tools_->publishWireframeCuboid(bbox_pose_, bbox_depth_, bbox_width_, bbox_height_,
+                                          rviz_visual_tools::MAGENTA);
 
     get_bbox_ = false;
   }
@@ -160,7 +158,7 @@ void SimplePointCloudFilter::setRegionOfInterest(Eigen::Affine3d pose, double de
   publishRegionOfInterest();
 }
 
-void SimplePointCloudFilter::setRegionOfInterest(Eigen::Affine3d bottom_right_front_corner, 
+void SimplePointCloudFilter::setRegionOfInterest(Eigen::Affine3d bottom_right_front_corner,
                                                  Eigen::Affine3d top_left_back_corner, double reduction_padding_x, double reduction_padding_y, double reduction_padding_z)
 {
   Eigen::Vector3d delta = top_left_back_corner.translation() - bottom_right_front_corner.translation();
@@ -170,8 +168,8 @@ void SimplePointCloudFilter::setRegionOfInterest(Eigen::Affine3d bottom_right_fr
   has_roi_ = true;
 
   roi_pose_ = bottom_right_front_corner;
-  roi_pose_.translation() += Eigen::Vector3d(roi_depth_ / 2.0 + reduction_padding_x, 
-                                             roi_width_ / 2.0 + reduction_padding_y, 
+  roi_pose_.translation() += Eigen::Vector3d(roi_depth_ / 2.0 + reduction_padding_x,
+                                             roi_width_ / 2.0 + reduction_padding_y,
                                              roi_height_ / 2.0 + reduction_padding_z);
 
   // Visualize
