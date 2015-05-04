@@ -145,12 +145,12 @@ Rviz Visualizers of robot states and debug markers
 
     roslaunch picknik_main rviz.launch
 
-Camera calibration:
+Camera calibration: IN DEVELOPMENT
 
 	#OLD roslaunch picknik_main camera_calibration.launch
     roslaunch picknik_perception tf_keyboard.launch
 
-Run the fake object recognition server: (or real one if you have Lu Ma skillz)
+Run real or fake object recognition server:
 
 	roslaunch picknik_perception perception_server_fake.launch
 
@@ -174,11 +174,11 @@ Rviz Visualizers of robot states and debug markers
 
     roslaunch picknik_main rviz.launch
 
-Camera calibration:
+Camera calibration: IN DEVELOPMENT
 
     roslaunch picknik_perception tf_keyboard.launch
  
-Run the fake object recognition server: (or real one if you have Lu Ma skillz)
+Run real or fake object recognition server:
 
 	roslaunch picknik_perception perception_server_fake.launch
 
@@ -278,7 +278,8 @@ Button Mapings
 		31. Playback calibration trajectory, using id:=[0 left |1 right]
 		32. Record a bin observing trajectory, using id:=[0-11]
 		33. Playback bin observing trajectory, using id:=[0-11]
-
+		34. Playback waypoint path specified in a csv
+		
         DEBUGGING
         40. Visualize shelf
         41. SRDF: Get the current pose of the robot for the SRDF

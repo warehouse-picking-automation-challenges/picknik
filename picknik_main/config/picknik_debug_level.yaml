@@ -11,7 +11,7 @@ apc_manager:
   
   # Experience planning
   verbose_experience_database_stats: false
-  show_experience_database: true
+  show_experience_database: false
 
   # Cartesian planning
   verbose_cartesian_planning: false

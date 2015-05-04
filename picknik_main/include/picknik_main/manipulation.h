@@ -115,6 +115,20 @@ public:
    */
   bool playbackTrajectoryFromFile(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
                                   double velocity_scaling_factor);
+  bool playbackWaypointsFromFile(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
+                                 double velocity_scaling_factor);
+
+  /**
+   * \brief Convert a 6-vector of x,y,z, roll,pitch,yall to an Affine3d with quaternion, from a line of a file
+   */
+  bool streamToAffine3d(Eigen::Affine3d& pose, const std::string& line, const std::string& separator);
+
+  /**
+   * \brief Find a path that accomplishes waypoints and execute all together
+   * \return true on success
+   */
+  bool moveCartesianWaypointPath(const robot_model::JointModelGroup* arm_jmg,
+                                 EigenSTL::vector_Affine3d waypoints);
 
   /**
    * \brief Read a trajectory from CSV and execute on robot state by state
@@ -140,7 +154,7 @@ public:
    * \return true on success
    */
   bool moveToSRDFPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name, double velocity_scaling_factor,
-                  bool check_validity = true);
+                      bool check_validity = true);
 
   /**
    * \brief Move EE to a particular pose by solving with IK
@@ -533,6 +547,12 @@ public:
    * \return true on success
    */
   bool getPose(Eigen::Affine3d &pose, const std::string& frame_name);
+
+  /**
+   * \brief Debug visualization tool for joint limits
+   * \return true on success
+   */
+  bool showJointLimits(const robot_model::JointModelGroup* jmg);
 
 protected:
 

@@ -991,7 +991,7 @@ bool APCManager::testInCollision()
     std::cout << std::endl;
 
     // For debugging in console
-    showJointLimits();
+    manipulation_->showJointLimits(config_->right_arm_);
 
     //manipulation_->fixCurrentCollisionAndBounds(arm_jmg);
     manipulation_->checkCollisionAndBounds(manipulation_->getCurrentState());
@@ -999,58 +999,6 @@ bool APCManager::testInCollision()
   }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done checking if in collision");
-  return true;
-}
-
-bool APCManager::showJointLimits()
-{
-  const std::vector<const moveit::core::JointModel*> &joints = config_->right_arm_->getActiveJointModels();
-
-  // Loop through joints
-  for (std::size_t i = 0; i < joints.size(); ++i)
-  {
-    // Assume all joints have only one variable
-    if (joints[i]->getVariableCount() > 1)
-    {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Unable to handle joints with more than one var");
-      return false;
-    }    
-    moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
-    double current_value = current_state->getVariablePosition(joints[i]->getName());
-
-    // check if bad position
-    bool out_of_bounds = !current_state->satisfiesBounds(joints[i]);
-
-    const moveit::core::VariableBounds& bound = joints[i]->getVariableBounds()[0];
-    
-    if (out_of_bounds)
-      std::cout << MOVEIT_CONSOLE_COLOR_RED;
-
-    std::cout << "   " << std::fixed << std::setprecision(5) << bound.min_position_ << "\t";
-    double delta = bound.max_position_ - bound.min_position_;
-    //std::cout << "delta: " << delta << " ";
-    double step = delta / 20.0;
-
-    bool marker_shown = false;
-    for (double value = bound.min_position_; value < bound.max_position_; value += step)
-    {
-      // show marker of current value
-      if (!marker_shown && current_value < value)
-      {
-        std::cout << "|";
-        marker_shown = true;
-      }
-      else
-        std::cout << "-";
-    }
-    // show max position
-    std::cout << " " << std::setprecision(5) << bound.max_position_ << "  " << joints[i]->getName() << std::endl;
-
-    if (out_of_bounds)
-      std::cout << MOVEIT_CONSOLE_COLOR_RESET;
-  }
-
-
   return true;
 }
 
@@ -1474,20 +1422,28 @@ bool APCManager::testPerceptionComm(std::size_t bin_id)
     return false;
   }
   ProductObjectPtr& product = bin->getProducts().front();
+  WorkOrder work_order(bin, product);
+  bool verbose = true;
 
   while (ros::ok())
   {
+    // // Communicate with perception pipeline
+    // perception_interface_->startPerception(product, bin);
 
-    // Communicate with perception pipeline
-    perception_interface_->startPerception(product, bin);
+    // ROS_INFO_STREAM_NAMED("apc_manager","Waiting 1 second");
+    // ros::Duration(1).sleep();
 
-    ROS_INFO_STREAM_NAMED("apc_manager","Waiting 1 second");
-    ros::Duration(1).sleep();
+    // // Get result from perception pipeline
+    // if (!perception_interface_->endPerception(product, bin))
+    // {
+    //   ROS_ERROR_STREAM_NAMED("apc_manager","End perception failed");
+    //   return false;
+    // }
 
-    // Get result from perception pipeline
-    if (!perception_interface_->endPerception(product, bin))
+    // Move camera to desired bin to get pose of product
+    if (!perceiveObject(work_order, verbose))
     {
-      ROS_ERROR_STREAM_NAMED("apc_manager","End perception failed");
+      ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
       return false;
     }
 
@@ -2230,30 +2186,9 @@ bool APCManager::calibrateInCircle()
     return false;
   }
 
-  // Calculate remaining trajectory
-  moveit_grasps::GraspTrajectories segmented_cartesian_traj;
-  if (!manipulation_->computeCartesianWaypointPath(arm_jmg, manipulation_->getCurrentState(), waypoints, 
-                                                   segmented_cartesian_traj))
+  if (!manipulation_->moveCartesianWaypointPath(arm_jmg, waypoints))
   {
-    ROS_INFO_STREAM_NAMED("apc_manager","Unable to plan circular path");
-    return false;
-  }
-
-  // Combine segmented trajectory into single trajectory
-  moveit_grasps::GraspTrajectories single_cartesian_traj;
-  single_cartesian_traj.resize(1);
-  for (std::size_t i = 0; i < segmented_cartesian_traj.size(); ++i)
-  {
-    single_cartesian_traj[0].insert(single_cartesian_traj[0].end(), segmented_cartesian_traj[i].begin(), 
-                                    segmented_cartesian_traj[i].end());
-  }
-
-  visuals_->visual_tools_->publishTrajectoryPoints(single_cartesian_traj[0],
-                                                   grasp_datas_[arm_jmg]->parent_link_, rvt::RAND);
-
-  if (!manipulation_->executeSavedCartesianPath(single_cartesian_traj, arm_jmg, 0))
-  {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Error executing trajectory segment " << 0);
+    ROS_ERROR_STREAM_NAMED("apc_manager","Error executing path");
     return false;
   }
 
@@ -2328,6 +2263,29 @@ bool APCManager::testPlanningSimple()
     }
     remote_control_->waitForNextStep("plan again");
   }
+  return true;
+}
+
+// Mode 34
+bool APCManager::playbackWaypointsFromFile()
+{
+  // Display planning scene
+  planning_scene_manager_->displayShelfWithOpenBins();
+
+  // Choose which planning group to use
+  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+
+  // Start playing back file
+  std::string file_path;
+  const std::string file_name = "calibration_waypoints";
+  manipulation_->getFilePath(file_path, file_name);
+
+  if (!manipulation_->playbackWaypointsFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to playback CSV from file for pose waypoints");
+    return false;
+  }
+
   return true;
 }
 

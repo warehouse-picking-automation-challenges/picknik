@@ -22,6 +22,7 @@
 #include <moveit/planning_pipeline/planning_pipeline.h>
 #include <moveit/robot_state/conversions.h>
 #include <moveit/trajectory_processing/iterative_time_parameterization.h>
+#include <moveit/macros/console_colors.h>
 
 // OMPL
 #include <ompl/tools/lightning/Lightning.h>
@@ -428,7 +429,7 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
   ROS_DEBUG_STREAM_NAMED("manipultion","Loading trajectory from file " << file_name);
 
   std::string line;
-  current_state_ = getCurrentState();
+  getCurrentState();
 
   robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, arm_jmg));
   double dummy_dt = 1; // temp value
@@ -498,6 +499,118 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
   return true;
 }
 
+bool Manipulation::playbackWaypointsFromFile(const std::string &file_name, 
+                                             const robot_model::JointModelGroup* arm_jmg,
+                                             double velocity_scaling_factor)
+{
+  std::ifstream input_file;
+  std::string line;
+  input_file.open (file_name.c_str());
+  ROS_DEBUG_STREAM_NAMED("manipultion","Loading waypoints from file " << file_name);
+
+  // Create desired trajectory
+  EigenSTL::vector_Affine3d waypoints;
+
+  double dummy_dt = 1; // temp value
+
+  // Read each line
+  while(std::getline(input_file, line))
+  {
+    // Convert line to a robot state
+    Eigen::Affine3d pose;
+    streamToAffine3d(pose, line, " ");
+    waypoints.push_back(pose);
+  }
+
+  // Close file
+  input_file.close();
+
+  // Error check
+  if (waypoints.empty())
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","No waypoints loaded from CSV file " << file_name);
+    return false;
+  }
+
+  // Visualize
+  if (true)
+  {
+    visuals_->visual_tools_->enableBatchPublishing(true);
+    for (std::size_t i = 0; i < waypoints.size(); ++i)
+    {
+      visuals_->visual_tools_->publishZArrow(waypoints[i], rvt::RED);      
+    }
+    visuals_->visual_tools_->triggerBatchPublishAndDisable();
+  }
+
+  // Plan and move
+  if (!moveCartesianWaypointPath(arm_jmg, waypoints))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Error executing path");
+    return false;
+  }
+
+  return true;
+}
+
+bool Manipulation::streamToAffine3d(Eigen::Affine3d& pose, const std::string& line, const std::string& separator)
+{
+  std::stringstream lineStream(line);
+  std::string cell;
+  std::vector<double> values;
+  values.resize(6);
+
+  // For each item/column
+  for (std::size_t i = 0; i < values.size(); ++i)
+  {
+    // Get a variable
+    if(!std::getline(lineStream, cell, '\t')) //separator.c_str()))
+    {
+      ROS_ERROR_STREAM_NAMED("manipulation","Missing varialbe " << i);
+      return false;
+    }
+
+    values[i] = atof(cell.c_str());
+  }
+
+  // Convert values to pose
+  pose = visuals_->visual_tools_->convertXYZRPY(values);
+  return true;
+}
+
+bool Manipulation::moveCartesianWaypointPath(const robot_model::JointModelGroup* arm_jmg, 
+                                             EigenSTL::vector_Affine3d waypoints)
+{
+  // Calculate remaining trajectory
+  moveit_grasps::GraspTrajectories segmented_cartesian_traj;
+  if (!computeCartesianWaypointPath(arm_jmg, getCurrentState(), waypoints, 
+                                                   segmented_cartesian_traj))
+  {
+    ROS_INFO_STREAM_NAMED("apc_manager","Unable to plan circular path");
+    return false;
+  }
+
+  // Combine segmented trajectory into single trajectory
+  moveit_grasps::GraspTrajectories single_cartesian_traj;
+  single_cartesian_traj.resize(1);
+  for (std::size_t i = 0; i < segmented_cartesian_traj.size(); ++i)
+  {
+    single_cartesian_traj[0].insert(single_cartesian_traj[0].end(), segmented_cartesian_traj[i].begin(), 
+                                    segmented_cartesian_traj[i].end());
+  }
+
+  visuals_->visual_tools_->publishTrajectoryPoints(single_cartesian_traj[0],
+                                                   grasp_datas_[arm_jmg]->parent_link_, rvt::RAND);
+
+  if (!executeSavedCartesianPath(single_cartesian_traj, arm_jmg, 0))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Error executing trajectory segment " << 0);
+    return false;
+  }
+
+  return true;
+}
+
 bool Manipulation::playbackTrajectoryFromFileInteractive(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
                                                          double velocity_scaling_factor)
 {
@@ -506,7 +619,7 @@ bool Manipulation::playbackTrajectoryFromFileInteractive(const std::string &file
   ROS_DEBUG_STREAM_NAMED("manipultion","Loading trajectory from file " << file_name);
 
   std::string line;
-  current_state_ = getCurrentState();
+  getCurrentState();
 
   robot_trajectory::RobotTrajectoryPtr robot_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, arm_jmg));
   double dummy_dt = 1; // temp value
@@ -2612,7 +2725,12 @@ bool Manipulation::checkCollisionAndBounds(const moveit::core::RobotStatePtr &st
   if (!start_state->satisfiesBounds(fix_state_bounds_.getMaxBoundsError()))
   {
     if (verbose)
+    {
       ROS_WARN_STREAM_NAMED("manipulation","Start state does not satisfy bounds");
+
+      // For debugging in console
+      showJointLimits(config_->right_arm_);
+    }
     result = false;
   }
 
@@ -2620,8 +2738,13 @@ bool Manipulation::checkCollisionAndBounds(const moveit::core::RobotStatePtr &st
   if (goal_state && !goal_state->satisfiesBounds(fix_state_bounds_.getMaxBoundsError()))
   {
     if (verbose)
+    {
       ROS_WARN_STREAM_NAMED("manipulation","Goal state does not satisfy bounds");
-    //std::cout << "bounds: " << robot_model_->getJointModel("jaco2_joint_6")->getVariableBoundsMsg()[0] << std::endl;
+     
+      // For debugging in console
+      showJointLimits(config_->right_arm_);
+    }
+
     result = false;
   }
 
@@ -2710,6 +2833,62 @@ bool Manipulation::getPose(Eigen::Affine3d &pose, const std::string& frame_name)
 
   // Copy results
   tf::transformTFToEigen(camera_transform, pose);
+
+  return true;
+}
+
+bool Manipulation::showJointLimits(const robot_model::JointModelGroup* jmg)
+{
+  const std::vector<const moveit::core::JointModel*> &joints = jmg->getActiveJointModels();
+
+  std::cout << std::endl;
+
+  // Loop through joints
+  for (std::size_t i = 0; i < joints.size(); ++i)
+  {
+    // Assume all joints have only one variable
+    if (joints[i]->getVariableCount() > 1)
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Unable to handle joints with more than one var");
+      return false;
+    }    
+    getCurrentState();
+    double current_value = current_state_->getVariablePosition(joints[i]->getName());
+
+    // check if bad position
+    bool out_of_bounds = !current_state_->satisfiesBounds(joints[i]);
+
+    const moveit::core::VariableBounds& bound = joints[i]->getVariableBounds()[0];
+    
+    if (out_of_bounds)
+      std::cout << MOVEIT_CONSOLE_COLOR_RED;
+
+    std::cout << "   " << std::fixed << std::setprecision(5) << bound.min_position_ << "\t";
+    double delta = bound.max_position_ - bound.min_position_;
+    //std::cout << "delta: " << delta << " ";
+    double step = delta / 20.0;
+
+    bool marker_shown = false;
+    for (double value = bound.min_position_; value < bound.max_position_; value += step)
+    {
+      // show marker of current value
+      if (!marker_shown && current_value < value)
+      {
+        std::cout << "|";
+        marker_shown = true;
+      }
+      else
+        std::cout << "-";
+    }
+    // show max position
+    std::cout << " \t" << std::fixed << std::setprecision(5) << bound.max_position_ 
+              << "  \t" << joints[i]->getName() 
+              << " current: " << std::fixed << std::setprecision(5) << current_value << std::endl;              
+
+    if (out_of_bounds)
+      std::cout << MOVEIT_CONSOLE_COLOR_RESET;
+  }
+
 
   return true;
 }

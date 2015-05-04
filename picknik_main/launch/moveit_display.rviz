@@ -54,21 +54,8 @@ Visualization Manager:
       Namespaces:
         Axis: true
         Cuboid: true
-        Line: true
         Shelf: true
         goal_bin_49: true
-        product_crayola_64_ct_55: true
-        product_crayola_64_ct_56: true
-        product_crayola_64_ct_57: true
-        product_crayola_64_ct_58: true
-        product_crayola_64_ct_59: true
-        product_crayola_64_ct_60: true
-        product_crayola_64_ct_61: true
-        product_crayola_64_ct_62: true
-        product_crayola_64_ct_63: true
-        product_crayola_64_ct_64: true
-        product_crayola_64_ct_65: true
-        product_crayola_64_ct_66: true
       Queue Size: 100
       Value: true
     - Alpha: 0.5
@@ -205,22 +192,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.50226
+      Distance: 2.36384
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.100029
-        Y: 0.166056
-        Z: 0.311796
+        X: 0.500856
+        Y: 0.0387309
+        Z: 0.443283
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: -0.225202
+      Pitch: 0.854798
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 4.88724
+      Yaw: 4.03724
     Saved: ~
 Window Geometry:
   Displays:

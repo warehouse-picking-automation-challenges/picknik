@@ -150,12 +150,6 @@ public:
   bool testInCollision();
 
   /**
-   * \brief Debug visualization tool for joint limits
-   * \return true on success
-   */
-  bool showJointLimits();
-
-  /**
    * \brief Plan to random valid motions
    * \return true on success
    */
@@ -390,6 +384,12 @@ public:
    * \return true on success
    */
   bool testPlanningSimple();
+
+  /**
+   * \brief Playback waypoint path specified in a csv
+   * \return true on success
+   */
+  bool playbackWaypointsFromFile();
 
 private:
 

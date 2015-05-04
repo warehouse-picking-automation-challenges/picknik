@@ -201,7 +201,7 @@ int main(int argc, char** argv)
       manager.testEndEffectors();
       break;
     case 9:
-      remove_from_shelf = false;
+      remove_from_shelf = true;
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Going to pose " << pose);
       manager.gotoPose(pose);
@@ -285,6 +285,11 @@ int main(int argc, char** argv)
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Playing back bin observing trajectory");
       manager.perceiveBinWithCamera(id);
+      break;
+    case 34:
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Playback waypoint path specified in a csv");
+      manager.playbackWaypointsFromFile();
       break;
 
     case 40:

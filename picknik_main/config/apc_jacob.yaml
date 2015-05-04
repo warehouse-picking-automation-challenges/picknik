@@ -66,7 +66,7 @@ camera:
   x_translation_from_bin: 0.55 # meters
   y_translation_from_bin: 0.0 # negative is right looking at shelf
   # THIS IS USED TO OFFSET THE GANTRY FROM THE BIN CENTROID
-  z_translation_from_bin: -0.66 # must be -0.66 or less
+  z_translation_from_bin: -0.86 # must be -0.66 or less
   x_rotation_from_standard_grasp: 0 #-0.2  # radians
   y_rotation_from_standard_grasp: 0  # negative is torwards right of shelf
   z_rotation_from_standard_grasp: 0  # radians

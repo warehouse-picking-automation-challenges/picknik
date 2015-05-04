@@ -375,6 +375,8 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     product->createCollisionBodies(world_to_bin);
 
     product->calculateBoundingBox(bin->getBinToWorld(shelf_));
+
+    visuals_->visual_tools_->deleteAllMarkers();
     product->visualizeWireframe(bin->getBinToWorld(shelf_));
 
   } // for each found product
