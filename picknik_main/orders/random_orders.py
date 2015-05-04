@@ -3,13 +3,14 @@ from __future__ import division, print_function, absolute_import
 
 import random
 import string
+import os
 from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 
 
-_items = list(pd.read_csv('items_data.csv', index_col=0).index.values)
+_items = list(pd.read_csv(os.path.dirname(os.path.realpath(__file__))+'/items_data.csv', index_col=0).index.values)
 
 
 def _multinomial(probabilites):

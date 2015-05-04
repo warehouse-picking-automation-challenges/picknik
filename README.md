@@ -27,7 +27,7 @@ The installation instructions were to long, and have been moved to INSTALL.md (n
 
 Create a simulated bin inventory and random order by running
 
-    rosrun picknik_main random_orders.py order.json
+    rosrun picknik_main random_orders.py `rospack find picknik_main`/orders/random.json
 
 Note that you can repeat experiments setting the used seed, and modify
 the likelyhood of the number of objects per bin too:

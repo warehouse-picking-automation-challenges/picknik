@@ -217,7 +217,7 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointMod
     if (verbose_cartesian_paths)
     {
       ros::Duration(1).sleep();
-      visuals_->grasp_markers_->deleteAllMarkers();
+      visuals_->trajectory_lines_->deleteAllMarkers();
     }
   }
 
@@ -246,8 +246,8 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
     = moveit_grasps::GraspGenerator::getPreGraspPose(grasp_candidate->grasp_, grasp_candidate->grasp_data_->parent_link_->getName());
 
   // Create waypoints
-  Eigen::Affine3d pregrasp_pose = visuals_->grasp_markers_->convertPose(pregrasp_pose_msg.pose);
-  Eigen::Affine3d grasp_pose = visuals_->grasp_markers_->convertPose(grasp_pose_msg.pose);
+  Eigen::Affine3d pregrasp_pose = visuals_->trajectory_lines_->convertPose(pregrasp_pose_msg.pose);
+  Eigen::Affine3d grasp_pose = visuals_->trajectory_lines_->convertPose(grasp_pose_msg.pose);
   Eigen::Affine3d lifted_grasp_pose = grasp_pose;
   lifted_grasp_pose.translation().z() += grasp_candidate->grasp_data_->lift_distance_desired_;
 
@@ -271,19 +271,19 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   if (visualize_path_details)
   {
     bool static_id = false;
-    // visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
-    // visuals_->grasp_markers_->publishText(pregrasp_pose, "pregrasp", rvt::WHITE, rvt::SMALL, static_id);
+    // visuals_->trajectory_lines_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
+    // visuals_->trajectory_lines_->publishText(pregrasp_pose, "pregrasp", rvt::WHITE, rvt::SMALL, static_id);
 
-    // visuals_->grasp_markers_->publishZArrow(grasp_pose, rvt::YELLOW, rvt::SMALL);
-    // visuals_->grasp_markers_->publishText(grasp_pose, "grasp", rvt::WHITE, rvt::SMALL, static_id);
+    // visuals_->trajectory_lines_->publishZArrow(grasp_pose, rvt::YELLOW, rvt::SMALL);
+    // visuals_->trajectory_lines_->publishText(grasp_pose, "grasp", rvt::WHITE, rvt::SMALL, static_id);
 
-    //visuals_->grasp_markers_->publishZArrow(lifted_grasp_pose, rvt::ORANGE, rvt::SMALL);
-    visuals_->grasp_markers_->publishAxis(lifted_grasp_pose);
-    visuals_->grasp_markers_->publishText(lifted_grasp_pose, "lifted", rvt::WHITE, rvt::SMALL, static_id);
+    //visuals_->trajectory_lines_->publishZArrow(lifted_grasp_pose, rvt::ORANGE, rvt::SMALL);
+    visuals_->trajectory_lines_->publishAxis(lifted_grasp_pose);
+    visuals_->trajectory_lines_->publishText(lifted_grasp_pose, "lifted", rvt::WHITE, rvt::SMALL, static_id);
 
-    //visuals_->grasp_markers_->publishZArrow(retreat_pose, rvt::RED, rvt::SMALL);
-    visuals_->grasp_markers_->publishAxis(retreat_pose);
-    visuals_->grasp_markers_->publishText(retreat_pose, "retreat", rvt::WHITE, rvt::SMALL, static_id);
+    //visuals_->trajectory_lines_->publishZArrow(retreat_pose, rvt::RED, rvt::SMALL);
+    visuals_->trajectory_lines_->publishAxis(retreat_pose);
+    visuals_->trajectory_lines_->publishText(retreat_pose, "retreat", rvt::WHITE, rvt::SMALL, static_id);
   }
 
   // Starting state
@@ -299,7 +299,7 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   {
     ROS_INFO_STREAM_NAMED("manipulation.waypoints","Unable to plan approach lift retreat path");
     if (verbose_cartesian_paths)
-      visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::RED, rvt::SMALL);
+      visuals_->trajectory_lines_->publishZArrow(pregrasp_pose, rvt::RED, rvt::SMALL);
     return false;
   }
 
@@ -313,11 +313,11 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   if (verbose_cartesian_paths || true)
   {
     ROS_INFO_STREAM_NAMED("manipulation.waypoints","Visualize end effector position of cartesian path for " << segmented_cartesian_traj.size() << " segments");
-    visuals_->grasp_markers_->publishTrajectoryPoints(segmented_cartesian_traj[moveit_grasps::APPROACH],
+    visuals_->trajectory_lines_->publishTrajectoryPoints(segmented_cartesian_traj[moveit_grasps::APPROACH],
                                                       grasp_datas_[arm_jmg]->parent_link_, rvt::YELLOW);
-    visuals_->grasp_markers_->publishTrajectoryPoints(segmented_cartesian_traj[moveit_grasps::LIFT],
+    visuals_->trajectory_lines_->publishTrajectoryPoints(segmented_cartesian_traj[moveit_grasps::LIFT],
                                                       grasp_datas_[arm_jmg]->parent_link_, rvt::ORANGE);
-    visuals_->grasp_markers_->publishTrajectoryPoints(segmented_cartesian_traj[moveit_grasps::RETREAT],
+    visuals_->trajectory_lines_->publishTrajectoryPoints(segmented_cartesian_traj[moveit_grasps::RETREAT],
                                                       grasp_datas_[arm_jmg]->parent_link_, rvt::RED);
   }
   // Turn off auto mode
@@ -1073,7 +1073,7 @@ bool Manipulation::executeApproachPath(moveit_grasps::GraspCandidatePtr chosen_g
 
   // Get goal pose
   const geometry_msgs::PoseStamped &grasp_pose_msg = chosen_grasp->grasp_.grasp_pose;
-  Eigen::Affine3d grasp_pose = visuals_->grasp_markers_->convertPose(grasp_pose_msg.pose);
+  Eigen::Affine3d grasp_pose = visuals_->trajectory_lines_->convertPose(grasp_pose_msg.pose);
 
   // Create desired trajectory
   EigenSTL::vector_Affine3d waypoints;
@@ -1085,10 +1085,10 @@ bool Manipulation::executeApproachPath(moveit_grasps::GraspCandidatePtr chosen_g
   if (visualize_path_details)
   {
     bool static_id = false;
-    //visuals_->grasp_markers_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
-    //visuals_->grasp_markers_->publishText(pregrasp_pose, "pregrasp", rvt::WHITE, rvt::SMALL, static_id);
-    visuals_->grasp_markers_->publishZArrow(grasp_pose, rvt::YELLOW, rvt::SMALL);
-    visuals_->grasp_markers_->publishText(grasp_pose, "grasp", rvt::WHITE, rvt::SMALL, static_id);
+    //visuals_->trajectory_lines_->publishZArrow(pregrasp_pose, rvt::GREEN, rvt::SMALL);
+    //visuals_->trajectory_lines_->publishText(pregrasp_pose, "pregrasp", rvt::WHITE, rvt::SMALL, static_id);
+    visuals_->trajectory_lines_->publishZArrow(grasp_pose, rvt::YELLOW, rvt::SMALL);
+    visuals_->trajectory_lines_->publishText(grasp_pose, "grasp", rvt::WHITE, rvt::SMALL, static_id);
   }
 
   // Compute cartesian path

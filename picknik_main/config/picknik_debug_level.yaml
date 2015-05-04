@@ -27,6 +27,7 @@ apc_manager:
   show_simulated_paths_moving: true
   unit_test:
     SuperSimple: false
-    SimpleRotated: true
-    SimpleVeryRotated: false
+    SimpleRotated: false
+    SimpleVeryRotated: true
     SimpleFarBack: false
+    RandomSimple: false

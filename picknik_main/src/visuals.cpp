@@ -107,6 +107,7 @@ bool Visuals::loadVerboseLevels(const std::string& parent_name)
   setting_names.push_back("unit_test/SimpleRotated");
   setting_names.push_back("unit_test/SimpleVeryRotated");
   setting_names.push_back("unit_test/SimpleFarBack");
+  setting_names.push_back("unit_test/RandomSimple");
   setting_names.push_back("show_experience_database");
   //setting_names.push_back("");
   //setting_names.push_back("");

@@ -1967,7 +1967,7 @@ bool APCManager::unitTests()
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
-    product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.08);
+    product_pose.translation() = Eigen::Vector3d(0.12, 0.13, 0.08);
     product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
       * Eigen::AngleAxisd(-1.57, Eigen::Vector3d::UnitY());
     if (!startUnitTest(json_file, test_name, product_pose))
@@ -1980,7 +1980,7 @@ bool APCManager::unitTests()
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
-    product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.08);
+    product_pose.translation() = Eigen::Vector3d(0.12, 0.13, 0.08);
     product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
       * Eigen::AngleAxisd(-1.87, Eigen::Vector3d::UnitY());  // slighlty rotated sideways
     if (!startUnitTest(json_file, test_name, product_pose))
@@ -1993,7 +1993,7 @@ bool APCManager::unitTests()
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
-    product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.08);
+    product_pose.translation() = Eigen::Vector3d(0.12, 0.13, 0.08);
     product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
       * Eigen::AngleAxisd(-2.0, Eigen::Vector3d::UnitY());  // rotated sideways
     if (!startUnitTest(json_file, test_name, product_pose))
@@ -2006,7 +2006,20 @@ bool APCManager::unitTests()
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
-    product_pose.translation() = Eigen::Vector3d(0.12, 0.1, 0.14);
+    product_pose.translation() = Eigen::Vector3d(0.12, 0.13, 0.14);
+    product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
+      * Eigen::AngleAxisd(-1.57, Eigen::Vector3d::UnitY());  // rotated sideways
+    if (!startUnitTest(json_file, test_name, product_pose))
+      return false;
+  }
+
+  // Test
+  test_name = "RandomSimple";
+  if (visuals_->isEnabled("unit_test/" + test_name))
+  {
+    const std::string json_file = "random.json";
+    Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
+    product_pose.translation() = Eigen::Vector3d(0.12, 0.13, 0.08);
     product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
       * Eigen::AngleAxisd(-1.57, Eigen::Vector3d::UnitY());  // rotated sideways
     if (!startUnitTest(json_file, test_name, product_pose))
@@ -2159,93 +2172,6 @@ bool APCManager::unitTestPerceptionComm()
 bool APCManager::calibrateInCircle()
 {
   // Choose which planning group to use
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
-
-  // Get location of camera
-  Eigen::Affine3d camera_pose;
-  manipulation_->getPose(camera_pose, config_->right_camera_frame_);
-
-  // Move camera pose forward away from camera
-  Eigen::Affine3d translate_forward = Eigen::Affine3d::Identity();
-  translate_forward.translation().x() += config_->camera_x_translation_from_bin_;
-  camera_pose = translate_forward * camera_pose;
-
-  // Debug
-  visuals_->visual_tools_->publishSphere(camera_pose, rvt::GREEN, rvt::LARGE);
-  visuals_->visual_tools_->publishXArrow(camera_pose, rvt::GREEN);
-
-  // Collection of goal positions
-  EigenSTL::vector_Affine3d waypoints;
-
-  // Create circle of poses around center
-  double radius = 0.2;
-  double increment = 0.5;
-  visuals_->visual_tools_->enableBatchPublishing(true);
-  for (double angle = 0; angle <= 2*M_PI; angle += increment)
-  {
-    // Rotate around circle
-    Eigen::Affine3d rotation_transform = Eigen::Affine3d::Identity();
-    rotation_transform.translation().z() += radius * cos( angle );
-    rotation_transform.translation().y() += radius * sin( angle );
-
-    Eigen::Affine3d new_point = rotation_transform * camera_pose;
-
-    // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
-    new_point = new_point * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitY());
-    //new_point = new_point * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ());
-
-    // Debug
-    //visuals_->visual_tools_->publishZArrow(new_point, rvt::RED);
-
-    // Translate to custom end effector geometry
-    Eigen::Affine3d grasp_pose = new_point * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
-    //visuals_->visual_tools_->publishZArrow(grasp_pose, rvt::PURPLE);
-    visuals_->visual_tools_->publishAxis(grasp_pose);
-
-    // Add to trajectory
-    waypoints.push_back(grasp_pose);
-  }
-  visuals_->visual_tools_->triggerBatchPublishAndDisable();
-
-  // Move to first position
-  if (!manipulation_->moveToEEPose(waypoints.front(), config_->main_velocity_scaling_factor_, arm_jmg))
-  {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to starting pose");
-    return false;
-  }
-
-  // Calculate remaining trajectory
-  moveit_grasps::GraspTrajectories segmented_cartesian_traj;
-  if (!manipulation_->computeCartesianWaypointPath(arm_jmg, manipulation_->getCurrentState(), waypoints, 
-                                                   segmented_cartesian_traj))
-  {
-    ROS_INFO_STREAM_NAMED("apc_manager","Unable to plan circular path");
-    return false;
-  }
-
-  ROS_INFO_STREAM_NAMED("apc_manager","Created " << segmented_cartesian_traj.size() << " segmented trajectories");
-  for (std::size_t i = 0; i < segmented_cartesian_traj.size(); ++i)
-  {   
-    visuals_->visual_tools_->publishTrajectoryPoints(segmented_cartesian_traj[i],
-                                                     grasp_datas_[arm_jmg]->parent_link_, rvt::RAND);
-  }
-
-  for (std::size_t i = 0; i < segmented_cartesian_traj.size(); ++i)
-  { 
-    if (!manipulation_->executeSavedCartesianPath(segmented_cartesian_traj, arm_jmg, i))
-    {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Error executing trajectory segment " << i);
-      return false;
-    }
-  }
-
-  return true;
-}
-
-// Mode 12
-bool APCManager::calibrateInSquare()
-{
-  // Choose which planning group to use
   const robot_model::JointModelGroup* arm_jmg = config_->arm_only_;
   if (!arm_jmg)
   {
@@ -2325,22 +2251,6 @@ bool APCManager::calibrateInSquare()
                                     segmented_cartesian_traj[i].end());
   }
 
-  // ROS_INFO_STREAM_NAMED("apc_manager","Created " << segmented_cartesian_traj.size() << " segmented trajectories");
-  // for (std::size_t i = 0; i < segmented_cartesian_traj.size(); ++i)
-  // {   
-  //   visuals_->visual_tools_->publishTrajectoryPoints(segmented_cartesian_traj[i],
-  //                                                    grasp_datas_[arm_jmg]->parent_link_, rvt::RAND);
-  // }
-
-  // for (std::size_t i = 0; i < segmented_cartesian_traj.size(); ++i)
-  // { 
-  //   if (!manipulation_->executeSavedCartesianPath(segmented_cartesian_traj, arm_jmg, i))
-  //   {
-  //     ROS_ERROR_STREAM_NAMED("apc_manager","Error executing trajectory segment " << i);
-  //     return false;
-  //   }
-  // }
-
   visuals_->visual_tools_->publishTrajectoryPoints(single_cartesian_traj[0],
                                                    grasp_datas_[arm_jmg]->parent_link_, rvt::RAND);
 
@@ -2351,6 +2261,13 @@ bool APCManager::calibrateInSquare()
   }
 
   return true;
+}
+
+// Mode 12
+bool APCManager::calibrateInSquare()
+{
+  ROS_WARN_STREAM_NAMED("temp","USE CIRCLE VERSION");
+  return false;
 }
 
 // Mode 26
