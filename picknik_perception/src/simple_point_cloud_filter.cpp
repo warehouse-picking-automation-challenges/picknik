@@ -9,6 +9,8 @@
 #include <pcl/filters/passthrough.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/radius_outlier_removal.h>
+#include <pcl/PCLPointCloud2.h>
+#include <pcl/conversions.h>
 #include <pcl/io/ply_io.h>
 
 namespace picknik_perception
@@ -59,7 +61,11 @@ bool SimplePointCloudFilter::createPlyFile(std::string file_name)
   }
 
   pcl::PLYWriter writer;
-  writer.write(full_path, roi_cloud_, Eigen::Vector4f::Zero(), Eigen::Quaternionf::Identity(), binary, use_camera);
+  pcl::PCLPointCloud2 cloud2_msg;
+  pcl::toPCLPointCloud2(*roi_cloud_, cloud2_msg);
+
+  // write to ply binary file
+  writer.write(full_path, cloud2_msg, Eigen::Vector4f::Zero(), Eigen::Quaternionf::Identity(), true, true);
   ROS_INFO_STREAM_NAMED("point_cloud_filter.savePLY","Saved point cloud with " << roi_cloud_->size() << "points");
 
   return true;
