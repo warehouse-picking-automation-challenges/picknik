@@ -499,7 +499,7 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
   return true;
 }
 
-bool Manipulation::playbackWaypointsFromFile(const std::string &file_name, 
+bool Manipulation::playbackWaypointsFromFile(const std::string &file_name,
                                              const robot_model::JointModelGroup* arm_jmg,
                                              double velocity_scaling_factor)
 {
@@ -519,6 +519,21 @@ bool Manipulation::playbackWaypointsFromFile(const std::string &file_name,
     // Convert line to a robot state
     Eigen::Affine3d pose;
     streamToAffine3d(pose, line, " ");
+
+    // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
+    pose = pose * Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitZ());
+    
+    // Temp tweaking
+    pose = config_->test_pose_ * pose;
+
+    //new_point = new_point * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ());
+
+    // Debug
+    //visuals_->visual_tools_->publishZArrow(new_point, rvt::RED);
+
+    // Translate to custom end effector geometry
+    //Eigen::Affine3d grasp_pose = new_point * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
+
     waypoints.push_back(pose);
   }
 
@@ -538,7 +553,11 @@ bool Manipulation::playbackWaypointsFromFile(const std::string &file_name,
     visuals_->visual_tools_->enableBatchPublishing(true);
     for (std::size_t i = 0; i < waypoints.size(); ++i)
     {
-      visuals_->visual_tools_->publishZArrow(waypoints[i], rvt::RED);      
+      //printTransform(waypoints[i]);
+
+      //visuals_->visual_tools_->publishAxis(waypoints[i]);
+      //visuals_->visual_tools_->publishZArrow(waypoints[i]);
+      visuals_->visual_tools_->publishSphere(waypoints[i]);
     }
     visuals_->visual_tools_->triggerBatchPublishAndDisable();
   }
@@ -555,38 +574,66 @@ bool Manipulation::playbackWaypointsFromFile(const std::string &file_name,
 
 bool Manipulation::streamToAffine3d(Eigen::Affine3d& pose, const std::string& line, const std::string& separator)
 {
-  std::stringstream lineStream(line);
+  std::stringstream line_stream(line);
   std::string cell;
   std::vector<double> values;
-  values.resize(6);
+  values.resize(16);
 
   // For each item/column
   for (std::size_t i = 0; i < values.size(); ++i)
   {
     // Get a variable
-    if(!std::getline(lineStream, cell, '\t')) //separator.c_str()))
+    if(!std::getline(line_stream, cell, ',')) //separator.c_str())) TODO
     {
-      ROS_ERROR_STREAM_NAMED("manipulation","Missing varialbe " << i);
+      ROS_ERROR_STREAM_NAMED("manipulation","Missing variable " << i << " on cell '" << cell << "' line '" << line << "'");
       return false;
     }
 
     values[i] = atof(cell.c_str());
   }
+  //std::copy(values.begin(), values.end(), std::ostream_iterator<double>(std::cout, ","));
+  //std::cout << std::endl;
 
-  // Convert values to pose
-  pose = visuals_->visual_tools_->convertXYZRPY(values);
+  Eigen::Map<Eigen::Matrix<double,4,4,Eigen::RowMajor> > matrix(values.data(),4,4);
+
+  if (false)
+  {
+    std::cout << matrix << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+  }
+  // //pose.matrix() = matrix;
+
+  //Eigen::Affine3d dummy;
+  pose.matrix() = matrix;
+
+  // turn off pose
+  // pose = Eigen::Affine3d::Identity();
+  // pose.translation().x() = dummy.translation().x();
+  // pose.translation().y() = dummy.translation().y();
+  // pose.translation().z() = dummy.translation().z();
+
   return true;
 }
 
-bool Manipulation::moveCartesianWaypointPath(const robot_model::JointModelGroup* arm_jmg, 
+bool Manipulation::moveCartesianWaypointPath(const robot_model::JointModelGroup* arm_jmg,
                                              EigenSTL::vector_Affine3d waypoints)
 {
+  // Debug
+  visuals_->visual_tools_->publishAxisLabeled(waypoints.front(), "start");
+
+  // Move to first position
+  if (!moveToEEPose(waypoints.front(), config_->main_velocity_scaling_factor_, arm_jmg))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move to starting pose");
+    return false;
+  }
+
   // Calculate remaining trajectory
   moveit_grasps::GraspTrajectories segmented_cartesian_traj;
-  if (!computeCartesianWaypointPath(arm_jmg, getCurrentState(), waypoints, 
+  if (!computeCartesianWaypointPath(arm_jmg, getCurrentState(), waypoints,
                                                    segmented_cartesian_traj))
   {
-    ROS_INFO_STREAM_NAMED("apc_manager","Unable to plan circular path");
+    ROS_INFO_STREAM_NAMED("manipulation","Unable to plan circular path");
     return false;
   }
 
@@ -595,7 +642,7 @@ bool Manipulation::moveCartesianWaypointPath(const robot_model::JointModelGroup*
   single_cartesian_traj.resize(1);
   for (std::size_t i = 0; i < segmented_cartesian_traj.size(); ++i)
   {
-    single_cartesian_traj[0].insert(single_cartesian_traj[0].end(), segmented_cartesian_traj[i].begin(), 
+    single_cartesian_traj[0].insert(single_cartesian_traj[0].end(), segmented_cartesian_traj[i].begin(),
                                     segmented_cartesian_traj[i].end());
   }
 
@@ -604,7 +651,7 @@ bool Manipulation::moveCartesianWaypointPath(const robot_model::JointModelGroup*
 
   if (!executeSavedCartesianPath(single_cartesian_traj, arm_jmg, 0))
   {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Error executing trajectory segment " << 0);
+    ROS_ERROR_STREAM_NAMED("manipulation","Error executing trajectory segment " << 0);
     return false;
   }
 
@@ -1290,7 +1337,7 @@ bool Manipulation::generateApproachPath(moveit_grasps::GraspCandidatePtr chosen_
                                         const moveit::core::RobotStatePtr pre_grasp_state,
                                         const moveit::core::RobotStatePtr the_grasp_state, bool verbose)
 {
-  Eigen::Vector3d approach_direction = 
+  Eigen::Vector3d approach_direction =
     grasp_generator_->getPreGraspDirection(chosen_grasp->grasp_, chosen_grasp->grasp_data_->parent_link_->getName());
   bool reverse_path = true;
 
@@ -1343,7 +1390,7 @@ const moveit::core::JointModel* Manipulation::getGantryJoint()
 bool Manipulation::executeVerticlePath(const moveit::core::JointModelGroup *arm_jmg, const double &desired_lift_distance,
                                        const double &velocity_scaling_factor, bool up, bool ignore_collision)
 {
-  ROS_INFO_STREAM_NAMED("apc_manager","Executing verticle path " << (up ? "up" : "down"));
+  ROS_INFO_STREAM_NAMED("manipulation","Executing verticle path " << (up ? "up" : "down"));
 
   // Attempt to only use gantry, then fall back to IK
   if (!executeVerticlePathGantryOnly(arm_jmg, desired_lift_distance, velocity_scaling_factor, up, ignore_collision))
@@ -2740,7 +2787,7 @@ bool Manipulation::checkCollisionAndBounds(const moveit::core::RobotStatePtr &st
     if (verbose)
     {
       ROS_WARN_STREAM_NAMED("manipulation","Goal state does not satisfy bounds");
-     
+
       // For debugging in console
       showJointLimits(config_->right_arm_);
     }
@@ -2849,9 +2896,9 @@ bool Manipulation::showJointLimits(const robot_model::JointModelGroup* jmg)
     // Assume all joints have only one variable
     if (joints[i]->getVariableCount() > 1)
     {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Unable to handle joints with more than one var");
+      ROS_ERROR_STREAM_NAMED("manipulation","Unable to handle joints with more than one var");
       return false;
-    }    
+    }
     getCurrentState();
     double current_value = current_state_->getVariablePosition(joints[i]->getName());
 
@@ -2859,7 +2906,7 @@ bool Manipulation::showJointLimits(const robot_model::JointModelGroup* jmg)
     bool out_of_bounds = !current_state_->satisfiesBounds(joints[i]);
 
     const moveit::core::VariableBounds& bound = joints[i]->getVariableBounds()[0];
-    
+
     if (out_of_bounds)
       std::cout << MOVEIT_CONSOLE_COLOR_RED;
 
@@ -2881,9 +2928,9 @@ bool Manipulation::showJointLimits(const robot_model::JointModelGroup* jmg)
         std::cout << "-";
     }
     // show max position
-    std::cout << " \t" << std::fixed << std::setprecision(5) << bound.max_position_ 
-              << "  \t" << joints[i]->getName() 
-              << " current: " << std::fixed << std::setprecision(5) << current_value << std::endl;              
+    std::cout << " \t" << std::fixed << std::setprecision(5) << bound.max_position_
+              << "  \t" << joints[i]->getName()
+              << " current: " << std::fixed << std::setprecision(5) << current_value << std::endl;
 
     if (out_of_bounds)
       std::cout << MOVEIT_CONSOLE_COLOR_RESET;

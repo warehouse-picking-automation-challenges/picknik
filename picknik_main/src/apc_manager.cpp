@@ -2139,7 +2139,7 @@ bool APCManager::calibrateInCircle()
   // Move camera pose forward away from camera
   Eigen::Affine3d translate_forward = Eigen::Affine3d::Identity();
   translate_forward.translation().x() += config_->camera_x_translation_from_bin_;
-  translate_forward.translation().z() -= config_->test_double_;
+  translate_forward.translation().z() -= 0.15;
   camera_pose = translate_forward * camera_pose;
 
   // Debug
@@ -2178,13 +2178,6 @@ bool APCManager::calibrateInCircle()
     waypoints.push_back(grasp_pose);
   }
   visuals_->visual_tools_->triggerBatchPublishAndDisable();
-
-  // Move to first position
-  if (!manipulation_->moveToEEPose(waypoints.front(), config_->main_velocity_scaling_factor_, arm_jmg))
-  {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to starting pose");
-    return false;
-  }
 
   if (!manipulation_->moveCartesianWaypointPath(arm_jmg, waypoints))
   {
@@ -2273,7 +2266,12 @@ bool APCManager::playbackWaypointsFromFile()
   planning_scene_manager_->displayShelfWithOpenBins();
 
   // Choose which planning group to use
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  const robot_model::JointModelGroup* arm_jmg = config_->arm_only_;
+  if (!arm_jmg)
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","No joint model group for arm");
+    return false;
+  }
 
   // Start playing back file
   std::string file_path;

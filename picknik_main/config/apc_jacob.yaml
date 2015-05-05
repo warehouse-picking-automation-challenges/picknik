@@ -5,7 +5,7 @@ main_velocity_scaling_factor: 0.7 # moving between cartesian paths
 approach_velocity_scaling_factor: 0.2
 lift_velocity_scaling_factor: 0.1
 retreat_velocity_scaling_factor: 0.6
-calibration_velocity_scaling_factor: 0.3  #0.1
+calibration_velocity_scaling_factor: 0.5  #0.1
 
 # Sleep timers
 wait_before_grasp: 0.1
@@ -79,7 +79,9 @@ camera:
 # Test data
 test:
   test_joint_limit_joint: 1  # starts at 0, negative number means test all
-  test_double: 0.15 # for anything
+  test_double: 0.1 # for anything
+  # During development it is nice to have ability to tweak a value
+  test_pose: [0.15, -0.01, 0, 0, 0, 0] # x,y,z,r,p,y
 
 behavior:
   end_effector_enabled: true

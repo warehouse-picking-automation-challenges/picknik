@@ -41,6 +41,7 @@
 
 // Parameter loading
 #include <rviz_visual_tools/ros_param_utilities.h>
+#include <rviz_visual_tools/rviz_visual_tools.h>
 
 namespace picknik_main
 {
@@ -117,6 +118,11 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
 
   // Generic test variable
   rvt::getDoubleParameter(parent_name, nh_, "test/test_double", test_double_);
+  
+  // Get test pose
+  std::vector<double> test_pose;
+  rvt::getDoubleParameters(parent_name, nh_, "test/test_pose", test_pose);
+  test_pose_ = rvt::RvizVisualTools::convertXYZRPY(test_pose);
   
   // Load proper groups
   // TODO - check if joint model group exists

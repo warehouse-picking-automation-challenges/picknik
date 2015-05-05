@@ -140,6 +140,7 @@ public:
 
   // Generic variable adjustment
   double test_double_;
+  Eigen::Affine3d test_pose_;
 
 }; // end class
 
