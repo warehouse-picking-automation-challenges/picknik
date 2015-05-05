@@ -4,13 +4,7 @@
 
 Startup Jacob hardware or simulation stack as usual, but run the main process in mode ``18``. Use right side of shelf camera (close to desk).
 
-Start cameras (on correct computer):
-
-    roslaunch picknik_perception multi_xtion.launch
-
-Start their calibration
-
-    roslaunch picknik_perception multi_xtion_calibrate.launch
+See main README.md for starting cameras.
 
 Run the perception server:
     

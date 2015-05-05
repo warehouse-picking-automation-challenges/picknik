@@ -73,35 +73,27 @@ Its help documentation:
     optional arguments:
       -h, --help       show this help message and exit
 
-## Start Realsense Camera
+## Start Primesense Cameras
 
-Start driver on computer where USB3 camera is plugged in
+Start cameras (on correct computer):
 
-    roslaunch realsense_camera realsense_camera.launch
+    roslaunch picknik_perception multi_xtion.launch
 
-Testing
+Start their calibration
 
-    rosrun image_view image_view image:=/camera/image/rgb_raw
+    roslaunch picknik_perception multi_xtion_calibrate.launch
+	
+Test camera view
 
-## Start Primesense Camera
-
-    roslaunch openni_launch openni.launch depth_registration:=true publish_tf:=1
-
-Filter from bounding box:
-
-    rosrun picknik_perception simple_point_cloud_filter.launch
+    rosrun image_view image_view image:=/xtion_right/image_raw
 
 ## Run DDTR Perception Pipeline
 
-Go to the build dir where you build the DDTR (e.g.):
-
-	cd ~/ros/perception/DDTR/build	
-    
 ### Run Shelf Calibration
    
 Go to the dir of RGFusion app:
 
-    cd Application/RGFusion
+    cd ~/ros/perception/DDTR/build/Application/RGFusion
     
 Now, run RGFusion:
 
@@ -119,7 +111,7 @@ Now you are safe the leave the application and run the Amazon app .
    
 Go to the dir of Amazon app:
 
-    cd Application/Amazon
+    cd ~/ros/perception/DDTR/build/Application/Amazon
     
 Now, run Amazon app:
 

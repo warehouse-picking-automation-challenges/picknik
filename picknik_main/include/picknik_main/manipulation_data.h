@@ -42,6 +42,9 @@
 // ROS
 #include <ros/ros.h>
 
+// PickNik
+#include <picknik_main/namespaces.h>
+
 // MoveIt!
 #include <moveit/robot_model/robot_model.h>
 
@@ -120,10 +123,10 @@ public:
   double planning_time_;
 
   // Group for each arm
-  const robot_model::JointModelGroup* right_arm_;
-  const robot_model::JointModelGroup* left_arm_;
-  const robot_model::JointModelGroup* both_arms_; // TODO remove?
-  const robot_model::JointModelGroup* arm_only_; // with jacob, this does not include the gantry
+  JointModelGroup* right_arm_;
+  JointModelGroup* left_arm_;
+  JointModelGroup* both_arms_; // TODO remove?
+  JointModelGroup* arm_only_; // with jacob, this does not include the gantry
 
   // Logic on type of robot
   bool dual_arm_;

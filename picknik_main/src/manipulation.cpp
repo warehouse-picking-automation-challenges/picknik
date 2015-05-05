@@ -108,7 +108,7 @@ bool Manipulation::updateBoundingMesh(WorkOrder& work_order)
   return true;
 }
 
-bool Manipulation::chooseGrasp(WorkOrder work_order, const robot_model::JointModelGroup* arm_jmg,
+bool Manipulation::chooseGrasp(WorkOrder work_order, JointModelGroup* arm_jmg,
                                std::vector<moveit_grasps::GraspCandidatePtr> &grasp_candidates, bool verbose,
                                moveit::core::RobotStatePtr seed_state)
 {
@@ -307,7 +307,7 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   ROS_DEBUG_STREAM_NAMED("manipulation.waypoints","Found valid and complete waypoint manipulation path for grasp candidate");
 
   // Get arm planning group
-  const robot_model::JointModelGroup* arm_jmg = grasp_candidate->grasp_data_->arm_jmg_;
+  JointModelGroup* arm_jmg = grasp_candidate->grasp_data_->arm_jmg_;
 
   // Show visuals
   if (verbose_cartesian_paths || true)
@@ -329,7 +329,7 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   return true;
 }
 
-bool Manipulation::computeCartesianWaypointPath(const robot_model::JointModelGroup* arm_jmg,
+bool Manipulation::computeCartesianWaypointPath(JointModelGroup* arm_jmg,
                                                 const moveit::core::RobotStatePtr start_state,
                                                 const EigenSTL::vector_Affine3d &waypoints,
                                                 moveit_grasps::GraspTrajectories &segmented_cartesian_traj)
@@ -421,7 +421,7 @@ bool Manipulation::computeCartesianWaypointPath(const robot_model::JointModelGro
   return true;
 }
 
-bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
+bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, JointModelGroup* arm_jmg,
                                               double velocity_scaling_factor)
 {
   std::ifstream input_file;
@@ -500,7 +500,7 @@ bool Manipulation::playbackTrajectoryFromFile(const std::string &file_name, cons
 }
 
 bool Manipulation::playbackWaypointsFromFile(const std::string &file_name,
-                                             const robot_model::JointModelGroup* arm_jmg,
+                                             JointModelGroup* arm_jmg,
                                              double velocity_scaling_factor)
 {
   std::ifstream input_file;
@@ -615,7 +615,7 @@ bool Manipulation::streamToAffine3d(Eigen::Affine3d& pose, const std::string& li
   return true;
 }
 
-bool Manipulation::moveCartesianWaypointPath(const robot_model::JointModelGroup* arm_jmg,
+bool Manipulation::moveCartesianWaypointPath(JointModelGroup* arm_jmg,
                                              EigenSTL::vector_Affine3d waypoints)
 {
   // Debug
@@ -658,7 +658,7 @@ bool Manipulation::moveCartesianWaypointPath(const robot_model::JointModelGroup*
   return true;
 }
 
-bool Manipulation::playbackTrajectoryFromFileInteractive(const std::string &file_name, const robot_model::JointModelGroup* arm_jmg,
+bool Manipulation::playbackTrajectoryFromFileInteractive(const std::string &file_name, JointModelGroup* arm_jmg,
                                                          double velocity_scaling_factor)
 {
   std::ifstream input_file;
@@ -762,7 +762,7 @@ bool Manipulation::recordTrajectoryToFile(const std::string &file_path)
   return true;
 }
 
-bool Manipulation::moveToSRDFPose(const robot_model::JointModelGroup* arm_jmg, const std::string &pose_name,
+bool Manipulation::moveToSRDFPose(JointModelGroup* arm_jmg, const std::string &pose_name,
                               double velocity_scaling_factor, bool check_validity)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","moveToSRDFPose()");
@@ -791,7 +791,7 @@ bool Manipulation::moveToSRDFPose(const robot_model::JointModelGroup* arm_jmg, c
 }
 
 bool Manipulation::moveToEEPose(const Eigen::Affine3d& ee_pose, double velocity_scaling_factor,
-                                const robot_model::JointModelGroup* arm_jmg)
+                                JointModelGroup* arm_jmg)
 {
   // Create start and goal
   getCurrentState();
@@ -819,7 +819,7 @@ bool Manipulation::moveToEEPose(const Eigen::Affine3d& ee_pose, double velocity_
 }
 
 bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
-                        const robot_model::JointModelGroup* arm_jmg, double velocity_scaling_factor,
+                        JointModelGroup* arm_jmg, double velocity_scaling_factor,
                         bool verbose, bool execute_trajectory, bool check_validity)
 {
   ROS_INFO_STREAM_NAMED("manipulation.move","Planning to new pose with velocity scale " << velocity_scaling_factor);
@@ -935,7 +935,7 @@ bool Manipulation::move(const moveit::core::RobotStatePtr& start, const moveit::
 }
 
 bool Manipulation::createPlanningRequest(planning_interface::MotionPlanRequest& request, const moveit::core::RobotStatePtr& start,
-                                         const moveit::core::RobotStatePtr& goal, const robot_model::JointModelGroup* arm_jmg,
+                                         const moveit::core::RobotStatePtr& goal, JointModelGroup* arm_jmg,
                                          double velocity_scaling_factor)
 {
   moveit::core::robotStateToRobotStateMsg(*start, request.start_state);
@@ -974,7 +974,7 @@ bool Manipulation::createPlanningRequest(planning_interface::MotionPlanRequest& 
 }
 
 bool Manipulation::plan(const moveit::core::RobotStatePtr& start, const moveit::core::RobotStatePtr& goal,
-                        const robot_model::JointModelGroup* arm_jmg, double velocity_scaling_factor, bool verbose,
+                        JointModelGroup* arm_jmg, double velocity_scaling_factor, bool verbose,
                         moveit_msgs::RobotTrajectory& trajectory_msg)
 {
   // Create motion planning request
@@ -1046,7 +1046,7 @@ bool Manipulation::planPostProcessing()
     // Show experience database
     if (visuals_->isEnabled("show_experience_database"))
     {
-      const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+      JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
       displayExperienceDatabase(arm_jmg);
     }
@@ -1740,7 +1740,7 @@ bool Manipulation::computeStraightLinePath( Eigen::Vector3d direction, double de
   return true;
 }
 
-const robot_model::JointModelGroup* Manipulation::chooseArm(const Eigen::Affine3d& ee_pose)
+JointModelGroup* Manipulation::chooseArm(const Eigen::Affine3d& ee_pose)
 {
   // Single Arm
   if (!config_->dual_arm_)
@@ -1767,7 +1767,7 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
 
   // Choose which arm to utilize for task
   Eigen::Affine3d ee_pose = transform(bin->getCentroid(), shelf_->getBottomRight()); // convert to world coordinates
-  const robot_model::JointModelGroup* arm_jmg = chooseArm(ee_pose);
+  JointModelGroup* arm_jmg = chooseArm(ee_pose);
 
   //Move camera left
   std::cout << std::endl;
@@ -1820,7 +1820,7 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   return true;
 }
 
-bool Manipulation::perturbCameraGantryOnly(BinObjectPtr bin, const robot_model::JointModelGroup* arm_jmg)
+bool Manipulation::perturbCameraGantryOnly(BinObjectPtr bin, JointModelGroup* arm_jmg)
 {
   // Note: assumes arm is already pointing at centroid of desired bin
   ROS_INFO_STREAM_NAMED("manipulation","Perturbing camera for perception - moving gantry up and down");
@@ -1854,7 +1854,7 @@ bool Manipulation::perturbCameraGantryOnly(BinObjectPtr bin, const robot_model::
 }
 
 bool Manipulation::getGraspingSeedState(BinObjectPtr bin, moveit::core::RobotStatePtr& seed_state,
-                                        const robot_model::JointModelGroup* arm_jmg)
+                                        JointModelGroup* arm_jmg)
 {
   bool visualize_grasping_seed_state = visuals_->isEnabled("show_grasping_seed_state");
 
@@ -1888,7 +1888,7 @@ bool Manipulation::getGraspingSeedState(BinObjectPtr bin, moveit::core::RobotSta
 }
 
 bool Manipulation::getRobotStateFromPose(const Eigen::Affine3d &ee_pose, moveit::core::RobotStatePtr& robot_state,
-                                         const robot_model::JointModelGroup* arm_jmg)
+                                         JointModelGroup* arm_jmg)
 {
   // Setup collision checking with a locked planning scene
   {
@@ -1935,7 +1935,7 @@ bool Manipulation::moveCameraToBin(BinObjectPtr bin)
   visuals_->visual_tools_->publishText(ee_pose, "ee_pose", rvt::BLACK, rvt::SMALL, false);
 
   // Choose which arm to utilize for task
-  const robot_model::JointModelGroup* arm_jmg = chooseArm(ee_pose);
+  JointModelGroup* arm_jmg = chooseArm(ee_pose);
 
   // Translate to custom end effector geometry
   ee_pose = ee_pose * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
@@ -1951,7 +1951,7 @@ bool Manipulation::moveCameraToBin(BinObjectPtr bin)
   return moveToEEPose(ee_pose, config_->main_velocity_scaling_factor_, arm_jmg);
 }
 
-bool Manipulation::moveCameraToBinGantryOnly(BinObjectPtr bin, const robot_model::JointModelGroup* arm_jmg)
+bool Manipulation::moveCameraToBinGantryOnly(BinObjectPtr bin, JointModelGroup* arm_jmg)
 {
   // Set new state to current state
   getCurrentState();
@@ -2014,7 +2014,7 @@ bool Manipulation::straightProjectPose( const Eigen::Affine3d& original_pose, Ei
 
 bool Manipulation::convertRobotStatesToTrajectory(const std::vector<moveit::core::RobotStatePtr>& robot_state_trajectory,
                                                   moveit_msgs::RobotTrajectory& trajectory_msg,
-                                                  const robot_model::JointModelGroup* jmg,
+                                                  JointModelGroup* jmg,
                                                   const double &velocity_scaling_factor)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","convertRobotStatesToTrajectory()");
@@ -2066,7 +2066,7 @@ bool Manipulation::openEndEffectors(bool open)
   return true;
 }
 
-bool Manipulation::openEndEffector(bool open, const robot_model::JointModelGroup* arm_jmg)
+bool Manipulation::openEndEffector(bool open, JointModelGroup* arm_jmg)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","openEndEffector()");
   ROS_ERROR_STREAM_NAMED("temp","THIS FUNCTION IS DPERECATED");
@@ -2079,7 +2079,7 @@ bool Manipulation::openEndEffector(bool open, const robot_model::JointModelGroup
   }
 
   getCurrentState();
-  const robot_model::JointModelGroup* ee_jmg = grasp_datas_[arm_jmg]->ee_jmg_;
+  JointModelGroup* ee_jmg = grasp_datas_[arm_jmg]->ee_jmg_;
 
   robot_trajectory::RobotTrajectoryPtr ee_traj(new robot_trajectory::RobotTrajectory(robot_model_, ee_jmg));
 
@@ -2122,7 +2122,7 @@ bool Manipulation::openEndEffector(bool open, const robot_model::JointModelGroup
   return true;
 }
 
-bool Manipulation::openEndEffectorWithVelocity(bool open, const robot_model::JointModelGroup* arm_jmg)
+bool Manipulation::openEndEffectorWithVelocity(bool open, JointModelGroup* arm_jmg)
 {
   // Check status
   if (!config_->end_effector_enabled_)
@@ -2224,7 +2224,7 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
     //return false;
   }
 
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->left_arm_ : config_->right_arm_;
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->left_arm_ : config_->right_arm_;
 
   // Decide what direction is needed to fix colliding state, using the cloned scene
   collision_detection::CollisionResult::ContactMap contacts;
@@ -2369,7 +2369,7 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   return true;
 }
 
-bool Manipulation::moveToStartPosition(const robot_model::JointModelGroup* arm_jmg, bool check_validity)
+bool Manipulation::moveToStartPosition(JointModelGroup* arm_jmg, bool check_validity)
 {
   // Choose which planning group to use
   if (arm_jmg == NULL)
@@ -2377,7 +2377,7 @@ bool Manipulation::moveToStartPosition(const robot_model::JointModelGroup* arm_j
   return moveToSRDFPose(arm_jmg, config_->start_pose_, config_->main_velocity_scaling_factor_, check_validity);
 }
 
-bool Manipulation::allowFingerTouch(const std::string& object_name, const robot_model::JointModelGroup* arm_jmg)
+bool Manipulation::allowFingerTouch(const std::string& object_name, JointModelGroup* arm_jmg)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","allowFingerTouch()");
 
@@ -2428,7 +2428,7 @@ void Manipulation::loadPlanningPipeline()
 }
 
 bool Manipulation::statesEqual(const moveit::core::RobotState &s1, const moveit::core::RobotState &s2,
-                               const robot_model::JointModelGroup* jmg)
+                               JointModelGroup* jmg)
 {
   static const double STATES_EQUAL_THRESHOLD = 0.01;
 
@@ -2455,7 +2455,7 @@ bool Manipulation::statesEqual(const moveit::core::RobotState &s1, const moveit:
   return true;
 }
 
-ompl::tools::ExperienceSetupPtr Manipulation::getExperienceSetup(const robot_model::JointModelGroup* arm_jmg)
+ompl::tools::ExperienceSetupPtr Manipulation::getExperienceSetup(JointModelGroup* arm_jmg)
 {
   // Get manager
   loadPlanningPipeline(); // always call before using planning_pipeline_
@@ -2480,7 +2480,7 @@ ompl::tools::ExperienceSetupPtr Manipulation::getExperienceSetup(const robot_mod
   return experience_setup;
 }
 
-bool Manipulation::displayExperienceDatabase(const robot_model::JointModelGroup* arm_jmg)
+bool Manipulation::displayExperienceDatabase(JointModelGroup* arm_jmg)
 {
   ompl::tools::ExperienceSetupPtr experience_setup = getExperienceSetup(arm_jmg);
 
@@ -2687,7 +2687,7 @@ bool Manipulation::waitForRobotToStop(const double& timeout)
   return false;
 }
 
-bool Manipulation::fixCurrentCollisionAndBounds(const robot_model::JointModelGroup* arm_jmg)
+bool Manipulation::fixCurrentCollisionAndBounds(JointModelGroup* arm_jmg)
 {
   //ROS_INFO_STREAM_NAMED("manipulation","Checking current collision and bounds");
 
@@ -2796,7 +2796,7 @@ bool Manipulation::checkCollisionAndBounds(const moveit::core::RobotStatePtr &st
   }
 
   // Check for collisions --------------------------------------------------------
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Get planning scene lock
   {
@@ -2884,7 +2884,7 @@ bool Manipulation::getPose(Eigen::Affine3d &pose, const std::string& frame_name)
   return true;
 }
 
-bool Manipulation::showJointLimits(const robot_model::JointModelGroup* jmg)
+bool Manipulation::showJointLimits(JointModelGroup* jmg)
 {
   const std::vector<const moveit::core::JointModel*> &joints = jmg->getActiveJointModels();
 

@@ -76,7 +76,7 @@ ExecutionInterface::ExecutionInterface(bool verbose, RemoteControlPtr remote_con
 }
 
 bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg,
-                                           const robot_model::JointModelGroup* jmg, bool wait_for_execution)
+                                           JointModelGroup* jmg, bool wait_for_execution)
 {
   trajectory_msgs::JointTrajectory& trajectory = trajectory_msg.joint_trajectory;
 
@@ -240,11 +240,12 @@ bool ExecutionInterface::checkExecutionManager()
   // Load MoveIt! managers
   if (!trajectory_execution_manager_)
   {
+    ROS_DEBUG_STREAM_NAMED("execution_interface","Loading trajectory execution manager");
     trajectory_execution_manager_.reset(new trajectory_execution_manager::
                                         TrajectoryExecutionManager(planning_scene_monitor_->getRobotModel()));
   }
 
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Check active controllers are running
   if (!trajectory_execution_manager_->ensureActiveControllersForGroup(arm_jmg->getName()))

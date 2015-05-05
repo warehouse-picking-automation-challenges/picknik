@@ -82,7 +82,7 @@ public:
    * \brief Do a bunch of checks and send to low level controllers
    * \return true on success
    */
-  bool executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg, const robot_model::JointModelGroup* jmg, 
+  bool executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg, JointModelGroup* jmg, 
                          bool wait_for_execution = true);
 
   /**

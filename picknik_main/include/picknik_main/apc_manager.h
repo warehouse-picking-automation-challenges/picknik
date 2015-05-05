@@ -257,27 +257,27 @@ public:
    * \brief Move object into the goal bin
    * \return true on success
    */
-  bool placeObjectInGoalBin(const robot_model::JointModelGroup* arm_jmg);
+  bool placeObjectInGoalBin(JointModelGroup* arm_jmg);
 
   /**
    * \brief Lift from goal bin
    * \return true on success
    */
-  bool liftFromGoalBin(const robot_model::JointModelGroup* arm_jmg);
+  bool liftFromGoalBin(JointModelGroup* arm_jmg);
 
   /**
    * \brief Move both arms to their start location
    * \param optionally specify which arm to use
    * \return true on success
    */
-  bool moveToStartPosition(const robot_model::JointModelGroup* arm_jmg = NULL, bool check_validity = true);
+  bool moveToStartPosition(JointModelGroup* arm_jmg = NULL, bool check_validity = true);
 
   /**
    * \brief Move to location to get rid of product
    * \param optionally specify which arm to use
    * \return true on success
    */
-  bool moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg);
+  bool moveToDropOffPosition(JointModelGroup* arm_jmg);
 
   /**
    * \brief Load single product, one per shelf, for testing
@@ -321,7 +321,7 @@ public:
    * \brief Attach a product to an arm for planning
    * \return true on success
    */
-  bool attachProduct(ProductObjectPtr product, const robot_model::JointModelGroup* arm_jmg);
+  bool attachProduct(ProductObjectPtr product, JointModelGroup* arm_jmg);
 
   /**
    * \brief Show experience database
