@@ -244,7 +244,6 @@ bool ExecutionInterface::checkExecutionManager()
     trajectory_execution_manager_.reset(new trajectory_execution_manager::
                                         TrajectoryExecutionManager(planning_scene_monitor_->getRobotModel()));
   }
-
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Check active controllers are running
@@ -253,7 +252,6 @@ bool ExecutionInterface::checkExecutionManager()
     ROS_ERROR_STREAM_NAMED("execution_interface","Group " << arm_jmg->getName() << " does not have controllers loaded");
     return false;
   }
-
   // Get the controllers List
   std::vector<std::string> controller_list;
   trajectory_execution_manager_->getControllerManager()->getControllersList(controller_list);
@@ -282,17 +280,18 @@ bool ExecutionInterface::checkExecutionManager()
     {
       has_error = true;
     }
+
     ros::Duration(0.5).sleep();
   }
 
   return true;
 }
 
-// DEPRECATED IN FAVOR OF MOVEIT CONTROLLER MANAGER VERSION
 bool ExecutionInterface::checkTrajectoryController(ros::ServiceClient& service_client, const std::string& hardware_name, bool has_ee)
 {
   // Try to communicate with controller manager
   controller_manager_msgs::ListControllers service;
+  ROS_DEBUG_STREAM_NAMED("execution_interface","Calling list controllers service client");
   if (!service_client.call(service))
   {
     ROS_ERROR_STREAM_THROTTLE_NAMED(2, "execution_interface","Unable to check if controllers for " << hardware_name
@@ -306,6 +305,7 @@ bool ExecutionInterface::checkTrajectoryController(ros::ServiceClient& service_c
   // Check if proper controller is running
   bool found_main_controller = false;
   bool found_ee_controller = false;
+
   for (std::size_t i = 0; i < service.response.controller.size(); ++i)
   {
     if (service.response.controller[i].name == control_type + "_trajectory_controller")

@@ -148,7 +148,6 @@ bool APCManager::checkSystemReady(bool remove_from_shelf)
                            << ee_jmg->getVariableCount());
     return false;
   }
-  std::cout << "here " << std::endl;
 
   // Check trajectory execution manager
   if( !manipulation_->getExecutionInterface()->checkExecutionManager() )
@@ -156,7 +155,7 @@ bool APCManager::checkSystemReady(bool remove_from_shelf)
     ROS_FATAL_STREAM_NAMED("apc_manager","Trajectory controllers unable to connect");
     return false;
   }
-  std::cout << "here " << std::endl;
+
   // Check Perception
   if (!fake_perception_)
   {
@@ -167,7 +166,6 @@ bool APCManager::checkSystemReady(bool remove_from_shelf)
   // Choose which planning group to use
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
-  std::cout << "here " << std::endl;
   // Check robot state valid
   if (remove_from_shelf)
   {
