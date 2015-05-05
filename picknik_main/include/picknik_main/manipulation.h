@@ -84,7 +84,8 @@ public:
    * \param input - description
    * \return true on success
    */
-  bool planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr grasp_candidate, bool verbose_cartesian_paths);
+  bool planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr grasp_candidate, bool verbose_cartesian_paths,
+                               WorkOrder& work_order);
 
   /**
    * \brief Compute a cartesian path along waypoints

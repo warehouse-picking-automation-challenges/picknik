@@ -1851,21 +1851,25 @@ bool APCManager::generateGoalBinLocations()
 
   static std::size_t NUM_DROPOFF_LOCATIONS = 8;
 
+  bool visualize_dropoff_locations = visuals_->isEnabled("show_goal_bin_markers");
+
   // Calculate dimensions of goal bin
   shelf_->getGoalBin()->calculateBoundingBox();
 
   // Visualize
-  shelf_->getGoalBin()->visualizeWireframe(shelf_->getBottomRight());
+  if (visualize_dropoff_locations)
+    shelf_->getGoalBin()->visualizeWireframe(shelf_->getBottomRight());
 
   // Find starting location of dropoff
-  Eigen::Affine3d overhead_goal_bin = shelf_->getBottomRight() * shelf_->getGoalBin()->getCentroid();
-  overhead_goal_bin.translation().z() += shelf_->getGoalBin()->getHeight() + config_->goal_bin_clearance_;
+  Eigen::Affine3d goal_bin_pose = shelf_->getBottomRight() * shelf_->getGoalBin()->getCentroid();
+  Eigen::Affine3d overhead_goal_bin = Eigen::Affine3d::Identity();
+  overhead_goal_bin.translation() = goal_bin_pose.translation();
+  overhead_goal_bin.translation().z() += shelf_->getGoalBin()->getHeight() / 2.0 + config_->goal_bin_clearance_;
 
-  // Convert pose that has z arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
-  overhead_goal_bin = overhead_goal_bin * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitX());
-  visuals_->visual_tools_->publishAxis(overhead_goal_bin);
-
-  bool visualize_dropoff_locations = visuals_->isEnabled("show_goal_bin_markers");
+  // Convert to pose that has z arrow pointing towards object and x out in the grasp dir
+  overhead_goal_bin = overhead_goal_bin * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX());
+  if (visualize_dropoff_locations)
+    visuals_->visual_tools_->publishAxis(overhead_goal_bin);
 
   // Calculations
   const std::size_t num_cols = 2;
@@ -1917,9 +1921,11 @@ bool APCManager::unitTests()
 {
   std::string test_name;
 
+  bool unit_test_all = visuals_->isEnabled("unit_test/all");
+
   // Test
   test_name = "SuperSimple";
-  if (visuals_->isEnabled("unit_test/" + test_name))
+  if (visuals_->isEnabled("unit_test/" + test_name) || unit_test_all)
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
@@ -1932,7 +1938,7 @@ bool APCManager::unitTests()
 
   // Test
   test_name = "SimpleRotated";
-  if (visuals_->isEnabled("unit_test/" + test_name))
+  if (visuals_->isEnabled("unit_test/" + test_name) || unit_test_all)
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
@@ -1945,7 +1951,7 @@ bool APCManager::unitTests()
 
   // Test
   test_name = "SimpleVeryRotated";
-  if (visuals_->isEnabled("unit_test/" + test_name))
+  if (visuals_->isEnabled("unit_test/" + test_name) || unit_test_all)
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
@@ -1958,20 +1964,20 @@ bool APCManager::unitTests()
 
   // Test
   test_name = "SimpleFarBack";
-  if (visuals_->isEnabled("unit_test/" + test_name))
+  if (visuals_->isEnabled("unit_test/" + test_name) || unit_test_all)
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
-    product_pose.translation() = Eigen::Vector3d(0.12, 0.13, 0.14);
+    product_pose.translation() = Eigen::Vector3d(0.25, 0.13, 0.06);
     product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
-      * Eigen::AngleAxisd(-1.57, Eigen::Vector3d::UnitY());  // rotated sideways
+      * Eigen::AngleAxisd(-1.5, Eigen::Vector3d::UnitY());  // rotated sideways
     if (!startUnitTest(json_file, test_name, product_pose))
       return false;
   }
 
   // Test
   test_name = "RandomSimple";
-  if (visuals_->isEnabled("unit_test/" + test_name))
+  if (visuals_->isEnabled("unit_test/" + test_name) || unit_test_all)
   {
     const std::string json_file = "random.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
@@ -1985,7 +1991,8 @@ bool APCManager::unitTests()
   return true;
 }
 
-bool APCManager::startUnitTest(const std::string &json_file, const std::string &test_name, const Eigen::Affine3d &product_pose)
+bool APCManager::startUnitTest(const std::string &json_file, const std::string &test_name, 
+                               const Eigen::Affine3d &product_pose)
 {
   std::cout << std::endl << MOVEIT_CONSOLE_COLOR_BROWN;
   std::cout << "------------------------------------------------------------------------------" << std::endl;

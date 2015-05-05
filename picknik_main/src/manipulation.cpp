@@ -65,7 +65,6 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   execution_interface_.reset( new ExecutionInterface(verbose_, remote_control_, visuals_, grasp_datas_, planning_scene_monitor_,
                                                      config_, current_state_, fake_execution) );
 
-
   // Load logging capability
   if (use_logging_ && config_->use_experience_setup_)
   {
@@ -172,7 +171,6 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, JointModelGroup* arm_jmg,
   bool grasp_verbose = false;
   if (!grasp_filter_->filterGrasps(grasp_candidates, planning_scene_monitor_, arm_jmg, seed_state,
                                    filter_pregrasps, grasp_verbose, verbose_if_failed))
-
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to filter grasps");
     return false;
@@ -190,7 +188,7 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, JointModelGroup* arm_jmg,
     if (!ros::ok())
       return false;
 
-    if (!planApproachLiftRetreat(*grasp_it, verbose_cartesian_paths))
+    if (!planApproachLiftRetreat(*grasp_it, verbose_cartesian_paths, work_order))
     {
       ROS_INFO_STREAM_NAMED("manipulation","Grasp candidate was unable to find valid cartesian waypoint path");
 
@@ -230,18 +228,49 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, JointModelGroup* arm_jmg,
   return grasp_candidates.size(); // return false if no candidates remaining
 }
 
-bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr grasp_candidate, bool verbose_cartesian_paths)
+bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr grasp_candidate, 
+                                           bool verbose_cartesian_paths, WorkOrder& work_order)
 {
+  BinObjectPtr& bin = work_order.bin_;
+  ProductObjectPtr& product = work_order.product_;
+
   // Get settings from grasp generator
   const geometry_msgs::PoseStamped &grasp_pose_msg = grasp_candidate->grasp_.grasp_pose;
   const geometry_msgs::PoseStamped pregrasp_pose_msg
-    = moveit_grasps::GraspGenerator::getPreGraspPose(grasp_candidate->grasp_, grasp_candidate->grasp_data_->parent_link_->getName());
+    = moveit_grasps::GraspGenerator::getPreGraspPose(grasp_candidate->grasp_, 
+                                                     grasp_candidate->grasp_data_->parent_link_->getName());
+
+  // Calculate the lift distance to center the object's centroid vertically in the bin
+  Eigen::Affine3d bin_to_object = product->getCentroid();
+  double lift_distance = bin->getHeight() / 2.0 - bin_to_object.translation().z();
+  if (lift_distance < grasp_candidate->grasp_data_->lift_distance_desired_)
+  {
+    ROS_WARN_STREAM_NAMED("manipulation","Lift distance " << lift_distance << " less than minimum allowed of " 
+                          << grasp_candidate->grasp_data_->lift_distance_desired_);
+    std::cout << "bin->getHeight() / 2.0 " << bin->getHeight() / 2.0
+              << " bin_to_object.translation().z() " <<  bin_to_object.translation().z() << std::endl;
+
+    visuals_->visual_tools_->publishAxisLabeled(bin->getCentroid(), "bin");
+    visuals_->visual_tools_->publishAxisLabeled(bin_to_object, "object");
+
+    lift_distance = grasp_candidate->grasp_data_->lift_distance_desired_;
+  }
+  ROS_WARN_STREAM_NAMED("manipulation","lift distance calculated to be " << lift_distance);
 
   // Create waypoints
   Eigen::Affine3d pregrasp_pose = visuals_->trajectory_lines_->convertPose(pregrasp_pose_msg.pose);
   Eigen::Affine3d grasp_pose = visuals_->trajectory_lines_->convertPose(grasp_pose_msg.pose);
   Eigen::Affine3d lifted_grasp_pose = grasp_pose;
-  lifted_grasp_pose.translation().z() += grasp_candidate->grasp_data_->lift_distance_desired_;
+  lifted_grasp_pose.translation().z() += lift_distance;
+
+  // Error checking for lift distance
+  if ( lifted_grasp_pose.translation().z() > bin->getTopLeft().translation().z())
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Max lift distance reached, requested " << lift_distance << 
+                           " which has a z height of " << lifted_grasp_pose.translation().z() 
+                           << " of " << bin->getTopLeft().translation().z());
+    return false;
+  }
 
   // METHOD 1 - retreat in same direction as approach
   // Eigen::Affine3d lifted_pregrasp_pose = pregrasp_pose;
