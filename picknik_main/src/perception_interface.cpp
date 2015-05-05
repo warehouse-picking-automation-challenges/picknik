@@ -178,7 +178,7 @@ bool PerceptionInterface::endPerception(ProductObjectPtr& product, BinObjectPtr&
 
   if (!perception_result->succeeded)
   {
-    ROS_ERROR_STREAM_NAMED("perception_interface","Perception action server reported failure");
+    ROS_ERROR_STREAM_NAMED("perception_interface","Perception action server result messages says succeeded = false, aka it found no products");
     is_processing_perception_ = false;
     return false;
   }
@@ -224,6 +224,7 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   {
     ROS_INFO_STREAM_NAMED("perception_interface","Perception found " << result->found_objects[i].object_name);
     bool was_requested = false;
+
     // Remove this product from the missing products vector
     for (std::vector<std::string>::iterator product_it = missing_products.begin(); product_it != missing_products.end(); )
     {
@@ -302,6 +303,12 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
 
     // Get object's transform
     Eigen::Affine3d camera_to_object = visuals_->visual_tools_->convertPose(found_object.object_pose.pose);
+
+    // Testing - publish axis in frame of camera
+    if (true)
+    {
+      visuals_->visual_tools_->publishArrow(found_object.object_pose);
+    }
 
     // // Convert to ROS frame
     // convertFrameCVToROS(visuals_->visual_tools_->convertPose(found_object.object_pose), camera_to_object);
@@ -385,7 +392,7 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
 
   // Allow mesh to display
   ros::spinOnce();
-  ros::Duration(1.0).sleep();
+  ros::Duration(0.1).sleep();
 
   return true;
 }

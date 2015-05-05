@@ -61,7 +61,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
   tf_.reset(new tf::TransformListener(nh_private_));
   // TODO: remove these lines, only an attempt to fix loadPlanningSceneMonitor bug
   ros::spinOnce();
-  ros::Duration(0.1).sleep();
+  //ros::Duration(0.1).sleep();
 
   // Load planning scene monitor
   if (!loadPlanningSceneMonitor())
@@ -106,7 +106,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
 
   if (config_->dual_arm_)
     grasp_datas_[config_->left_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_->left_hand_name_, robot_model_));
-  
+
   // Create manipulation manager
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
                                        remote_control_, shelf_, fake_execution));
@@ -1109,7 +1109,7 @@ bool APCManager::testCameraPositions()
 
     // Wait before going to next bin
     ros::Duration(1.0).sleep();
-    remote_control_->waitForNextStep("percieve next bin");    
+    remote_control_->waitForNextStep("percieve next bin");
   }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done moving to each bin");
@@ -1430,27 +1430,33 @@ bool APCManager::testPerceptionComm(std::size_t bin_id)
 
   while (ros::ok())
   {
-    // // Communicate with perception pipeline
-    // perception_interface_->startPerception(product, bin);
-
-    // ROS_INFO_STREAM_NAMED("apc_manager","Waiting 1 second");
-    // ros::Duration(1).sleep();
-
-    // // Get result from perception pipeline
-    // if (!perception_interface_->endPerception(product, bin))
-    // {
-    //   ROS_ERROR_STREAM_NAMED("apc_manager","End perception failed");
-    //   return false;
-    // }
-
-    // Move camera to desired bin to get pose of product
-    if (!perceiveObject(work_order, verbose))
+    bool no_movement = false;
+    if (no_movement)
     {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
-      return false;
+      // Communicate with perception pipeline
+      perception_interface_->startPerception(product, bin);
+
+      ROS_INFO_STREAM_NAMED("apc_manager","Waiting 1 second");
+      ros::Duration(1).sleep();
+
+      // Get result from perception pipeline
+      if (!perception_interface_->endPerception(product, bin))
+      {
+        ROS_ERROR_STREAM_NAMED("apc_manager","End perception failed");
+        return false;
+      }
+    }
+    else
+    {
+      // Move camera to desired bin to get pose of product
+      if (!perceiveObject(work_order, verbose))
+      {
+        ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
+        ROS_INFO_STREAM_NAMED("apc_manager","Sleeping before retrying...");
+        ros::Duration(10).sleep();
+      }
     }
 
-    ros::Duration(2.0).sleep();
     remote_control_->waitForNextStep("request perception again");
   }
 
@@ -1991,7 +1997,7 @@ bool APCManager::unitTests()
   return true;
 }
 
-bool APCManager::startUnitTest(const std::string &json_file, const std::string &test_name, 
+bool APCManager::startUnitTest(const std::string &json_file, const std::string &test_name,
                                const Eigen::Affine3d &product_pose)
 {
   std::cout << std::endl << MOVEIT_CONSOLE_COLOR_BROWN;
@@ -2219,7 +2225,7 @@ bool APCManager::testPlanningSimple()
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get shelf bin seed state");
     return false;
   }
-  
+
   // Create goal state at goal bin
   // Create locations if necessary
   generateGoalBinLocations();
@@ -2252,14 +2258,14 @@ bool APCManager::testPlanningSimple()
   {
     std::cout << std::endl;
     std::cout << std::endl;
-    std::cout << "-------------------------------------------------------" << std::endl;    
+    std::cout << "-------------------------------------------------------" << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
     std::cout << "Planning run " << i << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
     std::cout << std::endl;
 
-    if (!manipulation_->move(start, goal, arm_jmg, config_->main_velocity_scaling_factor_, verbose, execute_trajectory))                        
+    if (!manipulation_->move(start, goal, arm_jmg, config_->main_velocity_scaling_factor_, verbose, execute_trajectory))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to plan from start to goal");
       return false;
