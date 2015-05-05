@@ -54,7 +54,7 @@ namespace picknik_main
 ExecutionInterface::ExecutionInterface(bool verbose, RemoteControlPtr remote_control, VisualsPtr visuals,
                                        moveit_grasps::GraspDatas grasp_datas,
                                        planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                                       ManipulationDataPtr config, const std::string& package_path,
+                                       ManipulationDataPtr config, 
                                        moveit::core::RobotStatePtr current_state, bool fake_execution)
   : verbose_(verbose)
   , remote_control_(remote_control)
@@ -62,7 +62,6 @@ ExecutionInterface::ExecutionInterface(bool verbose, RemoteControlPtr remote_con
   , grasp_datas_(grasp_datas)
   , planning_scene_monitor_(planning_scene_monitor)
   , config_(config)
-  , package_path_(package_path)
   , current_state_(current_state)
   , nh_("~")
   , unit_testing_enabled_(false)
@@ -408,7 +407,7 @@ bool ExecutionInterface::getFilePath(std::string &file_path, const std::string &
 
   // Check that the directory exists, if not, create it
   fs::path path;
-  path = fs::path(package_path_ + "/trajectories/analysis/");
+  path = fs::path(config_->package_path_ + "/trajectories/analysis/");
 
   boost::system::error_code returnedError;
   fs::create_directories( path, returnedError );

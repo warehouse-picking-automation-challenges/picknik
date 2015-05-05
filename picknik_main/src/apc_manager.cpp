@@ -97,7 +97,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
 
   // Load manipulation data for our robot
   config_.reset(new ManipulationData());
-  config_->load(robot_model_, fake_execution);
+  config_->load(robot_model_, fake_execution, package_path_);
 
   // Load grasp data specific to our robot
   grasp_datas_[config_->right_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_->right_hand_name_, robot_model_));
@@ -109,7 +109,10 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
   
   // Create manipulation manager
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
-                                       remote_control_, package_path_, shelf_, fake_execution));
+                                       remote_control_, shelf_, fake_execution));
+
+  // Load trajectory IO class
+  trajectory_io_.reset(new TrajectoryIO(remote_control_, visuals_, config_, manipulation_));
 
   // Load perception layer
   perception_interface_.reset(new PerceptionInterface(verbose_, visuals_, shelf_, config_, tf_, nh_private_));
@@ -1135,10 +1138,9 @@ bool APCManager::calibrateCamera(std::size_t id)
   std::string file_path;
   const std::string camera = id ? "right" : "left";
   const std::string file_name = "calibration_trajectory_" + camera;
-  manipulation_->getFilePath(file_path, file_name);
+  trajectory_io_->getFilePath(file_path, file_name);
 
-  //  if (!manipulation_->playbackTrajectoryFromFileInteractive(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
-  if (!manipulation_->playbackTrajectoryFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
+  if (!trajectory_io_->playbackTrajectoryFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to playback " << file_name);
     return false;
@@ -1156,10 +1158,10 @@ bool APCManager::recordCalibrationTrajectory(std::size_t id)
   std::string file_path;
   const std::string camera = id ? "right" : "left";
   const std::string file_name = "calibration_trajectory_" + camera;
-  manipulation_->getFilePath(file_path, file_name);
+  trajectory_io_->getFilePath(file_path, file_name);
 
   // Start recording
-  manipulation_->recordTrajectoryToFile(file_path);
+  trajectory_io_->recordTrajectoryToFile(file_path);
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done recording calibration trajectory");
 
@@ -1316,7 +1318,7 @@ bool APCManager::testGraspGenerator()
 
   // Save the logging file
   std::string file_path;
-  manipulation_->getFilePath(file_path, "grasping_test");
+  trajectory_io_->getFilePath(file_path, "grasping_test");
   ROS_INFO_STREAM_NAMED("apc_manager","Saving grasping data to " << file_path);
 
   std::ofstream logging_file; // open to append
@@ -1479,10 +1481,10 @@ bool APCManager::recordBinWithCamera(BinObjectPtr bin)
 
   std::string file_path;
   const std::string file_name = "observe_bin_" + bin->getName() + "_trajectory";
-  manipulation_->getFilePath(file_path, file_name);
+  trajectory_io_->getFilePath(file_path, file_name);
 
   // Start recording
-  manipulation_->recordTrajectoryToFile(file_path);
+  trajectory_io_->recordTrajectoryToFile(file_path);
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done recording bin with camera");
 
@@ -1499,7 +1501,7 @@ bool APCManager::perceiveBinWithCamera(BinObjectPtr bin)
   // Start playing back file
   const std::string file_name = "observe_bin_" + bin->getName() + "_trajectory";
   std::string file_path;
-  manipulation_->getFilePath(file_path, file_name);
+  trajectory_io_->getFilePath(file_path, file_name);
 
   if (bin->getProducts().empty())
   {
@@ -1511,7 +1513,7 @@ bool APCManager::perceiveBinWithCamera(BinObjectPtr bin)
   // Communicate with perception pipeline
   perception_interface_->startPerception(product, bin);
 
-  if (!manipulation_->playbackTrajectoryFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
+  if (!trajectory_io_->playbackTrajectoryFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to playback " << file_name);
     return false;
@@ -2277,9 +2279,9 @@ bool APCManager::playbackWaypointsFromFile()
   // Start playing back file
   std::string file_path;
   const std::string file_name = "calibration_waypoints";
-  manipulation_->getFilePath(file_path, file_name);
+  trajectory_io_->getFilePath(file_path, file_name);
 
-  if (!manipulation_->playbackWaypointsFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
+  if (!trajectory_io_->playbackWaypointsFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to playback CSV from file for pose waypoints");
     return false;

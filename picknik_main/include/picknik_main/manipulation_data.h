@@ -66,7 +66,7 @@ public:
    * \param fake_execution - whether to load full speed velocity constraints (simulation goes faster)
    * \return true on success
    */
-  bool load(robot_model::RobotModelPtr robot_model, bool fake_execution);
+  bool load(robot_model::RobotModelPtr robot_model, bool fake_execution, const std::string& package_path);
 
 private:
 
@@ -145,6 +145,8 @@ public:
   double test_double_;
   Eigen::Affine3d test_pose_;
 
+  // File path to ROS package on drive
+  std::string package_path_;
 }; // end class
 
 // Create boost pointers for this class

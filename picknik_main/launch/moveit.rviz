@@ -494,13 +494,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Markers
       Namespaces:
-        Axis: true
-        Line: true
-        Text: true
-        bin: true
-        crayola_64_ct: true
-        world_to_bin: true
-        world_to_camera: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -524,11 +518,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
-        Arrow: true
-        Axis: true
-        Path: true
-        Sphere: true
-        Text: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -668,7 +658,7 @@ Visualization Manager:
         Scene Alpha: 1
         Scene Color: 255; 170; 0
         Scene Display Time: 0.2
-        Show Scene Geometry: false
+        Show Scene Geometry: true
         Voxel Coloring: Z-Axis
         Voxel Rendering: Occupied Voxels
       Scene Robot:
@@ -953,16 +943,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.1305
+      Distance: 9.72286
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.34527
-        Y: -0.963373
-        Z: 9.53674e-06
+        X: -1.2772
+        Y: 0.407995
+        Z: 9.0599e-06
       Name: Current View
       Near Clip Distance: 0.01
       Pitch: 0.429798
@@ -984,5 +974,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1190
-  X: 1854
-  Y: 14
+  X: 1913
+  Y: 17

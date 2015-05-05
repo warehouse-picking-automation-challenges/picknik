@@ -51,9 +51,10 @@ ManipulationData::ManipulationData()
 {
 }
 
-bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_execution)
+bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_execution, const std::string& package_path)
 {
   fake_execution_ = fake_execution;
+  package_path_ = package_path;
   const std::string parent_name = "manipulation_data"; // for namespacing logging messages
 
   // Load performance variables

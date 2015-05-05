@@ -192,6 +192,16 @@ target_link_libraries(manipulation
   ${Boost_LIBRARIES}
 )
 
+# library
+add_library(trajectory_io
+  src/trajectory_io.cpp
+)
+target_link_libraries(trajectory_io
+  manipulation
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
 # Experience trainer library
 # add_library(learning_pipeline
 #   src/learning_pipeline.cpp
@@ -207,10 +217,10 @@ add_library(apc_manager
   src/apc_manager.cpp
 )
 target_link_libraries(apc_manager
+  trajectory_io
   amazon_json_parser
   manipulation
   perception_interface
-  execution_interface
   planning_scene_manager
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}

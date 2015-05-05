@@ -73,20 +73,6 @@ Its help documentation:
     optional arguments:
       -h, --help       show this help message and exit
 
-## Start Primesense Cameras
-
-Start cameras (on correct computer):
-
-    roslaunch picknik_perception multi_xtion.launch
-
-Start their calibration
-
-    roslaunch picknik_perception multi_xtion_calibrate.launch
-	
-Test camera view
-
-    rosrun image_view image_view image:=/xtion_right/image_raw
-
 ## Run DDTR Perception Pipeline
 
 ### Run Shelf Calibration
@@ -137,12 +123,11 @@ Rviz Visualizers of robot states and debug markers
 
     roslaunch picknik_main rviz.launch
 
-Camera calibration: IN DEVELOPMENT
+Camera calibration:
 
-	#OLD roslaunch picknik_main camera_calibration.launch
-    roslaunch picknik_perception tf_keyboard.launch
+    roslaunch picknik_perception multi_xtion_calibrate.launch
 
-Run real or fake object recognition server:
+Run fake object recognition server:
 
 	roslaunch picknik_perception perception_server_fake.launch
 
@@ -166,13 +151,15 @@ Rviz Visualizers of robot states and debug markers
 
     roslaunch picknik_main rviz.launch
 
-Camera calibration: IN DEVELOPMENT
+Start cameras (on correct computer):
 
-    roslaunch picknik_perception tf_keyboard.launch
+    roslaunch picknik_perception multi_xtion.launch
+
+Camera calibration:
+
+    roslaunch picknik_perception multi_xtion_calibrate.launch
  
-Run real or fake object recognition server:
-
-	roslaunch picknik_perception perception_server_fake.launch
+Run real perception server - see section above.
 
 Run APC Manager (main program) for JACOB on hardware
 
@@ -208,13 +195,7 @@ Calibrate x axis
 
 Run the pre-recorded trajectory so that perception can build shelf model:
 
-    roslaunch picknik_main jacob_apc.launch mode:=10 fake_perception:=1
-
-### ROS Video Integration
-
-Not in use at the moment...
-
-    rosrun image_view image_view image:=/camera/image/rgb_raw
+    OLD roslaunch picknik_main jacob_apc.launch mode:=10 fake_perception:=1
 
 ### Jaco Joystick Control
 
@@ -397,3 +378,8 @@ And you should see something like:
     OpenGL version string: 4.5.0 NVIDIA 346.46
 
 If you see something like "mesa", please install Nvidia Video Card Driver Again.
+
+Test camera view
+
+    rosrun image_view image_view image:=/xtion_right/image_raw
+

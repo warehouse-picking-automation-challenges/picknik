@@ -73,10 +73,11 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  ExecutionInterface(bool verbose, RemoteControlPtr remote_control, VisualsPtr visuals, moveit_grasps::GraspDatas grasp_datas,
+  ExecutionInterface(bool verbose, RemoteControlPtr remote_control, VisualsPtr visuals, 
+                     moveit_grasps::GraspDatas grasp_datas,
                      planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor, 
-                     ManipulationDataPtr config, const std::string& package_path, moveit::core::RobotStatePtr current_state,
-                     bool fake_execution);
+                     ManipulationDataPtr config,
+                     moveit::core::RobotStatePtr current_state, bool fake_execution);                     
 
   /**
    * \brief Do a bunch of checks and send to low level controllers
@@ -131,9 +132,6 @@ private:
 
   // Robot-sepcific data for the APC
   ManipulationDataPtr config_;
-
-  // File path to ROS package on drive
-  std::string package_path_;
 
   // Allocated memory for robot state
   moveit::core::RobotStatePtr current_state_;

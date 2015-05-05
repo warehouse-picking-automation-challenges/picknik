@@ -20,7 +20,7 @@
 #include <picknik_main/amazon_json_parser.h>
 #include <picknik_main/shelf.h>
 #include <picknik_main/manipulation.h>
-//#include <picknik_main/learning_pipeline.h>
+#include <picknik_main/trajectory_io.h>
 #include <picknik_main/visuals.h>
 #include <picknik_main/planning_scene_manager.h>
 #include <picknik_main/manipulation_data.h>
@@ -45,7 +45,6 @@ static const std::string JOINT_STATE_TOPIC = "/robot/joint_states";
 static const std::string PACKAGE_NAME = "picknik_main";
 static const std::string GET_PLANNING_SCENE_SERVICE_NAME = "get_planning_scene"; // name of the service that can be used to query the planning scene
 
-//MOVEIT_CLASS_FORWARD(APCManager);
 
 class APCManager
 {
@@ -450,6 +449,9 @@ private:
   // Locations to dropoff products
   EigenSTL::vector_Affine3d dropoff_locations_;
   std::size_t next_dropoff_location_;
+
+  // Allow loading and saving trajectories to file
+  TrajectoryIOPtr trajectory_io_;
 
 }; // end class
 

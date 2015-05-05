@@ -41,17 +41,6 @@
 #include <moveit_grasps/grasp_data.h>
 #include <moveit_grasps/grasp_filter.h>
 
-// TODO hide this dep
-// namespace trajectory_processing
-// {
-// MOVEIT_CLASS_FORWARD(IterativeParabolicTimeParameterization);
-// }
-
-// namespace planning_interface:
-// {
-// MOVEIT_CLASS_FORWARD(PlanningContext);
-// }
-
 namespace planning_pipeline
 {
 MOVEIT_CLASS_FORWARD(PlanningPipeline);
@@ -73,8 +62,7 @@ public:
   Manipulation(bool verbose, VisualsPtr visuals,
                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                ManipulationDataPtr config, moveit_grasps::GraspDatas grasp_datas,
-               RemoteControlPtr remote_control, const std::string& package_path,
-               ShelfObjectPtr shelf, bool fake_execution);
+               RemoteControlPtr remote_control, ShelfObjectPtr shelf, bool fake_execution);               
 
   /**
    * \brief Calculate the bouding mesh for a product
@@ -107,45 +95,11 @@ public:
                                     std::vector<std::vector<moveit::core::RobotStatePtr> > &robot_state_trajectory);
 
   /**
-   * \brief Read a trajectory from CSV and execute on robot
-   * \param file_name - location of file
-   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
-   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
-   * \return true on success
-   */
-  bool playbackTrajectoryFromFile(const std::string &file_name, JointModelGroup* arm_jmg,
-                                  double velocity_scaling_factor);
-  bool playbackWaypointsFromFile(const std::string &file_name, JointModelGroup* arm_jmg,
-                                 double velocity_scaling_factor);
-
-  /**
-   * \brief Convert a 6-vector of x,y,z, roll,pitch,yall to an Affine3d with quaternion, from a line of a file
-   */
-  bool streamToAffine3d(Eigen::Affine3d& pose, const std::string& line, const std::string& separator);
-
-  /**
    * \brief Find a path that accomplishes waypoints and execute all together
    * \return true on success
    */
   bool moveCartesianWaypointPath(JointModelGroup* arm_jmg,
                                  EigenSTL::vector_Affine3d waypoints);
-
-  /**
-   * \brief Read a trajectory from CSV and execute on robot state by state
-   * \param file_name - location of file
-   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
-   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
-   * \return true on success
-   */
-  bool playbackTrajectoryFromFileInteractive(const std::string &file_name, JointModelGroup* arm_jmg,
-                                             double velocity_scaling_factor);
-
-  /**
-   * \brief Record the entire state of a robot to file
-   * \param file_name - location of file
-   * \return true on success
-   */
-  bool recordTrajectoryToFile(const std::string &file_name);
 
   /**
    * \brief Move to any pose as defined in the SRDF
@@ -529,14 +483,6 @@ public:
                                bool verbose = true);
 
   /**
-   * \brief Get location to save a CSV file
-   * \param file_path - the variable to populate with a path
-   * \param file_name - the desired name of the file
-   * \return true on success
-   */
-  bool getFilePath(std::string &file_path, const std::string &file_name = "moveit_export.csv") const;
-
-  /**
    * \brief Setup products randomly
    * \return true on success
    */
@@ -554,6 +500,14 @@ public:
    */
   bool showJointLimits(JointModelGroup* jmg);
 
+  /**
+   * \brief Get the iterative smoother
+   */
+  trajectory_processing::IterativeParabolicTimeParameterization getIterativeSmoother()
+  {
+    return iterative_smoother_;
+  }
+
 protected:
 
   // A shared node handle
@@ -561,9 +515,6 @@ protected:
 
   // Show more visual and console output, with general slower run time.
   bool verbose_;
-
-  // File path to ROS package on drive
-  std::string package_path_;
 
   // For executing trajectories
   ExecutionInterfacePtr execution_interface_;
