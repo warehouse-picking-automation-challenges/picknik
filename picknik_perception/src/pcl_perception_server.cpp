@@ -205,11 +205,6 @@ private:
 
   ros::Subscriber pointcloud_sub_;
   
-  // for merging point clouds of two cameras
-  ros::Subscriber pointcloud_a_sub_;
-  ros::Subscriber pointcloud_b_sub_;
-  ros::Publisher merged_pointcloud_pub_;
-
   picknik_perception::ManipulationInterfacePtr manipulation_interface_;
 
   // Amount to reduce the shelf region of interest by for error compensation
