@@ -68,10 +68,10 @@ public:
    */
   bool load(robot_model::RobotModelPtr robot_model, bool fake_execution, const std::string& package_path);
 
-private:
-
-  // A shared node handle
-  ros::NodeHandle nh_;
+  /**
+   * \brief A tool to quickly tweak location of pose in planning world. Shows warning since this is only for testing
+   */
+  Eigen::Affine3d getTestPose();
 
 public:
 
@@ -143,10 +143,19 @@ public:
 
   // Generic variable adjustment
   double test_double_;
-  Eigen::Affine3d test_pose_;
 
   // File path to ROS package on drive
   std::string package_path_;
+
+private:
+
+  // A shared node handle
+  ros::NodeHandle nh_;
+
+  // For tweaking
+  Eigen::Affine3d test_pose_;
+  std::vector<double> test_pose_doubles_;
+  
 }; // end class
 
 // Create boost pointers for this class

@@ -121,9 +121,8 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   rvt::getDoubleParameter(parent_name, nh_, "test/test_double", test_double_);
   
   // Get test pose
-  std::vector<double> test_pose;
-  rvt::getDoubleParameters(parent_name, nh_, "test/test_pose", test_pose);
-  test_pose_ = rvt::RvizVisualTools::convertXYZRPY(test_pose);
+  rvt::getDoubleParameters(parent_name, nh_, "test/test_pose", test_pose_doubles_);
+  test_pose_ = rvt::RvizVisualTools::convertXYZRPY(test_pose_doubles_);
   
   // Load proper groups
   // TODO - check if joint model group exists
@@ -149,5 +148,18 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   return true;
 }
 
+Eigen::Affine3d ManipulationData::getTestPose()
+{
+  using namespace std;
+  ROS_WARN_STREAM_NAMED("manipulation_data","Using test pose, which should only be used during early development");
+  ROS_WARN_STREAM_NAMED("manipulation_data","Use instead:");
+  
+  std::cout << "  Eigen::Affine3d transform = rvt::RvizVisualTools::convertXYZRPY(" << test_pose_doubles_[0] << "," 
+            << test_pose_doubles_[1] << "," 
+            << test_pose_doubles_[2] << "," << test_pose_doubles_[3] << "," << test_pose_doubles_[4] << ","
+            << test_pose_doubles_[5] << "); // from testPose()" << std::endl;
+
+  return test_pose_;
+}
 
 } // end namespace

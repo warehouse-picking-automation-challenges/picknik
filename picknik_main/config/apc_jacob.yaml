@@ -81,7 +81,7 @@ test:
   test_joint_limit_joint: 1  # starts at 0, negative number means test all
   test_double: 0.1 # for anything
   # During development it is nice to have ability to tweak a value
-  test_pose: [0.15, -0.01, 0, 0, 0, 0] # x,y,z,r,p,y
+  test_pose: [0.12, 0.05, 0.03, 1.57, 0, 0] # x,y,z,r,p,y
 
 behavior:
   end_effector_enabled: true

@@ -1921,11 +1921,11 @@ bool APCManager::unitTests()
 {
   std::string test_name;
 
-  bool unit_test_all = visuals_->isEnabled("unit_test/all");
+  bool unit_test_all = visuals_->isEnabled("unit_test_all");
 
   // Test
   test_name = "SuperSimple";
-  if (visuals_->isEnabled("unit_test/" + test_name) || unit_test_all)
+  if (visuals_->isEnabled("unit_test_" + test_name) || unit_test_all)
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
@@ -1938,7 +1938,7 @@ bool APCManager::unitTests()
 
   // Test
   test_name = "SimpleRotated";
-  if (visuals_->isEnabled("unit_test/" + test_name) || unit_test_all)
+  if (visuals_->isEnabled("unit_test_" + test_name) || unit_test_all)
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
@@ -1951,7 +1951,7 @@ bool APCManager::unitTests()
 
   // Test
   test_name = "SimpleVeryRotated";
-  if (visuals_->isEnabled("unit_test/" + test_name) || unit_test_all)
+  if (visuals_->isEnabled("unit_test_" + test_name) || unit_test_all)
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
@@ -1964,7 +1964,7 @@ bool APCManager::unitTests()
 
   // Test
   test_name = "SimpleFarBack";
-  if (visuals_->isEnabled("unit_test/" + test_name) || unit_test_all)
+  if (visuals_->isEnabled("unit_test_" + test_name) || unit_test_all)
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
@@ -1976,14 +1976,14 @@ bool APCManager::unitTests()
   }
 
   // Test
-  test_name = "RandomSimple";
-  if (visuals_->isEnabled("unit_test/" + test_name) || unit_test_all)
+  test_name = "ExpoLow";
+  if (visuals_->isEnabled("unit_test_" + test_name) || unit_test_all)
   {
-    const std::string json_file = "random.json";
-    Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
-    product_pose.translation() = Eigen::Vector3d(0.12, 0.13, 0.08);
-    product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
-      * Eigen::AngleAxisd(-1.57, Eigen::Vector3d::UnitY());  // rotated sideways
+    const std::string json_file = "expo.json";
+    Eigen::Affine3d product_pose = config_->getTestPose(); //Eigen::Affine3d::Identity();
+    //product_pose.translation() = Eigen::Vector3d(0.12, 0.13, 0.04);
+    //product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
+    //  * Eigen::AngleAxisd(-1.57, Eigen::Vector3d::UnitY());  // rotated sideways
     if (!startUnitTest(json_file, test_name, product_pose))
       return false;
   }

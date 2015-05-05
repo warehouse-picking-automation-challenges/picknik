@@ -1,14 +1,16 @@
 <launch>
 
-  <!-- NOTE: will open two tiny windows... keyboard presses register when this is in focus -->
-  <node pkg="keyboard" type="keyboard" name="keyboard_right" />
-  <node pkg="picknik_perception" type="tf_keyboard" name="tf_keyboard_right" output="screen">
-    <rosparam command="load" file="$(find picknik_perception)/config/tf_xtion_right.yaml"/>
-  </node>
+  <!-- NOTE: will open tiny window, keyboard presses register when this is in focus -->
 
-  <node pkg="keyboard" type="keyboard" name="keyboard_left" />
-  <node pkg="picknik_perception" type="tf_keyboard" name="tf_keyboard_left" output="screen">
-    <rosparam command="load" file="$(find picknik_perception)/config/tf_xtion_left.yaml"/>
-  </node>
+  <!-- RIGHT -->
+  <include file="$(find picknik_perception)/launch/multi_xtion_calibrate_each.launch">
+    <arg name="camera" default="xtion_right" />
+  </include>
+
+  <!-- LEFT -->
+  <include file="$(find picknik_perception)/launch/multi_xtion_calibrate_each.launch">
+    <arg name="camera" default="xtion_left" />
+  </include>
+
 
 </launch>

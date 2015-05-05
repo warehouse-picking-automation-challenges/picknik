@@ -165,10 +165,8 @@ bool TrajectoryIO::playbackWaypointsFromFile(const std::string &file_name, Joint
     // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
     pose = pose * Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitZ());
 
-    // Temp tweaking
-    pose = config_->test_pose_ * pose;
-
-    //new_point = new_point * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ());
+    Eigen::Affine3d transform = rvt::RvizVisualTools::convertXYZRPY(0.15,-0.01,0,0,0,0); // from testPose()
+    pose = transform * pose;
 
     // Debug
     //visuals_->visual_tools_->publishZArrow(new_point, rvt::RED);

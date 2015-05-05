@@ -27,5 +27,6 @@
   <run_depend>cmake_modules</run_depend>
   <run_depend>picknik_msgs</run_depend>
   <run_depend>bounding_box</run_depend>
+  <run_depend>openni_launch</run_depend>
 
 </package>

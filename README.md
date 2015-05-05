@@ -93,18 +93,6 @@ Press the button 'Clean Host (Del SDFs/Poses files)' on the control panel (left 
 Press button 'Save Pose' and 'Save SDF' to save the latest 3D model of the shelf.
 Now you are safe the leave the application and run the Amazon app .
 
-### Run Perception
-   
-Go to the dir of Amazon app:
-
-    cd ~/ros/perception/DDTR/build/Application/Amazon
-    
-Now, run Amazon app:
-
-    ./Amazon -wsp ~/ros/perception/DDTR/ -mode 3
-    
-Here, -wsp gives the dir of the source code of DDTR, -mode select the running mode of the application.   
-
 ## Start Robots
 
 Baxter documentation has been moved ot BAXTER.md
@@ -159,11 +147,18 @@ Camera calibration:
 
     roslaunch picknik_perception multi_xtion_calibrate.launch
  
-Run real perception server - see section above.
-
-Run APC Manager (main program) for JACOB on hardware
+Run APC Manager (main program) for JACOB on hardware. It will wait for perception server to start (below)
 
 	roslaunch picknik_main jacob_apc.launch mode:=1
+
+### Run Perception
+   
+    cd ~/ros/perception/DDTR/build/Application/Amazon/ && ./Amazon -wsp ~/ros/perception/DDTR/ -mode 3
+
+Arguments
+
+    -wsp gives the dir of the source code of DDTR
+	-mode select the running mode of the application.
 
 ### Move Robot to Shutdown Mode
 
