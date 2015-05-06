@@ -32,7 +32,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 /**
- * Authors : Andy Mcevoy
+ * Authors : Andy McEvoy
  * Desc    : Merge point clouds from two cameras into a single ros message.
  *           This assumes cameras are calibrated and aligned.
 */
@@ -53,33 +53,12 @@ namespace picknik_perception
 
 class PointCloudMerger
 {
-private:
-  ros::NodeHandle nh_;
-
-  ros::Subscriber left_pc_sub_;
-  ros::Subscriber right_pc_sub_;
-
-  ros::Publisher pc_pub_;
-
-  tf::TransformListener tf_listener_;
-
-  rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
-
-  bool has_left_pc_;
-  bool has_right_pc_;
-  bool processing_;
-
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_left_;
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_right_;
-
-  std::size_t id;
- 
 public:
 
   PointCloudMerger()
     : nh_("~")
   {
-    id = 0;
+    id_ = 0;
 
     has_left_pc_ = false;
     has_right_pc_ = false;
@@ -102,15 +81,6 @@ public:
     // publish aligned point cloud and bin point cloud
     pc_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ> >("points",1);
 
-    ROS_INFO_STREAM_NAMED("point_cloud_merger","starting to merge point clouds...");
-
-    while (ros::ok())
-    {
-
-    }
-
-    ROS_INFO_STREAM_NAMED("point_cloud_merger","stopping merged point cloud publisher...");
-
   }
 
   void leftPointCloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
@@ -121,25 +91,17 @@ public:
     }
     else
     {
-      // ROS_DEBUG_STREAM_NAMED("point_cloud_merger","got left cloud...");
-      const std::string BASE_LINK = "/world";
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-      pcl::fromROSMsg(*msg, *cloud);
+      pcl::fromROSMsg(*msg, *cloud_left_);
 
-      tf_listener_.waitForTransform(BASE_LINK, cloud->header.frame_id, msg->header.stamp, ros::Duration(2.0));
-      
-      if (!pcl_ros::transformPointCloud(BASE_LINK, *cloud, *cloud_left_, tf_listener_))
-      {
-        ROS_ERROR_STREAM_NAMED("point_cloud_merger","Error converting left cloud to desired frame");
-      }
+      // get frame to transfer right point cloud into
+      transform_link_ = cloud_left_->header.frame_id;
 
-      // ROS_DEBUG_STREAM_NAMED("point_cloud_merger","left frame_id = " << cloud_left_->header.frame_id);
       has_left_pc_ = true;
     }
   
     if (has_left_pc_ && has_right_pc_)
     {
-      // ROS_DEBUG_STREAM_NAMED("point_cloud_merger","have both...");
       processing_ = true;
       processPointClouds();
       processing_ = false;
@@ -154,8 +116,7 @@ public:
     }
     else
     {
-      // ROS_DEBUG_STREAM_NAMED("point_cloud_merger","got right cloud...");
-      const std::string BASE_LINK = "/world";
+      const std::string BASE_LINK = transform_link_;;
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
       pcl::fromROSMsg(*msg, *cloud);
 
@@ -166,13 +127,11 @@ public:
         ROS_ERROR_STREAM_NAMED("point_cloud_merger","Error converting left cloud to desired frame");
       }
 
-      // ROS_DEBUG_STREAM_NAMED("point_cloud_merger","right frame_id = " << cloud_right_->header.frame_id);
       has_right_pc_ = true;
     }
    
     if (has_left_pc_ && has_right_pc_)
     {
-      // ROS_DEBUG_STREAM_NAMED("point_cloud_merger","have both...");
       processing_ = true;
       processPointClouds();
       processing_ = false;
@@ -227,10 +186,7 @@ public:
 
       return true;      
     }
-    
-    // mrge point clouds
-    // ROS_DEBUG_STREAM_NAMED("point_cloud_merger","merging point clouds...");
-    
+      
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr merged_cloud(new pcl::PointCloud<pcl::PointXYZRGB>); 
   
     *merged_cloud = *cloud_left_ + *cloud_right_;
@@ -247,11 +203,34 @@ public:
 
   void publishCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud)
   {
-    cloud->header.seq = id++;
-    cloud->header.frame_id = "/world";
+    cloud->header.seq = id_++;
+    cloud->header.frame_id = transform_link_;
     pc_pub_.publish(cloud);
 
   }
+
+private:
+  ros::NodeHandle nh_;
+
+  ros::Subscriber left_pc_sub_;
+  ros::Subscriber right_pc_sub_;
+
+  ros::Publisher pc_pub_;
+
+  tf::TransformListener tf_listener_;
+
+  rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
+
+  bool has_left_pc_;
+  bool has_right_pc_;
+  bool processing_;
+
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_left_;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_right_;
+
+  std::size_t id_;
+
+  std::string transform_link_;
 
 }; // end class PointCloudMerger
 
@@ -265,4 +244,12 @@ int main (int argc, char** argv)
   spinner.start();
 
   picknik_perception::PointCloudMerger aligner;
+
+  ROS_INFO_STREAM_NAMED("point_cloud_merger","starting to merge point clouds...");
+  
+  ros::waitForShutdown();
+  
+  ROS_INFO_STREAM_NAMED("point_cloud_merger","stopping merged point cloud publisher...");
+
+
 }
