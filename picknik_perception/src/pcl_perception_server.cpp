@@ -83,6 +83,15 @@ public:
     loadShelfROI();
   }
 
+  bool changePointCloudTopic(std::string topic)
+  {
+    ROS_INFO_STREAM_NAMED("pcl_perception_server","Changing point cloud topic to: " << topic);
+    pointcloud_sub_.shutdown();
+    pointcloud_sub_ = nh_.subscribe(topic, 1,
+                                    &picknik_perception::SimplePointCloudFilter::pointCloudCallback, 
+                                    pointcloud_filter_);    
+  }
+
   bool mainPipeline()
   {
     ros::Rate rate(40.0);
@@ -195,7 +204,7 @@ private:
   SimplePointCloudFilterPtr pointcloud_filter_;
 
   ros::Subscriber pointcloud_sub_;
-
+  
   picknik_perception::ManipulationInterfacePtr manipulation_interface_;
 
   // Amount to reduce the shelf region of interest by for error compensation

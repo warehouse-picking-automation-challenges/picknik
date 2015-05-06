@@ -102,6 +102,15 @@ target_link_libraries(align_point_clouds
   ${PCL_LIBRARIES}
 )
 
+# Executable
+add_executable(merge_point_clouds
+  src/merge_point_clouds.cpp
+)
+target_link_libraries(merge_point_clouds
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+)
+
 add_executable(fake_perception_server src/fake_perception_server.cpp)
 target_link_libraries(fake_perception_server
   manipulation_interface
