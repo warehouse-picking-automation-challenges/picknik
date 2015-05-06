@@ -38,13 +38,22 @@
 
 #include <picknik_perception/simple_point_cloud_filter.h>
 
+#include <shape_msgs/Mesh.h>
+#include <shape_msgs/MeshTriangle.h>
+#include <geometry_msgs/Point.h>
+
 // PCL
-#include <pcl/filters/passthrough.h>
-#include <pcl/filters/statistical_outlier_removal.h>
-#include <pcl/filters/radius_outlier_removal.h>
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/conversions.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/filters/radius_outlier_removal.h>
+#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/io/pcd_io.h>
 #include <pcl/io/ply_io.h>
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/point_types.h>
+#include <pcl/surface/gp3.h>
 
 namespace picknik_perception
 {
@@ -74,9 +83,83 @@ SimplePointCloudFilter::SimplePointCloudFilter(rviz_visual_tools::RvizVisualTool
   ROS_DEBUG_STREAM_NAMED("point_cloud_filter","Simple point cloud filter ready.");
 }
 
-bool SimplePointCloudFilter::createPlyMsg()
+shape_msgs::Mesh SimplePointCloudFilter::createPlyMsg(pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud)
 {
+  // from pcl docs:
+  // http://pointclouds.org/documentation/tutorials/greedy_projection.php#greedy-triangulation
 
+  // change cloud type
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::copyPointCloud(*point_cloud, *cloud);
+
+  // compute normals estimation
+  pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normal_estimation;
+  pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
+  pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+
+  tree->setInputCloud(cloud);
+  normal_estimation.setInputCloud(cloud);
+  normal_estimation.setSearchMethod(tree);
+  normal_estimation.setKSearch(20); // make smaller to capture more details (see pcl docs on normal estimation)
+  normal_estimation.compute(*normals);
+
+  // concatenate the XYZ and normal fields
+  pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals(new pcl::PointCloud<pcl::PointNormal>);
+  pcl::concatenateFields(*cloud, *normals, *cloud_with_normals);
+  
+  // create search tree
+  pcl::search::KdTree<pcl::PointNormal>::Ptr tree2(new pcl::search::KdTree<pcl::PointNormal>);
+  tree2->setInputCloud(cloud_with_normals);
+
+  // initialize objects
+  pcl::GreedyProjectionTriangulation<pcl::PointNormal> gp3;
+  pcl::PolygonMesh triangles;
+
+  gp3.setSearchRadius(0.025); // maximum distance betweeen connected points (max edge length)
+  gp3.setMu(2.5);
+  gp3.setMaximumNearestNeighbors(100);
+  gp3.setMaximumSurfaceAngle(M_PI / 4.0);
+  gp3.setMinimumAngle(M_PI / 18.0);
+  gp3.setMaximumAngle(2.0 * M_PI / 3.0);
+  gp3.setNormalConsistency(false);
+
+  // get results
+  gp3.setInputCloud(cloud_with_normals);
+  gp3.setSearchMethod(tree2);
+  gp3.reconstruct(triangles);
+
+  // create mesh message
+  std::size_t num_points = cloud_with_normals->size();
+  std::size_t num_triangles = triangles.polygons.size();
+  shape_msgs::Mesh mesh_msg;
+  geometry_msgs::Point vertex;
+  shape_msgs::MeshTriangle triangle;
+
+  ROS_INFO_STREAM_NAMED("point_cloud_filter.plyMsg","created mesh with " << num_triangles << " triangles and " 
+                        << num_points << " vertices");
+
+  for (std::size_t i = 0; i < num_points; i++)
+  {
+    vertex.x = cloud_with_normals->points[i].x;
+    vertex.y = cloud_with_normals->points[i].y;
+    vertex.z = cloud_with_normals->points[i].z;
+    
+    mesh_msg.vertices.push_back(vertex);
+  }
+
+  for (std::size_t i = 0; i < num_triangles; i++)
+  {
+    for (std::size_t j = 0; j < 3; j++)
+    {
+      triangle.vertex_indices[j] = triangles.polygons[i].vertices[j];
+    }
+    mesh_msg.triangles.push_back(triangle);
+  }
+
+  ROS_INFO_STREAM_NAMED("point_cloud_filter.plyMsg","created mesh message  with " << mesh_msg.triangles.size() 
+                        << " triangles and " << mesh_msg.vertices.size() << " vertices");
+
+  return mesh_msg;
 }
 
 void SimplePointCloudFilter::createPlyFile(std::string file_name, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud)
@@ -99,7 +182,7 @@ void SimplePointCloudFilter::createPlyFile(std::string file_name, pcl::PointClou
 
   // write to ply binary file
   writer.write(full_path, cloud2_msg, Eigen::Vector4f::Zero(), Eigen::Quaternionf::Identity(), true, true);
-  ROS_INFO_STREAM_NAMED("point_cloud_filter.savePLY","Saved point cloud with " << cloud->size() << "points");
+  ROS_INFO_STREAM_NAMED("point_cloud_filter.savePLY","Saved point cloud with " << cloud->size() << " points");
 }
 
 

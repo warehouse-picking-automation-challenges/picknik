@@ -36,6 +36,9 @@
  * Desc  : A simple filter for a static depth camera
 */
 
+#ifndef PICKNIK_PERCEPTION_SIMPLE_POINT_CLOUD_FILTER_
+#define PICKNIK_PERCEPTION_SIMPLE_POINT_CLOUD_FILTER_
+
 // ROS
 #include <ros/ros.h>
 #include <ros/package.h>
@@ -65,7 +68,7 @@ public:
    * \brief Create a mesh message from the region of interest point cloud (roi_cloud_)
    * \return true on success
    */
-  bool createPlyMsg();
+  static shape_msgs::Mesh createPlyMsg(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
 
   /**
    * \brief Create a *.ply file from the region of interest point cloud (roi_cloud_)
@@ -155,3 +158,5 @@ typedef boost::shared_ptr<SimplePointCloudFilter> SimplePointCloudFilterPtr;
 typedef boost::shared_ptr<const SimplePointCloudFilter> SimplePointCloudFilterConstPtr;
 
 } // end namespace
+
+#endif

@@ -40,7 +40,7 @@
 
 #include <picknik_perception/simple_point_cloud_filter.h>
 
-#include <rviz_visual_tools/rviz_visual_tools.h>
+#include <moveit_visual_tools/moveit_visual_tools.h>
 #include <sensor_msgs/PointCloud2.h>
 
 #include <pcl/common/common_headers.h>
@@ -61,7 +61,7 @@ private:
 
   sensor_msgs::PointCloud2 pc_msg_;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr point_cloud_;
-  rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
+  moveit_visual_tools::MoveItVisualToolsPtr visual_tools_;
 
 public:
 
@@ -69,7 +69,7 @@ public:
     : nh_("~")
   {
     // Load
-    visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base"));
+    visual_tools_.reset(new moveit_visual_tools::MoveItVisualTools("base", "ply_test"));
     visual_tools_->deleteAllMarkers();
 
     // publish point cloud
@@ -82,7 +82,7 @@ public:
     visual_tools_->publishAxis(Eigen::Affine3d::Identity());
 
     // generate a point cloud for a cube
-    addBoxToPointCloud(1.0, 1.0, 1.0, 10.0);
+    addBoxToPointCloud(1.0, 1.0, 1.0, 100.0);
 
     // publish generated cloud
     std::size_t id = 0;
@@ -91,10 +91,15 @@ public:
 
     // generate ply file
     SimplePointCloudFilter::createPlyFile("test.ply", point_cloud_);
+
+    // generate ply message
+    shape_msgs::Mesh mesh_msg;
+    mesh_msg = SimplePointCloudFilter::createPlyMsg(point_cloud_);
+    ROS_DEBUG_STREAM_NAMED("test","sizes = " << mesh_msg.triangles.size() << ", " << mesh_msg.vertices.size());
+    visual_tools_->publishCollisionMesh(Eigen::Affine3d::Identity(), "object", mesh_msg, rviz_visual_tools::BLUE);
+    
     
     ROS_DEBUG_STREAM_NAMED("ply_generation","starting main loop...");
-
-
     while (ros::ok())
     {
       pc_pub_.publish(point_cloud_);      
