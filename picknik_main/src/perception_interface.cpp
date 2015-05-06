@@ -92,7 +92,7 @@ bool PerceptionInterface::isPerceptionReady()
 }
 
 bool PerceptionInterface::startPerception(ProductObjectPtr& product, BinObjectPtr& bin)
-{
+{  
   // Setup goal
   ROS_INFO_STREAM_NAMED("perception_interface","Communicating with perception pipeline");
   picknik_msgs::FindObjectsGoal find_object_goal;
@@ -103,13 +103,14 @@ bool PerceptionInterface::startPerception(ProductObjectPtr& product, BinObjectPt
   find_object_goal.bin_name = bin->getName();
   find_object_goal.bin_centroid = visuals_->visual_tools_->convertPose(bin_centroid);
   find_object_goal.bin_dimensions.type = shape_msgs::SolidPrimitive::BOX;
+  find_object_goal.bin_dimensions.dimensions.resize(3);
   find_object_goal.bin_dimensions.dimensions[shape_msgs::SolidPrimitive::BOX_X] = bin->getDepth();
   find_object_goal.bin_dimensions.dimensions[shape_msgs::SolidPrimitive::BOX_Y] = bin->getWidth();
   find_object_goal.bin_dimensions.dimensions[shape_msgs::SolidPrimitive::BOX_Z] = bin->getHeight();
 
   // Get all of the products in the bin
   bin->getProducts(find_object_goal.expected_objects_names);
-
+ 
   // Make sure perception is reset
   if (false)
   {
@@ -126,10 +127,10 @@ bool PerceptionInterface::startPerception(ProductObjectPtr& product, BinObjectPt
 
   // Send request
   find_objects_action_.sendGoal(find_object_goal);
-
+ 
   // Change state of interface
   is_processing_perception_ = true;
-
+ 
   return true;
 }
 
@@ -383,13 +384,16 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
       ROS_ERROR_STREAM_NAMED("perception_interface","No mesh provided");
 
     // Show in collision and display Rvizs
-    product->visualizeHighRes(world_to_bin); // TODO change to 
-    product->createCollisionBodies(world_to_bin);
+    //product->visualizeHighRes(world_to_bin); // TODO change to the new mesh
+
+    // So that bounding boxes don't build up
+    visuals_->visual_tools_->deleteAllMarkers();
 
     // Update the bounding box
     updateBoundingMesh(product, bin);
 
-    //visuals_->visual_tools_->deleteAllMarkers();
+    // Show the new mesh
+    product->createCollisionBodies(world_to_bin);
 
     // DEBUG : show camera pose from percepiton system
     visuals_->visual_tools_->publishAxisLabeled(found_object.camera_pose.pose, "perception_camera");    

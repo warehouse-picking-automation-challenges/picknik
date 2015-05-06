@@ -132,8 +132,8 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
               ROS_WARN_STREAM_NAMED("product_simulator","Unable to update bounding mesh");
             }
 
-            if (verbose_)
-              product->visualizeHighRes(world_to_bin_transform);
+            //if (verbose_)
+            //  product->visualizeHighRes(world_to_bin_transform);
             
             if (inCollision(product, world_to_bin_transform))
             {
@@ -145,7 +145,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
           if (change_rviz_displays)
           {
             product->createCollisionBodies(world_to_bin_transform);
-            product->visualizeHighRes(world_to_bin_transform);
+            //product->visualizeHighRes(world_to_bin_transform);
           }
           break;
         }

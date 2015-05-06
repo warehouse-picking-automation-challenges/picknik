@@ -1989,10 +1989,7 @@ bool APCManager::unitTests()
   if (visuals_->isEnabled("unit_test_" + test_name) || unit_test_all)
   {
     const std::string json_file = "expo.json";
-    Eigen::Affine3d product_pose = config_->getTestPose(); //Eigen::Affine3d::Identity();
-    //product_pose.translation() = Eigen::Vector3d(0.12, 0.13, 0.04);
-    //product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
-    //  * Eigen::AngleAxisd(-1.57, Eigen::Vector3d::UnitY());  // rotated sideways
+    Eigen::Affine3d product_pose = rvt::RvizVisualTools::convertXYZRPY(0.12,0.05,0.03,1.57,0,0); // from testPose()
     if (!startUnitTest(json_file, test_name, product_pose))
       return false;
   }

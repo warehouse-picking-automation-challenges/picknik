@@ -251,15 +251,17 @@ bool MeshObject::visualizeHighRes(const Eigen::Affine3d& trans) const
   visuals_->visual_tools_display_->publishAxis(transform(centroid_, trans), 0.1/2, 0.01/2);
 
   // Show full resolution mesh - scale = 1, id = 1, namespace = collision object name
-  return visuals_->visual_tools_display_->publishMesh(transform(mesh_centroid_, trans), high_res_mesh_path_, rvt::CLEAR, 1,
-                                                      collision_object_name_, 1);
+  return visuals_->visual_tools_display_->publishMesh(transform(mesh_centroid_, trans), high_res_mesh_path_,
+                                                      rvt::CLEAR, 1, collision_object_name_, 1);
 }
 
 bool MeshObject::visualizeWireframe(const Eigen::Affine3d& trans) const
 {
   // Show wireframe in both systems
-  visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans), depth_, width_, height_, rvt::LIME_GREEN);
-  visuals_->visual_tools_->publishWireframeCuboid( transform(centroid_, trans), depth_, width_, height_, rvt::LIME_GREEN);
+  visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans), depth_, width_, height_, 
+                                                           rvt::LIME_GREEN);
+  visuals_->visual_tools_->publishWireframeCuboid( transform(centroid_, trans), depth_, width_, height_, 
+                                                   rvt::LIME_GREEN);
   return true;
 }
 
