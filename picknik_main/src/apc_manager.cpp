@@ -1078,7 +1078,7 @@ bool APCManager::createRandomProductPoses()
   // Generate random product poses and visualize the shelf
   bool product_simulator_verbose = false;
   ProductSimulator product_simulator(product_simulator_verbose, visuals_, planning_scene_monitor_);
-  return product_simulator.generateRandomProductPoses(shelf_);
+  return product_simulator.generateRandomProductPoses(shelf_, perception_interface_);
 }
 
 // Mode 4
@@ -1716,7 +1716,7 @@ bool APCManager::loadShelfWithOnlyOneProduct(const std::string& product_name)
   // Randomize product locations
   bool product_simulator_verbose = false;
   ProductSimulator product_simulator(product_simulator_verbose, visuals_, planning_scene_monitor_);
-  product_simulator.generateRandomProductPoses(shelf_);
+  product_simulator.generateRandomProductPoses(shelf_, perception_interface_);
 
   return true;
 }
@@ -1860,17 +1860,18 @@ bool APCManager::generateGoalBinLocations()
   bool visualize_dropoff_locations = visuals_->isEnabled("show_goal_bin_markers");
 
   // Calculate dimensions of goal bin
-  shelf_->getGoalBin()->calculateBoundingBox();
+  //shelf_->getGoalBin()->calculateBoundingBox();
 
   // Visualize
-  if (visualize_dropoff_locations)
-    shelf_->getGoalBin()->visualizeWireframe(shelf_->getBottomRight());
+  //if (visualize_dropoff_locations)
+  //  shelf_->getGoalBin()->visualizeWireframe(shelf_->getBottomRight());
 
   // Find starting location of dropoff
   Eigen::Affine3d goal_bin_pose = shelf_->getBottomRight() * shelf_->getGoalBin()->getCentroid();
   Eigen::Affine3d overhead_goal_bin = Eigen::Affine3d::Identity();
   overhead_goal_bin.translation() = goal_bin_pose.translation();
-  overhead_goal_bin.translation().z() += shelf_->getGoalBin()->getHeight() / 2.0 + config_->goal_bin_clearance_;
+  ROS_WARN_STREAM_NAMED("apc_manager","Increase goal bin clearance here");
+  overhead_goal_bin.translation().z() += config_->goal_bin_clearance_;
 
   // Convert to pose that has z arrow pointing towards object and x out in the grasp dir
   overhead_goal_bin = overhead_goal_bin * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX());
@@ -1880,9 +1881,11 @@ bool APCManager::generateGoalBinLocations()
   // Calculations
   const std::size_t num_cols = 2;
   const std::size_t num_rows = NUM_DROPOFF_LOCATIONS / num_cols;
-  const double total_x_depth = shelf_->getGoalBin()->getDepth() / 3.0; // this is the longer dimension
+  static const double GOAL_BIN_DEPTH = 0.61;
+  static const double GOAL_BIN_WIDTH = 0.37;
+  const double total_x_depth = GOAL_BIN_DEPTH / 3.0; // this is the longer dimension
   const double delta_x = total_x_depth / (num_rows - 1);
-  const double total_y_width = shelf_->getGoalBin()->getWidth() / 3.0;
+  const double total_y_width = GOAL_BIN_WIDTH / 3.0;
   const double delta_y = total_y_width / (num_cols - 1);
 
   // Create first location

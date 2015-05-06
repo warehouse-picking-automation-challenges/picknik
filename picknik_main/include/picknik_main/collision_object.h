@@ -22,9 +22,6 @@
 #include <picknik_main/namespaces.h>
 #include <picknik_main/visuals.h>
 
-// bounding_box
-#include <bounding_box/bounding_box.h>
-
 namespace picknik_main
 {
 
@@ -350,14 +347,6 @@ public:
   */
   void setMeshCentroid(const Eigen::Affine3d& centroid);
 
-  /**
-   * \brief Get bounding box and corresponding height/width/depth
-   * \param verbose
-   * \param bin_to_world - optional transform to help with debugging
-   * \return true on success
-   */
-  bool calculateBoundingBox(const Eigen::Affine3d &bin_to_world = Eigen::Affine3d::Identity());
-
 protected:
 
   // Geometry
@@ -371,8 +360,6 @@ protected:
   // Pose relative to parent object
   Eigen::Affine3d centroid_;
   Eigen::Affine3d mesh_centroid_;
-
-  bounding_box::BoundingBox bounding_box_;
 };
 
 } // namespace

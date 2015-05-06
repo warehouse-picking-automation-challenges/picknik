@@ -13,7 +13,7 @@
 */
 
 #include <picknik_main/collision_object.h>
-#include <moveit_grasps/grasp_generator.h> // get bounding box
+//#include <moveit_grasps/grasp_generator.h> // get bounding box
 
 namespace picknik_main
 {
@@ -360,69 +360,6 @@ const Eigen::Affine3d& MeshObject::getMeshCentroid() const
 void MeshObject::setMeshCentroid(const Eigen::Affine3d& centroid)
 {
   mesh_centroid_ = centroid;
-}
-
-bool MeshObject::calculateBoundingBox(const Eigen::Affine3d &bin_to_world)
-{
-  bool verbose = visuals_->isEnabled("verbose_bounding_box");
-
-  // Debug
-  if (verbose)
-  {
-    std::cout << std::endl;
-    std::cout << "-------------------------------------------------------" << std::endl;
-
-    std::cout << "Before getBoundingingBoxFromMesh(): " << std::endl;
-    std::cout << "  Cuboid Pose: "; printTransform(getCentroid());
-    std::cout << "  Height: " << getHeight() << std::endl;
-    std::cout << "  Depth: " << getDepth() << std::endl;
-    std::cout << "  Width: " << getWidth() << std::endl;
-    std::cout << std::endl;
-  }
-
-  // Get bounding box
-  Eigen::Affine3d bounding_to_mesh;
-  double depth, width, height;
-  if (!bounding_box_.getBodyAlignedBoundingBox(getCollisionMesh(), bounding_to_mesh, depth, width, height))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Failed to get bounding box");
-    return false;
-  }
-  setDepth(depth);
-  setWidth(width);
-  setHeight(height);
-
-  const Eigen::Affine3d &mesh_to_bin = getMeshCentroid(); // perception results (centroid of mesh to bin)
-
-  // Debug
-  if (verbose)
-  {
-    std::cout << "Bounding to Mesh: ";
-    printTransform(bounding_to_mesh);
-
-    std::cout << "Mesh to bin:      ";
-    printTransform(mesh_to_bin);
-
-    // View
-    const Eigen::Affine3d bounding_to_world = bounding_to_mesh * mesh_to_bin * bin_to_world;
-    visuals_->visual_tools_->publishAxisLabeled(bounding_to_world, "bounding_to_world");
-  }
-
-  const Eigen::Affine3d bounding_to_bin = mesh_to_bin * bounding_to_mesh;
-  setCentroid(bounding_to_bin);
-
-  // Debug
-  if (verbose)
-  {
-    std::cout << std::endl;
-    std::cout << "After getBoundingingBoxFromMesh(): " << std::endl;
-    std::cout << "  Cuboid Pose: "; printTransform(getCentroid());
-    std::cout << "  Height: " << getHeight() << std::endl;
-    std::cout << "  Depth: " << getDepth() << std::endl;
-    std::cout << "  Width: " << getWidth() << std::endl;
-    std::cout << "-------------------------------------------------------" << std::endl;
-  }
-  return true;
 }
 
 } // namespace

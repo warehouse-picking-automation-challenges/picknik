@@ -140,7 +140,7 @@ public:
       ROS_DEBUG_STREAM_NAMED("PC_aligner","sizes = " << icp_left->size() << " : " << icp_right->size());
 
       pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-      icp.setInputCloud(icp_left);
+      icp.setInputCloud(icp_left); // TODO deprecated
       icp.setInputTarget(icp_right);
       pcl::PointCloud<pcl::PointXYZ> Final;
 

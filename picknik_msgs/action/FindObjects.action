@@ -14,8 +14,8 @@ string[] expected_objects_names
 
 # Region of interest - coordinates of bin
 string bin_name
-geometry_msgs/Pose front_bottom_right
-geometry_msgs/Pose back_top_left
+geometry_msgs/Pose bin_centroid
+shape_msgs/SolidPrimitive bin_dimensions
 
 ---
 # RESULT ====================================================

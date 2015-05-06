@@ -53,7 +53,7 @@ ProductSimulator::ProductSimulator(bool verbose, VisualsPtr visuals,
   ROS_INFO_STREAM_NAMED("product_simulator","ProductSimulator Ready.");
 }
 
-bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
+bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, PerceptionInterfacePtr percepetion_interface)
 {
   ROS_INFO_STREAM_NAMED("product_simulator","Generating random product poses");
 
@@ -126,6 +126,12 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
             product->setCentroid(pose);
             product->setMeshCentroid(pose);
 
+            // Calculate bounding mesh
+            if (!percepetion_interface->updateBoundingMesh(product, bin))
+            {
+              ROS_WARN_STREAM_NAMED("product_simulator","Unable to update bounding mesh");
+            }
+
             if (verbose_)
               product->visualizeHighRes(world_to_bin_transform);
             
@@ -138,8 +144,8 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
           // Use current location, no matter where it ended up
           if (change_rviz_displays)
           {
-          product->createCollisionBodies(world_to_bin_transform);
-          product->visualizeHighRes(world_to_bin_transform);
+            product->createCollisionBodies(world_to_bin_transform);
+            product->visualizeHighRes(world_to_bin_transform);
           }
           break;
         }
