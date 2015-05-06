@@ -42,6 +42,9 @@
 // ROS
 #include <ros/ros.h>
 
+// PickNik
+#include <picknik_main/namespaces.h>
+
 // MoveIt!
 #include <moveit/robot_model/robot_model.h>
 
@@ -63,12 +66,12 @@ public:
    * \param fake_execution - whether to load full speed velocity constraints (simulation goes faster)
    * \return true on success
    */
-  bool load(robot_model::RobotModelPtr robot_model, bool fake_execution);
+  bool load(robot_model::RobotModelPtr robot_model, bool fake_execution, const std::string& package_path);
 
-private:
-
-  // A shared node handle
-  ros::NodeHandle nh_;
+  /**
+   * \brief A tool to quickly tweak location of pose in planning world. Shows warning since this is only for testing
+   */
+  Eigen::Affine3d getTestPose();
 
 public:
 
@@ -120,10 +123,10 @@ public:
   double planning_time_;
 
   // Group for each arm
-  const robot_model::JointModelGroup* right_arm_;
-  const robot_model::JointModelGroup* left_arm_;
-  const robot_model::JointModelGroup* both_arms_; // TODO remove?
-  const robot_model::JointModelGroup* arm_only_; // with jacob, this does not include the gantry
+  JointModelGroup* right_arm_;
+  JointModelGroup* left_arm_;
+  JointModelGroup* both_arms_; // TODO remove?
+  JointModelGroup* arm_only_; // with jacob, this does not include the gantry
 
   // Logic on type of robot
   bool dual_arm_;
@@ -141,6 +144,18 @@ public:
   // Generic variable adjustment
   double test_double_;
 
+  // File path to ROS package on drive
+  std::string package_path_;
+
+private:
+
+  // A shared node handle
+  ros::NodeHandle nh_;
+
+  // For tweaking
+  Eigen::Affine3d test_pose_;
+  std::vector<double> test_pose_doubles_;
+  
 }; // end class
 
 // Create boost pointers for this class

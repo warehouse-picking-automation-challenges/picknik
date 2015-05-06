@@ -54,7 +54,7 @@ namespace picknik_main
 ExecutionInterface::ExecutionInterface(bool verbose, RemoteControlPtr remote_control, VisualsPtr visuals,
                                        moveit_grasps::GraspDatas grasp_datas,
                                        planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
-                                       ManipulationDataPtr config, const std::string& package_path,
+                                       ManipulationDataPtr config, 
                                        moveit::core::RobotStatePtr current_state, bool fake_execution)
   : verbose_(verbose)
   , remote_control_(remote_control)
@@ -62,7 +62,6 @@ ExecutionInterface::ExecutionInterface(bool verbose, RemoteControlPtr remote_con
   , grasp_datas_(grasp_datas)
   , planning_scene_monitor_(planning_scene_monitor)
   , config_(config)
-  , package_path_(package_path)
   , current_state_(current_state)
   , nh_("~")
   , unit_testing_enabled_(false)
@@ -76,7 +75,7 @@ ExecutionInterface::ExecutionInterface(bool verbose, RemoteControlPtr remote_con
 }
 
 bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &trajectory_msg,
-                                           const robot_model::JointModelGroup* jmg, bool wait_for_execution)
+                                           JointModelGroup* jmg, bool wait_for_execution)
 {
   trajectory_msgs::JointTrajectory& trajectory = trajectory_msg.joint_trajectory;
 
@@ -240,11 +239,11 @@ bool ExecutionInterface::checkExecutionManager()
   // Load MoveIt! managers
   if (!trajectory_execution_manager_)
   {
+    ROS_DEBUG_STREAM_NAMED("execution_interface","Loading trajectory execution manager");
     trajectory_execution_manager_.reset(new trajectory_execution_manager::
                                         TrajectoryExecutionManager(planning_scene_monitor_->getRobotModel()));
   }
-
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Check active controllers are running
   if (!trajectory_execution_manager_->ensureActiveControllersForGroup(arm_jmg->getName()))
@@ -252,7 +251,6 @@ bool ExecutionInterface::checkExecutionManager()
     ROS_ERROR_STREAM_NAMED("execution_interface","Group " << arm_jmg->getName() << " does not have controllers loaded");
     return false;
   }
-
   // Get the controllers List
   std::vector<std::string> controller_list;
   trajectory_execution_manager_->getControllerManager()->getControllersList(controller_list);
@@ -281,17 +279,18 @@ bool ExecutionInterface::checkExecutionManager()
     {
       has_error = true;
     }
+
     ros::Duration(0.5).sleep();
   }
 
   return true;
 }
 
-// DEPRECATED IN FAVOR OF MOVEIT CONTROLLER MANAGER VERSION
 bool ExecutionInterface::checkTrajectoryController(ros::ServiceClient& service_client, const std::string& hardware_name, bool has_ee)
 {
   // Try to communicate with controller manager
   controller_manager_msgs::ListControllers service;
+  ROS_DEBUG_STREAM_NAMED("execution_interface","Calling list controllers service client");
   if (!service_client.call(service))
   {
     ROS_ERROR_STREAM_THROTTLE_NAMED(2, "execution_interface","Unable to check if controllers for " << hardware_name
@@ -305,6 +304,7 @@ bool ExecutionInterface::checkTrajectoryController(ros::ServiceClient& service_c
   // Check if proper controller is running
   bool found_main_controller = false;
   bool found_ee_controller = false;
+
   for (std::size_t i = 0; i < service.response.controller.size(); ++i)
   {
     if (service.response.controller[i].name == control_type + "_trajectory_controller")
@@ -407,7 +407,7 @@ bool ExecutionInterface::getFilePath(std::string &file_path, const std::string &
 
   // Check that the directory exists, if not, create it
   fs::path path;
-  path = fs::path(package_path_ + "/trajectories/analysis/");
+  path = fs::path(config_->package_path_ + "/trajectories/analysis/");
 
   boost::system::error_code returnedError;
   fs::create_directories( path, returnedError );

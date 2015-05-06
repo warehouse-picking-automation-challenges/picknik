@@ -20,7 +20,7 @@
 #include <picknik_main/amazon_json_parser.h>
 #include <picknik_main/shelf.h>
 #include <picknik_main/manipulation.h>
-//#include <picknik_main/learning_pipeline.h>
+#include <picknik_main/trajectory_io.h>
 #include <picknik_main/visuals.h>
 #include <picknik_main/planning_scene_manager.h>
 #include <picknik_main/manipulation_data.h>
@@ -45,7 +45,6 @@ static const std::string JOINT_STATE_TOPIC = "/robot/joint_states";
 static const std::string PACKAGE_NAME = "picknik_main";
 static const std::string GET_PLANNING_SCENE_SERVICE_NAME = "get_planning_scene"; // name of the service that can be used to query the planning scene
 
-//MOVEIT_CLASS_FORWARD(APCManager);
 
 class APCManager
 {
@@ -148,12 +147,6 @@ public:
    * \return true on success
    */
   bool testInCollision();
-
-  /**
-   * \brief Debug visualization tool for joint limits
-   * \return true on success
-   */
-  bool showJointLimits();
 
   /**
    * \brief Plan to random valid motions
@@ -263,27 +256,27 @@ public:
    * \brief Move object into the goal bin
    * \return true on success
    */
-  bool placeObjectInGoalBin(const robot_model::JointModelGroup* arm_jmg);
+  bool placeObjectInGoalBin(JointModelGroup* arm_jmg);
 
   /**
    * \brief Lift from goal bin
    * \return true on success
    */
-  bool liftFromGoalBin(const robot_model::JointModelGroup* arm_jmg);
+  bool liftFromGoalBin(JointModelGroup* arm_jmg);
 
   /**
    * \brief Move both arms to their start location
    * \param optionally specify which arm to use
    * \return true on success
    */
-  bool moveToStartPosition(const robot_model::JointModelGroup* arm_jmg = NULL, bool check_validity = true);
+  bool moveToStartPosition(JointModelGroup* arm_jmg = NULL, bool check_validity = true);
 
   /**
    * \brief Move to location to get rid of product
    * \param optionally specify which arm to use
    * \return true on success
    */
-  bool moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg);
+  bool moveToDropOffPosition(JointModelGroup* arm_jmg);
 
   /**
    * \brief Load single product, one per shelf, for testing
@@ -327,7 +320,7 @@ public:
    * \brief Attach a product to an arm for planning
    * \return true on success
    */
-  bool attachProduct(ProductObjectPtr product, const robot_model::JointModelGroup* arm_jmg);
+  bool attachProduct(ProductObjectPtr product, JointModelGroup* arm_jmg);
 
   /**
    * \brief Show experience database
@@ -391,6 +384,12 @@ public:
    */
   bool testPlanningSimple();
 
+  /**
+   * \brief Playback waypoint path specified in a csv
+   * \return true on success
+   */
+  bool playbackWaypointsFromFile();
+
 private:
 
   // A shared node handle
@@ -450,6 +449,9 @@ private:
   // Locations to dropoff products
   EigenSTL::vector_Affine3d dropoff_locations_;
   std::size_t next_dropoff_location_;
+
+  // Allow loading and saving trajectories to file
+  TrajectoryIOPtr trajectory_io_;
 
 }; // end class
 

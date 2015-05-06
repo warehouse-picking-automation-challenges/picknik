@@ -41,6 +41,7 @@
 
 // Parameter loading
 #include <rviz_visual_tools/ros_param_utilities.h>
+#include <rviz_visual_tools/rviz_visual_tools.h>
 
 namespace picknik_main
 {
@@ -50,9 +51,10 @@ ManipulationData::ManipulationData()
 {
 }
 
-bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_execution)
+bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_execution, const std::string& package_path)
 {
   fake_execution_ = fake_execution;
+  package_path_ = package_path;
   const std::string parent_name = "manipulation_data"; // for namespacing logging messages
 
   // Load performance variables
@@ -118,6 +120,10 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   // Generic test variable
   rvt::getDoubleParameter(parent_name, nh_, "test/test_double", test_double_);
   
+  // Get test pose
+  rvt::getDoubleParameters(parent_name, nh_, "test/test_pose", test_pose_doubles_);
+  test_pose_ = rvt::RvizVisualTools::convertXYZRPY(test_pose_doubles_);
+  
   // Load proper groups
   // TODO - check if joint model group exists
   if (dual_arm_)
@@ -142,5 +148,18 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   return true;
 }
 
+Eigen::Affine3d ManipulationData::getTestPose()
+{
+  using namespace std;
+  ROS_WARN_STREAM_NAMED("manipulation_data","Using test pose, which should only be used during early development");
+  ROS_WARN_STREAM_NAMED("manipulation_data","Use instead:");
+  
+  std::cout << "  Eigen::Affine3d transform = rvt::RvizVisualTools::convertXYZRPY(" << test_pose_doubles_[0] << "," 
+            << test_pose_doubles_[1] << "," 
+            << test_pose_doubles_[2] << "," << test_pose_doubles_[3] << "," << test_pose_doubles_[4] << ","
+            << test_pose_doubles_[5] << "); // from testPose()" << std::endl;
+
+  return test_pose_;
+}
 
 } // end namespace

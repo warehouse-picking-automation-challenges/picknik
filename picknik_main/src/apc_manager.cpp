@@ -61,7 +61,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
   tf_.reset(new tf::TransformListener(nh_private_));
   // TODO: remove these lines, only an attempt to fix loadPlanningSceneMonitor bug
   ros::spinOnce();
-  ros::Duration(0.1).sleep();
+  //ros::Duration(0.1).sleep();
 
   // Load planning scene monitor
   if (!loadPlanningSceneMonitor())
@@ -97,7 +97,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
 
   // Load manipulation data for our robot
   config_.reset(new ManipulationData());
-  config_->load(robot_model_, fake_execution);
+  config_->load(robot_model_, fake_execution, package_path_);
 
   // Load grasp data specific to our robot
   grasp_datas_[config_->right_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_->right_hand_name_, robot_model_));
@@ -106,10 +106,13 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
 
   if (config_->dual_arm_)
     grasp_datas_[config_->left_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_->left_hand_name_, robot_model_));
-  
+
   // Create manipulation manager
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
-                                       remote_control_, package_path_, shelf_, fake_execution));
+                                       remote_control_, shelf_, fake_execution));
+
+  // Load trajectory IO class
+  trajectory_io_.reset(new TrajectoryIO(remote_control_, visuals_, config_, manipulation_));
 
   // Load perception layer
   perception_interface_.reset(new PerceptionInterface(verbose_, visuals_, shelf_, config_, tf_, nh_private_));
@@ -141,7 +144,7 @@ bool APCManager::checkSystemReady(bool remove_from_shelf)
                            << ", joints: " << config_->right_arm_->getVariableCount());
     return false;
   }
-  const robot_model::JointModelGroup* ee_jmg = grasp_datas_[config_->right_arm_]->ee_jmg_;
+  JointModelGroup* ee_jmg = grasp_datas_[config_->right_arm_]->ee_jmg_;
   if (ee_jmg->getVariableCount() > 6)
   {
     ROS_FATAL_STREAM_NAMED("apc_manager","Incorrect number of joints for group " << ee_jmg->getName() << ", joints: "
@@ -159,11 +162,12 @@ bool APCManager::checkSystemReady(bool remove_from_shelf)
   // Check Perception
   if (!fake_perception_)
   {
+    ROS_INFO_STREAM_NAMED("apc_manager","Checking perception");
     perception_interface_->isPerceptionReady();
   }
 
   // Choose which planning group to use
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Check robot state valid
   if (remove_from_shelf)
@@ -277,7 +281,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
     return false;
   }
 
-  const robot_model::JointModelGroup* arm_jmg;
+  JointModelGroup* arm_jmg;
   bool execute_trajectory = true;
 
   moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
@@ -791,7 +795,7 @@ bool APCManager::testShelfLocation()
     ee_pose = shelf_->getBottomRight() * bin_it->second->getBottomRight(); // convert to world frame
     ee_pose.translation().y() += bin_it->second->getWidth();
 
-    const robot_model::JointModelGroup* arm_jmg = manipulation_->chooseArm(ee_pose);
+    JointModelGroup* arm_jmg = manipulation_->chooseArm(ee_pose);
 
     ee_pose.translation().x() += SAFETY_PADDING - grasp_datas_[arm_jmg]->finger_to_palm_depth_;
 
@@ -869,7 +873,7 @@ bool APCManager::testApproachLiftRetreat()
     //perceiveObjectFake(work_order);
 
     // Choose which arm to use
-    const robot_model::JointModelGroup* arm_jmg = manipulation_->chooseArm(work_order.product_->getWorldPose(shelf_, work_order.bin_));
+    JointModelGroup* arm_jmg = manipulation_->chooseArm(work_order.product_->getWorldPose(shelf_, work_order.bin_));
 
     // Allow fingers to touch object
     manipulation_->allowFingerTouch(work_order.product_->getCollisionName(), arm_jmg);
@@ -903,7 +907,7 @@ bool APCManager::getSRDFPose()
   ROS_DEBUG_STREAM_NAMED("apc_manager","Get SRDF pose");
 
   // Choose which planning group to use
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
   const std::vector<const moveit::core::JointModel*> joints = arm_jmg->getJointModels();
 
   while(ros::ok())
@@ -933,7 +937,7 @@ bool APCManager::getSRDFPose()
 // Mode 3
 bool APCManager::testGoalBinPose()
 {
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Set planning scene
   planning_scene_manager_->displayShelfWithOpenBins();
@@ -984,14 +988,14 @@ bool APCManager::testGoalBinPose()
 bool APCManager::testInCollision()
 {
   // Choose which planning group to use
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   while (ros::ok())
   {
     std::cout << std::endl;
 
     // For debugging in console
-    showJointLimits();
+    manipulation_->showJointLimits(config_->right_arm_);
 
     //manipulation_->fixCurrentCollisionAndBounds(arm_jmg);
     manipulation_->checkCollisionAndBounds(manipulation_->getCurrentState());
@@ -999,58 +1003,6 @@ bool APCManager::testInCollision()
   }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done checking if in collision");
-  return true;
-}
-
-bool APCManager::showJointLimits()
-{
-  const std::vector<const moveit::core::JointModel*> &joints = config_->right_arm_->getActiveJointModels();
-
-  // Loop through joints
-  for (std::size_t i = 0; i < joints.size(); ++i)
-  {
-    // Assume all joints have only one variable
-    if (joints[i]->getVariableCount() > 1)
-    {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Unable to handle joints with more than one var");
-      return false;
-    }    
-    moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
-    double current_value = current_state->getVariablePosition(joints[i]->getName());
-
-    // check if bad position
-    bool out_of_bounds = !current_state->satisfiesBounds(joints[i]);
-
-    const moveit::core::VariableBounds& bound = joints[i]->getVariableBounds()[0];
-    
-    if (out_of_bounds)
-      std::cout << MOVEIT_CONSOLE_COLOR_RED;
-
-    std::cout << "   " << std::fixed << std::setprecision(5) << bound.min_position_ << "\t";
-    double delta = bound.max_position_ - bound.min_position_;
-    //std::cout << "delta: " << delta << " ";
-    double step = delta / 20.0;
-
-    bool marker_shown = false;
-    for (double value = bound.min_position_; value < bound.max_position_; value += step)
-    {
-      // show marker of current value
-      if (!marker_shown && current_value < value)
-      {
-        std::cout << "|";
-        marker_shown = true;
-      }
-      else
-        std::cout << "-";
-    }
-    // show max position
-    std::cout << " " << std::setprecision(5) << bound.max_position_ << "  " << joints[i]->getName() << std::endl;
-
-    if (out_of_bounds)
-      std::cout << MOVEIT_CONSOLE_COLOR_RESET;
-  }
-
-
   return true;
 }
 
@@ -1086,7 +1038,7 @@ bool APCManager::testRandomValidMotions()
       moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state));
 
       // Choose arm
-      const robot_model::JointModelGroup* arm_jmg = config_->right_arm_;
+      JointModelGroup* arm_jmg = config_->right_arm_;
       if (config_->dual_arm_)
         if (visuals_->visual_tools_->iRand(0,1) == 0)
           arm_jmg = config_->left_arm_;
@@ -1157,7 +1109,7 @@ bool APCManager::testCameraPositions()
 
     // Wait before going to next bin
     ros::Duration(1.0).sleep();
-    remote_control_->waitForNextStep("percieve next bin");    
+    remote_control_->waitForNextStep("percieve next bin");
   }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done moving to each bin");
@@ -1180,16 +1132,15 @@ bool APCManager::calibrateCamera(std::size_t id)
   }
 
   // Choose which planning group to use
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Start playing back file
   std::string file_path;
   const std::string camera = id ? "right" : "left";
   const std::string file_name = "calibration_trajectory_" + camera;
-  manipulation_->getFilePath(file_path, file_name);
+  trajectory_io_->getFilePath(file_path, file_name);
 
-  //  if (!manipulation_->playbackTrajectoryFromFileInteractive(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
-  if (!manipulation_->playbackTrajectoryFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
+  if (!trajectory_io_->playbackTrajectoryFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to playback " << file_name);
     return false;
@@ -1207,10 +1158,10 @@ bool APCManager::recordCalibrationTrajectory(std::size_t id)
   std::string file_path;
   const std::string camera = id ? "right" : "left";
   const std::string file_name = "calibration_trajectory_" + camera;
-  manipulation_->getFilePath(file_path, file_name);
+  trajectory_io_->getFilePath(file_path, file_name);
 
   // Start recording
-  manipulation_->recordTrajectoryToFile(file_path);
+  trajectory_io_->recordTrajectoryToFile(file_path);
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done recording calibration trajectory");
 
@@ -1223,7 +1174,7 @@ bool APCManager::testGoHome()
   ROS_DEBUG_STREAM_NAMED("apc_manager","Going home");
 
   // Choose which planning group to use
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
   moveToStartPosition(arm_jmg);
   return true;
 }
@@ -1245,7 +1196,7 @@ bool APCManager::testGraspGenerator()
   moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
   moveit::core::RobotStatePtr the_grasp_state(new moveit::core::RobotState(*current_state)); // Allocate robot states
   Eigen::Affine3d global_object_pose;
-  const robot_model::JointModelGroup* arm_jmg;
+  JointModelGroup* arm_jmg;
   std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates;
 
   // Scoring
@@ -1367,7 +1318,7 @@ bool APCManager::testGraspGenerator()
 
   // Save the logging file
   std::string file_path;
-  manipulation_->getFilePath(file_path, "grasping_test");
+  trajectory_io_->getFilePath(file_path, "grasping_test");
   ROS_INFO_STREAM_NAMED("apc_manager","Saving grasping data to " << file_path);
 
   std::ofstream logging_file; // open to append
@@ -1474,24 +1425,38 @@ bool APCManager::testPerceptionComm(std::size_t bin_id)
     return false;
   }
   ProductObjectPtr& product = bin->getProducts().front();
+  WorkOrder work_order(bin, product);
+  bool verbose = true;
 
   while (ros::ok())
   {
-
-    // Communicate with perception pipeline
-    perception_interface_->startPerception(product, bin);
-
-    ROS_INFO_STREAM_NAMED("apc_manager","Waiting 1 second");
-    ros::Duration(1).sleep();
-
-    // Get result from perception pipeline
-    if (!perception_interface_->endPerception(product, bin))
+    bool no_movement = false;
+    if (no_movement)
     {
-      ROS_ERROR_STREAM_NAMED("apc_manager","End perception failed");
-      return false;
+      // Communicate with perception pipeline
+      perception_interface_->startPerception(product, bin);
+
+      ROS_INFO_STREAM_NAMED("apc_manager","Waiting 1 second");
+      ros::Duration(1).sleep();
+
+      // Get result from perception pipeline
+      if (!perception_interface_->endPerception(product, bin))
+      {
+        ROS_ERROR_STREAM_NAMED("apc_manager","End perception failed");
+        return false;
+      }
+    }
+    else
+    {
+      // Move camera to desired bin to get pose of product
+      if (!perceiveObject(work_order, verbose))
+      {
+        ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
+        ROS_INFO_STREAM_NAMED("apc_manager","Sleeping before retrying...");
+        ros::Duration(10).sleep();
+      }
     }
 
-    ros::Duration(2.0).sleep();
     remote_control_->waitForNextStep("request perception again");
   }
 
@@ -1522,10 +1487,10 @@ bool APCManager::recordBinWithCamera(BinObjectPtr bin)
 
   std::string file_path;
   const std::string file_name = "observe_bin_" + bin->getName() + "_trajectory";
-  manipulation_->getFilePath(file_path, file_name);
+  trajectory_io_->getFilePath(file_path, file_name);
 
   // Start recording
-  manipulation_->recordTrajectoryToFile(file_path);
+  trajectory_io_->recordTrajectoryToFile(file_path);
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done recording bin with camera");
 
@@ -1537,12 +1502,12 @@ bool APCManager::perceiveBinWithCamera(BinObjectPtr bin)
   ROS_DEBUG_STREAM_NAMED("apc_manager","Moving camera around " << bin->getName());
 
   // Choose which planning group to use
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->left_arm_ : config_->right_arm_;
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->left_arm_ : config_->right_arm_;
 
   // Start playing back file
   const std::string file_name = "observe_bin_" + bin->getName() + "_trajectory";
   std::string file_path;
-  manipulation_->getFilePath(file_path, file_name);
+  trajectory_io_->getFilePath(file_path, file_name);
 
   if (bin->getProducts().empty())
   {
@@ -1554,7 +1519,7 @@ bool APCManager::perceiveBinWithCamera(BinObjectPtr bin)
   // Communicate with perception pipeline
   perception_interface_->startPerception(product, bin);
 
-  if (!manipulation_->playbackTrajectoryFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
+  if (!trajectory_io_->playbackTrajectoryFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to playback " << file_name);
     return false;
@@ -1581,7 +1546,7 @@ bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
   ProductObjectPtr& product = work_order.product_;
 
   // Choose which planning group to use
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Move camera to the bin
   ROS_INFO_STREAM_NAMED("apc_manager","Moving camera to bin '" << bin->getName() << "'");
@@ -1654,7 +1619,7 @@ bool APCManager::perceiveObjectFake(WorkOrder work_order)
   return true;
 }
 
-bool APCManager::placeObjectInGoalBin(const robot_model::JointModelGroup* arm_jmg)
+bool APCManager::placeObjectInGoalBin(JointModelGroup* arm_jmg)
 {
   // Move to position
   if (!moveToDropOffPosition(arm_jmg))
@@ -1676,7 +1641,7 @@ bool APCManager::placeObjectInGoalBin(const robot_model::JointModelGroup* arm_jm
   return true;
 }
 
-bool APCManager::liftFromGoalBin(const robot_model::JointModelGroup* arm_jmg)
+bool APCManager::liftFromGoalBin(JointModelGroup* arm_jmg)
 {
   bool up = true;
   if (!manipulation_->executeVerticlePath(arm_jmg, config_->place_goal_down_distance_desired_,
@@ -1690,12 +1655,12 @@ bool APCManager::liftFromGoalBin(const robot_model::JointModelGroup* arm_jmg)
   return true;
 }
 
-bool APCManager::moveToStartPosition(const robot_model::JointModelGroup* arm_jmg, bool check_validity)
+bool APCManager::moveToStartPosition(JointModelGroup* arm_jmg, bool check_validity)
 {
   return manipulation_->moveToStartPosition(arm_jmg, check_validity);
 }
 
-bool APCManager::moveToDropOffPosition(const robot_model::JointModelGroup* arm_jmg)
+bool APCManager::moveToDropOffPosition(JointModelGroup* arm_jmg)
 {
   // Create locations if necessary
   generateGoalBinLocations();
@@ -1852,7 +1817,7 @@ bool APCManager::allowCollisions()
   return true;
 }
 
-bool APCManager::attachProduct(ProductObjectPtr product, const robot_model::JointModelGroup* arm_jmg)
+bool APCManager::attachProduct(ProductObjectPtr product, JointModelGroup* arm_jmg)
 {
   visuals_->visual_tools_->attachCO(product->getCollisionName(), grasp_datas_[arm_jmg]->parent_link_->getName());
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
@@ -1879,7 +1844,7 @@ bool APCManager::attachProduct(ProductObjectPtr product, const robot_model::Join
 bool APCManager::displayExperienceDatabase()
 {
   // Choose which planning group to use
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   return manipulation_->displayExperienceDatabase(arm_jmg);
 }
@@ -1892,21 +1857,25 @@ bool APCManager::generateGoalBinLocations()
 
   static std::size_t NUM_DROPOFF_LOCATIONS = 8;
 
+  bool visualize_dropoff_locations = visuals_->isEnabled("show_goal_bin_markers");
+
   // Calculate dimensions of goal bin
   shelf_->getGoalBin()->calculateBoundingBox();
 
   // Visualize
-  shelf_->getGoalBin()->visualizeWireframe(shelf_->getBottomRight());
+  if (visualize_dropoff_locations)
+    shelf_->getGoalBin()->visualizeWireframe(shelf_->getBottomRight());
 
   // Find starting location of dropoff
-  Eigen::Affine3d overhead_goal_bin = shelf_->getBottomRight() * shelf_->getGoalBin()->getCentroid();
-  overhead_goal_bin.translation().z() += shelf_->getGoalBin()->getHeight() + config_->goal_bin_clearance_;
+  Eigen::Affine3d goal_bin_pose = shelf_->getBottomRight() * shelf_->getGoalBin()->getCentroid();
+  Eigen::Affine3d overhead_goal_bin = Eigen::Affine3d::Identity();
+  overhead_goal_bin.translation() = goal_bin_pose.translation();
+  overhead_goal_bin.translation().z() += shelf_->getGoalBin()->getHeight() / 2.0 + config_->goal_bin_clearance_;
 
-  // Convert pose that has z arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
-  overhead_goal_bin = overhead_goal_bin * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitX());
-  visuals_->visual_tools_->publishAxis(overhead_goal_bin);
-
-  bool visualize_dropoff_locations = visuals_->isEnabled("show_goal_bin_markers");
+  // Convert to pose that has z arrow pointing towards object and x out in the grasp dir
+  overhead_goal_bin = overhead_goal_bin * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX());
+  if (visualize_dropoff_locations)
+    visuals_->visual_tools_->publishAxis(overhead_goal_bin);
 
   // Calculations
   const std::size_t num_cols = 2;
@@ -1958,9 +1927,11 @@ bool APCManager::unitTests()
 {
   std::string test_name;
 
+  bool unit_test_all = visuals_->isEnabled("unit_test_all");
+
   // Test
   test_name = "SuperSimple";
-  if (visuals_->isEnabled("unit_test/" + test_name))
+  if (visuals_->isEnabled("unit_test_" + test_name) || unit_test_all)
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
@@ -1973,7 +1944,7 @@ bool APCManager::unitTests()
 
   // Test
   test_name = "SimpleRotated";
-  if (visuals_->isEnabled("unit_test/" + test_name))
+  if (visuals_->isEnabled("unit_test_" + test_name) || unit_test_all)
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
@@ -1986,7 +1957,7 @@ bool APCManager::unitTests()
 
   // Test
   test_name = "SimpleVeryRotated";
-  if (visuals_->isEnabled("unit_test/" + test_name))
+  if (visuals_->isEnabled("unit_test_" + test_name) || unit_test_all)
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
@@ -1999,26 +1970,26 @@ bool APCManager::unitTests()
 
   // Test
   test_name = "SimpleFarBack";
-  if (visuals_->isEnabled("unit_test/" + test_name))
+  if (visuals_->isEnabled("unit_test_" + test_name) || unit_test_all)
   {
     const std::string json_file = "crayola.json";
     Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
-    product_pose.translation() = Eigen::Vector3d(0.12, 0.13, 0.14);
+    product_pose.translation() = Eigen::Vector3d(0.25, 0.13, 0.06);
     product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
-      * Eigen::AngleAxisd(-1.57, Eigen::Vector3d::UnitY());  // rotated sideways
+      * Eigen::AngleAxisd(-1.5, Eigen::Vector3d::UnitY());  // rotated sideways
     if (!startUnitTest(json_file, test_name, product_pose))
       return false;
   }
 
   // Test
-  test_name = "RandomSimple";
-  if (visuals_->isEnabled("unit_test/" + test_name))
+  test_name = "ExpoLow";
+  if (visuals_->isEnabled("unit_test_" + test_name) || unit_test_all)
   {
-    const std::string json_file = "random.json";
-    Eigen::Affine3d product_pose = Eigen::Affine3d::Identity();
-    product_pose.translation() = Eigen::Vector3d(0.12, 0.13, 0.08);
-    product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
-      * Eigen::AngleAxisd(-1.57, Eigen::Vector3d::UnitY());  // rotated sideways
+    const std::string json_file = "expo.json";
+    Eigen::Affine3d product_pose = config_->getTestPose(); //Eigen::Affine3d::Identity();
+    //product_pose.translation() = Eigen::Vector3d(0.12, 0.13, 0.04);
+    //product_pose *= Eigen::AngleAxisd(1.57, Eigen::Vector3d::UnitX())
+    //  * Eigen::AngleAxisd(-1.57, Eigen::Vector3d::UnitY());  // rotated sideways
     if (!startUnitTest(json_file, test_name, product_pose))
       return false;
   }
@@ -2026,7 +1997,8 @@ bool APCManager::unitTests()
   return true;
 }
 
-bool APCManager::startUnitTest(const std::string &json_file, const std::string &test_name, const Eigen::Affine3d &product_pose)
+bool APCManager::startUnitTest(const std::string &json_file, const std::string &test_name,
+                               const Eigen::Affine3d &product_pose)
 {
   std::cout << std::endl << MOVEIT_CONSOLE_COLOR_BROWN;
   std::cout << "------------------------------------------------------------------------------" << std::endl;
@@ -2084,7 +2056,7 @@ bool APCManager::gotoPose(const std::string& pose_name)
   ros::Duration(1).sleep();
   ros::spinOnce();
 
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
   bool check_validity = true;
 
   if (!manipulation_->moveToSRDFPose(arm_jmg, pose_name, config_->main_velocity_scaling_factor_, check_validity))
@@ -2102,7 +2074,7 @@ bool APCManager::testIKSolver()
 {
   moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*manipulation_->getCurrentState()));
 
-  const robot_model::JointModelGroup* arm_jmg = config_->right_arm_;
+  JointModelGroup* arm_jmg = config_->right_arm_;
   Eigen::Affine3d ee_pose = Eigen::Affine3d::Identity();
   ee_pose.translation().x() += 0.3;
   ee_pose.translation().y() += 0.2;
@@ -2169,7 +2141,7 @@ bool APCManager::unitTestPerceptionComm()
 bool APCManager::calibrateInCircle()
 {
   // Choose which planning group to use
-  const robot_model::JointModelGroup* arm_jmg = config_->arm_only_;
+  JointModelGroup* arm_jmg = config_->arm_only_;
   if (!arm_jmg)
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","No joint model group for arm");
@@ -2183,7 +2155,7 @@ bool APCManager::calibrateInCircle()
   // Move camera pose forward away from camera
   Eigen::Affine3d translate_forward = Eigen::Affine3d::Identity();
   translate_forward.translation().x() += config_->camera_x_translation_from_bin_;
-  translate_forward.translation().z() -= config_->test_double_;
+  translate_forward.translation().z() -= 0.15;
   camera_pose = translate_forward * camera_pose;
 
   // Debug
@@ -2223,37 +2195,9 @@ bool APCManager::calibrateInCircle()
   }
   visuals_->visual_tools_->triggerBatchPublishAndDisable();
 
-  // Move to first position
-  if (!manipulation_->moveToEEPose(waypoints.front(), config_->main_velocity_scaling_factor_, arm_jmg))
+  if (!manipulation_->moveCartesianWaypointPath(arm_jmg, waypoints))
   {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to starting pose");
-    return false;
-  }
-
-  // Calculate remaining trajectory
-  moveit_grasps::GraspTrajectories segmented_cartesian_traj;
-  if (!manipulation_->computeCartesianWaypointPath(arm_jmg, manipulation_->getCurrentState(), waypoints, 
-                                                   segmented_cartesian_traj))
-  {
-    ROS_INFO_STREAM_NAMED("apc_manager","Unable to plan circular path");
-    return false;
-  }
-
-  // Combine segmented trajectory into single trajectory
-  moveit_grasps::GraspTrajectories single_cartesian_traj;
-  single_cartesian_traj.resize(1);
-  for (std::size_t i = 0; i < segmented_cartesian_traj.size(); ++i)
-  {
-    single_cartesian_traj[0].insert(single_cartesian_traj[0].end(), segmented_cartesian_traj[i].begin(), 
-                                    segmented_cartesian_traj[i].end());
-  }
-
-  visuals_->visual_tools_->publishTrajectoryPoints(single_cartesian_traj[0],
-                                                   grasp_datas_[arm_jmg]->parent_link_, rvt::RAND);
-
-  if (!manipulation_->executeSavedCartesianPath(single_cartesian_traj, arm_jmg, 0))
-  {
-    ROS_ERROR_STREAM_NAMED("apc_manager","Error executing trajectory segment " << 0);
+    ROS_ERROR_STREAM_NAMED("apc_manager","Error executing path");
     return false;
   }
 
@@ -2270,7 +2214,7 @@ bool APCManager::calibrateInSquare()
 // Mode 26
 bool APCManager::testPlanningSimple()
 {
-  const robot_model::JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Create start state at top left bin
   moveit::core::RobotStatePtr start(new moveit::core::RobotState(*manipulation_->getCurrentState()));
@@ -2281,7 +2225,7 @@ bool APCManager::testPlanningSimple()
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get shelf bin seed state");
     return false;
   }
-  
+
   // Create goal state at goal bin
   // Create locations if necessary
   generateGoalBinLocations();
@@ -2314,20 +2258,48 @@ bool APCManager::testPlanningSimple()
   {
     std::cout << std::endl;
     std::cout << std::endl;
-    std::cout << "-------------------------------------------------------" << std::endl;    
+    std::cout << "-------------------------------------------------------" << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
     std::cout << "Planning run " << i << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
     std::cout << std::endl;
 
-    if (!manipulation_->move(start, goal, arm_jmg, config_->main_velocity_scaling_factor_, verbose, execute_trajectory))                        
+    if (!manipulation_->move(start, goal, arm_jmg, config_->main_velocity_scaling_factor_, verbose, execute_trajectory))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to plan from start to goal");
       return false;
     }
     remote_control_->waitForNextStep("plan again");
   }
+  return true;
+}
+
+// Mode 34
+bool APCManager::playbackWaypointsFromFile()
+{
+  // Display planning scene
+  planning_scene_manager_->displayShelfWithOpenBins();
+
+  // Choose which planning group to use
+  JointModelGroup* arm_jmg = config_->arm_only_;
+  if (!arm_jmg)
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","No joint model group for arm");
+    return false;
+  }
+
+  // Start playing back file
+  std::string file_path;
+  const std::string file_name = "calibration_waypoints";
+  trajectory_io_->getFilePath(file_path, file_name);
+
+  if (!trajectory_io_->playbackWaypointsFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","Unable to playback CSV from file for pose waypoints");
+    return false;
+  }
+
   return true;
 }
 

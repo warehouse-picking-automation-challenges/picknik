@@ -2,7 +2,8 @@
 #   - prepend with 'show' if it affects rviz
 #   - prepend with 'verbose' if it affects console
 
-apc_manager:
+debug_level:
+
   # Goal bin
   show_goal_bin_markers: true
 
@@ -11,7 +12,7 @@ apc_manager:
   
   # Experience planning
   verbose_experience_database_stats: false
-  show_experience_database: true
+  show_experience_database: false
 
   # Cartesian planning
   verbose_cartesian_planning: false
@@ -23,11 +24,13 @@ apc_manager:
   # Multi-use yes/no - can be used for anything
   generic_bool: false
 
-  # Unit testing / simulation
+  # Simulation
   show_simulated_paths_moving: true
-  unit_test:
-    SuperSimple: false
-    SimpleRotated: false
-    SimpleVeryRotated: true
-    SimpleFarBack: false
-    RandomSimple: false
+
+  # Unit testing
+  unit_test_all: false
+  unit_test_SuperSimple: false
+  unit_test_SimpleRotated: false
+  unit_test_SimpleVeryRotated: false
+  unit_test_SimpleFarBack: false
+  unit_test_ExpoLow: true

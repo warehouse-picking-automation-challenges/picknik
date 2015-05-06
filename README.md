@@ -73,35 +73,13 @@ Its help documentation:
     optional arguments:
       -h, --help       show this help message and exit
 
-## Start Realsense Camera
-
-Start driver on computer where USB3 camera is plugged in
-
-    roslaunch realsense_camera realsense_camera.launch
-
-Testing
-
-    rosrun image_view image_view image:=/camera/image/rgb_raw
-
-## Start Primesense Camera
-
-    roslaunch openni_launch openni.launch depth_registration:=true publish_tf:=1
-
-Filter from bounding box:
-
-    rosrun picknik_perception simple_point_cloud_filter.launch
-
 ## Run DDTR Perception Pipeline
 
-Go to the build dir where you build the DDTR (e.g.):
-
-	cd ~/ros/perception/DDTR/build	
-    
 ### Run Shelf Calibration
    
 Go to the dir of RGFusion app:
 
-    cd Application/RGFusion
+    cd ~/ros/perception/DDTR/build/Application/RGFusion
     
 Now, run RGFusion:
 
@@ -114,18 +92,6 @@ Press the button 'Clean Host (Del SDFs/Poses files)' on the control panel (left 
 
 Press button 'Save Pose' and 'Save SDF' to save the latest 3D model of the shelf.
 Now you are safe the leave the application and run the Amazon app .
-
-### Run Perception
-   
-Go to the dir of Amazon app:
-
-    cd Application/Amazon
-    
-Now, run Amazon app:
-
-    ./Amazon -wsp ~/ros/perception/DDTR/ -mode 3
-    
-Here, -wsp gives the dir of the source code of DDTR, -mode select the running mode of the application.   
 
 ## Start Robots
 
@@ -147,10 +113,9 @@ Rviz Visualizers of robot states and debug markers
 
 Camera calibration:
 
-	#OLD roslaunch picknik_main camera_calibration.launch
-    roslaunch picknik_perception tf_keyboard.launch
+    roslaunch picknik_perception multi_xtion_calibrate.launch
 
-Run the fake object recognition server: (or real one if you have Lu Ma skillz)
+Run fake object recognition server:
 
 	roslaunch picknik_perception perception_server_fake.launch
 
@@ -174,17 +139,26 @@ Rviz Visualizers of robot states and debug markers
 
     roslaunch picknik_main rviz.launch
 
+Start cameras (on correct computer):
+
+    roslaunch picknik_perception multi_xtion.launch
+
 Camera calibration:
 
-    roslaunch picknik_perception tf_keyboard.launch
+    roslaunch picknik_perception multi_xtion_calibrate.launch
  
-Run the fake object recognition server: (or real one if you have Lu Ma skillz)
-
-	roslaunch picknik_perception perception_server_fake.launch
-
-Run APC Manager (main program) for JACOB on hardware
+Run APC Manager (main program) for JACOB on hardware. It will wait for perception server to start (below)
 
 	roslaunch picknik_main jacob_apc.launch mode:=1
+
+### Run Perception
+   
+    cd ~/ros/perception/DDTR/build/Application/Amazon/ && ./Amazon -wsp ~/ros/perception/DDTR/ -mode 3
+
+Arguments
+
+    -wsp gives the dir of the source code of DDTR
+	-mode select the running mode of the application.
 
 ### Move Robot to Shutdown Mode
 
@@ -216,13 +190,7 @@ Calibrate x axis
 
 Run the pre-recorded trajectory so that perception can build shelf model:
 
-    roslaunch picknik_main jacob_apc.launch mode:=10 fake_perception:=1
-
-### ROS Video Integration
-
-Not in use at the moment...
-
-    rosrun image_view image_view image:=/camera/image/rgb_raw
+    OLD roslaunch picknik_main jacob_apc.launch mode:=10 fake_perception:=1
 
 ### Jaco Joystick Control
 
@@ -278,7 +246,8 @@ Button Mapings
 		31. Playback calibration trajectory, using id:=[0 left |1 right]
 		32. Record a bin observing trajectory, using id:=[0-11]
 		33. Playback bin observing trajectory, using id:=[0-11]
-
+		34. Playback waypoint path specified in a csv
+		
         DEBUGGING
         40. Visualize shelf
         41. SRDF: Get the current pose of the robot for the SRDF
@@ -404,3 +373,8 @@ And you should see something like:
     OpenGL version string: 4.5.0 NVIDIA 346.46
 
 If you see something like "mesa", please install Nvidia Video Card Driver Again.
+
+Test camera view
+
+    rosrun image_view image_view image:=/xtion_right/image_raw
+

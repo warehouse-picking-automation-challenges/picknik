@@ -1,0 +1,2 @@
+#!/bin/bash
+cd ~/ros/perception/DDTR/build/Application/Amazon/ && ./Amazon -wsp ~/ros/perception/DDTR/ -mode 3

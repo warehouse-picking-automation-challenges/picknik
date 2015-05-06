@@ -15,13 +15,23 @@
 #ifndef PICKNIK_MAIN__NAMESPACES
 #define PICKNIK_MAIN__NAMESPACES
 
-// Temporarily define the namespace
+// Temporarily define namespaces
 namespace moveit_visual_tools {}
 namespace rviz_visual_tools {}
 namespace ompl_visual_tools {}
+namespace moveit
+{
+namespace core
+{
+class JointModelGroup;
+}
+}
 
+// Shortcuts
 namespace mvt = moveit_visual_tools;
 namespace rvt = rviz_visual_tools;
 namespace ovt = ompl_visual_tools;
+
+typedef const moveit::core::JointModelGroup JointModelGroup;
 
 #endif

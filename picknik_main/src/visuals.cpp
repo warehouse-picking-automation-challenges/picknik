@@ -92,36 +92,8 @@ bool Visuals::setSharedRobotState(moveit::core::RobotStatePtr current_state)
 
 bool Visuals::loadVerboseLevels(const std::string& parent_name)
 {
-  std::vector<std::string> setting_names;
+  rvt::getBoolMap(parent_name, nh_, "debug_level", enabled_);
 
-  // Populate what settings we want
-  setting_names.push_back("show_goal_bin_markers");
-  setting_names.push_back("verbose_bounding_box");
-  setting_names.push_back("verbose_experience_database_stats");
-  setting_names.push_back("verbose_cartesian_planning");
-  setting_names.push_back("show_grasping_seed_state");
-  setting_names.push_back("show_grasp_filter_collision_if_failed");
-  setting_names.push_back("show_simulated_paths_moving");
-  setting_names.push_back("generic_bool");
-  setting_names.push_back("unit_test/SuperSimple");
-  setting_names.push_back("unit_test/SimpleRotated");
-  setting_names.push_back("unit_test/SimpleVeryRotated");
-  setting_names.push_back("unit_test/SimpleFarBack");
-  setting_names.push_back("unit_test/RandomSimple");
-  setting_names.push_back("show_experience_database");
-  //setting_names.push_back("");
-  //setting_names.push_back("");
-  //setting_names.push_back("");
-  //setting_names.push_back("");
-  //setting_names.push_back("");
-  //setting_names.push_back("");
-  //setting_names.push_back("");
-
-  // Load settings from rosparam
-  for (std::size_t i = 0; i < setting_names.size(); ++i)
-  {
-    rvt::getBoolParameter(parent_name, nh_, "apc_manager/" + setting_names[i], enabled_[setting_names[i]]);    
-  }
   return true;
 }
 
