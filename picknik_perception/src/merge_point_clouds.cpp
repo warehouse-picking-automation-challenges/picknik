@@ -119,9 +119,14 @@ public:
     {
       return;
     }
+    else if (transform_link_.empty())
+    {
+      // left point cloud must be recieved first
+      return;
+    }
     else
     {
-      const std::string BASE_LINK = transform_link_;;
+      const std::string BASE_LINK = transform_link_;
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
       pcl::fromROSMsg(*msg, *cloud);
 
@@ -203,6 +208,8 @@ public:
       ROS_INFO_STREAM_NAMED("merge_point_clouds","Point cloud publishing has started!");
       has_started_ = true;
     }
+    else
+      ROS_DEBUG_STREAM_THROTTLE_NAMED(1.0,"merge_point_clouds","Publishing");
     
     has_left_pc_ = false;
     has_right_pc_ = false;

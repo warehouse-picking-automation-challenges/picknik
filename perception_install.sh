@@ -1,5 +1,6 @@
 # AUTO INSTALL PERCEPTION
 # Make sure perception code is located in ~/ros/perception
+set -e
 
 # Dependencies:
 
@@ -10,8 +11,7 @@ sudo apt-get install -y autoconf2.13 libglm-dev libtinyxml2-dev libglew-dev doxy
 cd ~/ros/perception/protobuf
 ./autogen.sh
 ./configure
-make -j3
-sudo make install all
+sudo make install all -j6
 sudo cp /usr/local/lib/libproto* /usr/lib/
 
 ### Add building shortcut
@@ -43,6 +43,7 @@ cmaker
 ### Install DDTR
 
 cd ~/ros/perception/DDTR
+git pull
 git submodule init
 git submodule update
 cmaker
