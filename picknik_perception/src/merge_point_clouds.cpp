@@ -232,6 +232,7 @@ private:
 
   rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
 
+  bool has_started_;
   bool has_left_pc_;
   bool has_right_pc_;
   bool processing_;

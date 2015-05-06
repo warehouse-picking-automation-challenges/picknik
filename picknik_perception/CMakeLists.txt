@@ -94,15 +94,6 @@ target_link_libraries(cloud_preprocessor
 )
 
 # Executable
-add_executable(align_point_clouds
-  src/align_point_clouds.cpp
-)
-target_link_libraries(align_point_clouds
-  ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
-)
-
-# Executable
 add_executable(merge_point_clouds
   src/merge_point_clouds.cpp
 )
