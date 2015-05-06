@@ -97,3 +97,12 @@ Create a launch file that will change the camera topic names (from `multi_xtion.
    <arg name="depth_registration" value="true" />
 </include>
 ```
+### Merging point clouds
+
+If two cameras are being used and are aligned, the clouds can be merged into a single topic with
+
+```
+rosrun picknik_perception merge_point_clouds
+```
+
+by default, this subscribes to `/xtion_left/depth_registered/points` and `/xtion_right/depth_registered/points`.
