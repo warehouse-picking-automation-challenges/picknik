@@ -491,6 +491,7 @@ bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera)
 
 bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjectPtr &bin)
 {
+  ROS_INFO_STREAM_NAMED("perception_interface","Updating bounding mesh for product " << product->getName());
   bool verbose = visuals_->isEnabled("verbose_bounding_box");
 
   // Debug
@@ -499,20 +500,26 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
     std::cout << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
 
-    std::cout << "Before getBoundingingBoxFromMesh(): " << std::endl;
-    std::cout << "  Cuboid Pose: "; printTransform(product->getCentroid());
-    std::cout << "  Height: " << product->getHeight() << std::endl;
-    std::cout << "  Depth: " << product->getDepth() << std::endl;
-    std::cout << "  Width: " << product->getWidth() << std::endl;
-    std::cout << std::endl;
+    // std::cout << "Before getBoundingingBoxFromMesh(): " << std::endl;
+    // std::cout << "  Cuboid Pose: "; printTransform(product->getCentroid());
+    // std::cout << "  Height: " << product->getHeight() << std::endl;
+    // std::cout << "  Depth: " << product->getDepth() << std::endl;
+    // std::cout << "  Width: " << product->getWidth() << std::endl;
+    // std::cout << std::endl;
   }
   Eigen::Affine3d bin_to_world = shelf_->getBottomRight() * bin->getBottomRight();
 
-  ROS_INFO_STREAM_NAMED("collision_object","Dropping points to plane");
-  bounding_box_.drop_pose_ = bin_to_world;
-  bounding_box_.drop_plane_ = bounding_box::XY;
-  bounding_box_.drop_points_ = true;
+  if (visuals_->isEnabled("dropping_bounding_box"))
+  {
+    ROS_DEBUG_STREAM_NAMED("perception_interface","Dropping points to plane for " << product->getName());
 
+    bounding_box_.drop_pose_ = bin_to_world;
+    bounding_box_.drop_plane_ = bounding_box::XY;
+    bounding_box_.drop_points_ = true;
+
+    visuals_->visual_tools_->publishAxisLabeled(bounding_box_.drop_pose_, "drop_pose");
+  }
+  
   // visual_tools_->publishAxis(pose);
   // visual_tools_->publishAxis(bounding_box_.drop_pose_);
   // visual_tools_->publishCuboid(pose, depth, width, height, rviz_visual_tools::TRANSLUCENT_DARK);      
@@ -545,7 +552,7 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
 
     // View
     const Eigen::Affine3d bounding_to_world = bounding_to_mesh * mesh_to_bin * bin_to_world;
-    visuals_->visual_tools_->publishAxisLabeled(bounding_to_world, "bounding_to_world");
+    //visuals_->visual_tools_->publishAxisLabeled(bounding_to_world, "bounding_to_world");
   }
 
   const Eigen::Affine3d bounding_to_bin = mesh_to_bin * bounding_to_mesh;

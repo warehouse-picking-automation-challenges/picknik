@@ -8,7 +8,7 @@ debug_level:
   show_goal_bin_markers: true
 
   # Bounding Box
-  verbose_bounding_box: false
+  verbose_bounding_box: true
   
   # Experience planning
   verbose_experience_database_stats: false
@@ -34,3 +34,6 @@ debug_level:
   unit_test_SimpleVeryRotated: false
   unit_test_SimpleFarBack: false
   unit_test_ExpoLow: true
+
+  # Use dropping bounding box feature
+  dropping_bounding_box: false

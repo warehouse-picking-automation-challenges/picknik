@@ -239,7 +239,7 @@ protected:
   // Poses relative to center bottom of robot
   Eigen::Affine3d bottom_right_;
   Eigen::Affine3d top_left_;
-};
+}; // RectangleObject
 
 
 // -------------------------------------------------------------------------------------------------
@@ -283,7 +283,7 @@ public:
   /**
    * \brief Getter for CollisionMesh
    */ 
-  const shape_msgs::Mesh& getCollisionMesh() const;
+  const shape_msgs::Mesh& getCollisionMesh();
 
   /**
    * \brief Setter for CollisionMesh
@@ -360,7 +360,8 @@ protected:
   // Pose relative to parent object
   Eigen::Affine3d centroid_;
   Eigen::Affine3d mesh_centroid_;
-};
+
+}; // MeshObject
 
 } // namespace
 

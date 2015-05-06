@@ -121,7 +121,7 @@ Run fake object recognition server:
 
 Run APC Manager (main program) for JACOB in simulation
 
-	roslaunch picknik_main jacob_apc.launch fake_execution:=1 fake_perception:=1 mode:=1 auto:=1
+	roslaunch picknik_main jacob_apc.launch fake_execution:=1 fake_perception:=1 mode:=1 full_auto:=1
 
 ### Run HARDWARE of Jacob
 

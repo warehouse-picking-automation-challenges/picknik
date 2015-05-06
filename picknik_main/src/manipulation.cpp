@@ -108,7 +108,9 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, JointModelGroup* arm_jmg,
 
   Eigen::Affine3d world_to_product = product->getWorldPose(shelf_, bin);
 
-  if (verbose)
+  printTransform(world_to_product);
+
+  if (verbose || true)
   {
     visuals_->visual_tools_->publishAxis(world_to_product);
     visuals_->visual_tools_->publishText(world_to_product, "object_pose", rvt::BLACK, rvt::SMALL, false);

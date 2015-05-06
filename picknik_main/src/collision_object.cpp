@@ -285,8 +285,17 @@ bool MeshObject::loadCollisionBodies()
   return true;
 }
 
-const shape_msgs::Mesh& MeshObject::getCollisionMesh() const
+const shape_msgs::Mesh& MeshObject::getCollisionMesh()
 {
+  // Check if mesh needs to be loaded
+  if (mesh_msg_.triangles.empty()) // load mesh from file
+  {
+    if (!loadCollisionBodies())
+    {
+      ROS_ERROR_STREAM_NAMED("collision_object","Unable to load collision object");
+    }
+  }
+
   return mesh_msg_;
 }
 
