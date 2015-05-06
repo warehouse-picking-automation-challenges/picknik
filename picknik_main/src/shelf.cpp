@@ -31,7 +31,7 @@ BinObject::BinObject(VisualsPtr visuals,
 {
 }
 
-bool BinObject::visualize(const Eigen::Affine3d& trans) const
+bool BinObject::visualizeHighRes(const Eigen::Affine3d& trans) const
 {
   // Show bin
   //visuals_->visual_tools_display_->publishCuboid( transform(bottom_right_, trans).translation(),
@@ -41,7 +41,7 @@ bool BinObject::visualize(const Eigen::Affine3d& trans) const
   // Show products
   for (std::size_t product_id = 0; product_id < products_.size(); ++product_id)
   {
-    products_[product_id]->visualize(trans * bottom_right_); // send transform from world to bin
+    products_[product_id]->visualizeHighRes(trans * bottom_right_); // send transform from world to bin
   }
 
   return true;
@@ -469,7 +469,7 @@ bool ShelfObject::visualizeAxis(VisualsPtr visuals) const
   return true;
 }
 
-bool ShelfObject::visualize(bool show_products) const
+bool ShelfObject::visualizeHighRes(bool show_products) const
 {
   Eigen::Affine3d high_res_pose = bottom_right_ * high_res_mesh_offset_;
 
@@ -482,12 +482,12 @@ bool ShelfObject::visualize(bool show_products) const
   {
     for (BinObjectMap::const_iterator bin_it = bins_.begin(); bin_it != bins_.end(); bin_it++)
     {
-      bin_it->second->visualize(bottom_right_);
+      bin_it->second->visualizeHighRes(bottom_right_);
     }
   }
 
   // Show goal bin
-  goal_bin_->visualize(bottom_right_);
+  goal_bin_->visualizeHighRes(bottom_right_);
 
   // Show all other collision objects
   visualizeEnvironmentObjects();
@@ -508,7 +508,7 @@ bool ShelfObject::visualizeEnvironmentObjects() const
   for (std::map<std::string,RectangleObjectPtr>::const_iterator env_it = environment_objects_.begin();
        env_it != environment_objects_.end(); env_it++)
   {
-    env_it->second->visualize(bottom_right_);
+    env_it->second->visualizeHighRes(bottom_right_);
   }
   return true;
 }

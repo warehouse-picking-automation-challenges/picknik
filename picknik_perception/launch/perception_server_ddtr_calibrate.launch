@@ -8,8 +8,8 @@
 	   value="gdb -x $(find picknik_main)/launch/debug_settings.gdb --ex run --args" />
 
   <!-- Main process -->
-  <node name="perception_server_ddtr" pkg="picknik_perception" type="perception_server_ddtr" respawn="false" 
-	launch-prefix="$(arg launch_prefix)" output="screen">
+  <node name="perception_server_ddtr_calibrate" pkg="picknik_perception" type="perception_server_ddtr_calibrate" 
+	respawn="false" launch-prefix="$(arg launch_prefix)" output="screen">	
   </node>
 
 </launch>

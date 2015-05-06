@@ -57,6 +57,7 @@ public:
 
   PointCloudMerger()
     : nh_("~")
+    , has_started_(false)
   {
     id_ = 0;
 
@@ -69,7 +70,7 @@ public:
     cloud_left_ = cloud_left;
     cloud_right_ = cloud_right;
 
-    visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base"));
+    visual_tools_.reset(new rviz_visual_tools::RvizVisualTools("base","/picknik_main/markers"));
     visual_tools_->deleteAllMarkers();
 
     // subscribe to point clouds
@@ -80,6 +81,10 @@ public:
 
     // publish aligned point cloud and bin point cloud
     pc_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ> >("points",1);
+
+    // wait to allow buffers to load
+    ros::Duration(1.0).sleep();
+    ros::spinOnce();
 
   }
 
@@ -124,7 +129,7 @@ public:
       
       if (!pcl_ros::transformPointCloud(BASE_LINK, *cloud, *cloud_right_, tf_listener_))
       {
-        ROS_ERROR_STREAM_NAMED("point_cloud_merger","Error converting left cloud to desired frame");
+        ROS_ERROR_STREAM_NAMED("merge_point_clouds","Error converting left cloud to desired frame");
       }
 
       has_right_pc_ = true;
@@ -140,14 +145,14 @@ public:
 
   void setLeftCameraTopic(std::string topic)
   {
-    ROS_DEBUG_STREAM_NAMED("point_cloud_merger","changing left camera topic: " << topic);
+    ROS_DEBUG_STREAM_NAMED("merge_point_clouds","changing left camera topic: " << topic);
     left_pc_sub_.shutdown();
     left_pc_sub_ = nh_.subscribe(topic, 1, &PointCloudMerger::leftPointCloudCallback, this);
   }
 
   void setRightCameraTopic(std::string topic)
   {
-    ROS_DEBUG_STREAM_NAMED("point_cloud_merger","changing right camera topic: " << topic);
+    ROS_DEBUG_STREAM_NAMED("merge_point_clouds","changing right camera topic: " << topic);
     right_pc_sub_.shutdown();
     right_pc_sub_ = nh_.subscribe(topic, 1, &PointCloudMerger::rightPointCloudCallback, this);
   }
@@ -157,7 +162,7 @@ public:
     // check if both or either of the clouds has zero size
     if (cloud_left_->size() == 0 && cloud_right_->size() == 0)
     {
-      ROS_WARN_STREAM_NAMED("point_cloud_merger","Both clouds have zero size, skipping...");
+      ROS_WARN_STREAM_NAMED("merge_point_clouds","Both clouds have zero size, skipping...");
       has_left_pc_ = false;
       has_right_pc_ = false;
       return false;
@@ -165,7 +170,7 @@ public:
 
     if (cloud_left_->size() == 0)
     {
-      ROS_WARN_STREAM_NAMED("point_cloud_merger","Left point cloud has zero size...");
+      ROS_WARN_STREAM_NAMED("merge_point_clouds","Left point cloud has zero size...");
 
       publishCloud(cloud_right_);
 
@@ -177,7 +182,7 @@ public:
     
     if (cloud_right_->size() == 0)
     {
-      ROS_WARN_STREAM_NAMED("point_cloud_merger","right point cloud has zero size...");
+      ROS_WARN_STREAM_NAMED("merge_point_clouds","right point cloud has zero size...");
 
       publishCloud(cloud_left_);
 
@@ -186,12 +191,18 @@ public:
 
       return true;      
     }
-      
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr merged_cloud(new pcl::PointCloud<pcl::PointXYZRGB>); 
   
     *merged_cloud = *cloud_left_ + *cloud_right_;
       
     publishCloud(merged_cloud);
+
+    // user feedback
+    if (!has_started_)
+    {
+      ROS_INFO_STREAM_NAMED("merge_point_clouds","Point cloud publishing has started!");
+      has_started_ = true;
+    }
     
     has_left_pc_ = false;
     has_right_pc_ = false;
@@ -238,7 +249,7 @@ private:
 
 int main (int argc, char** argv)
 {
-  ros::init(argc, argv, "point_cloud_merger");
+  ros::init(argc, argv, "merge_point_clouds");
 
   ros::AsyncSpinner spinner(2);
   spinner.start();

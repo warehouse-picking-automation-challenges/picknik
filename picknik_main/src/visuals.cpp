@@ -74,7 +74,7 @@ bool Visuals::visualizeDisplayShelf(ShelfObjectPtr shelf)
 {
   visual_tools_display_->deleteAllMarkers(); // clear all old markers
   visual_tools_display_->enableBatchPublishing(true);
-  shelf->visualize();
+  shelf->visualizeHighRes();
   shelf->visualizeAxis(shared_from_this());
   visual_tools_display_->triggerBatchPublishAndDisable();
   return true;

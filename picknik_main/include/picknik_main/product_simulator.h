@@ -46,6 +46,7 @@
 #include <picknik_main/shelf.h>
 #include <picknik_main/namespaces.h>
 #include <picknik_main/visuals.h>
+#include <picknik_main/perception_interface.h>
 
 namespace picknik_main
 {
@@ -69,7 +70,7 @@ public:
    * \brief Place objects on shelf randomly in simulation
    * \return true on success
    */
-  bool generateRandomProductPoses(ShelfObjectPtr shelf);
+  bool generateRandomProductPoses(ShelfObjectPtr shelf, PerceptionInterfacePtr percepetion_interface);
 
   /**
    * \brief Add a collision mesh of a product to any scene

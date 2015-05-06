@@ -85,20 +85,6 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   ROS_INFO_STREAM_NAMED("manipulation","Manipulation Ready.");
 }
 
-bool Manipulation::updateBoundingMesh(WorkOrder& work_order)
-{
-  BinObjectPtr& bin = work_order.bin_;
-  ProductObjectPtr& product = work_order.product_;
-
-  // Calculate dimensions
-  product->calculateBoundingBox(bin->getBinToWorld(shelf_));
-
-  // Visualize
-  product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()));
-
-  return true;
-}
-
 bool Manipulation::chooseGrasp(WorkOrder work_order, JointModelGroup* arm_jmg,
                                std::vector<moveit_grasps::GraspCandidatePtr> &grasp_candidates, bool verbose,
                                moveit::core::RobotStatePtr seed_state)
@@ -126,12 +112,6 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, JointModelGroup* arm_jmg,
   {
     visuals_->visual_tools_->publishAxis(world_to_product);
     visuals_->visual_tools_->publishText(world_to_product, "object_pose", rvt::BLACK, rvt::SMALL, false);
-  }
-
-  // Bounding mesh
-  if (!updateBoundingMesh(work_order))
-  {
-    ROS_WARN_STREAM_NAMED("manipulation","Unable to update bounding mesh");
   }
 
   // Generate grasps

@@ -53,6 +53,9 @@
 // Picknik Msgs
 #include <picknik_msgs/FindObjectsAction.h>
 
+// Bounding Box
+#include <bounding_box/bounding_box.h>
+
 namespace picknik_main
 {
 
@@ -95,6 +98,12 @@ public:
    */
   bool processPerceptionResults(picknik_msgs::FindObjectsResultConstPtr result,
                                 ProductObjectPtr& product, BinObjectPtr& bin);
+
+  /**
+   * \brief Calculate the bouding mesh for a product
+   * \return true on success
+   */
+  bool updateBoundingMesh(ProductObjectPtr &product, BinObjectPtr &bin);
   
 private:
 
@@ -119,8 +128,6 @@ private:
    * \return true on success
    */
   bool publishCameraFrame(Eigen::Affine3d camera_to_world);
-
-  //bool convertFrameCVToROS(const Eigen::Affine3d& cv_frame, Eigen::Affine3d& ros_frame);
 
   // Show more visual and console output, with general slower run time.
   bool verbose_;
@@ -157,7 +164,7 @@ private:
   double camera_cy_; 
   double camera_min_depth_; 
   
-  
+  bounding_box::BoundingBox bounding_box_;  
 }; // end class
 
 // Create boost pointers for this class

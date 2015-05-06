@@ -112,9 +112,24 @@ public:
       }
       ROS_INFO_STREAM_NAMED("pcl_perception_server","Starting perception for " << goal->bin_name << ", waiting for stop command");
 
+      // Centroid of bin
+      Eigen::Affine3d roi_centroid = visual_tools_->convertPose(goal->bin_centroid);
+
+      // Size of the bin
+      const double &bin_height = goal->bin_dimensions.dimensions[shape_msgs::SolidPrimitive::BOX_Z];
+      const double &bin_width  = goal->bin_dimensions.dimensions[shape_msgs::SolidPrimitive::BOX_Y];
+      const double &bin_depth  = goal->bin_dimensions.dimensions[shape_msgs::SolidPrimitive::BOX_X];
+
+      // corners for front of bin, in world coordiantes... TODO - i did this is ROS coordinate system
+      Eigen::Vector3d translate_bottom_right(-bin_depth / 2.0, -bin_width / 2.0, -bin_height / 2.0);
+      // etc...
+      // TODO
+      Eigen::Affine3d front_bottom_right; // TODO
+      Eigen::Affine3d back_top_left; // TODOu
+
       // Set regions of interest
-      pointcloud_filter_->setRegionOfInterest(visual_tools_->convertPose(goal->front_bottom_right),
-                                              visual_tools_->convertPose(goal->back_top_left), roi_reduction_padding_x_, roi_reduction_padding_y_, roi_reduction_padding_z_);
+      pointcloud_filter_->setRegionOfInterest(front_bottom_right, back_top_left, roi_reduction_padding_x_, roi_reduction_padding_y_, roi_reduction_padding_z_);
+                                              
 
 
       // TODO: this stop command is not really applicable to this method of perception

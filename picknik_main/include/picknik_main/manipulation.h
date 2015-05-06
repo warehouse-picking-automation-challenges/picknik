@@ -62,13 +62,7 @@ public:
   Manipulation(bool verbose, VisualsPtr visuals,
                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                ManipulationDataPtr config, moveit_grasps::GraspDatas grasp_datas,
-               RemoteControlPtr remote_control, ShelfObjectPtr shelf, bool fake_execution);               
-
-  /**
-   * \brief Calculate the bouding mesh for a product
-   * \return true on success
-   */
-  bool updateBoundingMesh(WorkOrder& work_order);
+               RemoteControlPtr remote_control, ShelfObjectPtr shelf, bool fake_execution);
 
   /**
    * \brief Choose the grasp for the object

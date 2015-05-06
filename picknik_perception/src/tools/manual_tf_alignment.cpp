@@ -49,7 +49,7 @@ ManualTFAlignment::ManualTFAlignment()
   ROS_INFO_STREAM_NAMED("manualTF","Listening to topic : " << topic_name_);
   ROS_INFO_STREAM_NAMED("manualTF","Transform from     : " << from_);
   ROS_INFO_STREAM_NAMED("manualTF","Transform to       : " << to_);
-  ROS_INFO_STREAM_NAMED("manualTF","Will save TF data to: " << save_path_);
+  ROS_INFO_STREAM_NAMED("manualTF","Will save TF data to: " << save_path_);  
 }
 
 void ManualTFAlignment::keyboardCallback(const keyboard::Key::ConstPtr& msg)

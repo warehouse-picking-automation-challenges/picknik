@@ -92,22 +92,25 @@ bool PerceptionInterface::isPerceptionReady()
 }
 
 bool PerceptionInterface::startPerception(ProductObjectPtr& product, BinObjectPtr& bin)
-{
+{  
   // Setup goal
   ROS_INFO_STREAM_NAMED("perception_interface","Communicating with perception pipeline");
   picknik_msgs::FindObjectsGoal find_object_goal;
   find_object_goal.desired_object_name = product->getName();
 
   // Send region of interest
-  const Eigen::Affine3d bottom_right = picknik_main::transform(bin->getBottomRight(), shelf_->getBottomRight());
-  const Eigen::Affine3d top_left = picknik_main::transform(bin->getTopLeft(), shelf_->getBottomRight());
+  const Eigen::Affine3d bin_centroid = picknik_main::transform(bin->getCentroid(), shelf_->getBottomRight());
   find_object_goal.bin_name = bin->getName();
-  find_object_goal.front_bottom_right = visuals_->visual_tools_->convertPose(bottom_right);
-  find_object_goal.back_top_left = visuals_->visual_tools_->convertPose(top_left);
+  find_object_goal.bin_centroid = visuals_->visual_tools_->convertPose(bin_centroid);
+  find_object_goal.bin_dimensions.type = shape_msgs::SolidPrimitive::BOX;
+  find_object_goal.bin_dimensions.dimensions.resize(3);
+  find_object_goal.bin_dimensions.dimensions[shape_msgs::SolidPrimitive::BOX_X] = bin->getDepth();
+  find_object_goal.bin_dimensions.dimensions[shape_msgs::SolidPrimitive::BOX_Y] = bin->getWidth();
+  find_object_goal.bin_dimensions.dimensions[shape_msgs::SolidPrimitive::BOX_Z] = bin->getHeight();
 
   // Get all of the products in the bin
   bin->getProducts(find_object_goal.expected_objects_names);
-
+ 
   // Make sure perception is reset
   if (false)
   {
@@ -124,10 +127,10 @@ bool PerceptionInterface::startPerception(ProductObjectPtr& product, BinObjectPt
 
   // Send request
   find_objects_action_.sendGoal(find_object_goal);
-
+ 
   // Change state of interface
   is_processing_perception_ = true;
-
+ 
   return true;
 }
 
@@ -281,7 +284,7 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
 
   // Get camera position
   Eigen::Affine3d object_pose_offset = Eigen::Affine3d::Identity();
-  //getHackOffsetPose(object_pose_offset, time_stamp);
+  getHackOffsetPose(object_pose_offset, time_stamp);
 
   // Show camera view
   //publishCameraFrame(world_to_camera);
@@ -300,6 +303,9 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     {
       ROS_ERROR_STREAM_NAMED("perception_interface","frame_id has changed between found objects in same perception results message");
     }
+
+    // TESTING - set camera pose to that from lu's code
+    world_to_camera = visuals_->visual_tools_->convertPose(found_object.camera_pose.pose);
 
     // Get object's transform
     Eigen::Affine3d camera_to_object = visuals_->visual_tools_->convertPose(found_object.object_pose.pose);
@@ -378,13 +384,19 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
       ROS_ERROR_STREAM_NAMED("perception_interface","No mesh provided");
 
     // Show in collision and display Rvizs
-    product->visualize(world_to_bin);
+    //product->visualizeHighRes(world_to_bin); // TODO change to the new mesh
+
+    // So that bounding boxes don't build up
+    visuals_->visual_tools_->deleteAllMarkers();
+
+    // Update the bounding box
+    updateBoundingMesh(product, bin);
+
+    // Show the new mesh
     product->createCollisionBodies(world_to_bin);
 
-    product->calculateBoundingBox(bin->getBinToWorld(shelf_));
-
-    visuals_->visual_tools_->deleteAllMarkers();
-    product->visualizeWireframe(bin->getBinToWorld(shelf_));
+    // DEBUG : show camera pose from percepiton system
+    visuals_->visual_tools_->publishAxisLabeled(found_object.camera_pose.pose, "perception_camera");    
 
   } // for each found product
 
@@ -477,16 +489,85 @@ bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera)
   return true;
 }
 
-// bool PerceptionInterface::convertFrameCVToROS(const Eigen::Affine3d& cv_frame, Eigen::Affine3d& ros_frame)
-// {
-//   Eigen::Matrix3d rotation;
-//   rotation = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
-//     * Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitZ());
-//   //std::cout << "Rotation: " << rotation << std::endl;
-//   ros_frame = rotation * cv_frame;
+bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjectPtr &bin)
+{
+  bool verbose = visuals_->isEnabled("verbose_bounding_box");
 
-//   return true;
-// }
+  // Debug
+  if (verbose)
+  {
+    std::cout << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
 
+    std::cout << "Before getBoundingingBoxFromMesh(): " << std::endl;
+    std::cout << "  Cuboid Pose: "; printTransform(product->getCentroid());
+    std::cout << "  Height: " << product->getHeight() << std::endl;
+    std::cout << "  Depth: " << product->getDepth() << std::endl;
+    std::cout << "  Width: " << product->getWidth() << std::endl;
+    std::cout << std::endl;
+  }
+  Eigen::Affine3d bin_to_world = shelf_->getBottomRight() * bin->getBottomRight();
+
+  ROS_INFO_STREAM_NAMED("collision_object","Dropping points to plane");
+  bounding_box_.drop_pose_ = bin_to_world;
+  bounding_box_.drop_plane_ = bounding_box::XY;
+  bounding_box_.drop_points_ = true;
+
+  // visual_tools_->publishAxis(pose);
+  // visual_tools_->publishAxis(bounding_box_.drop_pose_);
+  // visual_tools_->publishCuboid(pose, depth, width, height, rviz_visual_tools::TRANSLUCENT_DARK);      
+  // drop_cloud->header.frame_id = "/world";
+  // drop_cloud->header.seq = id++;
+  //bounding_box_.drop_points_ = false;
+
+  // Get bounding box
+  Eigen::Affine3d bounding_to_mesh;
+  double depth, width, height;
+  if (!bounding_box_.getBodyAlignedBoundingBox(product->getCollisionMesh(), bounding_to_mesh, depth, width, height))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to get bounding box");
+    return false;
+  }
+  product->setDepth(depth);
+  product->setWidth(width);
+  product->setHeight(height);
+
+  const Eigen::Affine3d &mesh_to_bin = product->getMeshCentroid(); // perception results (centroid of mesh to bin)
+
+  // Debug
+  if (verbose)
+  {
+    std::cout << "Bounding to Mesh: ";
+    printTransform(bounding_to_mesh);
+
+    std::cout << "Mesh to bin:      ";
+    printTransform(mesh_to_bin);
+
+    // View
+    const Eigen::Affine3d bounding_to_world = bounding_to_mesh * mesh_to_bin * bin_to_world;
+    visuals_->visual_tools_->publishAxisLabeled(bounding_to_world, "bounding_to_world");
+  }
+
+  const Eigen::Affine3d bounding_to_bin = mesh_to_bin * bounding_to_mesh;
+  product->setCentroid(bounding_to_bin);
+
+  // Debug
+  if (verbose)
+  {
+    std::cout << std::endl;
+    std::cout << "After getBoundingingBoxFromMesh(): " << std::endl;
+    std::cout << "  Cuboid Pose: "; printTransform(product->getCentroid());
+    std::cout << "  Height: " << product->getHeight() << std::endl;
+    std::cout << "  Depth: " << product->getDepth() << std::endl;
+    std::cout << "  Width: " << product->getWidth() << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+  }
+
+
+  // Visualize
+  product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()));
+
+  return true;
+}
 
 } // namespace

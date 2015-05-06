@@ -22,9 +22,6 @@
 #include <picknik_main/namespaces.h>
 #include <picknik_main/visuals.h>
 
-// bounding_box
-#include <bounding_box/bounding_box.h>
-
 namespace picknik_main
 {
 
@@ -73,32 +70,11 @@ public:
   CollisionObject(const CollisionObject& copy);
   
   /**
-   * \brief Show bin in Rviz (not collision bodies)
-   * \param trans - transform from parent container to current container
-   */
-  // virtual bool visualize(const Eigen::Affine3d& trans) const;
-
-  /**
    * \brief Show the outline of the object
    * \param trans - transform from parent container to current container
    * \return true on success
    */
   virtual bool visualizeWireframe(const Eigen::Affine3d& trans) const = 0;
-
-  /**
-   * \brief Get height of rectangle
-   */
-  // virtual double getHeight() const;
-
-  /**
-   * \brief Get width of rectangle
-   */
-  // virtual double getWidth() const;
-
-  /**
-   * \brief Get depth of rectangle
-   */
-  // virtual double getDepth() const;
 
   /**
    * \brief Getter for rectangle name
@@ -186,7 +162,7 @@ public:
    * \brief Show bin in Rviz (not collision bodies)
    * \param trans - transform from parent container to current container
    */
-  bool visualize(const Eigen::Affine3d& trans) const;
+  bool visualizeHighRes(const Eigen::Affine3d& trans) const;
 
   /**
    * \brief Show the outline of the object
@@ -282,7 +258,7 @@ public:
    * \brief Show bin in Rviz (not collision bodies)
    * \param trans - transform from parent container to current container
    */
-  bool visualize(const Eigen::Affine3d& trans) const;
+  bool visualizeHighRes(const Eigen::Affine3d& trans) const;
 
   /**
    * \brief Show the outline of the object
@@ -371,14 +347,6 @@ public:
   */
   void setMeshCentroid(const Eigen::Affine3d& centroid);
 
-  /**
-   * \brief Get bounding box and corresponding height/width/depth
-   * \param verbose
-   * \param bin_to_world - optional transform to help with debugging
-   * \return true on success
-   */
-  bool calculateBoundingBox(const Eigen::Affine3d &bin_to_world = Eigen::Affine3d::Identity());
-
 protected:
 
   // Geometry
@@ -392,8 +360,6 @@ protected:
   // Pose relative to parent object
   Eigen::Affine3d centroid_;
   Eigen::Affine3d mesh_centroid_;
-
-  bounding_box::BoundingBox bounding_box_;
 };
 
 } // namespace
