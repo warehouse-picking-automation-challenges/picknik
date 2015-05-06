@@ -127,12 +127,6 @@ target_link_libraries(pcl_perception_server
   ${Boost_LIBRARIES}
 )
 
-add_executable(ply_generation_test src/tests/ply_generation_tests.cpp)
-target_link_libraries(ply_generation_test
-  simple_point_cloud_filter
-  ${catkin_LIBRARIES}
-)
-
 ## Install
 
 # Install libraries

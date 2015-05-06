@@ -65,20 +65,6 @@ public:
   SimplePointCloudFilter(rviz_visual_tools::RvizVisualToolsPtr& visual_tools);
 
   /**
-   * \brief Create a mesh message from the region of interest point cloud (roi_cloud_)
-   * \return true on success
-   */
-  static shape_msgs::Mesh createPlyMsg(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
-
-  /**
-   * \brief Create a *.ply file from the region of interest point cloud (roi_cloud_)
-   *  will be saved in picknik_perception/data
-   * \param file name
-   * \return true on success
-   */
-  static void createPlyFile(std::string file_name, pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
-
-  /**
    * \brief Visualize region of interest
    * \return true on success
    */
