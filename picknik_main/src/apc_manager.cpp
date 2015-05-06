@@ -1613,7 +1613,7 @@ bool APCManager::perceiveObjectFake(WorkOrder work_order)
   product->setMeshCentroid(fake_centroid);
 
   // Show in collision and display Rvizs
-  product->visualize(world_to_bin);
+  product->visualizeHighRes(world_to_bin);
   product->createCollisionBodies(world_to_bin);
 
   return true;

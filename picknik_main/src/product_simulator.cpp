@@ -82,7 +82,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
     visuals_->visual_tools_display_->deleteAllMarkers(); // clear all old markers
     visuals_->visual_tools_display_->enableBatchPublishing(true); // don't show markers yet
     bool show_products = false;
-    shelf->visualize(show_products);
+    shelf->visualizeHighRes(show_products);
     shelf->visualizeAxis(visuals_);
   }
   // Loop through each bin
@@ -114,7 +114,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
         // Visualize and show in collision shelf
         world_to_bin_transform = transform(bin->getBottomRight(), shelf->getBottomRight());
         if (verbose_)
-          product->visualize(world_to_bin_transform);
+          product->visualizeHighRes(world_to_bin_transform);
 
         if (!inCollision(product, world_to_bin_transform))
         {
@@ -127,7 +127,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
             product->setMeshCentroid(pose);
 
             if (verbose_)
-              product->visualize(world_to_bin_transform);
+              product->visualizeHighRes(world_to_bin_transform);
             
             if (inCollision(product, world_to_bin_transform))
             {
@@ -139,7 +139,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf)
           if (change_rviz_displays)
           {
           product->createCollisionBodies(world_to_bin_transform);
-          product->visualize(world_to_bin_transform);
+          product->visualizeHighRes(world_to_bin_transform);
           }
           break;
         }

@@ -53,7 +53,7 @@ public:
    * \brief Show bin in Rviz (not collision bodies)
    * \param trans - transform from parent container to current container
    */
-  bool visualize(const Eigen::Affine3d& trans) const;
+  bool visualizeHighRes(const Eigen::Affine3d& trans) const;
 
   /**
    * \brief Show coordinate system
@@ -128,7 +128,7 @@ public:
   /**
    * \brief Show shelf in Rviz (not collision bodies)
    */
-  bool visualize(bool show_products = true) const;
+  bool visualizeHighRes(bool show_products = true) const;
 
   /**
    * \brief Show all other collision objects

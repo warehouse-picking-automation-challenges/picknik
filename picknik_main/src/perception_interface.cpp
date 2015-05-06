@@ -281,7 +281,7 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
 
   // Get camera position
   Eigen::Affine3d object_pose_offset = Eigen::Affine3d::Identity();
-  //getHackOffsetPose(object_pose_offset, time_stamp);
+  getHackOffsetPose(object_pose_offset, time_stamp);
 
   // Show camera view
   //publishCameraFrame(world_to_camera);
@@ -300,6 +300,9 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     {
       ROS_ERROR_STREAM_NAMED("perception_interface","frame_id has changed between found objects in same perception results message");
     }
+
+    // TESTING - set camera pose to that from lu's code
+    world_to_camera = visuals_->visual_tools_->convertPose(found_object.camera_pose.pose);
 
     // Get object's transform
     Eigen::Affine3d camera_to_object = visuals_->visual_tools_->convertPose(found_object.object_pose.pose);
@@ -378,13 +381,16 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
       ROS_ERROR_STREAM_NAMED("perception_interface","No mesh provided");
 
     // Show in collision and display Rvizs
-    product->visualize(world_to_bin);
+    product->visualizeHighRes(world_to_bin); // TODO change to 
     product->createCollisionBodies(world_to_bin);
 
     product->calculateBoundingBox(bin->getBinToWorld(shelf_));
 
     visuals_->visual_tools_->deleteAllMarkers();
     product->visualizeWireframe(bin->getBinToWorld(shelf_));
+
+    // DEBUG : show camera pose from percepiton system
+    visuals_->visual_tools_->publishAxisLabeled(found_object.camera_pose.pose, "perception_camera");    
 
   } // for each found product
 

@@ -73,32 +73,11 @@ public:
   CollisionObject(const CollisionObject& copy);
   
   /**
-   * \brief Show bin in Rviz (not collision bodies)
-   * \param trans - transform from parent container to current container
-   */
-  // virtual bool visualize(const Eigen::Affine3d& trans) const;
-
-  /**
    * \brief Show the outline of the object
    * \param trans - transform from parent container to current container
    * \return true on success
    */
   virtual bool visualizeWireframe(const Eigen::Affine3d& trans) const = 0;
-
-  /**
-   * \brief Get height of rectangle
-   */
-  // virtual double getHeight() const;
-
-  /**
-   * \brief Get width of rectangle
-   */
-  // virtual double getWidth() const;
-
-  /**
-   * \brief Get depth of rectangle
-   */
-  // virtual double getDepth() const;
 
   /**
    * \brief Getter for rectangle name
@@ -186,7 +165,7 @@ public:
    * \brief Show bin in Rviz (not collision bodies)
    * \param trans - transform from parent container to current container
    */
-  bool visualize(const Eigen::Affine3d& trans) const;
+  bool visualizeHighRes(const Eigen::Affine3d& trans) const;
 
   /**
    * \brief Show the outline of the object
@@ -282,7 +261,7 @@ public:
    * \brief Show bin in Rviz (not collision bodies)
    * \param trans - transform from parent container to current container
    */
-  bool visualize(const Eigen::Affine3d& trans) const;
+  bool visualizeHighRes(const Eigen::Affine3d& trans) const;
 
   /**
    * \brief Show the outline of the object

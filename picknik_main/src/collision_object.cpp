@@ -126,7 +126,7 @@ RectangleObject::RectangleObject(const RectangleObject& copy)
   top_left_= copy.top_left_;
 }
 
-bool RectangleObject::visualize(const Eigen::Affine3d& trans) const
+bool RectangleObject::visualizeHighRes(const Eigen::Affine3d& trans) const
 {
   // Show simple geometric shape
   return visuals_->visual_tools_display_->publishCuboid( transform(bottom_right_, trans).translation(),
@@ -240,7 +240,7 @@ MeshObject::MeshObject(const MeshObject& copy)
   mesh_msg_ = copy.mesh_msg_;
 }
 
-bool MeshObject::visualize(const Eigen::Affine3d& trans) const
+bool MeshObject::visualizeHighRes(const Eigen::Affine3d& trans) const
 {
   if (high_res_mesh_path_.empty())
   {

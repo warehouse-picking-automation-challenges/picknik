@@ -153,7 +153,7 @@ Run APC Manager (main program) for JACOB on hardware. It will wait for perceptio
 
 ### Run Perception
    
-    cd ~/ros/perception/DDTR/build/Application/Amazon/ && ./Amazon -wsp ~/ros/perception/DDTR/ -mode 3
+    roslaunch picknik_perception perception_server_ddtr.launch 
 
 Arguments
 
