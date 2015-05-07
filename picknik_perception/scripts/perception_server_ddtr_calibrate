@@ -1,2 +1,2 @@
 #!/bin/bash
-cd ~/ros/perception/DDTR/build/Application/Amazon/ && ./Amazon -wsp ~/ros/perception/DDTR/ -mode 3
+cd ~/ros/perception/DDTR/build/Application/RGFusion/ && ./RollingGridFusion -wsp ~/ros/perception/DDTR/ -mode 6
