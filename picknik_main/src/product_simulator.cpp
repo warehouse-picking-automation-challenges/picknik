@@ -148,6 +148,9 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
             ROS_WARN_STREAM_NAMED("product_simulator","Unable to update bounding mesh");
           }
 
+          // Visualize bounding box
+          product->visualizeWireframe(transform(bin->getBottomRight(), shelf->getBottomRight()), rvt::YELLOW);
+
           break;
         }
 

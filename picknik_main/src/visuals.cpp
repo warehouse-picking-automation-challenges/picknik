@@ -67,7 +67,7 @@ Visuals::Visuals(robot_model::RobotModelPtr robot_model, planning_scene_monitor:
 
   // Load verbose/visualization settings
   const std::string parent_name = "visuals"; // for namespacing logging messages
-  loadVerboseLevels(parent_name);
+  rvt::getBoolMap(parent_name, nh_, "debug_level", enabled_);
 }
 
 bool Visuals::visualizeDisplayShelf(ShelfObjectPtr shelf)
@@ -90,13 +90,6 @@ bool Visuals::setSharedRobotState(moveit::core::RobotStatePtr current_state)
   return true;
 }
 
-bool Visuals::loadVerboseLevels(const std::string& parent_name)
-{
-  rvt::getBoolMap(parent_name, nh_, "debug_level", enabled_);
-
-  return true;
-}
-
 bool Visuals::isEnabled(const std::string& setting_name)
 {
   std::map<std::string,bool>::iterator it = enabled_.find(setting_name);
@@ -105,7 +98,7 @@ bool Visuals::isEnabled(const std::string& setting_name)
     // Element found;
     return it->second;
   }
-  ROS_ERROR_STREAM_NAMED("manipulation_data","Enabled setting key " << setting_name << " does not exist in the available configuration");
+  ROS_ERROR_STREAM_NAMED("visuals","isEnabled() key '" << setting_name << "' does not exist in the available configuration");
   return false;
 }
 

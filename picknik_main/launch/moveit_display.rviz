@@ -52,7 +52,10 @@ Visualization Manager:
       Marker Topic: /picknik_main/highres_markers
       Name: Amazon Detailed Markers
       Namespaces:
+        Axis: true
         Cuboid: true
+        Line: true
+        Shelf: true
         goal_bin_49: true
       Queue Size: 100
       Value: true
@@ -170,7 +173,11 @@ Visualization Manager:
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
-        {}
+        Arrow: true
+        Axis: true
+        Path: true
+        Sphere: true
+        Text: true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -189,22 +196,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.9146
+      Distance: 2.09917
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.500856
-        Y: 0.0387309
-        Z: 0.443283
+        X: 0.78843
+        Y: 0.141728
+        Z: 0.997034
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.749798
+      Pitch: 0.634798
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 4.16542
+      Yaw: 3.56042
     Saved: ~
 Window Geometry:
   Displays:

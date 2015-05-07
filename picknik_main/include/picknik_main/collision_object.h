@@ -74,7 +74,7 @@ public:
    * \param trans - transform from parent container to current container
    * \return true on success
    */
-  virtual bool visualizeWireframe(const Eigen::Affine3d& trans) const = 0;
+  virtual bool visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const = 0;
 
   /**
    * \brief Getter for rectangle name
@@ -169,7 +169,7 @@ public:
    * \param trans - transform from parent container to current container
    * \return true on success
    */
-  bool visualizeWireframe(const Eigen::Affine3d& trans) const;
+  bool visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color = rvt::LIME_GREEN) const;
 
   /**
    * \brief Show the bottom right of the object
@@ -265,7 +265,7 @@ public:
    * \param trans - transform from parent container to current container
    * \return true on success
    */
-  bool visualizeWireframe(const Eigen::Affine3d& trans) const;
+  bool visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color = rvt::LIME_GREEN) const;
 
   /**
    * \brief Show the centroid of the object

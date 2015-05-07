@@ -1778,7 +1778,7 @@ bool Manipulation::openEndEffector(bool open, JointModelGroup* arm_jmg)
   ROS_ERROR_STREAM_NAMED("temp","THIS FUNCTION IS DPERECATED");
 
   // Check status
-  if (!config_->end_effector_enabled_)
+  if (!config_->isEnabled("end_effector_enabled"))
   {
     ROS_WARN_STREAM_NAMED("manipulation","Gripping is disabled");
     return true;
@@ -1831,7 +1831,7 @@ bool Manipulation::openEndEffector(bool open, JointModelGroup* arm_jmg)
 bool Manipulation::openEndEffectorWithVelocity(bool open, JointModelGroup* arm_jmg)
 {
   // Check status
-  if (!config_->end_effector_enabled_)
+  if (!config_->isEnabled("end_effector_enabled"))
   {
     ROS_WARN_STREAM_NAMED("manipulation","Gripping is disabled");
     return true;

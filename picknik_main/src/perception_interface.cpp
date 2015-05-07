@@ -392,6 +392,9 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     // Update the bounding box
     updateBoundingMesh(product, bin);
 
+    // Visualize bounding box
+    product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()), rvt::LIME_GREEN);
+
     // Show the new mesh
     product->createCollisionBodies(world_to_bin);
 
@@ -492,10 +495,10 @@ bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera)
 bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjectPtr &bin)
 {
   ROS_INFO_STREAM_NAMED("perception_interface","Updating bounding mesh for product " << product->getName());
-  bool verbose = visuals_->isEnabled("verbose_bounding_box");
+  bool verbose_bounding_box = visuals_->isEnabled("verbose_bounding_box");
 
   // Debug
-  if (verbose)
+  if (verbose_bounding_box)
   {
     std::cout << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
@@ -509,11 +512,12 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   }
   Eigen::Affine3d bin_to_world = shelf_->getBottomRight() * bin->getBottomRight();
 
-  if (visuals_->isEnabled("dropping_bounding_box"))
+  if (config_->isEnabled("dropping_bounding_box"))
   {
+    //Eigen::Affine3d cuboid_to_bin;
     ROS_DEBUG_STREAM_NAMED("perception_interface","Dropping points to plane for " << product->getName());
 
-    bounding_box_.drop_pose_ = bin_to_world;
+    bounding_box_.drop_pose_ = product->getCentroid().inverse();
     bounding_box_.drop_plane_ = bounding_box::XY;
     bounding_box_.drop_points_ = true;
 
@@ -542,7 +546,7 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   const Eigen::Affine3d &mesh_to_bin = product->getMeshCentroid(); // perception results (centroid of mesh to bin)
 
   // Debug
-  if (verbose)
+  if (verbose_bounding_box)
   {
     std::cout << "Bounding to Mesh: ";
     printTransform(bounding_to_mesh);
@@ -559,7 +563,7 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   product->setCentroid(bounding_to_bin);
 
   // Debug
-  if (verbose)
+  if (verbose_bounding_box)
   {
     std::cout << std::endl;
     std::cout << "After getBoundingingBoxFromMesh(): " << std::endl;
@@ -569,10 +573,6 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
     std::cout << "  Width: " << product->getWidth() << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
   }
-
-
-  // Visualize
-  product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()));
 
   return true;
 }

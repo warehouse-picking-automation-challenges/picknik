@@ -133,7 +133,7 @@ bool RectangleObject::visualizeHighRes(const Eigen::Affine3d& trans) const
                                                          transform(top_left_, trans).translation(), color_);
 }
 
-bool RectangleObject::visualizeWireframe(const Eigen::Affine3d& trans) const
+bool RectangleObject::visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const
 {
   ROS_WARN_STREAM_NAMED("temp","viz wireframe todo");
   //return visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans), getDepth(), getWidth(), getHeight(), color_);
@@ -255,13 +255,12 @@ bool MeshObject::visualizeHighRes(const Eigen::Affine3d& trans) const
                                                       rvt::CLEAR, 1, collision_object_name_, 1);
 }
 
-bool MeshObject::visualizeWireframe(const Eigen::Affine3d& trans) const
+bool MeshObject::visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const
 {
   // Show wireframe in both systems
-  visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans), depth_, width_, height_, 
-                                                           rvt::LIME_GREEN);
-  visuals_->visual_tools_->publishWireframeCuboid( transform(centroid_, trans), depth_, width_, height_, 
-                                                   rvt::LIME_GREEN);
+  Eigen::Affine3d pose = transform(centroid_, trans);
+  visuals_->visual_tools_display_->publishWireframeCuboid( pose, depth_, width_, height_, color);
+  visuals_->visual_tools_->publishWireframeCuboid( pose, depth_, width_, height_, color);
   return true;
 }
 

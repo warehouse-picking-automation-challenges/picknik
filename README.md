@@ -76,21 +76,18 @@ Its help documentation:
 ## Run DDTR Perception Pipeline
 
 ### Run Shelf Calibration
-   
-Go to the dir of RGFusion app:
 
-    cd ~/ros/perception/DDTR/build/Application/RGFusion
-    
-Now, run RGFusion:
+To start:
 
-    ./RollingGridFusion -wsp ~/ros/perception/DDTR/ -mode 6
+    roslaunch picknik_perception perception_server_ddtr_calibrate.launch
 
-Now, you should be able to see the live camera images in the top left GUI. Press key 'f' to start Kinect Fusion.
-press 'space' to stop building the shelf model when you got the 3D model you want.
+You should be able to see the live camera images in the top left GUI.
 
-Press the button 'Clean Host (Del SDFs/Poses files)' on the control panel (left side) of the application to clean the old shelf model files.
-
-Press button 'Save Pose' and 'Save SDF' to save the latest 3D model of the shelf.
+ - Press key 'f' to start Kinect Fusion.
+ - Press 'space' to stop building the shelf model when you got the 3D model you want.
+ - Press the button 'Clean Host (Del SDFs/Poses files)' on the control panel (left side) of the application to clean the old shelf model files.
+ - Press button 'Save Pose' and 'Save SDF' to save the latest 3D model of the shelf.
+ 
 Now you are safe the leave the application and run the Amazon app .
 
 ## Start Robots

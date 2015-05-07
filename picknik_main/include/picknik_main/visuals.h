@@ -57,14 +57,6 @@ public:
    */
   bool isEnabled(const std::string& setting_name);
 
-private:
-
-  /**
-   * \brief Load verbose/visulization settings
-   * \return true on success
-   */
-  bool loadVerboseLevels(const std::string& parent_name);
-
 public:
 
   // Public vars

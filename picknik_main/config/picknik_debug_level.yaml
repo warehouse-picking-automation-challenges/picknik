@@ -8,7 +8,7 @@ debug_level:
   show_goal_bin_markers: true
 
   # Bounding Box
-  verbose_bounding_box: true
+  verbose_bounding_box: false
   
   # Experience planning
   verbose_experience_database_stats: false
@@ -21,9 +21,6 @@ debug_level:
   # Seed state
   show_grasping_seed_state: false
 
-  # Multi-use yes/no - can be used for anything
-  generic_bool: false
-
   # Simulation
   show_simulated_paths_moving: true
 
@@ -34,6 +31,3 @@ debug_level:
   unit_test_SimpleVeryRotated: false
   unit_test_SimpleFarBack: false
   unit_test_ExpoLow: true
-
-  # Use dropping bounding box feature
-  dropping_bounding_box: false

@@ -240,7 +240,7 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to, std::siz
     {
       ROS_WARN_STREAM_NAMED("apc_manager","An error occured in last product order.");
 
-      if (!config_->super_auto_)
+      if (!config_->isEnabled("super_auto"))
       {
         // remote_control_->setAutonomous(false);
         // remote_control_->setFullAutonomous(false);
