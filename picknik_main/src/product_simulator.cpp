@@ -126,12 +126,6 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
             product->setCentroid(pose);
             product->setMeshCentroid(pose);
 
-            // Calculate bounding mesh
-            if (!percepetion_interface->updateBoundingMesh(product, bin))
-            {
-              ROS_WARN_STREAM_NAMED("product_simulator","Unable to update bounding mesh");
-            }
-
             //if (verbose_)
             //  product->visualizeHighRes(world_to_bin_transform);
             
@@ -147,6 +141,16 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
             product->createCollisionBodies(world_to_bin_transform);
             //product->visualizeHighRes(world_to_bin_transform);
           }
+
+          // Calculate bounding mesh
+          if (!percepetion_interface->updateBoundingMesh(product, bin))
+          {
+            ROS_WARN_STREAM_NAMED("product_simulator","Unable to update bounding mesh");
+          }
+
+          // Visualize bounding box
+          product->visualizeHighResWireframe(transform(bin->getBottomRight(), shelf->getBottomRight()), rvt::YELLOW);
+
           break;
         }
 

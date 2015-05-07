@@ -70,7 +70,7 @@ public:
     // listen to point cloud topic
     ros::Duration(1.0).sleep();
     ros::spinOnce();
-    pointcloud_sub_ = nh_.subscribe("/xtion_left/depth_registered/points", 1,
+    pointcloud_sub_ = nh_.subscribe("/merge_point_clouds/points", 1,
                                     &picknik_perception::SimplePointCloudFilter::pointCloudCallback, pointcloud_filter_);
 
     // Load parameters
@@ -104,28 +104,29 @@ public:
       rate.sleep();
 
       // Check if goal is recieved
-      picknik_msgs::FindObjectsGoalConstPtr goal;
-      if (!manipulation_interface_->isReadyToStartPerception(goal))
+      picknik_msgs::FindObjectsGoalConstPtr request;
+      if (!manipulation_interface_->isReadyToStartPerception(request))
       {
         ros::Duration(0.1).sleep();
         continue; // loop again
       }
-      ROS_INFO_STREAM_NAMED("pcl_perception_server","Starting perception for " << goal->bin_name << ", waiting for stop command");
+      ROS_INFO_STREAM_NAMED("pcl_perception_server","Starting perception for " << request->bin_name << ", waiting for stop command");
 
       // Centroid of bin
-      Eigen::Affine3d roi_centroid = visual_tools_->convertPose(goal->bin_centroid);
+      Eigen::Affine3d roi_centroid = visual_tools_->convertPose(request->bin_centroid);
 
       // Size of the bin
-      const double &bin_height = goal->bin_dimensions.dimensions[shape_msgs::SolidPrimitive::BOX_Z];
-      const double &bin_width  = goal->bin_dimensions.dimensions[shape_msgs::SolidPrimitive::BOX_Y];
-      const double &bin_depth  = goal->bin_dimensions.dimensions[shape_msgs::SolidPrimitive::BOX_X];
+      const double &bin_height = request->bin_dimensions.dimensions[shape_msgs::SolidPrimitive::BOX_Z];
+      const double &bin_width  = request->bin_dimensions.dimensions[shape_msgs::SolidPrimitive::BOX_Y];
+      const double &bin_depth  = request->bin_dimensions.dimensions[shape_msgs::SolidPrimitive::BOX_X];
 
-      // corners for front of bin, in world coordiantes... TODO - i did this is ROS coordinate system
-      Eigen::Vector3d translate_bottom_right(-bin_depth / 2.0, -bin_width / 2.0, -bin_height / 2.0);
-      // etc...
-      // TODO
-      Eigen::Affine3d front_bottom_right; // TODO
-      Eigen::Affine3d back_top_left; // TODOu
+      // translate pose to corners
+      Eigen::Vector3d translate_to_corners(bin_depth / 2.0, bin_width / 2.0, bin_height / 2.0);
+
+      Eigen::Affine3d front_bottom_right = roi_centroid;
+      front_bottom_right.translation() -= translate_to_corners;
+      Eigen::Affine3d back_top_left = roi_centroid;
+      back_top_left.translation() += translate_to_corners;
 
       // Set regions of interest
       pointcloud_filter_->setRegionOfInterest(front_bottom_right, back_top_left, roi_reduction_padding_x_, roi_reduction_padding_y_, roi_reduction_padding_z_);
@@ -156,14 +157,14 @@ public:
       // Create results
       picknik_msgs::FindObjectsResult result;
 
-      if (goal->expected_objects_names.size() > 1)
+      if (request->expected_objects_names.size() > 1)
         ROS_WARN_STREAM_NAMED("pcl_perception_server","Perception can currently only handle one product");
 
       // For each object in the bin
-      for (std::size_t i = 0; i < goal->expected_objects_names.size(); ++i)
+      for (std::size_t i = 0; i < request->expected_objects_names.size(); ++i)
       {
         picknik_msgs::FoundObject new_product;
-        new_product.object_name = goal->expected_objects_names[i];
+        new_product.object_name = request->expected_objects_names[i];
 
         // TODO Object pose
         pointcloud_filter_->getObjectPose(new_product.object_pose.pose);

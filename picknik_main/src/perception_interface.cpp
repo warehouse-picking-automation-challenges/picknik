@@ -379,6 +379,8 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     {
       ROS_INFO_STREAM_NAMED("perception_interface","Setting new bounding mesh");
       product->setCollisionMesh(mesh);
+
+      product->writeCollisionBody(config_->package_path_ + "/meshes/detected/current.stl");
     }
     else
       ROS_ERROR_STREAM_NAMED("perception_interface","No mesh provided");
@@ -391,6 +393,13 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
 
     // Update the bounding box
     updateBoundingMesh(product, bin);
+
+    // Visualize bounding box
+    product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()), rvt::LIME_GREEN);
+
+    // Visualize bounding box in high res display
+    //visuals_->visualizeDisplayShelf(shelf_);
+    product->visualizeHighResWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()), rvt::LIME_GREEN);
 
     // Show the new mesh
     product->createCollisionBodies(world_to_bin);
@@ -491,28 +500,36 @@ bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera)
 
 bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjectPtr &bin)
 {
-  bool verbose = visuals_->isEnabled("verbose_bounding_box");
+  ROS_INFO_STREAM_NAMED("perception_interface","Updating bounding mesh for product " << product->getName());
+  bool verbose_bounding_box = visuals_->isEnabled("verbose_bounding_box");
 
   // Debug
-  if (verbose)
+  if (verbose_bounding_box)
   {
     std::cout << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
 
-    std::cout << "Before getBoundingingBoxFromMesh(): " << std::endl;
-    std::cout << "  Cuboid Pose: "; printTransform(product->getCentroid());
-    std::cout << "  Height: " << product->getHeight() << std::endl;
-    std::cout << "  Depth: " << product->getDepth() << std::endl;
-    std::cout << "  Width: " << product->getWidth() << std::endl;
-    std::cout << std::endl;
+    // std::cout << "Before getBoundingingBoxFromMesh(): " << std::endl;
+    // std::cout << "  Cuboid Pose: "; printTransform(product->getCentroid());
+    // std::cout << "  Height: " << product->getHeight() << std::endl;
+    // std::cout << "  Depth: " << product->getDepth() << std::endl;
+    // std::cout << "  Width: " << product->getWidth() << std::endl;
+    // std::cout << std::endl;
   }
   Eigen::Affine3d bin_to_world = shelf_->getBottomRight() * bin->getBottomRight();
 
-  ROS_INFO_STREAM_NAMED("collision_object","Dropping points to plane");
-  bounding_box_.drop_pose_ = bin_to_world;
-  bounding_box_.drop_plane_ = bounding_box::XY;
-  bounding_box_.drop_points_ = true;
+  if (config_->isEnabled("dropping_bounding_box"))
+  {
+    //Eigen::Affine3d cuboid_to_bin;
+    ROS_DEBUG_STREAM_NAMED("perception_interface","Dropping points to plane for " << product->getName());
 
+    bounding_box_.drop_pose_ = product->getCentroid().inverse();
+    bounding_box_.drop_plane_ = bounding_box::XY;
+    bounding_box_.drop_points_ = true;
+
+    visuals_->visual_tools_->publishAxisLabeled(bounding_box_.drop_pose_, "drop_pose");
+  }
+  
   // visual_tools_->publishAxis(pose);
   // visual_tools_->publishAxis(bounding_box_.drop_pose_);
   // visual_tools_->publishCuboid(pose, depth, width, height, rviz_visual_tools::TRANSLUCENT_DARK);      
@@ -535,7 +552,7 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   const Eigen::Affine3d &mesh_to_bin = product->getMeshCentroid(); // perception results (centroid of mesh to bin)
 
   // Debug
-  if (verbose)
+  if (verbose_bounding_box)
   {
     std::cout << "Bounding to Mesh: ";
     printTransform(bounding_to_mesh);
@@ -545,14 +562,14 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
 
     // View
     const Eigen::Affine3d bounding_to_world = bounding_to_mesh * mesh_to_bin * bin_to_world;
-    visuals_->visual_tools_->publishAxisLabeled(bounding_to_world, "bounding_to_world");
+    //visuals_->visual_tools_->publishAxisLabeled(bounding_to_world, "bounding_to_world");
   }
 
   const Eigen::Affine3d bounding_to_bin = mesh_to_bin * bounding_to_mesh;
   product->setCentroid(bounding_to_bin);
 
   // Debug
-  if (verbose)
+  if (verbose_bounding_box)
   {
     std::cout << std::endl;
     std::cout << "After getBoundingingBoxFromMesh(): " << std::endl;
@@ -562,10 +579,6 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
     std::cout << "  Width: " << product->getWidth() << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
   }
-
-
-  // Visualize
-  product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()));
 
   return true;
 }

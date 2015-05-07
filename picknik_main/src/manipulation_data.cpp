@@ -109,8 +109,7 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   rvt::getDoubleParameter(parent_name, nh_, "moveit_ompl/planning_time", planning_time_);
 
   // Behavior configs
-  rvt::getBoolParameter(parent_name, nh_, "behavior/end_effector_enabled", end_effector_enabled_);
-  rvt::getBoolParameter(parent_name, nh_, "behavior/super_auto", super_auto_);
+  rvt::getBoolMap(parent_name, nh_, "behavior", enabled_);
 
   // Decide on dual arm mode we are in
   int temp_value;
@@ -160,6 +159,18 @@ Eigen::Affine3d ManipulationData::getTestPose()
             << test_pose_doubles_[5] << "); // from testPose()" << std::endl;
 
   return test_pose_;
+}
+
+bool ManipulationData::isEnabled(const std::string& setting_name)
+{
+  std::map<std::string,bool>::iterator it = enabled_.find(setting_name);
+  if(it != enabled_.end())
+  {
+    // Element found;
+    return it->second;
+  }
+  ROS_ERROR_STREAM_NAMED("manipulation_data","isEnabled() key '" << setting_name << "' does not exist in the available configuration");
+  return false;
 }
 
 } // end namespace

@@ -13,7 +13,8 @@
 */
 
 #include <picknik_main/collision_object.h>
-//#include <moveit_grasps/grasp_generator.h> // get bounding box
+
+#include <iostream>
 
 namespace picknik_main
 {
@@ -36,7 +37,7 @@ CollisionObject::CollisionObject(VisualsPtr visuals,
     // use this func so that a unique collision ID is also generated
     setName("collision_" + boost::lexical_cast<std::string>(rectangle_id));
 
-    ROS_WARN_STREAM_NAMED("shelf","Creating default rectangle named " << name_);
+    ROS_WARN_STREAM_NAMED("collision_object","Creating default rectangle named " << name_);
   }
   else
   {
@@ -133,7 +134,14 @@ bool RectangleObject::visualizeHighRes(const Eigen::Affine3d& trans) const
                                                          transform(top_left_, trans).translation(), color_);
 }
 
-bool RectangleObject::visualizeWireframe(const Eigen::Affine3d& trans) const
+bool RectangleObject::visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const
+{
+  ROS_WARN_STREAM_NAMED("temp","viz wireframe todo");
+  //return visuals_->visual_tools_->publishWireframeCuboid( transform(centroid_, trans), getDepth(), getWidth(), getHeight(), color_);
+  return true;
+}
+
+bool RectangleObject::visualizeHighResWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const
 {
   ROS_WARN_STREAM_NAMED("temp","viz wireframe todo");
   //return visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans), getDepth(), getWidth(), getHeight(), color_);
@@ -147,7 +155,7 @@ bool RectangleObject::visualizeAxis(const Eigen::Affine3d& trans) const
 
 bool RectangleObject::createCollisionBodies(const Eigen::Affine3d &trans)
 {
-  ROS_DEBUG_STREAM_NAMED("shelf","Adding/updating collision body '" << collision_object_name_ << "'");
+  ROS_DEBUG_STREAM_NAMED("collision_object","Adding/updating collision body '" << collision_object_name_ << "'");
 
   // Just use basic rectangle
   return visuals_->visual_tools_->publishCollisionCuboid( transform(bottom_right_, trans).translation(),
@@ -244,7 +252,7 @@ bool MeshObject::visualizeHighRes(const Eigen::Affine3d& trans) const
 {
   if (high_res_mesh_path_.empty())
   {
-    ROS_ERROR_STREAM_NAMED("temp","no mesh path provided");
+    ROS_ERROR_STREAM_NAMED("collision_object","no mesh path provided");
   }
 
   // Show axis
@@ -255,13 +263,18 @@ bool MeshObject::visualizeHighRes(const Eigen::Affine3d& trans) const
                                                       rvt::CLEAR, 1, collision_object_name_, 1);
 }
 
-bool MeshObject::visualizeWireframe(const Eigen::Affine3d& trans) const
+bool MeshObject::visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const
 {
-  // Show wireframe in both systems
-  visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans), depth_, width_, height_, 
-                                                           rvt::LIME_GREEN);
-  visuals_->visual_tools_->publishWireframeCuboid( transform(centroid_, trans), depth_, width_, height_, 
-                                                   rvt::LIME_GREEN);
+  Eigen::Affine3d pose = transform(centroid_, trans);
+  visuals_->visual_tools_->publishWireframeCuboid( pose, depth_, width_, height_, color);
+  return true;
+}
+
+bool MeshObject::visualizeHighResWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const
+{
+  Eigen::Affine3d pose = transform(centroid_, trans);
+  visuals_->visual_tools_display_->publishWireframeCuboid( pose, depth_, width_, height_, color, 
+                                                           collision_object_name_ + "_wireframe");
   return true;
 }
 
@@ -276,7 +289,8 @@ bool MeshObject::loadCollisionBodies()
   shapes::ShapeMsg shape_msg; // this is a boost::variant type from shape_messages.h
   if (!mesh || !shapes::constructMsgFromShape(mesh, shape_msg))
   {
-    ROS_ERROR_STREAM_NAMED("shelf","Unable to create mesh shape message from resource " << collision_mesh_path_);
+    ROS_ERROR_STREAM_NAMED("collision_object","Unable to create mesh shape message from resource " 
+                           << collision_mesh_path_);
     return false;
   }
 
@@ -285,8 +299,34 @@ bool MeshObject::loadCollisionBodies()
   return true;
 }
 
-const shape_msgs::Mesh& MeshObject::getCollisionMesh() const
+bool MeshObject::writeCollisionBody(const std::string& file_path)
 {
+  ROS_DEBUG_STREAM_NAMED("collision_object","Writing mesh to file");
+
+  shapes::Shape *shape = shapes::constructShapeFromMsg(mesh_msg_);
+  shapes::Mesh *mesh = static_cast<shapes::Mesh*>(shape);
+
+  std::vector<char> buffer;
+  shapes::writeSTLBinary(mesh, buffer);
+
+  // Write
+  std::ofstream file_stream(file_path.c_str(), std::ios::out | std::ofstream::binary);
+  std::copy(buffer.begin(), buffer.end(), std::ostreambuf_iterator<char>(file_stream));
+
+  return true;
+}
+
+const shape_msgs::Mesh& MeshObject::getCollisionMesh()
+{
+  // Check if mesh needs to be loaded
+  if (mesh_msg_.triangles.empty()) // load mesh from file
+  {
+    if (!loadCollisionBodies())
+    {
+      ROS_ERROR_STREAM_NAMED("collision_object","Unable to load collision object");
+    }
+  }
+
   return mesh_msg_;
 }
 

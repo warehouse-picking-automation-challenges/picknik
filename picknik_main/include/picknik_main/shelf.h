@@ -335,6 +335,7 @@ public:
   double collision_wall_safety_margin_;
 
 private:
+
   // Walls of shelf
   std::vector<RectangleObject> shelf_parts_;
 

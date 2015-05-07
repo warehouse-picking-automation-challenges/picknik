@@ -76,21 +76,18 @@ Its help documentation:
 ## Run DDTR Perception Pipeline
 
 ### Run Shelf Calibration
-   
-Go to the dir of RGFusion app:
 
-    cd ~/ros/perception/DDTR/build/Application/RGFusion
-    
-Now, run RGFusion:
+To start:
 
-    ./RollingGridFusion -wsp ~/ros/perception/DDTR/ -mode 6
+    roslaunch picknik_perception perception_server_ddtr_calibrate.launch
 
-Now, you should be able to see the live camera images in the top left GUI. Press key 'f' to start Kinect Fusion.
-press 'space' to stop building the shelf model when you got the 3D model you want.
+You should be able to see the live camera images in the top left GUI.
 
-Press the button 'Clean Host (Del SDFs/Poses files)' on the control panel (left side) of the application to clean the old shelf model files.
-
-Press button 'Save Pose' and 'Save SDF' to save the latest 3D model of the shelf.
+ - Press key 'f' to start Kinect Fusion.
+ - Press 'space' to stop building the shelf model when you got the 3D model you want.
+ - Press the button 'Clean Host (Del SDFs/Poses files)' on the control panel (left side) of the application to clean the old shelf model files.
+ - Press button 'Save Pose' and 'Save SDF' to save the latest 3D model of the shelf.
+ 
 Now you are safe the leave the application and run the Amazon app .
 
 ## Start Robots
@@ -121,7 +118,7 @@ Run fake object recognition server:
 
 Run APC Manager (main program) for JACOB in simulation
 
-	roslaunch picknik_main jacob_apc.launch fake_execution:=1 fake_perception:=1 mode:=1 auto:=1
+	roslaunch picknik_main jacob_apc.launch fake_execution:=1 fake_perception:=1 mode:=1 full_auto:=1
 
 ### Run HARDWARE of Jacob
 
@@ -234,7 +231,7 @@ Button Mapings
         TESTING
 		16. Test grasp generator abilities and score results
 		17. Test joint limits
-		18. Test requesting preception results, using bin id:=[0-11]
+		18. Test requesting preception results, using bin id:=[1-12]
 		22. Test approach, lift, and retreat motion for random objects
 		23. UNIT TESTS for manipulation		
         25. Test IK solver with simple pose request
@@ -244,8 +241,8 @@ Button Mapings
         TRAJECTORY HANDLING
 		30. Record a calibration trajectory, using id:=[0 left |1 right]
 		31. Playback calibration trajectory, using id:=[0 left |1 right]
-		32. Record a bin observing trajectory, using id:=[0-11]
-		33. Playback bin observing trajectory, using id:=[0-11]
+		32. Record a bin observing trajectory, using id:=[1-12]
+		33. Playback bin observing trajectory, using id:=[1-12]
 		34. Playback waypoint path specified in a csv
 		
         DEBUGGING
@@ -266,7 +263,7 @@ Button Mapings
 	debug - slower and more verbose
 	fake_execution - runs at higher speeds and uses simulated controllers
 	fake_perception - do not use perception server
-	id - specify which bin to look at, as a index number, starting at 0, e.g A=0, B=1,
+	id - specify which bin to look at, as a index number, starting at 0, e.g A=1, B=2,
 	     or id of camera 0 (left) or 1 (right)
 	
 ## Mesh Test

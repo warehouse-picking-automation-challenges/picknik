@@ -14,4 +14,7 @@
     <arg name="depth_registration" value="true" />
   </include>
 
+  <!-- Start merging code -->
+  <node name="merge_point_clouds" type="merge_point_clouds" pkg="picknik_perception" output="screen" respawn="true" />
+
 </launch>

@@ -73,7 +73,12 @@ public:
    */
   Eigen::Affine3d getTestPose();
 
-public:
+  /**
+   * \brief Check if certain key is enabled
+   * \return true if enabled
+   */  
+  bool isEnabled(const std::string& setting_name);
+
 
   // Performance variables
   double main_velocity_scaling_factor_;
@@ -134,9 +139,8 @@ public:
   // Execution mode
   bool fake_execution_;
 
-  // Behavior configs
-  bool end_effector_enabled_;
-  bool super_auto_;
+  // Behavior settings
+  std::map<std::string, bool> enabled_;
 
   // World frame / base frame / model frame
   std::string world_frame_;

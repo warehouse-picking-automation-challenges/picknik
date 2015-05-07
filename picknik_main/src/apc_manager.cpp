@@ -240,7 +240,7 @@ bool APCManager::runOrder(std::size_t order_start, std::size_t jump_to, std::siz
     {
       ROS_WARN_STREAM_NAMED("apc_manager","An error occured in last product order.");
 
-      if (!config_->super_auto_)
+      if (!config_->isEnabled("super_auto"))
       {
         // remote_control_->setAutonomous(false);
         // remote_control_->setFullAutonomous(false);
@@ -677,13 +677,22 @@ bool APCManager::testVisualizeShelf()
   // Generate random product poses and visualize the shelf
   createRandomProductPoses();
 
+  // Visualize high res shelf
+  visuals_->visualizeDisplayShelf(shelf_);
+
   //planning_scene_manager_->testAllModes();
 
   // Get shelf region of interst
-  std::cout << "Shelf Bottom Right: " << std::endl;
-  printTransform(shelf_->getBottomRight());
-  std::cout << "Shelf Top Left: " << std::endl;
-  printTransform(shelf_->getTopLeft());
+  // std::cout << "Shelf Bottom Right: " << std::endl;
+  // printTransform(shelf_->getBottomRight());
+  // std::cout << "Shelf Top Left: " << std::endl;
+  // printTransform(shelf_->getTopLeft());
+
+  // Test saving
+  std::vector<ProductObjectPtr> products;
+  shelf_->getAllProducts(products);
+  if (products.empty())
+    ROS_ERROR_STREAM_NAMED("temp","empty vector");
 
   ros::spin();
   return true;
@@ -1409,6 +1418,13 @@ bool APCManager::testJointLimits()
 // Mode 18
 bool APCManager::testPerceptionComm(std::size_t bin_id)
 {
+  // Error check
+  if (bin_id == 0)
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","No bin id specified, use 'id:=1' etc");
+    return false;
+  }
+
   // Load JSON file
   loadShelfContents(order_file_path_);
 
@@ -1466,12 +1482,26 @@ bool APCManager::testPerceptionComm(std::size_t bin_id)
 // Mode 32
 bool APCManager::recordBinWithCamera(std::size_t bin_id)
 {
+  // Error check
+  if (bin_id == 0)
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","No bin id specified, use 'id:=1' etc");
+    return false;
+  }
+
   return recordBinWithCamera(shelf_->getBin(bin_id));
 }
 
 // Mode 33
 bool APCManager::perceiveBinWithCamera(std::size_t bin_id)
 {
+  // Error check
+  if (bin_id == 0)
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","No bin id specified, use 'id:=1' etc");
+    return false;
+  }
+
   // Load JSON file
   loadShelfContents(order_file_path_);
 

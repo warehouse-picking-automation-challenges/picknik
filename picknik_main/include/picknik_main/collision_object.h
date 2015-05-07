@@ -74,7 +74,8 @@ public:
    * \param trans - transform from parent container to current container
    * \return true on success
    */
-  virtual bool visualizeWireframe(const Eigen::Affine3d& trans) const = 0;
+  virtual bool visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const = 0;
+  virtual bool visualizeHighResWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const = 0;
 
   /**
    * \brief Getter for rectangle name
@@ -169,7 +170,8 @@ public:
    * \param trans - transform from parent container to current container
    * \return true on success
    */
-  bool visualizeWireframe(const Eigen::Affine3d& trans) const;
+  bool visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color = rvt::LIME_GREEN) const;
+  bool visualizeHighResWireframe(const Eigen::Affine3d& trans, const rvt::colors &color = rvt::LIME_GREEN) const;
 
   /**
    * \brief Show the bottom right of the object
@@ -239,7 +241,7 @@ protected:
   // Poses relative to center bottom of robot
   Eigen::Affine3d bottom_right_;
   Eigen::Affine3d top_left_;
-};
+}; // RectangleObject
 
 
 // -------------------------------------------------------------------------------------------------
@@ -265,7 +267,8 @@ public:
    * \param trans - transform from parent container to current container
    * \return true on success
    */
-  bool visualizeWireframe(const Eigen::Affine3d& trans) const;
+  bool visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color = rvt::LIME_GREEN) const;
+  bool visualizeHighResWireframe(const Eigen::Affine3d& trans, const rvt::colors &color = rvt::LIME_GREEN) const;
 
   /**
    * \brief Show the centroid of the object
@@ -281,9 +284,15 @@ public:
   bool loadCollisionBodies();
 
   /**
+   * \brief Write to file
+   * \return true on success
+   */
+  bool writeCollisionBody(const std::string& file_path);
+
+  /**
    * \brief Getter for CollisionMesh
    */ 
-  const shape_msgs::Mesh& getCollisionMesh() const;
+  const shape_msgs::Mesh& getCollisionMesh();
 
   /**
    * \brief Setter for CollisionMesh
@@ -360,7 +369,8 @@ protected:
   // Pose relative to parent object
   Eigen::Affine3d centroid_;
   Eigen::Affine3d mesh_centroid_;
-};
+
+}; // MeshObject
 
 } // namespace
 

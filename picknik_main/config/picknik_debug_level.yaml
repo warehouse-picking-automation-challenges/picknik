@@ -21,9 +21,6 @@ debug_level:
   # Seed state
   show_grasping_seed_state: false
 
-  # Multi-use yes/no - can be used for anything
-  generic_bool: false
-
   # Simulation
   show_simulated_paths_moving: true
 
