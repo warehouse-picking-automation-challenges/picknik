@@ -70,7 +70,7 @@ public:
     // listen to point cloud topic
     ros::Duration(1.0).sleep();
     ros::spinOnce();
-    pointcloud_sub_ = nh_.subscribe("/xtion_left/depth_registered/points", 1,
+    pointcloud_sub_ = nh_.subscribe("/merge_point_clouds/points", 1,
                                     &picknik_perception::SimplePointCloudFilter::pointCloudCallback, pointcloud_filter_);
 
     // Load parameters

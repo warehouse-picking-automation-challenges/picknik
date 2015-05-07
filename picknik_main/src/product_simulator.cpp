@@ -149,7 +149,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
           }
 
           // Visualize bounding box
-          product->visualizeWireframe(transform(bin->getBottomRight(), shelf->getBottomRight()), rvt::YELLOW);
+          product->visualizeHighResWireframe(transform(bin->getBottomRight(), shelf->getBottomRight()), rvt::YELLOW);
 
           break;
         }

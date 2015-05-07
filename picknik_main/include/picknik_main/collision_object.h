@@ -75,6 +75,7 @@ public:
    * \return true on success
    */
   virtual bool visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const = 0;
+  virtual bool visualizeHighResWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const = 0;
 
   /**
    * \brief Getter for rectangle name
@@ -170,6 +171,7 @@ public:
    * \return true on success
    */
   bool visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color = rvt::LIME_GREEN) const;
+  bool visualizeHighResWireframe(const Eigen::Affine3d& trans, const rvt::colors &color = rvt::LIME_GREEN) const;
 
   /**
    * \brief Show the bottom right of the object
@@ -266,6 +268,7 @@ public:
    * \return true on success
    */
   bool visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color = rvt::LIME_GREEN) const;
+  bool visualizeHighResWireframe(const Eigen::Affine3d& trans, const rvt::colors &color = rvt::LIME_GREEN) const;
 
   /**
    * \brief Show the centroid of the object
@@ -279,6 +282,12 @@ public:
    * \return true on success
    */
   bool loadCollisionBodies();
+
+  /**
+   * \brief Write to file
+   * \return true on success
+   */
+  bool writeCollisionBody(const std::string& file_path);
 
   /**
    * \brief Getter for CollisionMesh

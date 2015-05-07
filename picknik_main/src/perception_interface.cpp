@@ -379,6 +379,8 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     {
       ROS_INFO_STREAM_NAMED("perception_interface","Setting new bounding mesh");
       product->setCollisionMesh(mesh);
+
+      product->writeCollisionBody(config_->package_path_ + "/meshes/detected/current.stl");
     }
     else
       ROS_ERROR_STREAM_NAMED("perception_interface","No mesh provided");
@@ -394,6 +396,10 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
 
     // Visualize bounding box
     product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()), rvt::LIME_GREEN);
+
+    // Visualize bounding box in high res display
+    //visuals_->visualizeDisplayShelf(shelf_);
+    product->visualizeHighResWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()), rvt::LIME_GREEN);
 
     // Show the new mesh
     product->createCollisionBodies(world_to_bin);

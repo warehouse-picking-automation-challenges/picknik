@@ -231,7 +231,7 @@ Button Mapings
         TESTING
 		16. Test grasp generator abilities and score results
 		17. Test joint limits
-		18. Test requesting preception results, using bin id:=[0-11]
+		18. Test requesting preception results, using bin id:=[1-12]
 		22. Test approach, lift, and retreat motion for random objects
 		23. UNIT TESTS for manipulation		
         25. Test IK solver with simple pose request
@@ -241,8 +241,8 @@ Button Mapings
         TRAJECTORY HANDLING
 		30. Record a calibration trajectory, using id:=[0 left |1 right]
 		31. Playback calibration trajectory, using id:=[0 left |1 right]
-		32. Record a bin observing trajectory, using id:=[0-11]
-		33. Playback bin observing trajectory, using id:=[0-11]
+		32. Record a bin observing trajectory, using id:=[1-12]
+		33. Playback bin observing trajectory, using id:=[1-12]
 		34. Playback waypoint path specified in a csv
 		
         DEBUGGING
@@ -263,7 +263,7 @@ Button Mapings
 	debug - slower and more verbose
 	fake_execution - runs at higher speeds and uses simulated controllers
 	fake_perception - do not use perception server
-	id - specify which bin to look at, as a index number, starting at 0, e.g A=0, B=1,
+	id - specify which bin to look at, as a index number, starting at 0, e.g A=1, B=2,
 	     or id of camera 0 (left) or 1 (right)
 	
 ## Mesh Test
