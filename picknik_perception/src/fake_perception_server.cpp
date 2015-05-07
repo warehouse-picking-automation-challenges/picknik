@@ -43,7 +43,7 @@
 #include <picknik_msgs/FindObjectsAction.h>
 #include <picknik_perception/manipulation_interface.h>
 
-#include <rviz_visual_tools/rviz_visual_tools.h>
+#include <moveit_visual_tools/moveit_visual_tools.h>
 
 int main(int argc, char** argv)
 {
@@ -60,6 +60,19 @@ int main(int argc, char** argv)
   // Create the ROS communication layer with the manipulation pipeline
   picknik_perception::ManipulationInterfacePtr client;
   client.reset(new picknik_perception::ManipulationInterface());
+
+  // Load collision body
+  const std::string& collision_mesh_path = "file:///home/dave/ros/ws_picknik/src/picknik/picknik_main/meshes/products/mead_index_cards/collision.stl";
+  shapes::Shape *mesh = shapes::createMeshFromResource(collision_mesh_path); // make sure its prepended by file://
+  shapes::ShapeMsg shape_msg; // this is a boost::variant type from shape_messages.h
+  if (!mesh || !shapes::constructMsgFromShape(mesh, shape_msg))
+  {
+    ROS_ERROR_STREAM_NAMED("collision_object","Unable to create mesh shape message from resource "
+                           << collision_mesh_path);
+    return false;
+  }
+
+  shape_msgs::Mesh mesh_msg = boost::get<shape_msgs::Mesh>(shape_msg);
 
   // Main loop
   while (ros::ok())
@@ -110,11 +123,14 @@ int main(int argc, char** argv)
       picknik_msgs::FoundObject new_product;
       new_product.object_name = goal->expected_objects_names[i];
 
+      // Mesh
+      new_product.bounding_mesh = mesh_msg;
+
       // Object pose
-      new_product.object_pose.header.frame_id = "world";
-      new_product.object_pose.pose.position.x = 1.2;
-      new_product.object_pose.pose.position.y = 0;
-      new_product.object_pose.pose.position.z = 0;
+      new_product.object_pose.header.frame_id = "xtion_right_depth_frame";
+      new_product.object_pose.pose.position.x = 0.9; // hard coded for bin
+      new_product.object_pose.pose.position.y = -0.1;
+      new_product.object_pose.pose.position.z = -0.15 + rviz_visual_tools::RvizVisualTools::dRand(-0.1,0.1);
       new_product.object_pose.pose.orientation.x = 0;
       new_product.object_pose.pose.orientation.y = 0;
       new_product.object_pose.pose.orientation.z = 0;

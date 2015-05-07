@@ -85,6 +85,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
     shelf->visualizeHighRes(show_products);
     shelf->visualizeAxis(visuals_);
   }
+
   // Loop through each bin
   for (BinObjectMap::const_iterator bin_it = shelf->getBins().begin(); bin_it != shelf->getBins().end(); bin_it++)
   {
@@ -113,8 +114,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
 
         // Visualize and show in collision shelf
         world_to_bin_transform = transform(bin->getBottomRight(), shelf->getBottomRight());
-        if (verbose_)
-          product->visualizeHighRes(world_to_bin_transform);
+        //product->visualizeHighRes(world_to_bin_transform);
 
         if (!inCollision(product, world_to_bin_transform))
         {
@@ -149,7 +149,8 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
           }
 
           // Visualize bounding box
-          product->visualizeHighResWireframe(transform(bin->getBottomRight(), shelf->getBottomRight()), rvt::YELLOW);
+          product->visualizeHighResWireframe(world_to_bin_transform, rvt::YELLOW);
+          product->visualizeHighRes(world_to_bin_transform);
 
           break;
         }

@@ -90,7 +90,7 @@ public:
    * \brief Get result from actionserver and process
    * \return true on success
    */
-  bool endPerception(ProductObjectPtr& product, BinObjectPtr& bin);
+  bool endPerception(ProductObjectPtr& product, BinObjectPtr& bin, bool fake_perception);
 
   /**
    * \brief Update the poses, and optionally the mesh, of the products in a bin
@@ -104,7 +104,13 @@ public:
    * \return true on success
    */
   bool updateBoundingMesh(ProductObjectPtr &product, BinObjectPtr &bin);
-  
+
+  /**
+   * \brief Error checking that product is inside shelf bin
+   * \return true on success
+   */
+  bool checkBounds(const Eigen::Affine3d &bin_to_object, BinObjectPtr& bin, ProductObjectPtr& product);
+
 private:
 
   /**

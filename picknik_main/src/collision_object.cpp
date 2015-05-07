@@ -266,15 +266,18 @@ bool MeshObject::visualizeHighRes(const Eigen::Affine3d& trans) const
 bool MeshObject::visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const
 {
   Eigen::Affine3d pose = transform(centroid_, trans);
-  visuals_->visual_tools_->publishWireframeCuboid( pose, depth_, width_, height_, color);
+  std::size_t id = 1;
+  visuals_->visual_tools_->publishWireframeCuboid( pose, depth_, width_, height_, color, 
+                                                   collision_object_name_ + "_wireframe", id);
   return true;
 }
 
 bool MeshObject::visualizeHighResWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const
 {
   Eigen::Affine3d pose = transform(centroid_, trans);
+  std::size_t id = 1;
   visuals_->visual_tools_display_->publishWireframeCuboid( pose, depth_, width_, height_, color, 
-                                                           collision_object_name_ + "_wireframe");
+                                                           collision_object_name_ + "_wireframe", id);
   return true;
 }
 

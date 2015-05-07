@@ -31,3 +31,9 @@ debug_level:
   unit_test_SimpleVeryRotated: false
   unit_test_SimpleFarBack: false
   unit_test_ExpoLow: true
+
+  # Perception Interface
+  show_raw_object_pose: false
+  show_world_to_camera_pose: true
+  show_world_to_bin_pose: false
+  show_world_to_object_pose: true

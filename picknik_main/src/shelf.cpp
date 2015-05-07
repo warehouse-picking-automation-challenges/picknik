@@ -611,7 +611,7 @@ BinObjectMap& ShelfObject::getBins()
 
 BinObjectPtr ShelfObject::getBin(std::size_t bin_id)
 {
-  const std::string bin_name = "bin_" + boost::lexical_cast<std::string>((char)(65 + bin_id));
+  const std::string bin_name = "bin_" + boost::lexical_cast<std::string>((char)(64 + bin_id));
   std::cout << "bin_name: " << bin_name << std::endl;
   return bins_[bin_name];
 }

@@ -160,7 +160,7 @@ public:
 
   /**
    * \brief Getter for a bin by its index number
-   * \param index, where 0 is bin A counting up
+   * \param index, where 1 is bin A counting up
    */
   BinObjectPtr getBin(std::size_t bin_id);
 

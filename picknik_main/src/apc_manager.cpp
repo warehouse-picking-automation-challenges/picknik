@@ -160,11 +160,11 @@ bool APCManager::checkSystemReady(bool remove_from_shelf)
   }
 
   // Check Perception
-  if (!fake_perception_)
-  {
-    ROS_INFO_STREAM_NAMED("apc_manager","Checking perception");
-    perception_interface_->isPerceptionReady();
-  }
+  // if (!fake_perception_)
+  // {
+  ROS_INFO_STREAM_NAMED("apc_manager","Checking perception");
+  perception_interface_->isPerceptionReady();
+  // }
 
   // Choose which planning group to use
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
@@ -360,15 +360,15 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
         // Fake perception of product
-        if (!fake_perception_)
+        // if (!fake_perception_)
+        //{
+        // Move camera to desired bin to get pose of product
+        if (!perceiveObject(work_order, verbose))
         {
-          // Move camera to desired bin to get pose of product
-          if (!perceiveObject(work_order, verbose))
-          {
-            ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
-            return false;
-          }
+          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
+          return false;
         }
+        //}
 
         break;
 
@@ -669,7 +669,7 @@ bool APCManager::testEndEffectors()
 // Mode 40
 bool APCManager::testVisualizeShelf()
 {
-  ROS_INFO_STREAM_NAMED("apc_manager","Testing all planning scene manager modes");
+  ROS_INFO_STREAM_NAMED("apc_manager","Visualize shelf");
 
   // Load JSON file
   loadShelfContents(order_file_path_);
@@ -677,23 +677,9 @@ bool APCManager::testVisualizeShelf()
   // Generate random product poses and visualize the shelf
   createRandomProductPoses();
 
-  // Visualize high res shelf
-  visuals_->visualizeDisplayShelf(shelf_);
-
   //planning_scene_manager_->testAllModes();
 
-  // Get shelf region of interst
-  // std::cout << "Shelf Bottom Right: " << std::endl;
-  // printTransform(shelf_->getBottomRight());
-  // std::cout << "Shelf Top Left: " << std::endl;
-  // printTransform(shelf_->getTopLeft());
-
-  // Test saving
-  std::vector<ProductObjectPtr> products;
-  shelf_->getAllProducts(products);
-  if (products.empty())
-    ROS_ERROR_STREAM_NAMED("temp","empty vector");
-
+  ROS_INFO_STREAM_NAMED("apc_manager","Ready to shutdown");
   ros::spin();
   return true;
 }
@@ -1456,7 +1442,7 @@ bool APCManager::testPerceptionComm(std::size_t bin_id)
       ros::Duration(1).sleep();
 
       // Get result from perception pipeline
-      if (!perception_interface_->endPerception(product, bin))
+      if (!perception_interface_->endPerception(product, bin, fake_perception_))
       {
         ROS_ERROR_STREAM_NAMED("apc_manager","End perception failed");
         return false;
@@ -1559,7 +1545,7 @@ bool APCManager::perceiveBinWithCamera(BinObjectPtr bin)
   planning_scene_manager_->displayShelfWithOpenBins();
 
   // Get result from perception pipeline
-  if (!perception_interface_->endPerception(product, bin))
+  if (!perception_interface_->endPerception(product, bin, fake_perception_))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","End perception failed");
     return false;
@@ -1617,7 +1603,7 @@ bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
   manipulation_->waitForRobotToStop(timeout);
 
   // Get result from perception pipeline
-  if (!perception_interface_->endPerception(product, bin))
+  if (!perception_interface_->endPerception(product, bin, fake_perception_))
   {
     return false;
   }

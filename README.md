@@ -86,7 +86,8 @@ You should be able to see the live camera images in the top left GUI.
  - Press key 'f' to start Kinect Fusion.
  - Press 'space' to stop building the shelf model when you got the 3D model you want.
  - Press the button 'Clean Host (Del SDFs/Poses files)' on the control panel (left side) of the application to clean the old shelf model files.
- - Press button 'Save Pose' and 'Save SDF' to save the latest 3D model of the shelf.
+ - Press 'Save Pose'
+ - Press 'Save SDF' to save the latest 3D model of the shelf.
  
 Now you are safe the leave the application and run the Amazon app .
 
@@ -156,6 +157,10 @@ Arguments
 
     -wsp gives the dir of the source code of DDTR
 	-mode select the running mode of the application.
+
+Keys
+
+ - Press SPACE to switch between two views
 
 ### Move Robot to Shutdown Mode
 
