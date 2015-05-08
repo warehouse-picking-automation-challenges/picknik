@@ -91,7 +91,7 @@ public:
     ROS_INFO_STREAM_NAMED("pcl_perception_server","Changing point cloud topic to: " << topic);
     pointcloud_sub_.shutdown();
     pointcloud_sub_ = nh_.subscribe(topic, 1,
-                                    &picknik_perception::SimplePointCloudFilter::pointCloudCallback,
+                                    &SimplePointCloudFilter::pointCloudCallback,
                                     pointcloud_filter_);
   }
 
@@ -132,9 +132,8 @@ public:
       back_top_left.translation() += translate_to_corners;
 
       // Set regions of interest
-      pointcloud_filter_->setRegionOfInterest(front_bottom_right, back_top_left, roi_reduction_padding_x_, roi_reduction_padding_y_, roi_reduction_padding_z_);
-
-
+      pointcloud_filter_->setRegionOfInterest(front_bottom_right, back_top_left, roi_reduction_padding_x_, 
+                                              roi_reduction_padding_y_, roi_reduction_padding_z_);
 
       // TODO: this stop command is not really applicable to this method of perception
       while (ros::ok())
@@ -156,18 +155,6 @@ public:
 
       // Finish up perception
       ROS_INFO_STREAM_NAMED("pcl_perception_server","Finishing up perception");
-
-      // Convert point cloud to have its origin at the point cloud's centroid
-      // Transform a sensor_msgs::PointCloud2 dataset using an Eigen 4x4 matrix.
-      //const Eigen::Matrix4f transform = bbox_pose_.matrix();
-      //tf::Transform transform;
-      //pcl::PointCloud<pcl::PointXYZRGB>::Ptr product_point_cloud;
-      //pcl_ros::transformPointCloud (*pointcloud_filter_->roi_cloud_, *product_point_cloud, transform);
-
-      // void pcl_ros::transformPointCloud(const pcl::PointCloud< PointT > & cloud_in,
-      //                                   pcl::PointCloud< PointT > & cloud_out,
-      //                                   const tf::Transform & transform
-
 
       // Convert point cloud to mesh
       shape_msgs::Mesh mesh_msg;

@@ -114,6 +114,9 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, JointModelGroup* arm_jmg,
   {
     visuals_->visual_tools_->publishAxis(world_to_product);
     visuals_->visual_tools_->publishText(world_to_product, "object_pose", rvt::BLACK, rvt::SMALL, false);
+
+    ROS_DEBUG_STREAM_NAMED("manipulation","Generating grasps with product depth: " << product->getDepth() << " width: " << product->getWidth() 
+                           << " height: " << product->getHeight());
   }
 
   // Generate grasps

@@ -160,11 +160,11 @@ bool APCManager::checkSystemReady(bool remove_from_shelf)
   }
 
   // Check Perception
-  // if (!fake_perception_)
-  // {
-  ROS_INFO_STREAM_NAMED("apc_manager","Checking perception");
-  perception_interface_->isPerceptionReady();
-  // }
+  if (!fake_perception_)
+  {
+    ROS_INFO_STREAM_NAMED("apc_manager","Checking perception");
+    perception_interface_->isPerceptionReady();
+  }
 
   // Choose which planning group to use
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
@@ -360,15 +360,15 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         planning_scene_manager_->displayShelfOnlyBin( work_order.bin_->getName() );
 
         // Fake perception of product
-        // if (!fake_perception_)
-        //{
-        // Move camera to desired bin to get pose of product
-        if (!perceiveObject(work_order, verbose))
+        if (!fake_perception_)
         {
-          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
-          return false;
+          // Move camera to desired bin to get pose of product
+          if (!perceiveObject(work_order, verbose))
+          {
+            ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
+            return false;
+          }
         }
-        //}
 
         break;
 
@@ -2088,16 +2088,20 @@ bool APCManager::startUnitTest(const std::string &json_file, const std::string &
   std::string json_file_path = package_path_ + "/orders/" + json_file;
   loadShelfContents(json_file_path);
 
-  // Get all the products in the shelf
-  std::vector<ProductObjectPtr> products;
-  shelf_->getAllProducts(products);
-
-  // Set all products to same exact pose
-  for (std::vector<ProductObjectPtr>::iterator product_it = products.begin(); product_it != products.end(); product_it++)
+  // For each bin
+  for (BinObjectMap::iterator bin_it = shelf_->getBins().begin(); bin_it != shelf_->getBins().end(); bin_it++)
   {
-    ProductObjectPtr &p = *product_it;
-    p->setCentroid(product_pose);
-    p->setMeshCentroid(product_pose);
+    // Set all products to same exact pose
+    for (std::vector<ProductObjectPtr>::iterator product_it = bin_it->second->getProducts().begin(); 
+         product_it != bin_it->second->getProducts().end(); product_it++)
+    {
+      ProductObjectPtr product = *product_it;
+      product->setCentroid(product_pose);
+      product->setMeshCentroid(product_pose);
+
+      // Calculate their bounding box since we are skipping the perception_interface and product_simulator
+      perception_interface_->updateBoundingMesh(product, bin_it->second);
+    }
   }
 
   // Display new shelf
