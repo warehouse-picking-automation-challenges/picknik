@@ -1472,7 +1472,7 @@ bool APCManager::testPerceptionCommEach()
   loadShelfContents(order_file_path_);
 
   // Generate random product poses and visualize the shelf
-  createRandomProductPoses();
+  //createRandomProductPoses();
 
   // Display planning scene
   planning_scene_manager_->displayShelfWithOpenBins();

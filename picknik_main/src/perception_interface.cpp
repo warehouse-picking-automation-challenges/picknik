@@ -375,15 +375,16 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
       //const std::string& high_res_mesh_path = config_->package_path_ + "/meshes/products/" + product->getName() + "/detected/current.stl";
       const std::string& high_res_mesh_path = config_->package_path_ + "/meshes/detected/current.stl";
       product->writeCollisionBody(high_res_mesh_path);
-      std::cout << "debug: " << product->getHighResMeshPath() << std::endl;
+      std::cout << "previous high res mesh path: " << product->getHighResMeshPath() << std::endl;
       product->setHighResMeshPath("file://" + high_res_mesh_path);
+      std::cout << "new high res mesh path: " << product->getHighResMeshPath() << std::endl;
       has_new_mesh = true;
     }
     else
       ROS_ERROR_STREAM_NAMED("perception_interface","No mesh provided");
 
     // So that bounding boxes don't build up
-    visuals_->visual_tools_->deleteAllMarkers();
+    //visuals_->visual_tools_->deleteAllMarkers();
 
     // Update the bounding box
     updateBoundingMesh(product, bin);

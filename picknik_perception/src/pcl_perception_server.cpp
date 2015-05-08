@@ -81,6 +81,7 @@ public:
     rviz_visual_tools::getDoubleParameter(parent_name, nh_, "roi_reduction_padding_x", roi_reduction_padding_x_);
     rviz_visual_tools::getDoubleParameter(parent_name, nh_, "roi_reduction_padding_y", roi_reduction_padding_y_);
     rviz_visual_tools::getDoubleParameter(parent_name, nh_, "roi_reduction_padding_z", roi_reduction_padding_z_);
+    rviz_visual_tools::getBoolParameter(parent_name, nh_, "use_outlier_removal", use_outlier_removal_);
 
     // Show whole shelf
     loadShelfROI();
@@ -144,14 +145,15 @@ public:
         if (manipulation_interface_->isReadyToStopPerception())
           break;
 
-        // show bounding box
-        //pointcloud_filter_->outlier_removal_ = true;
-        pointcloud_filter_->enableBoundingBox();
-
         // Wait
         rate.sleep();
       }
-      pointcloud_filter_->outlier_removal_ = false;
+      
+      if (!pointcloud_filter_->detectObjects(use_outlier_removal_))
+      {
+        ROS_ERROR_STREAM_NAMED("pcl_perception_server","Error occured when detecting objects");
+        return false;
+      }
 
       // Finish up perception
       ROS_INFO_STREAM_NAMED("pcl_perception_server","Finishing up perception");
@@ -249,6 +251,8 @@ private:
   double roi_reduction_padding_x_;
   double roi_reduction_padding_y_;
   double roi_reduction_padding_z_;
+
+  bool use_outlier_removal_;
 
 }; // class
 

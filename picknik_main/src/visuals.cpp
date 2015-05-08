@@ -79,8 +79,6 @@ Visuals::Visuals(robot_model::RobotModelPtr robot_model,
 
 bool Visuals::visualizeDisplayShelf(ShelfObjectPtr shelf)
 {
-  ROS_WARN_STREAM_NAMED("visuals","Visualizing Display Shelf");
-
   visual_tools_display_->deleteAllMarkers(); // clear all old markers
   visual_tools_display_->enableBatchPublishing(true);
   shelf->visualizeHighRes();

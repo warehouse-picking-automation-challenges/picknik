@@ -55,6 +55,9 @@
 #include <pcl/point_types.h>
 #include <pcl/surface/gp3.h>
 
+// Parameter loading
+#include <rviz_visual_tools/ros_param_utilities.h>
+
 namespace picknik_perception
 {
 
@@ -64,8 +67,6 @@ SimplePointCloudFilter::SimplePointCloudFilter(rviz_visual_tools::RvizVisualTool
   , has_roi_(false)
 {
   processing_ = false;
-  get_bbox_ = false;
-  outlier_removal_ = false;
 
   // set regoin of interest
   roi_depth_ = 1.0;
@@ -79,6 +80,11 @@ SimplePointCloudFilter::SimplePointCloudFilter(rviz_visual_tools::RvizVisualTool
 
   // publish bin point cloud
   roi_cloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("roi_cloud",1);
+
+  // Load parameters
+  const std::string parent_name = "simple_point_cloud_filter"; // for namespacing logging messages
+  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "radius_of_outlier_removal", radius_of_outlier_removal_);
+
 
   ROS_DEBUG_STREAM_NAMED("point_cloud_filter","Simple point cloud filter ready.");
 }
@@ -99,8 +105,7 @@ void SimplePointCloudFilter::pointCloudCallback(const sensor_msgs::PointCloud2Co
 {
   if (processing_)
   {
-    ROS_ERROR_STREAM_NAMED("point_cloud_filter.pcCallback","skipped point cloud because currently busy");
-
+    ROS_INFO_STREAM_THROTTLE_NAMED(2.0, "point_cloud_filter","Skipped point cloud because currently busy");
     return;
   }
 
@@ -149,53 +154,62 @@ void SimplePointCloudFilter::processPointCloud(const sensor_msgs::PointCloud2Con
     pass_z.setFilterFieldName("z");
     pass_z.setFilterLimits(roi_pose_.translation()[2] - roi_height_ / 2.0, roi_pose_.translation()[2] + roi_height_ / 2.0);
     pass_z.filter(*roi_cloud_);
-
-    // slowish
-    if (outlier_removal_)
-    {
-      ROS_WARN_STREAM_NAMED("simple_point_cloud_filter","Performing outlier removal");
-
-      pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> rad;
-      rad.setInputCloud(roi_cloud_);
-      rad.setRadiusSearch(0.005);
-      rad.setMinNeighborsInRadius(200);
-      rad.filter(*roi_cloud_);
-
-      pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
-      sor.setInputCloud(roi_cloud_);
-      sor.setMeanK(50);
-      sor.setStddevMulThresh(1.0);
-      sor.filter(*roi_cloud_);
-    }
-
-    if (roi_cloud_->points.size() == 0)
-    {
-      ROS_WARN_STREAM_THROTTLE_NAMED(2, "point_cloud_filter.process","0 points left after filtering");
-      return;
-    }
   }
 
   // publish point clouds for rviz
   roi_cloud_pub_.publish(roi_cloud_);
   ROS_DEBUG_STREAM_THROTTLE_NAMED(2, "point_cloud_filter","Publishing filtered point cloud");
-
-  // optionally get the bounding box of the point cloud
-  if (get_bbox_)
-  {
-    getBoundingBox();
-
-    get_bbox_ = false;
-  }
-
 }
 
-bool SimplePointCloudFilter::getBoundingBox()
+bool SimplePointCloudFilter::detectObjects(bool remove_outliers)
 {
+  // wait until other loop is done processing, then block that loop
+  while (processing_)
+  {
+    ros::Duration(0.1).sleep();
+    ROS_INFO_STREAM_THROTTLE_NAMED(1,"point_cloud_filter","Waiting for main point cloud callback to finish processing");
+  }
+  processing_ = true;
+
+  if (remove_outliers)
+  {
+    ROS_INFO_STREAM_NAMED("point_cloud_filter","Performing outlier removal");
+
+    pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> rad;
+    rad.setInputCloud(roi_cloud_);
+    rad.setRadiusSearch(radius_of_outlier_removal_);
+    rad.setMinNeighborsInRadius(200);
+    rad.filter(*roi_cloud_);
+
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
+    sor.setInputCloud(roi_cloud_);
+    sor.setMeanK(50);
+    sor.setStddevMulThresh(1.0);
+    sor.filter(*roi_cloud_);
+  }
+
+  // publish point clouds for rviz
+  roi_cloud_pub_.publish(roi_cloud_);
+  ros::Duration(5).sleep();
+
+  if (roi_cloud_->points.size() == 0)
+  {
+    ROS_WARN_STREAM_THROTTLE_NAMED(2, "point_cloud_filter.process","0 points in region of interest");
+    processing_ = false;
+    return false;
+  }
+
+  // get the bounding box of the point cloud
   bounding_box_.getBodyAlignedBoundingBox(roi_cloud_, bbox_pose_, bbox_depth_, bbox_width_, bbox_height_);
 
   // Visualize
   //visual_tools_->publishWireframeCuboid(bbox_pose_, bbox_depth_, bbox_width_, bbox_height_,
   //                                      rviz_visual_tools::MAGENTA);
+  
+  // Allow main loop to work again
+  processing_ = false;
+  
+  return true;
 }
 
 void SimplePointCloudFilter::setRegionOfInterest(Eigen::Affine3d pose, double depth, double width, double height)
@@ -272,10 +286,6 @@ void SimplePointCloudFilter::resetRegionOfInterst()
   has_roi_ = false;
 }
 
-void SimplePointCloudFilter::enableBoundingBox(bool enable)
-{
-  get_bbox_ = enable;
-}
 
 void SimplePointCloudFilter::getObjectPose(geometry_msgs::Pose &pose)
 {

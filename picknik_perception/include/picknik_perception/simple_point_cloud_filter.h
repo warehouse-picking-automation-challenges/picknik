@@ -95,7 +95,7 @@ public:
    * \brief Processing of filtered point cloud
    * \return true on success
    */
-  bool getBoundingBox();
+  bool detectObjects(bool remove_outliers);
 
   /*
    * \brief Set the region of interest for the point cloud as a cuboid
@@ -133,15 +133,11 @@ public:
   Eigen::Affine3d& getObjectPose();
 
   bool processing_;
-  bool outlier_removal_;
 
   // point clouds
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr roi_cloud_;
 
 private:
-
-  // process point cloud to get bounding box of item
-  bool get_bbox_;
 
   // Bounding box pose and dimensions
   Eigen::Affine3d bbox_pose_;
@@ -167,6 +163,9 @@ private:
   ros::Publisher roi_cloud_pub_;
 
   bounding_box::BoundingBox bounding_box_;
+
+  double radius_of_outlier_removal_;
+
 }; // class
 
 // Create boost pointers for this class
