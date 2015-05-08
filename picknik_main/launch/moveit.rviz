@@ -8,7 +8,6 @@ Panels:
         - /Amazon Markers1/Namespaces1
         - /Amazon Trajectory Markers1/Namespaces1
         - /OMPL Experience1/Namespaces1
-        - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
         - /TF1/Frames1
         - /DepthCloud1/Auto Size1
@@ -530,8 +529,8 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: visualization_marker_array
-      Name: MarkerArray
+      Marker Topic: /picknik_main/product_perception
+      Name: APC Product Perception
       Namespaces:
         {}
       Queue Size: 100
@@ -987,22 +986,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.23659
+      Distance: 5.13932
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.09011
-        Y: 0.0483544
-        Z: 1.07288e-05
+        X: 1.57324
+        Y: -0.2333
+        Z: 9.89432e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.419798
+      Pitch: 0.274797
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.13769
+      Yaw: 3.1045
     Saved: ~
 Window Geometry:
   Displays:

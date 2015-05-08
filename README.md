@@ -237,6 +237,7 @@ Button Mapings
 		16. Test grasp generator abilities and score results
 		17. Test joint limits
 		18. Test requesting preception results, using bin id:=[1-12]
+		19. Test requesting preception results from each bin in a loop
 		22. Test approach, lift, and retreat motion for random objects
 		23. UNIT TESTS for manipulation		
         25. Test IK solver with simple pose request

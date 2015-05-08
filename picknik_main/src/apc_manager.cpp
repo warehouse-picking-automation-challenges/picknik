@@ -1465,6 +1465,66 @@ bool APCManager::testPerceptionComm(std::size_t bin_id)
   return true;
 }
 
+// Mode 19
+bool APCManager::testPerceptionCommEach()
+{
+  // Load JSON file
+  loadShelfContents(order_file_path_);
+
+  // Generate random product poses and visualize the shelf
+  createRandomProductPoses();
+
+  // Display planning scene
+  planning_scene_manager_->displayShelfWithOpenBins();
+
+  for (std::size_t bin_id = 1; bin_id < 10; ++bin_id)
+  {
+    if (!ros::ok())
+      break;
+
+    BinObjectPtr bin = shelf_->getBin(bin_id);
+    if (bin->getProducts().size() == 0)
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","No products in bin "<< bin->getName());
+      return false;
+    }
+    ProductObjectPtr& product = bin->getProducts().front();
+    WorkOrder work_order(bin, product);
+    bool verbose = true;
+
+    bool no_movement = false;
+    if (no_movement)
+    {
+      // Communicate with perception pipeline
+      perception_interface_->startPerception(product, bin);
+
+      ROS_INFO_STREAM_NAMED("apc_manager","Waiting 1 second");
+      ros::Duration(1).sleep();
+
+      // Get result from perception pipeline
+      if (!perception_interface_->endPerception(product, bin, fake_perception_))
+      {
+        ROS_ERROR_STREAM_NAMED("apc_manager","End perception failed");
+        return false;
+      }
+    }
+    else
+    {
+      // Move camera to desired bin to get pose of product
+      if (!perceiveObject(work_order, verbose))
+      {
+        ROS_ERROR_STREAM_NAMED("apc_manager","Unable to get object pose");
+        ROS_INFO_STREAM_NAMED("apc_manager","Sleeping before retrying...");
+        ros::Duration(10).sleep();
+      }
+    }
+
+    remote_control_->waitForNextStep("request perception again");
+  }
+
+  return true;
+}
+
 // Mode 32
 bool APCManager::recordBinWithCamera(std::size_t bin_id)
 {

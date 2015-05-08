@@ -171,6 +171,7 @@ public:
       // Convert point cloud to mesh
       shape_msgs::Mesh mesh_msg;
       mesh_msg = bounding_box::createMeshMsg(pointcloud_filter_->roi_cloud_, pointcloud_filter_->getObjectPose());
+      ROS_INFO_STREAM_NAMED("pcl_perception_server","Finished computing mesh msg");
       ROS_DEBUG_STREAM_NAMED("test","sizes = " << mesh_msg.triangles.size() << ", " << mesh_msg.vertices.size());
       //visual_tools_->publishCollisionMesh(Eigen::Affine3d::Identity(), "object", mesh_msg, rviz_visual_tools::BLUE);
 

@@ -202,6 +202,7 @@ public:
    * \return true on success
    */
   bool testPerceptionComm(std::size_t bin_id);
+  bool testPerceptionCommEach();
 
   /**
    * \brief Given an id of a bin (starting at 0=A) record the trajectory of a camera observing it
