@@ -96,7 +96,6 @@ public:
     }
     else
     {
-      pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
       pcl::fromROSMsg(*msg, *cloud_left_);
 
       // get frame to transfer right point cloud into

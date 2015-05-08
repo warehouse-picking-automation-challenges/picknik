@@ -39,6 +39,8 @@
 #ifndef PICKNIK_PERCEPTION_SIMPLE_POINT_CLOUD_FILTER_
 #define PICKNIK_PERCEPTION_SIMPLE_POINT_CLOUD_FILTER_
 
+#include <sstream>
+
 // ROS
 #include <ros/ros.h>
 #include <ros/package.h>
@@ -48,12 +50,16 @@
 // PCL
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
+#include <pcl/io/pcd_io.h>
 
 // Rviz
 #include <rviz_visual_tools/rviz_visual_tools.h>
 
 // bounding_box
 #include <bounding_box/bounding_box.h>
+
+// boost
+#include <boost/filesystem.hpp>
 
 namespace picknik_perception
 {
@@ -69,6 +75,11 @@ public:
    * \return true on success
    */
   bool publishRegionOfInterest();
+
+  /**
+   * \brief save the region of interest as a pcd file.
+   */
+  static void saveRegionOfInterest(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
 
   /*
    * \brief
@@ -87,10 +98,22 @@ public:
   bool getBoundingBox();
 
   /*
-   * \brief
+   * \brief Set the region of interest for the point cloud as a cuboid
+   * \param pose - the pose of the cuboid
+   * \param depth - the size of the cuboid along the x-axis of the pose
+   * \param width - the size of the cuboid along the y-axis of the pose
+   * \param height - the size of the cuboid along the z-axis of the pose
+   * \param bottom_right_front_corner - pose describing the bottom front right corner of a cuboid
+   * \param top_left_back_corner - pose describing the top left back corner of a cuboid
+   * \param reduction_padding_x - padding in the x direction of the poses
+   * \param reduction_padding_y - padding in the y direction of the poses
+   * \param reduction_padding_z - padding in the z direction of the poses
+   *
+   * NOTE: pose for the region of interes is taken from bottom_right_front_corner
    */
   void setRegionOfInterest(Eigen::Affine3d pose, double depth, double width, double height);
-  void setRegionOfInterest(Eigen::Affine3d bottom_right_front_corner, Eigen::Affine3d top_left_back_corner, double reduction_padding_x, double reduction_padding_y, double reduction_padding_z);
+  void setRegionOfInterest(Eigen::Affine3d bottom_right_front_corner, Eigen::Affine3d top_left_back_corner, 
+                           double reduction_padding_x, double reduction_padding_y, double reduction_padding_z);
 
   /**
    * \brief After percieving a particular bin, switch back to showing entire shelf
