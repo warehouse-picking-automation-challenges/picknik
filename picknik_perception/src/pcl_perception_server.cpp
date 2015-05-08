@@ -168,6 +168,7 @@ public:
       //                                   pcl::PointCloud< PointT > & cloud_out,
       //                                   const tf::Transform & transform
 
+
       // Convert point cloud to mesh
       shape_msgs::Mesh mesh_msg;
       mesh_msg = bounding_box::createMeshMsg(pointcloud_filter_->roi_cloud_, pointcloud_filter_->getObjectPose());
@@ -234,6 +235,16 @@ public:
     pointcloud_filter_->setRegionOfInterest( bottom_right_front_corner, top_left_back_corner, reduction_padding, reduction_padding, reduction_padding);
 
     return true;
+  }
+  
+  /**
+   * \brief Helper function for debugging
+   */
+  void printTransform(const Eigen::Affine3d &transform)
+  {
+    Eigen::Quaterniond q(transform.rotation());
+    std::cout << "T.xyz = [" << transform.translation().x() << ", " << transform.translation().y() << ", " << transform.translation().z() << "], Q.xyzw = ["
+              << q.x() << ", " << q.y() << ", " << q.z() << ", " << q.w() << "]" << std::endl;
   }
 
 private:

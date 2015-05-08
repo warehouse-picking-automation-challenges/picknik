@@ -6,17 +6,13 @@ Startup Jacob hardware or simulation stack as usual, but run the main process in
 
 See main README.md for starting cameras.
 
-Merge point clouds
-
-    rosrun picknik_perception merge_point_clouds
-
 Run the perception server:
     
     roslaunch picknik_perception perception_server_pcl.launch
 
 Test perception server:
 
-    roslaunch picknik_main jacob_apc.launch fake_perception:=0 fake_execution:=0 mode:=18
+    roslaunch picknik_main jacob_apc.launch mode:=18 full_auto:=1 id:=6
 
 ## Notes on Filtering
 
