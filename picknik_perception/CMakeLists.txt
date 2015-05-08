@@ -54,6 +54,7 @@ add_library(simple_point_cloud_filter
 )
 target_link_libraries(simple_point_cloud_filter
   ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}  
 )
 
 # Library
@@ -116,6 +117,13 @@ target_link_libraries(pcl_perception_server
   manipulation_interface
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
+)
+
+# Executable
+add_executable(picknik_perception_tests src/tests/picknik_perception_tests.cpp)
+target_link_libraries(picknik_perception_tests
+  simple_point_cloud_filter
+  ${catkin_LIBRARIES}
 )
 
 ## Install

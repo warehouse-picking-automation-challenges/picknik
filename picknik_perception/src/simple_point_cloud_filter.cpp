@@ -228,6 +228,45 @@ void SimplePointCloudFilter::setRegionOfInterest(Eigen::Affine3d bottom_right_fr
   publishRegionOfInterest();
 }
 
+void SimplePointCloudFilter::saveRegionOfInterest(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud)
+{
+
+  // Save files in picknik_perception/data/roi_pcds
+  std::string package_path = ros::package::getPath("picknik_perception");
+
+  // from: http://www.cplusplus.com/forum/beginner/70854/
+  namespace fs = boost::filesystem;
+  fs::path save_path(package_path + "/data/roi_pcds");
+  fs::directory_iterator end_iter;
+
+  // get unique identifier for file (count number of pcd files in folder)
+  std::size_t file_count = 0;
+
+  for (fs::directory_iterator iter(save_path); iter != end_iter; ++iter)
+  {
+    if (iter->path().extension() == ".pcd")
+    {
+      file_count++;
+    }
+  }
+  
+  ROS_DEBUG_STREAM_NAMED("point_cloud_filter.save","number of files in directory: " << file_count);
+
+  std::stringstream file_name;
+  file_name << save_path.string() << "/roi_pc_" <<(int)file_count << ".pcd";
+  std::string full_path = file_name.str();
+
+  ROS_DEBUG_STREAM_NAMED("point_cloud_filter.save","saving file to: " << full_path);
+
+  // remove nan's
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr new_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+  std::vector<int> indices;
+  pcl::removeNaNFromPointCloud(*cloud, *new_cloud, indices);
+
+  // save to file
+  pcl::io::savePCDFileASCII(full_path, *new_cloud);
+}
+
 void SimplePointCloudFilter::resetRegionOfInterst()
 {
   has_roi_ = false;
