@@ -372,19 +372,18 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
       ROS_INFO_STREAM_NAMED("perception_interface","Setting new bounding mesh");
       product->setCollisionMesh(mesh);
 
+      //const std::string& high_res_mesh_path = config_->package_path_ + "/meshes/products/" + product->getName() + "/detected/current.stl";
       const std::string& high_res_mesh_path = config_->package_path_ + "/meshes/detected/current.stl";
       product->writeCollisionBody(high_res_mesh_path);
-      product->setHighResMeshPath(high_res_mesh_path);
+      std::cout << "debug: " << product->getHighResMeshPath() << std::endl;
+      product->setHighResMeshPath("file://" + high_res_mesh_path);
       has_new_mesh = true;
     }
     else
       ROS_ERROR_STREAM_NAMED("perception_interface","No mesh provided");
 
-    // Show in collision and display Rvizs
-    //product->visualizeHighRes(world_to_bin); // TODO change to the new mesh
-
     // So that bounding boxes don't build up
-    //visuals_->visual_tools_->deleteAllMarkers();
+    visuals_->visual_tools_->deleteAllMarkers();
 
     // Update the bounding box
     updateBoundingMesh(product, bin);
@@ -393,7 +392,6 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()), rvt::LIME_GREEN);
 
     // Visualize bounding box in high res display
-    //visuals_->visualizeDisplayShelf(shelf_);
     product->visualizeHighResWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()), rvt::LIME_GREEN);
 
     // Show the new mesh

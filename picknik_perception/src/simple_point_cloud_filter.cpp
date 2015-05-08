@@ -157,7 +157,7 @@ void SimplePointCloudFilter::processPointCloud(const sensor_msgs::PointCloud2Con
 
       pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> rad;
       rad.setInputCloud(roi_cloud_);
-      rad.setRadiusSearch(0.03);
+      rad.setRadiusSearch(0.005);
       rad.setMinNeighborsInRadius(200);
       rad.filter(*roi_cloud_);
 
@@ -182,15 +182,20 @@ void SimplePointCloudFilter::processPointCloud(const sensor_msgs::PointCloud2Con
   // optionally get the bounding box of the point cloud
   if (get_bbox_)
   {
-    bounding_box_.getBodyAlignedBoundingBox(roi_cloud_, bbox_pose_, bbox_depth_, bbox_width_, bbox_height_);
-
-    // Visualize
-    visual_tools_->publishWireframeCuboid(bbox_pose_, bbox_depth_, bbox_width_, bbox_height_,
-                                          rviz_visual_tools::MAGENTA);
+    getBoundingBox();
 
     get_bbox_ = false;
   }
 
+}
+
+bool SimplePointCloudFilter::getBoundingBox()
+{
+  bounding_box_.getBodyAlignedBoundingBox(roi_cloud_, bbox_pose_, bbox_depth_, bbox_width_, bbox_height_);
+
+  // Visualize
+  //visual_tools_->publishWireframeCuboid(bbox_pose_, bbox_depth_, bbox_width_, bbox_height_,
+  //                                      rviz_visual_tools::MAGENTA);
 }
 
 void SimplePointCloudFilter::setRegionOfInterest(Eigen::Affine3d pose, double depth, double width, double height)
@@ -236,6 +241,11 @@ void SimplePointCloudFilter::enableBoundingBox(bool enable)
 void SimplePointCloudFilter::getObjectPose(geometry_msgs::Pose &pose)
 {
   pose = visual_tools_->convertPose(bbox_pose_);
+}
+
+Eigen::Affine3d& SimplePointCloudFilter::getObjectPose()
+{
+  return bbox_pose_;
 }
 
 } // namespace

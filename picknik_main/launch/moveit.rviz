@@ -5,14 +5,12 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Grid1/Offset1
-        - /Amazon Markers1
         - /Amazon Markers1/Namespaces1
         - /Amazon Trajectory Markers1/Namespaces1
         - /OMPL Experience1/Namespaces1
         - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
         - /TF1/Frames1
-        - /Region of Interest1
         - /DepthCloud1/Auto Size1
         - /Axes1
       Splitter Ratio: 0.619256
@@ -496,7 +494,13 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Markers
       Namespaces:
-        {}
+        Axis: true
+        Text: true
+        Wireframe Cuboid: true
+        bin: true
+        crayola_64_ct: true
+        product_crayola_64_ct_60_wireframe: true
+        world_to_camera: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -512,7 +516,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/grasping_markers
       Name: Amazon Grasp Markers
       Namespaces:
-        Arrow: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -520,11 +524,16 @@ Visualization Manager:
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
-        Arrow: true
-        Axis: true
         Path: true
         Sphere: true
-        Text: true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: visualization_marker_array
+      Name: MarkerArray
+      Namespaces:
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -664,7 +673,7 @@ Visualization Manager:
         Scene Alpha: 1
         Scene Color: 255; 170; 0
         Scene Display Time: 0.2
-        Show Scene Geometry: false
+        Show Scene Geometry: true
         Voxel Coloring: Z-Axis
         Voxel Rendering: Occupied Voxels
       Scene Robot:
@@ -856,7 +865,36 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
-      Enabled: true
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: Merged Point Clouds
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.01
+      Style: Points
+      Topic: /merge_point_clouds/points
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: false
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: RGB8
+      Decay Time: 0
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -868,11 +906,11 @@ Visualization Manager:
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.01
-      Style: Flat Squares
-      Topic: /merge_point_clouds/points
+      Style: Points
+      Topic: /pcl_perception_server/roi_cloud
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
@@ -949,22 +987,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.00888
+      Distance: 3.23659
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.0397472
-        Y: -0.684012
-        Z: 1.09076e-05
+        X: 1.09011
+        Y: 0.0483544
+        Z: 1.07288e-05
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.564798
+      Pitch: 0.419798
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.79771
+      Yaw: 3.13769
     Saved: ~
 Window Geometry:
   Displays:
@@ -980,5 +1018,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1190
-  X: 1883
+  X: 1901
   Y: 14

@@ -66,6 +66,7 @@ public:
   mvt::MoveItVisualToolsPtr goal_state_; // also used for trajectory lines
   mvt::MoveItVisualToolsPtr grasp_markers_; // also used for start state
   mvt::MoveItVisualToolsPtr trajectory_lines_; // also used for goal state
+  mvt::MoveItVisualToolsPtr product_perception_; // for bounding boxes
 
 private:
 

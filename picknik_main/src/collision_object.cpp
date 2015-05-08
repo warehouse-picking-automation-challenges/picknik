@@ -256,11 +256,12 @@ bool MeshObject::visualizeHighRes(const Eigen::Affine3d& trans) const
   }
 
   // Show axis
-  visuals_->visual_tools_display_->publishAxis(transform(centroid_, trans), 0.1/2, 0.01/2);
+  //visuals_->visual_tools_display_->publishAxis(transform(centroid_, trans), 0.1/2, 0.01/2);
 
-  // Show full resolution mesh - scale = 1, id = 1, namespace = collision object name
+  // Show full resolution mesh - scale = 1,
+  const std::size_t id = 1;
   return visuals_->visual_tools_display_->publishMesh(transform(mesh_centroid_, trans), high_res_mesh_path_,
-                                                      rvt::CLEAR, 1, collision_object_name_, 1);
+                                                      rvt::CLEAR, 1, collision_object_name_, id);
 }
 
 bool MeshObject::visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const
@@ -269,6 +270,7 @@ bool MeshObject::visualizeWireframe(const Eigen::Affine3d& trans, const rvt::col
   std::size_t id = 1;
   visuals_->visual_tools_->publishWireframeCuboid( pose, depth_, width_, height_, color, 
                                                    collision_object_name_ + "_wireframe", id);
+  visuals_->visual_tools_->publishAxis(pose);
   return true;
 }
 

@@ -80,6 +80,12 @@ public:
    */
   void processPointCloud(const sensor_msgs::PointCloud2ConstPtr& msg);
 
+  /**
+   * \brief Processing of filtered point cloud
+   * \return true on success
+   */
+  bool getBoundingBox();
+
   /*
    * \brief
    */
@@ -101,6 +107,7 @@ public:
    * \brief Get object pose
    */
   void getObjectPose(geometry_msgs::Pose &pose);
+  Eigen::Affine3d& getObjectPose();
 
   bool processing_;
   bool outlier_removal_;

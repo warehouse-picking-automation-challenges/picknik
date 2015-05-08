@@ -22,7 +22,8 @@
 namespace picknik_main
 {
 
-Visuals::Visuals(robot_model::RobotModelPtr robot_model, planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor)
+Visuals::Visuals(robot_model::RobotModelPtr robot_model, 
+                 planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor)
   : nh_("~")
 {
   // ------------------------------------------------------------------------------------------------------
@@ -64,6 +65,12 @@ Visuals::Visuals(robot_model::RobotModelPtr robot_model, planning_scene_monitor:
   goal_state_->deleteAllMarkers(); // clear all old markers
   goal_state_->hideRobot(); // show that things have been reset
   trajectory_lines_ = goal_state_; // same object just renamed
+
+  // ------------------------------------------------------------------------------------------------------
+  // Load Product Perception VisualTools 
+  product_perception_.reset(new mvt::MoveItVisualTools(robot_model->getModelFrame(), "/picknik_main/product_perception",
+                                               planning_scene_monitor));
+  product_perception_->deleteAllMarkers(); // clear all old markers
 
   // Load verbose/visualization settings
   const std::string parent_name = "visuals"; // for namespacing logging messages
