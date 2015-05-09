@@ -5,10 +5,10 @@
 debug_level:
 
   # Goal bin
-  show_goal_bin_markers: true
+  show_goal_bin_markers: false
 
   # Bounding Box
-  verbose_bounding_box: true
+  verbose_bounding_box: false
   
   # Experience planning
   verbose_experience_database_stats: false

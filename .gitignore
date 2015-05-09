@@ -1,6 +1,6 @@
 # ignore blender files
 *.blend
-
+picknik_main/meshes/detected/*
 CATKIN_IGNORE
 *.csv
 *~

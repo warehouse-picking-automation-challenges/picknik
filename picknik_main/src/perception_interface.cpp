@@ -372,8 +372,10 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
       ROS_INFO_STREAM_NAMED("perception_interface","Setting new bounding mesh");
       product->setCollisionMesh(mesh);
 
-      //const std::string& high_res_mesh_path = config_->package_path_ + "/meshes/products/" + product->getName() + "/detected/current.stl";
-      const std::string& high_res_mesh_path = config_->package_path_ + "/meshes/detected/current.stl";
+      static std::size_t mesh_id = 0;
+      const std::string& high_res_mesh_path = config_->package_path_ + "/meshes/detected/current" +
+        boost::lexical_cast<std::string>(mesh_id++) + ".stl";
+
       product->writeCollisionBody(high_res_mesh_path);
       std::cout << "previous high res mesh path: " << product->getHighResMeshPath() << std::endl;
       product->setHighResMeshPath("file://" + high_res_mesh_path);
@@ -522,7 +524,7 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
     //Eigen::Affine3d cuboid_to_bin;
     ROS_DEBUG_STREAM_NAMED("perception_interface","Dropping points to plane for " << product->getName());
 
-    bounding_box_.drop_pose_ = product->getCentroid().inverse();
+    bounding_box_.drop_pose_ = bin_to_world; //product->getCentroid().inverse();
     bounding_box_.drop_plane_ = bounding_box::XY;
     bounding_box_.drop_points_ = true;
 
