@@ -10,6 +10,7 @@ Panels:
         - /OMPL Experience1/Namespaces1
         - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
+        - /TF1
         - /TF1/Frames1
         - /DepthCloud1/Auto Size1
       Splitter Ratio: 0.619256
@@ -494,20 +495,6 @@ Visualization Manager:
       Name: Amazon Markers
       Namespaces:
         Axis: true
-        Collision: true
-        Line: true
-        Sphere: true
-        Text: true
-        bin: true
-        crayola_64_ct: true
-        drop_pose: true
-        object: true
-        product_crayola_64_ct_55_wireframe: true
-        product_crayola_64_ct_56_wireframe: true
-        product_crayola_64_ct_57_wireframe: true
-        product_crayola_64_ct_58_wireframe: true
-        product_crayola_64_ct_59_wireframe: true
-        world_to_camera: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -523,7 +510,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/grasping_markers
       Name: Amazon Grasp Markers
       Namespaces:
-        Arrow: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -531,11 +518,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
-        Arrow: true
-        Axis: true
-        Path: true
-        Sphere: true
-        Text: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -543,9 +526,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/product_perception
       Name: APC Product Perception
       Namespaces:
-        Text: true
-        Wireframe Cuboid: true
-        bin: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -794,19 +775,167 @@ Visualization Manager:
         Show Robot Visual: false
       Value: true
     - Class: rviz/TF
-      Enabled: false
-      Frame Timeout: 15
+      Enabled: true
+      Frame Timeout: 5
       Frames:
         All Enabled: false
-      Marker Scale: 0.5
+        base:
+          Value: true
+        bin_A:
+          Value: true
+        bin_B:
+          Value: true
+        bin_C:
+          Value: true
+        bin_D:
+          Value: true
+        bin_E:
+          Value: true
+        bin_F:
+          Value: true
+        bin_G:
+          Value: true
+        bin_H:
+          Value: true
+        bin_I:
+          Value: true
+        bin_J:
+          Value: true
+        bin_K:
+          Value: true
+        bin_L:
+          Value: true
+        frame:
+          Value: true
+        gantry:
+          Value: true
+        gantry_plate:
+          Value: true
+        jaco2_end_effector:
+          Value: true
+        jaco2_link_1:
+          Value: true
+        jaco2_link_2:
+          Value: true
+        jaco2_link_3:
+          Value: true
+        jaco2_link_4:
+          Value: true
+        jaco2_link_5:
+          Value: true
+        jaco2_link_base:
+          Value: true
+        jaco2_link_finger_1:
+          Value: true
+        jaco2_link_finger_1_tip:
+          Value: true
+        jaco2_link_finger_2:
+          Value: true
+        jaco2_link_finger_2_tip:
+          Value: true
+        jaco2_link_finger_3:
+          Value: true
+        jaco2_link_finger_3_tip:
+          Value: true
+        jaco2_link_hand:
+          Value: true
+        jaco2_wrist:
+          Value: true
+        shelf:
+          Value: true
+        world:
+          Value: true
+        xtion_left_depth_frame:
+          Value: true
+        xtion_left_depth_optical_frame:
+          Value: true
+        xtion_left_link:
+          Value: true
+        xtion_left_rgb_frame:
+          Value: true
+        xtion_left_rgb_optical_frame:
+          Value: true
+        xtion_right_depth_frame:
+          Value: true
+        xtion_right_depth_optical_frame:
+          Value: true
+        xtion_right_link:
+          Value: true
+        xtion_right_rgb_frame:
+          Value: true
+        xtion_right_rgb_optical_frame:
+          Value: true
+      Marker Scale: 0.25
       Name: TF
-      Show Arrows: false
+      Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        world:
+          base:
+            frame:
+              gantry:
+                gantry_plate:
+                  jaco2_link_base:
+                    jaco2_link_1:
+                      jaco2_link_2:
+                        jaco2_link_3:
+                          jaco2_link_4:
+                            jaco2_link_5:
+                              jaco2_wrist:
+                                jaco2_link_hand:
+                                  jaco2_end_effector:
+                                    {}
+                                  jaco2_link_finger_1:
+                                    jaco2_link_finger_1_tip:
+                                      {}
+                                  jaco2_link_finger_2:
+                                    jaco2_link_finger_2_tip:
+                                      {}
+                                  jaco2_link_finger_3:
+                                    jaco2_link_finger_3_tip:
+                                      {}
+                  xtion_left_link:
+                    xtion_left_depth_frame:
+                      xtion_left_depth_optical_frame:
+                        {}
+                    xtion_left_rgb_frame:
+                      xtion_left_rgb_optical_frame:
+                        {}
+                  xtion_right_link:
+                    xtion_right_depth_frame:
+                      xtion_right_depth_optical_frame:
+                        {}
+                    xtion_right_rgb_frame:
+                      xtion_right_rgb_optical_frame:
+                        {}
+          shelf:
+            bin_A:
+              {}
+            bin_B:
+              {}
+            bin_C:
+              {}
+            bin_D:
+              {}
+            bin_E:
+              {}
+            bin_F:
+              {}
+            bin_G:
+              {}
+            bin_H:
+              {}
+            bin_I:
+              {}
+            bin_J:
+              {}
+            bin_K:
+              {}
+            bin_L:
+              {}
       Update Interval: 0
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -999,22 +1128,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 9.55361
+      Distance: 3.68425
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 3.0602
-        Y: 1.12151
-        Z: 5.96046e-07
+        X: 0.904157
+        Y: 0.257843
+        Z: 4.76837e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.245398
+      Pitch: 0.340398
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.6004
+      Yaw: 3.76541
     Saved: ~
 Window Geometry:
   Displays:
@@ -1030,5 +1159,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1190
-  X: 1891
+  X: 1881
   Y: 14

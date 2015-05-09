@@ -125,7 +125,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
   visuals_->visualizeDisplayShelf(shelf_);
 
   // Allow collisions between frame of robot and floor
-  allowCollisions();
+  allowCollisions(config_->right_arm_); // jaco-specific
 
   ROS_INFO_STREAM_NAMED("apc_manager","APCManager Ready.");
 }
@@ -344,7 +344,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         planning_scene_manager_->displayShelfWithOpenBins();
 
         // Open hand
-        if (!manipulation_->openEndEffectors(true))
+        if (!manipulation_->openEEs(true))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to open end effectors");
           return false;
@@ -495,7 +495,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         visuals_->start_state_->deleteAllMarkers(); // clear all old markers
 
         // Close EE
-        if (!manipulation_->openEndEffectorWithVelocity(false, arm_jmg))
+        if (!manipulation_->openEE(false, arm_jmg))
         {
           ROS_WARN_STREAM_NAMED("apc_manager","Unable to close end effector");
           //return false;
@@ -573,7 +573,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Set planning scene
         // planning_scene_manager_->displayShelfAsWall();
 
-        if (!manipulation_->openEndEffectorWithVelocity(true, arm_jmg))
+        if (!manipulation_->openEE(true, arm_jmg))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
           return false;
@@ -624,7 +624,7 @@ bool APCManager::trainExperienceDatabase()
 // Mode 8
 bool APCManager::testEndEffectors()
 {
-  bool normal_method = false;
+  bool normal_method = true;
 
   // Test visualization
   statusPublisher("Testing open close visualization of EE");
@@ -644,10 +644,8 @@ bool APCManager::testEndEffectors()
 
       if (normal_method)
       {
-        // Close right and optionally right EE
-        manipulation_->openEndEffectorWithVelocity(open, config_->right_arm_);
-        if (config_->dual_arm_)
-          manipulation_->openEndEffectorWithVelocity(open, config_->left_arm_);
+        // Close all EEs
+        manipulation_->openEEs(open);
       }
       else
       {
@@ -655,9 +653,9 @@ bool APCManager::testEndEffectors()
         double space_between_fingers = config_->test_double_;
 
         // Close right and optionally right EE
-        manipulation_->openEndEffectorWithVelocity(space_between_fingers, config_->right_arm_);
+        manipulation_->setEEFingerWidth(space_between_fingers, config_->right_arm_);
         if (config_->dual_arm_)
-          manipulation_->openEndEffectorWithVelocity(space_between_fingers, config_->left_arm_);
+          manipulation_->setEEFingerWidth(space_between_fingers, config_->left_arm_);
       }
 
       ros::Duration(2.0).sleep();
@@ -673,10 +671,8 @@ bool APCManager::testEndEffectors()
 
       if (normal_method)
       {
-        // Close right and optionally right EE
-        manipulation_->openEndEffectorWithVelocity(open, config_->right_arm_);
-        if (config_->dual_arm_)
-          manipulation_->openEndEffectorWithVelocity(open, config_->left_arm_);
+        // Close all EEs
+        manipulation_->openEEs(open);
       }
       else
       {
@@ -684,9 +680,9 @@ bool APCManager::testEndEffectors()
         double space_between_fingers = 0; // close
 
         // Open right and optionally right EE
-        manipulation_->openEndEffectorWithVelocity(space_between_fingers, config_->right_arm_);
+        manipulation_->setEEFingerWidth(space_between_fingers, config_->right_arm_);
         if (config_->dual_arm_)
-          manipulation_->openEndEffectorWithVelocity(space_between_fingers, config_->left_arm_);
+          manipulation_->setEEFingerWidth(space_between_fingers, config_->left_arm_);
       }
 
       ros::Duration(2.0).sleep();
@@ -803,9 +799,7 @@ bool APCManager::testShelfLocation()
   Eigen::Affine3d ee_pose;
 
   // Set EE as closed so that we can touch the tip easier
-  manipulation_->openEndEffectorWithVelocity(false, config_->right_arm_);
-  if (config_->dual_arm_)
-    manipulation_->openEndEffectorWithVelocity(false, config_->left_arm_);
+  manipulation_->openEEs(false);
 
   // Reduce collision world to simple
   planning_scene_manager_->displayShelfAsWall();
@@ -976,7 +970,7 @@ bool APCManager::testGoalBinPose()
   for (std::size_t i = 0; i < dropoff_locations_.size(); ++i)
   {
     // Close end effector
-    if (!manipulation_->openEndEffectorWithVelocity(false, arm_jmg))
+    if (!manipulation_->openEEs(false))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
       return false;
@@ -990,7 +984,7 @@ bool APCManager::testGoalBinPose()
     }
 
     // Open end effector
-    if (!manipulation_->openEndEffectorWithVelocity(true, arm_jmg))
+    if (!manipulation_->openEEs(true))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Unable to open end effector");
       return false;
@@ -1152,7 +1146,7 @@ bool APCManager::calibrateCamera(std::size_t id)
   planning_scene_manager_->displayShelfWithOpenBins();
 
   // Close fingers
-  if (!manipulation_->openEndEffectors(false))
+  if (!manipulation_->openEEs(false))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effectors");
     return false;
@@ -1913,13 +1907,24 @@ RemoteControlPtr APCManager::getRemoteControl()
   return remote_control_;
 }
 
-bool APCManager::allowCollisions()
+bool APCManager::allowCollisions(JointModelGroup* arm_jmg)
 {
   // Allow collisions between frame of robot and floor
   {
     planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning
-    scene->getAllowedCollisionMatrixNonConst().setEntry(shelf_->getEnvironmentCollisionObject("floor_wall")->getCollisionName(),
-                                                        "frame", true);
+    collision_detection::AllowedCollisionMatrix& collision_matrix = scene->getAllowedCollisionMatrixNonConst();
+    collision_matrix.setEntry(shelf_->getEnvironmentCollisionObject("floor_wall")->getCollisionName(), "frame", true);
+
+    // Get links of end effector
+    const std::vector<std::string> &ee_link_names = grasp_datas_[arm_jmg]->ee_jmg_->getLinkModelNames();
+    for (std::size_t i = 0; i < ee_link_names.size(); ++i)
+    {
+      for (std::size_t j = i+1; j < ee_link_names.size(); ++j)
+      {
+        std::cout << "disabling collsion between " << ee_link_names[i] << " and " <<  ee_link_names[j] << std::endl;
+        collision_matrix.setEntry(ee_link_names[i], ee_link_names[j], true);
+      }
+    }                                                   
   }
 
   return true;
@@ -2419,54 +2424,74 @@ bool APCManager::playbackWaypointsFromFile()
 bool APCManager::testGraspWidths()
 {
   // Test visualization
-  statusPublisher("Testing open close visualization of EE");
-  double space_between_fingers = 0;
-  static const double MAX_DISTANCE_WIDTH = 0.0725;
-  moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
+  statusPublisher("Testing open close of End Effectors");
 
-  // Send distance between finger commands
   if (false)
+  {
+    //-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    // Send joint position commands
+    
+    double joint_position = 0.0;
+    static const double MAX_JOINT_POSISTION = 0.742;
+
     while (ros::ok())
     {
       std::cout << std::endl << std::endl;
 
-      ROS_WARN_STREAM_NAMED("apc_manger","Setting finger joint position " << space_between_fingers);
+      ROS_WARN_STREAM_NAMED("apc_manger","Setting finger joint position " << joint_position);
 
-      // Close right and optionally right EE
-      if (!manipulation_->openEndEffectorWithVelocityJointPos(space_between_fingers, config_->right_arm_))
+      // Change fingers
+      if (!manipulation_->setEEJointPosition(joint_position, config_->right_arm_))
       {
         ROS_ERROR_STREAM_NAMED("apc_manager","Failed to set finger disance");
       }
 
-      //ros::Duration(4.0).sleep();
+      // Wait
+      ros::Duration(2.0).sleep();
       remote_control_->waitForNextStep("move fingers");
 
-      // Increment test
-      space_between_fingers += 0.05;
-      if (space_between_fingers > 0.742)
-        space_between_fingers = 0.0;
+      // Increment the test
+      joint_position += 0.05;
+      if (joint_position > MAX_JOINT_POSISTION)
+        joint_position = 0.0;
     }
-
-  // Send joint position commands
-  while (ros::ok())
-  {
-    std::cout << std::endl << std::endl;
-
-    space_between_fingers += 0.01;
-    if (space_between_fingers > MAX_DISTANCE_WIDTH)
-      space_between_fingers = 0.0;
-
-    ROS_WARN_STREAM_NAMED("apc_manger","Setting finger width distance " << space_between_fingers);
-
-    // Close right and optionally right EE
-    if (!manipulation_->openEndEffectorWithVelocity(space_between_fingers, config_->right_arm_))
-    {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to set finger disance");
-    }
-
-    ros::Duration(4.0).sleep();
   }
+  else
+  {
+    //-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    // Send distance between finger commands
 
+    // Jaco-specific
+    static const double MAX_WIDTH = 10.2;
+    static const double MIN_WIDTH = 0.4;
+    double space_between_fingers = MIN_WIDTH;
+
+    while (ros::ok())
+    {
+      std::cout << std::endl << std::endl;
+
+      ROS_WARN_STREAM_NAMED("apc_manger","Setting finger width distance " << space_between_fingers);
+
+      // Change fingers
+      if (!manipulation_->setEEFingerWidth(space_between_fingers, config_->right_arm_))
+      {
+        ROS_ERROR_STREAM_NAMED("apc_manager","Failed to set finger width");
+      }
+
+      // Wait
+      ros::Duration(2.0).sleep();
+      remote_control_->waitForNextStep("move fingers");
+
+      // Increment the test
+      space_between_fingers += 0.01;
+      if (space_between_fingers > MAX_WIDTH)
+        space_between_fingers = MIN_WIDTH;
+    }
+  }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done testing end effectors");
   return true;

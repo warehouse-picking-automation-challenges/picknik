@@ -347,26 +347,40 @@ public:
    * \brief Open both end effectors in hardware
    * \return true on success
    */
-  bool openEndEffectors(bool open);
+  bool openEEs(bool open);
 
   /**
-   * \brief open/close grippers
+   * \brief Open/close grippers using velocity commands
    * \param bool if it should be open or closed
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on sucess
    */
-  bool openEndEffector(bool open, JointModelGroup* arm_jmg);
+  bool openEE(bool open, JointModelGroup* arm_jmg);
 
   /**
-   * \brief open/close grippers using velocity commands
-   * \param bool if it should be open or closed
+   * \brief Set the distance between fingers (in meters)
+   * \param space_between_fingers
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on sucess
    */
-  bool openEndEffectorWithVelocity(bool open, JointModelGroup* arm_jmg);
-  bool openEndEffectorWithVelocity(double space_between_fingers, JointModelGroup* arm_jmg);
-  bool openEndEffectorWithVelocityJointPos(double joint_position, JointModelGroup* arm_jmg);
-  bool openEndEffectorWithVelocity(JointModelGroup* arm_jmg, trajectory_msgs::JointTrajectory grasp_posture);
+  bool setEEFingerWidth(double space_between_fingers, JointModelGroup* arm_jmg);
+
+  /**
+   * \brief Set the joint values of the finger joints - TODO - this is very Jaco-specific
+   * \param joint_position
+   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \return true on sucess
+   */
+  bool setEEJointPosition(double joint_position, JointModelGroup* arm_jmg);
+
+
+  /**
+   * \brief Set the full grasp posture of the finger joints 
+   * \param joint_position
+   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \return true on sucess
+   */
+  bool setEEGraspPosture(trajectory_msgs::JointTrajectory grasp_posture, JointModelGroup* arm_jmg);
                                                
   /**
    * \brief Set a robot state to have an open or closed EE. Does not actually affect hardware

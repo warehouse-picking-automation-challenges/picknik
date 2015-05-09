@@ -115,7 +115,7 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, JointModelGroup* arm_jmg,
     visuals_->visual_tools_->publishAxis(world_to_product);
     visuals_->visual_tools_->publishText(world_to_product, "object_pose", rvt::BLACK, rvt::SMALL, false);
 
-    ROS_DEBUG_STREAM_NAMED("manipulation","Generating grasps with product depth: " << product->getDepth() << " width: " << product->getWidth() 
+    ROS_DEBUG_STREAM_NAMED("manipulation","Generating grasps with product depth: " << product->getDepth() << " width: " << product->getWidth()
                            << " height: " << product->getHeight());
   }
 
@@ -213,7 +213,7 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, JointModelGroup* arm_jmg,
   return grasp_candidates.size(); // return false if no candidates remaining
 }
 
-bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr grasp_candidate, 
+bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr grasp_candidate,
                                            bool verbose_cartesian_paths, WorkOrder& work_order)
 {
   BinObjectPtr& bin = work_order.bin_;
@@ -222,7 +222,7 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   // Get settings from grasp generator
   const geometry_msgs::PoseStamped &grasp_pose_msg = grasp_candidate->grasp_.grasp_pose;
   const geometry_msgs::PoseStamped pregrasp_pose_msg
-    = moveit_grasps::GraspGenerator::getPreGraspPose(grasp_candidate->grasp_, 
+    = moveit_grasps::GraspGenerator::getPreGraspPose(grasp_candidate->grasp_,
                                                      grasp_candidate->grasp_data_->parent_link_->getName());
 
   // Calculate the lift distance to center the object's centroid vertically in the bin
@@ -230,7 +230,7 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   double lift_distance = bin->getHeight() / 2.0 - bin_to_object.translation().z();
   if (lift_distance < grasp_candidate->grasp_data_->lift_distance_desired_)
   {
-    ROS_WARN_STREAM_NAMED("manipulation","Lift distance " << lift_distance << " less than minimum allowed of " 
+    ROS_WARN_STREAM_NAMED("manipulation","Lift distance " << lift_distance << " less than minimum allowed of "
                           << grasp_candidate->grasp_data_->lift_distance_desired_);
     std::cout << "bin->getHeight() / 2.0 " << bin->getHeight() / 2.0
               << " bin_to_object.translation().z() " <<  bin_to_object.translation().z() << std::endl;
@@ -251,8 +251,8 @@ bool Manipulation::planApproachLiftRetreat(moveit_grasps::GraspCandidatePtr gras
   // Error checking for lift distance
   if ( lifted_grasp_pose.translation().z() > bin->getTopLeft().translation().z())
   {
-    ROS_ERROR_STREAM_NAMED("manipulation","Max lift distance reached, requested " << lift_distance << 
-                           " which has a z height of " << lifted_grasp_pose.translation().z() 
+    ROS_ERROR_STREAM_NAMED("manipulation","Max lift distance reached, requested " << lift_distance <<
+                           " which has a z height of " << lifted_grasp_pose.translation().z()
                            << " of " << bin->getTopLeft().translation().z());
     return false;
   }
@@ -1759,119 +1759,63 @@ bool Manipulation::convertRobotStatesToTrajectory(const std::vector<moveit::core
   return true;
 }
 
-bool Manipulation::openEndEffectors(bool open)
+bool Manipulation::openEEs(bool open)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","openEndEffectors()");
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","openEEs()");
 
   // First arm
-  if (!openEndEffectorWithVelocity(open, config_->right_arm_))
+  if (!openEE(open, config_->right_arm_))
     return false;
 
   // Second arm if applicable
   if (config_->dual_arm_)
-    if (!openEndEffectorWithVelocity(open, config_->left_arm_))
+    if (!openEE(open, config_->left_arm_))
       return false;
 
   return true;
 }
 
-bool Manipulation::openEndEffector(bool open, JointModelGroup* arm_jmg)
+bool Manipulation::openEE(bool open, JointModelGroup* arm_jmg)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","openEndEffector()");
-  ROS_ERROR_STREAM_NAMED("temp","THIS FUNCTION IS DPERECATED");
-
-  // Check status
-  if (!config_->isEnabled("end_effector_enabled"))
-  {
-    ROS_WARN_STREAM_NAMED("manipulation","Gripping is disabled");
-    return true;
-  }
-
-  getCurrentState();
-  JointModelGroup* ee_jmg = grasp_datas_[arm_jmg]->ee_jmg_;
-
-  robot_trajectory::RobotTrajectoryPtr ee_traj(new robot_trajectory::RobotTrajectory(robot_model_, ee_jmg));
-
   if (open)
   {
-    ROS_INFO_STREAM_NAMED("manipulation","Opening end effector for " << grasp_datas_[arm_jmg]->ee_jmg_->getName());
-    ee_traj->setRobotTrajectoryMsg(*current_state_, grasp_datas_[arm_jmg]->pre_grasp_posture_); // open
+    return setEEGraspPosture(grasp_datas_[arm_jmg]->pre_grasp_posture_, arm_jmg);
   }
   else
   {
-    ROS_INFO_STREAM_NAMED("manipulation","Closing end effector for " << grasp_datas_[arm_jmg]->ee_jmg_->getName());
-    ee_traj->setRobotTrajectoryMsg(*current_state_, grasp_datas_[arm_jmg]->grasp_posture_); // closed
+    return setEEGraspPosture(grasp_datas_[arm_jmg]->grasp_posture_, arm_jmg);
   }
+}
 
-  // Show the change in end effector
-  if (verbose_)
+bool Manipulation::setEEFingerWidth(double space_between_fingers, JointModelGroup* arm_jmg)
+{
+  ROS_INFO_STREAM_NAMED("manipulation","Moving end effector to have space_between_fingers of "
+                        << space_between_fingers);
+
+  // Jaco-specific
+  static const double MAX_WIDTH = 10.2;
+  static const double MIN_WIDTH = 0.4;
+
+  // Error check
+  if (space_between_fingers > MAX_WIDTH || space_between_fingers < MIN_WIDTH)
   {
-    visuals_->start_state_->publishRobotState(current_state_, rvt::GREEN);
-    visuals_->goal_state_->publishRobotState(ee_traj->getLastWayPoint(), rvt::ORANGE);
-  }
-
-  // Check if already in new position
-  if (statesEqual(*current_state_, ee_traj->getLastWayPoint(), ee_jmg))
-  {
-    ROS_INFO_STREAM_NAMED("manipulation","Not executing motion because current state and goal state are close enough.");
-    return true;
-  }
-
-  // Convert trajectory to a message
-  moveit_msgs::RobotTrajectory trajectory_msg;
-  ee_traj->getRobotTrajectoryMsg(trajectory_msg);
-
-  // Execute trajectory
-  if( !execution_interface_->executeTrajectory(trajectory_msg, arm_jmg) )
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute grasp trajectory");
+    ROS_ERROR_STREAM_NAMED("manipulation","Requested " << space_between_fingers << " is beyond limits of " << MIN_WIDTH << "," << MAX_WIDTH);
     return false;
   }
 
-  return true;
-}
-
-bool Manipulation::openEndEffectorWithVelocity(bool open, JointModelGroup* arm_jmg)
-{
-  if (open)
-  {
-    return openEndEffectorWithVelocity(arm_jmg, grasp_datas_[arm_jmg]->pre_grasp_posture_);
-  }
-  else
-  {
-    return openEndEffectorWithVelocity(arm_jmg, grasp_datas_[arm_jmg]->grasp_posture_);
-  }
-}
-
-bool Manipulation::openEndEffectorWithVelocity(double space_between_fingers, JointModelGroup* arm_jmg)
-{
-  ROS_INFO_STREAM_NAMED("manipulation","Moving end effector to have space_between_fingers of " 
-                        << space_between_fingers);
-
-  double joint_lower = 0; // open
-  double joint_upper = 0.742; // close
-  double max_width = 0.0725;
-  double min_width = 0.006;
-
-  // Silly math method
-  double y0 = joint_lower;
-  double y1 = joint_upper;
-  double x = space_between_fingers;
-  double x0 = max_width;
-  double x1 = min_width;
-  double y = y0 + (y1 - y0)/(x1 - x0)*(x - x0);
-
-  // Apply result
-  double joint_position = y;
+  // Data from GDoc: https://docs.google.com/spreadsheets/d/1OXLqzDU7vjZhEis64XW2ziXoY39EwoqGZP6w3LAysvo/edit#gid=0
+  static const double SLOPE = -14.51428571;
+  static const double INTERCEPT = 10.36703297;
+  double joint_position = SLOPE * space_between_fingers + INTERCEPT;
 
   // TODO
-  //std::cout << " finger_distance_to_joint_ratio: " << grasp_datas_[arm_jmg]->finger_distance_to_joint_ratio_ 
+  //std::cout << " finger_distance_to_joint_ratio: " << grasp_datas_[arm_jmg]->finger_distance_to_joint_ratio_
   //          << std::endl;
 
-  return openEndEffectorWithVelocityJointPos(joint_position, arm_jmg);
+  return setEEJointPosition(joint_position, arm_jmg);
 }
 
-bool Manipulation::openEndEffectorWithVelocityJointPos(double joint_position, JointModelGroup* arm_jmg)
+bool Manipulation::setEEJointPosition(double joint_position, JointModelGroup* arm_jmg)
 {
   ROS_INFO_STREAM_NAMED("manipulation","Moving fingers to joint position " << joint_position);
 
@@ -1879,7 +1823,7 @@ bool Manipulation::openEndEffectorWithVelocityJointPos(double joint_position, Jo
 
   // Get default grasp posture
   grasp_posture = grasp_datas_[arm_jmg]->grasp_posture_;
-  
+
   // TODO: This is jacob-specific
   // set jaco2_joint_finger_1
   grasp_posture.points.front().positions[0] = joint_position;
@@ -1888,13 +1832,12 @@ bool Manipulation::openEndEffectorWithVelocityJointPos(double joint_position, Jo
   // set jaco2_joint_finger_3
   grasp_posture.points.front().positions[2] = joint_position;
 
-  return openEndEffectorWithVelocity(arm_jmg, grasp_posture);
+  return setEEGraspPosture(grasp_posture, arm_jmg);
 }
 
-bool Manipulation::openEndEffectorWithVelocity(JointModelGroup* arm_jmg, 
-                                               trajectory_msgs::JointTrajectory grasp_posture)
+bool Manipulation::setEEGraspPosture(trajectory_msgs::JointTrajectory grasp_posture, JointModelGroup* arm_jmg)
 {
-  std::cout << "Moving to grasp posture:\n" << grasp_posture << std::endl;
+  ROS_DEBUG_STREAM_NAMED("manipulation","Moving to grasp posture:\n" << grasp_posture);
 
   // Check status
   if (!config_->isEnabled("end_effector_enabled"))
@@ -1904,10 +1847,10 @@ bool Manipulation::openEndEffectorWithVelocity(JointModelGroup* arm_jmg,
   }
 
   getCurrentState();
-  robot_trajectory::RobotTrajectoryPtr 
+  robot_trajectory::RobotTrajectoryPtr
     ee_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, grasp_datas_[arm_jmg]->ee_jmg_));
 
-  ROS_INFO_STREAM_NAMED("manipulation","Sending command to end effector " 
+  ROS_INFO_STREAM_NAMED("manipulation","Sending command to end effector "
                         << grasp_datas_[arm_jmg]->ee_jmg_->getName());
 
   // Add goal state
@@ -1918,10 +1861,12 @@ bool Manipulation::openEndEffectorWithVelocity(JointModelGroup* arm_jmg,
   ee_trajectory->addPrefixWayPoint(current_state_, dummy_dt);
 
   // Check if already in new position
-  if (statesEqual(ee_trajectory->getFirstWayPoint(), ee_trajectory->getLastWayPoint(), 
+  if (statesEqual(ee_trajectory->getFirstWayPoint(), ee_trajectory->getLastWayPoint(),
                   grasp_datas_[arm_jmg]->ee_jmg_))
   {
-    ROS_INFO_STREAM_NAMED("manipulation","Not executing motion because current state and goal state are close enough.");
+    ROS_INFO_STREAM_NAMED("manipulation","Not executing motion because current state and goal state are close enough for group "
+                          << grasp_datas_[arm_jmg]->ee_jmg_->getName());
+
     return true;
   }
 
@@ -1986,7 +1931,7 @@ bool Manipulation::fixCollidingState(planning_scene::PlanningScenePtr cloned_sce
   //remote_control_->setFullAutonomous(false);
 
   // Open hand to ensure we aren't holding anything anymore
-  if (!openEndEffectors(true))
+  if (!openEEs(true))
   {
     ROS_WARN_STREAM_NAMED("manipulation","Unable to open end effectors");
     //return false;
@@ -2207,13 +2152,17 @@ bool Manipulation::statesEqual(const moveit::core::RobotState &s1, const moveit:
 
   for (std::size_t i = 0; i < jmg->getVariableCount(); ++i)
   {
+    const moveit::core::JointModel* this_joint = jmg->getJointModel(jmg->getVariableNames()[i]);
+
+    std::vector<const moveit::core::JointModel*>::const_iterator joint_it;
+    joint_it = std::find(jmg->getActiveJointModels().begin(), jmg->getActiveJointModels().end(), this_joint);
+                         
     // Make sure joint is active
-    if (std::find(jmg->getActiveJointModels().begin(), jmg->getActiveJointModels().end(), jmg->getJointModels()[i])
-        != jmg->getActiveJointModels().end())
+    if (joint_it != jmg->getActiveJointModels().end())        
     {
       if ( fabs(s1_vars[i] - s2_vars[i]) > STATES_EQUAL_THRESHOLD )
       {
-        //std::cout << "statesEqual: Variable " << jmg->getVariableNames()[i] << " beyond threshold, diff: "
+        // std::cout << "    statesEqual: Variable " << jmg->getVariableNames()[i] << " beyond threshold, diff: "
         // << fabs(s1_vars[i] - s2_vars[i]) << std::endl;
         return false;
       }

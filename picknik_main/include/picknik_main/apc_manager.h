@@ -315,7 +315,7 @@ public:
   /**
    * \brief Disable collision checking for certain pairs
    */
-  bool allowCollisions();
+  bool allowCollisions(JointModelGroup* arm_jmg);
 
   /**
    * \brief Attach a product to an arm for planning

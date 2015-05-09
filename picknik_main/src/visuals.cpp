@@ -68,9 +68,13 @@ Visuals::Visuals(robot_model::RobotModelPtr robot_model,
 
   // ------------------------------------------------------------------------------------------------------
   // Load Product Perception VisualTools 
-  product_perception_.reset(new mvt::MoveItVisualTools(robot_model->getModelFrame(), "/picknik_main/product_perception",
-                                               planning_scene_monitor));
-  product_perception_->deleteAllMarkers(); // clear all old markers
+  //product_perception_.reset(new mvt::MoveItVisualTools(robot_model->getModelFrame(), "/picknik_main/product_perception",
+  //                                             planning_scene_monitor));
+  //product_perception_->deleteAllMarkers(); // clear all old markers
+
+  // ------------------------------------------------------------------------------------------------------
+  // Load TF Visual Tools
+  tf_.reset(new rvt::TFVisualTools());
 
   // Load verbose/visualization settings
   const std::string parent_name = "visuals"; // for namespacing logging messages

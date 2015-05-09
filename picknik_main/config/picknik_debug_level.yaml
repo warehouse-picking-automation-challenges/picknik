@@ -25,7 +25,7 @@ debug_level:
   show_simulated_paths_moving: true
 
   # Unit testing
-  unit_test_all: false
+  unit_test_all: true
   unit_test_SuperSimple: false
   unit_test_SimpleRotated: false
   unit_test_SimpleVeryRotated: false
