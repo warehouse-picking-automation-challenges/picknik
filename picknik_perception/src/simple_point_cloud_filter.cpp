@@ -202,6 +202,9 @@ bool SimplePointCloudFilter::detectObjects(bool remove_outliers)
   // get the bounding box of the point cloud
   bounding_box_.getBodyAlignedBoundingBox(roi_cloud_, Eigen::Affine3d::Identity(), bbox_pose_, bbox_depth_, bbox_width_, bbox_height_);
 
+  // save bounding_box_ point cloud for debugging
+  saveRegionOfInterest(bounding_box_.cloud_);
+  
   // Visualize
   //visual_tools_->publishWireframeCuboid(bbox_pose_, bbox_depth_, bbox_width_, bbox_height_,
   //                                      rviz_visual_tools::MAGENTA);
