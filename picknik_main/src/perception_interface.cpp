@@ -501,7 +501,7 @@ bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera)
 
 bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjectPtr &bin)
 {
-  ROS_INFO_STREAM_NAMED("perception_interface","Updating bounding mesh for product " << product->getName());
+  ROS_DEBUG_STREAM_NAMED("perception_interface","Updating bounding mesh for product " << product->getName());
   bool verbose_bounding_box = visuals_->isEnabled("verbose_bounding_box");
 
   // Debug

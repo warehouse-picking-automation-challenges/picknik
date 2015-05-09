@@ -7,11 +7,12 @@ Panels:
         - /Grid1/Offset1
         - /Amazon Markers1/Namespaces1
         - /Amazon Trajectory Markers1/Namespaces1
+        - /OMPL Experience1
+        - /OMPL Experience1/Status1
         - /OMPL Experience1/Namespaces1
         - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
         - /TF1
-        - /TF1/Frames1
         - /DepthCloud1/Auto Size1
       Splitter Ratio: 0.619256
     Tree Height: 681
@@ -495,6 +496,8 @@ Visualization Manager:
       Name: Amazon Markers
       Namespaces:
         Axis: true
+        Collision: true
+        Text: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -510,7 +513,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/grasping_markers
       Name: Amazon Grasp Markers
       Namespaces:
-        {}
+        Arrow: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -518,7 +521,10 @@ Visualization Manager:
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
-        {}
+        Axis: true
+        Path: true
+        Sphere: true
+        Text: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -530,13 +536,13 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /ompl_experience_database
       Name: OMPL Experience
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /picknik_main/display_contacts
@@ -1128,22 +1134,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.68425
+      Distance: 3.81102
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.904157
-        Y: 0.257843
-        Z: 4.76837e-07
+        X: 0.74175
+        Y: 0.176384
+        Z: 7.15255e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.340398
+      Pitch: 0.435398
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.76541
+      Yaw: 3.96043
     Saved: ~
 Window Geometry:
   Displays:

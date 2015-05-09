@@ -54,8 +54,8 @@ MOVEIT_CLASS_FORWARD(Manipulation);
 // TODO move these, last minute sloppiness
 static const double MIN_JOINT_POSITION = 0.0;
 static const double MAX_JOINT_POSITION = 0.742;
-static const double MAX_FINGER_WIDTH = 0.102; // meters
-static const double MIN_FINGER_WIDTH = 0.004;
+//static const double MAX_FINGER_WIDTH = 0.102; // meters
+//static const double MIN_FINGER_WIDTH = 0.004;
 
 class Manipulation
 {
@@ -364,21 +364,12 @@ public:
   bool openEE(bool open, JointModelGroup* arm_jmg);
 
   /**
-   * \brief Set the distance between fingers (in meters)
-   * \param space_between_fingers
-   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
-   * \return true on sucess
-   */
-  bool setEEFingerWidth(double space_between_fingers, JointModelGroup* arm_jmg);
-
-  /**
    * \brief Set the joint values of the finger joints - TODO - this is very Jaco-specific
    * \param joint_position
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on sucess
    */
   bool setEEJointPosition(double joint_position, JointModelGroup* arm_jmg);
-  bool setEEJointPosition(std::vector<double> joint_positions, JointModelGroup* arm_jmg);
 
   /**
    * \brief Set the full grasp posture of the finger joints 

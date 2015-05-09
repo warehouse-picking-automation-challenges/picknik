@@ -343,8 +343,8 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Set planning scene
         planning_scene_manager_->displayShelfWithOpenBins();
 
-        // Open hand
-        if (!manipulation_->openEEs(true))
+        // Open hand all the way
+        if (!manipulation_->setEEJointPosition(MAX_JOINT_POSITION, config_->right_arm_))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to open end effectors");
           return false;
@@ -624,8 +624,6 @@ bool APCManager::trainExperienceDatabase()
 // Mode 8
 bool APCManager::testEndEffectors()
 {
-  bool normal_method = true;
-
   // Test visualization
   statusPublisher("Testing open close visualization of EE");
   std::size_t i = 0;
@@ -642,21 +640,8 @@ bool APCManager::testEndEffectors()
       manipulation_->setStateWithOpenEE(open, current_state);
       visuals_->visual_tools_->publishRobotState(current_state);
 
-      if (normal_method)
-      {
-        // Close all EEs
-        manipulation_->openEEs(open);
-      }
-      else
-      {
-        ROS_WARN_STREAM_NAMED("apc_manger","Using experiemntal grasp distance method");
-        double space_between_fingers = config_->test_double_;
-
-        // Close right and optionally right EE
-        manipulation_->setEEFingerWidth(space_between_fingers, config_->right_arm_);
-        if (config_->dual_arm_)
-          manipulation_->setEEFingerWidth(space_between_fingers, config_->left_arm_);
-      }
+      // Close all EEs
+      manipulation_->openEEs(open);
 
       ros::Duration(2.0).sleep();
     }
@@ -669,21 +654,8 @@ bool APCManager::testEndEffectors()
 
       visuals_->visual_tools_->publishRobotState(current_state);
 
-      if (normal_method)
-      {
-        // Close all EEs
-        manipulation_->openEEs(open);
-      }
-      else
-      {
-        ROS_WARN_STREAM_NAMED("apc_manger","Using experiemntal grasp distance method");
-        double space_between_fingers = 0; // close
-
-        // Open right and optionally right EE
-        manipulation_->setEEFingerWidth(space_between_fingers, config_->right_arm_);
-        if (config_->dual_arm_)
-          manipulation_->setEEFingerWidth(space_between_fingers, config_->left_arm_);
-      }
+      // Close all EEs
+      manipulation_->openEEs(open);
 
       ros::Duration(2.0).sleep();
     }
@@ -835,32 +807,6 @@ bool APCManager::testShelfLocation()
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move arm to desired shelf location");
       continue;
     }
-
-    // std::cout << std::endl;
-    // std::cout << std::endl;
-    // std::cout << "Waiting before moving forward" << std::endl;
-    // remote_control_->waitForNextStep();
-
-
-    // ROS_INFO_STREAM_NAMED("apc_manager","Moving forward");
-    // bool retreat = false;
-    // double desired_approach_distance = 0.02;
-    // if (!manipulation_->executeRetreatPath(arm_jmg, desired_approach_distance, retreat))
-    // {
-    //   ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move forward " << desired_approach_distance);
-    // }
-
-    // std::cout << std::endl;
-    // std::cout << std::endl;
-    // std::cout << "Waiting before retreating" << std::endl;
-    // remote_control_->waitForNextStep();
-
-
-    // retreat = true;
-    // if (!manipulation_->executeRetreatPath(arm_jmg, desired_approach_distance, retreat))
-    // {
-    //   ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move backwards " << desired_approach_distance);
-    // }
 
     remote_control_->waitForNextStep();
   } // end for
@@ -2102,7 +2048,7 @@ bool APCManager::unitTests()
   if (visuals_->isEnabled("unit_test_" + test_name) || unit_test_all)
   {
     const std::string json_file = "expo.json";
-    Eigen::Affine3d product_pose = rvt::RvizVisualTools::convertXYZRPY(0.12,0.05,0.03,1.57,0,0); // from testPose()
+    Eigen::Affine3d product_pose = config_->getTestPose(); //rvt::RvizVisualTools::convertXYZRPY(0.12,0.06,0.03,1.57,0,0); // from testPose()
     if (!startUnitTest(json_file, test_name, product_pose))
       return false;
   }
@@ -2426,6 +2372,7 @@ bool APCManager::testGraspWidths()
   // Test visualization
   statusPublisher("Testing open close of End Effectors");
 
+  JointModelGroup* arm_jmg = config_->right_arm_;
   if (false)
   {
     //-----------------------------------------------------------------------------
@@ -2442,7 +2389,7 @@ bool APCManager::testGraspWidths()
       ROS_WARN_STREAM_NAMED("apc_manger","Setting finger joint position " << joint_position);
 
       // Change fingers
-      if (!manipulation_->setEEJointPosition(joint_position, config_->right_arm_))
+      if (!manipulation_->setEEJointPosition(joint_position, arm_jmg))
       {
         ROS_ERROR_STREAM_NAMED("apc_manager","Failed to set finger disance");
       }
@@ -2465,7 +2412,7 @@ bool APCManager::testGraspWidths()
     // Send distance between finger commands
 
     // Jaco-specific
-    double space_between_fingers = MIN_FINGER_WIDTH;
+    double space_between_fingers = grasp_datas_[arm_jmg]->min_finger_width_;
 
     while (ros::ok())
     {
@@ -2478,19 +2425,23 @@ bool APCManager::testGraspWidths()
       remote_control_->waitForNextStep("move fingers");
 
       // Change fingers
-      if (!manipulation_->setEEFingerWidth(space_between_fingers, config_->right_arm_))
+      trajectory_msgs::JointTrajectory grasp_posture;
+      grasp_datas_[arm_jmg]->fingerWidthToGraspPosture(space_between_fingers, grasp_posture);
+      
+      // Send command
+      if (!manipulation_->setEEGraspPosture(grasp_posture, arm_jmg))
       {
         ROS_ERROR_STREAM_NAMED("apc_manager","Failed to set finger width");
       }
 
       // Increment the test
-      space_between_fingers += (MAX_FINGER_WIDTH - MIN_FINGER_WIDTH) / 10.0;
-      if (space_between_fingers > MAX_FINGER_WIDTH)
+      space_between_fingers += (grasp_datas_[arm_jmg]->max_finger_width_ - grasp_datas_[arm_jmg]->min_finger_width_) / 10.0;
+      if (space_between_fingers > grasp_datas_[arm_jmg]->max_finger_width_)
       {
         std::cout << std::endl;
         std::cout << "-------------------------------------------------------" << std::endl;
         std::cout << "Wrapping around " << std::endl;
-        space_between_fingers = MIN_FINGER_WIDTH;
+        space_between_fingers = grasp_datas_[arm_jmg]->min_finger_width_;
       }
     }
   }
