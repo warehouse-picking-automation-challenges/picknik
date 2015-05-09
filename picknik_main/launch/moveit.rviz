@@ -8,6 +8,7 @@ Panels:
         - /Amazon Markers1/Namespaces1
         - /Amazon Trajectory Markers1/Namespaces1
         - /OMPL Experience1/Namespaces1
+        - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
         - /TF1/Frames1
         - /DepthCloud1/Auto Size1
@@ -46,7 +47,7 @@ Visualization Manager:
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -152,12 +153,12 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
       Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -263,12 +264,12 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_start_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
       Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -374,7 +375,7 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_goal_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
       Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
@@ -998,22 +999,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 5.82873
+      Distance: 9.55361
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 4.57701
-        Y: 0.304915
+        X: 3.0602
+        Y: 1.12151
         Z: 5.96046e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.0953984
+      Pitch: 0.245398
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.2104
+      Yaw: 3.6004
     Saved: ~
 Window Geometry:
   Displays:

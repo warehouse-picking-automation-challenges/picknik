@@ -364,7 +364,9 @@ public:
    * \return true on sucess
    */
   bool openEndEffectorWithVelocity(bool open, JointModelGroup* arm_jmg);
-
+  bool openEndEffectorWithVelocity(double space_between_fingers, JointModelGroup* arm_jmg);
+  bool openEndEffectorWithVelocity(JointModelGroup* arm_jmg, trajectory_msgs::JointTrajectory grasp_posture);
+                                               
   /**
    * \brief Set a robot state to have an open or closed EE. Does not actually affect hardware
    * \return true on success

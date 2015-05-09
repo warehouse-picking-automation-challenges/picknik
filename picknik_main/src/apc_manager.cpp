@@ -624,6 +624,8 @@ bool APCManager::trainExperienceDatabase()
 // Mode 8
 bool APCManager::testEndEffectors()
 {
+  bool normal_method = false;
+
   // Test visualization
   statusPublisher("Testing open close visualization of EE");
   std::size_t i = 0;
@@ -635,28 +637,58 @@ bool APCManager::testEndEffectors()
     if (i % 2 == 0)
     {
       std::cout << "Showing closed EE of state " << std::endl;
+
       open = false;
       manipulation_->setStateWithOpenEE(open, current_state);
       visuals_->visual_tools_->publishRobotState(current_state);
 
-      // Close right and optionally right EE
-      manipulation_->openEndEffectorWithVelocity(open, config_->right_arm_);
-      if (config_->dual_arm_)
-        manipulation_->openEndEffectorWithVelocity(open, config_->left_arm_);
+      if (normal_method)
+      {
+        // Close right and optionally right EE
+        manipulation_->openEndEffectorWithVelocity(open, config_->right_arm_);
+        if (config_->dual_arm_)
+          manipulation_->openEndEffectorWithVelocity(open, config_->left_arm_);
+      }
+      else
+      {
+        ROS_WARN_STREAM_NAMED("apc_manger","Using experiemntal grasp distance method");
+        double space_between_fingers = config_->test_double_;
+
+        // Close right and optionally right EE
+        manipulation_->openEndEffectorWithVelocity(space_between_fingers, config_->right_arm_);
+        if (config_->dual_arm_)
+          manipulation_->openEndEffectorWithVelocity(space_between_fingers, config_->left_arm_);
+      }
 
       ros::Duration(2.0).sleep();
     }
     else
     {
       std::cout << "Showing open EE of state " << std::endl;
+
       open = true;
       manipulation_->setStateWithOpenEE(open, current_state);
+
       visuals_->visual_tools_->publishRobotState(current_state);
 
-      // Open right and optionally right EE
-      manipulation_->openEndEffectorWithVelocity(open, config_->right_arm_);
-      if (config_->dual_arm_)
-        manipulation_->openEndEffectorWithVelocity(open, config_->left_arm_);
+      if (normal_method)
+      {
+        // Close right and optionally right EE
+        manipulation_->openEndEffectorWithVelocity(open, config_->right_arm_);
+        if (config_->dual_arm_)
+          manipulation_->openEndEffectorWithVelocity(open, config_->left_arm_);
+      }
+      else
+      {
+        ROS_WARN_STREAM_NAMED("apc_manger","Using experiemntal grasp distance method");
+        double space_between_fingers = 0; // close
+
+        // Open right and optionally right EE
+        manipulation_->openEndEffectorWithVelocity(space_between_fingers, config_->right_arm_);
+        if (config_->dual_arm_)
+          manipulation_->openEndEffectorWithVelocity(space_between_fingers, config_->left_arm_);
+      }
+
       ros::Duration(2.0).sleep();
     }
     ++i;

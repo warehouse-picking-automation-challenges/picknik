@@ -1833,6 +1833,60 @@ bool Manipulation::openEndEffector(bool open, JointModelGroup* arm_jmg)
 
 bool Manipulation::openEndEffectorWithVelocity(bool open, JointModelGroup* arm_jmg)
 {
+  if (open)
+  {
+    return openEndEffectorWithVelocity(arm_jmg, grasp_datas_[arm_jmg]->pre_grasp_posture_);
+  }
+  else
+  {
+    return openEndEffectorWithVelocity(arm_jmg, grasp_datas_[arm_jmg]->grasp_posture_);
+  }
+}
+
+bool Manipulation::openEndEffectorWithVelocity(double space_between_fingers, JointModelGroup* arm_jmg)
+{
+  ROS_INFO_STREAM_NAMED("manipulation","Moving end effector to have space_between_fingers of " 
+                        << space_between_fingers);
+
+  trajectory_msgs::JointTrajectory grasp_posture;
+  
+  // Get default grasp posture
+  grasp_posture = grasp_datas_[arm_jmg]->grasp_posture_;
+
+  double joint_lower = 0; // open
+  double joint_upper = 0.742; // close
+  double max_width = 0.0725;
+  double min_width = 0;
+
+  // Silly math method
+  double y0 = joint_lower;
+  double y1 = joint_upper;
+  double x = space_between_fingers;
+  double x0 = max_width;
+  double x1 = min_width;
+  double y = y0 + (y1 - y0)/(x1 - x0)*(x - x0);
+
+  // Apply result
+  double joint_position = y;
+
+  // TODO
+  std::cout << " finger_distance_to_joint_ratio: " << grasp_datas_[arm_jmg]->finger_distance_to_joint_ratio_ 
+            << std::endl;
+
+  // TODO: This is jacob-specific
+  // set jaco2_joint_finger_1
+  grasp_posture.points.front().positions[0] = joint_position;
+  // set jaco2_joint_finger_2
+  grasp_posture.points.front().positions[1] = joint_position;
+  // set jaco2_joint_finger_3
+  grasp_posture.points.front().positions[2] = joint_position;
+
+  return openEndEffectorWithVelocity(arm_jmg, grasp_posture);
+}
+
+bool Manipulation::openEndEffectorWithVelocity(JointModelGroup* arm_jmg, 
+                                               trajectory_msgs::JointTrajectory grasp_posture)
+{
   // Check status
   if (!config_->isEnabled("end_effector_enabled"))
   {
@@ -1841,26 +1895,22 @@ bool Manipulation::openEndEffectorWithVelocity(bool open, JointModelGroup* arm_j
   }
 
   getCurrentState();
-  robot_trajectory::RobotTrajectoryPtr ee_trajectory(new robot_trajectory::RobotTrajectory(robot_model_,
-                                                                                           grasp_datas_[arm_jmg]->ee_jmg_));
-  // Add goal state to trajectory
-  if (open)
-  {
-    ROS_INFO_STREAM_NAMED("manipulation","Opening end effector for " << grasp_datas_[arm_jmg]->ee_jmg_->getName());
-    ee_trajectory->setRobotTrajectoryMsg(*current_state_, grasp_datas_[arm_jmg]->pre_grasp_posture_); // open
-  }
-  else
-  {
-    ROS_INFO_STREAM_NAMED("manipulation","Closing end effector for " << grasp_datas_[arm_jmg]->ee_jmg_->getName());
-    ee_trajectory->setRobotTrajectoryMsg(*current_state_, grasp_datas_[arm_jmg]->grasp_posture_); // closed
-  }
+  robot_trajectory::RobotTrajectoryPtr 
+    ee_trajectory(new robot_trajectory::RobotTrajectory(robot_model_, grasp_datas_[arm_jmg]->ee_jmg_));
+
+  ROS_INFO_STREAM_NAMED("manipulation","Sending command to end effector " 
+                        << grasp_datas_[arm_jmg]->ee_jmg_->getName());
+
+  // Add goal state
+  ee_trajectory->setRobotTrajectoryMsg(*current_state_, grasp_posture);
 
   // Add start state to trajectory
   double dummy_dt = 1;
   ee_trajectory->addPrefixWayPoint(current_state_, dummy_dt);
 
   // Check if already in new position
-  if (statesEqual(ee_trajectory->getFirstWayPoint(), ee_trajectory->getLastWayPoint(), grasp_datas_[arm_jmg]->ee_jmg_))
+  if (statesEqual(ee_trajectory->getFirstWayPoint(), ee_trajectory->getLastWayPoint(), 
+                  grasp_datas_[arm_jmg]->ee_jmg_))
   {
     ROS_INFO_STREAM_NAMED("manipulation","Not executing motion because current state and goal state are close enough.");
     return true;
