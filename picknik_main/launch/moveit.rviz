@@ -11,7 +11,6 @@ Panels:
         - /PlanningScene1/Scene Geometry1
         - /TF1/Frames1
         - /DepthCloud1/Auto Size1
-        - /Axes1
       Splitter Ratio: 0.619256
     Tree Height: 681
   - Class: rviz/Help
@@ -494,11 +493,19 @@ Visualization Manager:
       Name: Amazon Markers
       Namespaces:
         Axis: true
+        Collision: true
+        Line: true
+        Sphere: true
         Text: true
-        Wireframe Cuboid: true
         bin: true
         crayola_64_ct: true
-        product_crayola_64_ct_60_wireframe: true
+        drop_pose: true
+        object: true
+        product_crayola_64_ct_55_wireframe: true
+        product_crayola_64_ct_56_wireframe: true
+        product_crayola_64_ct_57_wireframe: true
+        product_crayola_64_ct_58_wireframe: true
+        product_crayola_64_ct_59_wireframe: true
         world_to_camera: true
       Queue Size: 100
       Value: true
@@ -515,7 +522,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/grasping_markers
       Name: Amazon Grasp Markers
       Namespaces:
-        {}
+        Arrow: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -523,8 +530,11 @@ Visualization Manager:
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
+        Arrow: true
+        Axis: true
         Path: true
         Sphere: true
+        Text: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -532,7 +542,9 @@ Visualization Manager:
       Marker Topic: /picknik_main/product_perception
       Name: APC Product Perception
       Namespaces:
-        {}
+        Text: true
+        Wireframe Cuboid: true
+        bin: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -893,7 +905,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -909,7 +921,7 @@ Visualization Manager:
       Topic: /pcl_perception_server/roi_cloud
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
@@ -986,22 +998,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 5.13932
+      Distance: 5.82873
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.57324
-        Y: -0.2333
-        Z: 9.89432e-06
+        X: 4.57701
+        Y: 0.304915
+        Z: 5.96046e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.274797
+      Pitch: 0.0953984
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.1045
+      Yaw: 3.2104
     Saved: ~
 Window Geometry:
   Displays:
@@ -1017,5 +1029,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1190
-  X: 1901
+  X: 1891
   Y: 14

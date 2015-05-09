@@ -86,7 +86,7 @@ test:
 behavior:
   end_effector_enabled: true
   super_auto: false
-  dropping_bounding_box: true
+  dropping_bounding_box: false
 
 
 

@@ -26,11 +26,11 @@ debug_level:
 
   # Unit testing
   unit_test_all: false
-  unit_test_SuperSimple: true
+  unit_test_SuperSimple: false
   unit_test_SimpleRotated: false
   unit_test_SimpleVeryRotated: false
   unit_test_SimpleFarBack: false
-  unit_test_ExpoLow: false
+  unit_test_ExpoLow: true
 
   # Perception Interface
   show_raw_object_pose: false
