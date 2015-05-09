@@ -1514,7 +1514,7 @@ bool APCManager::testPerceptionCommEach()
     if (!ros::ok())
       break;
 
-    BinObjectPtr bin = bin_it;
+    BinObjectPtr bin = bin_it->second;
     if (bin->getProducts().size() == 0)
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","No products in bin "<< bin->getName());
