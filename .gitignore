@@ -4,3 +4,6 @@ picknik_main/meshes/detected/*
 CATKIN_IGNORE
 *.csv
 *~
+
+#ignore pcd files
+*.pcd
