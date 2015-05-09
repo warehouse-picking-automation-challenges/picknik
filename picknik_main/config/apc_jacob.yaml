@@ -60,6 +60,9 @@ right_wall_y: 0 # 0 means disabled
 # Top limit
 ceiling_z: 2.4
 
+# End effector configuration - jaco specific
+finger_3_offset: -0.1 # open more than the others
+
 # Perception Data
 camera:
   # THIS IS USED TO OFFSET THE CAMERA TO THE CIRCLAR CALIBRATION LOCATION

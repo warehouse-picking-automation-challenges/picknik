@@ -1789,55 +1789,91 @@ bool Manipulation::openEE(bool open, JointModelGroup* arm_jmg)
 
 bool Manipulation::setEEFingerWidth(double space_between_fingers, JointModelGroup* arm_jmg)
 {
-  ROS_INFO_STREAM_NAMED("manipulation","Moving end effector to have space_between_fingers of "
+  ROS_DEBUG_STREAM_NAMED("manipulation","Moving end effector to have space_between_fingers of "
                         << space_between_fingers);
 
-  // Jaco-specific
-  static const double MAX_WIDTH = 10.2;
-  static const double MIN_WIDTH = 0.4;
-
   // Error check
-  if (space_between_fingers > MAX_WIDTH || space_between_fingers < MIN_WIDTH)
+  if (space_between_fingers > MAX_FINGER_WIDTH || space_between_fingers < MIN_FINGER_WIDTH)
   {
-    ROS_ERROR_STREAM_NAMED("manipulation","Requested " << space_between_fingers << " is beyond limits of " << MIN_WIDTH << "," << MAX_WIDTH);
+    ROS_ERROR_STREAM_NAMED("manipulation","Requested " << space_between_fingers << " is beyond limits of " << MIN_FINGER_WIDTH << "," << MAX_FINGER_WIDTH);
     return false;
   }
 
   // Data from GDoc: https://docs.google.com/spreadsheets/d/1OXLqzDU7vjZhEis64XW2ziXoY39EwoqGZP6w3LAysvo/edit#gid=0
-  static const double SLOPE = -14.51428571;
-  static const double INTERCEPT = 10.36703297;
+  // NOTE: this is in CM, so convert space_between_fingers to cm
+  space_between_fingers = space_between_fingers * 100;
+  static const double SLOPE = -0.06881728199; //-14.51428571;
+  static const double INTERCEPT = 0.7097604907; //10.36703297;
   double joint_position = SLOPE * space_between_fingers + INTERCEPT;
 
   // TODO
   //std::cout << " finger_distance_to_joint_ratio: " << grasp_datas_[arm_jmg]->finger_distance_to_joint_ratio_
   //          << std::endl;
 
+  std::vector<double> joint_positions;
+  joint_positions.resize(6);
+  joint_positions[0] = joint_position;
+  joint_positions[1] = joint_position;
+  // special treatment - this joint should be opened more than the others
+  joint_positions[2] = joint_position + config_->finger_3_offset_;
+  joint_positions[3] = 0;
+  joint_positions[4] = 0;
+  joint_positions[5] = 0;
+
+  if (joint_positions[2] > MAX_JOINT_POSITION)
+  {
+    ROS_WARN_STREAM_NAMED("temp","beyond max joint position");
+    joint_positions[2] = MAX_JOINT_POSITION;
+  }
+
   return setEEJointPosition(joint_position, arm_jmg);
 }
 
 bool Manipulation::setEEJointPosition(double joint_position, JointModelGroup* arm_jmg)
 {
-  ROS_INFO_STREAM_NAMED("manipulation","Moving fingers to joint position " << joint_position);
+  std::vector<double> joint_positions;
+  for (std::size_t i = 0; i < grasp_datas_[arm_jmg]->grasp_posture_.points.size(); ++i)
+  {
+    joint_positions.push_back(joint_position);
+    // TODO ignore tip joints
+  }
+  return setEEJointPosition(joint_positions, arm_jmg);
+}
+
+bool Manipulation::setEEJointPosition(std::vector<double> joint_positions, JointModelGroup* arm_jmg)
+{
+  ROS_DEBUG_STREAM_NAMED("manipulation.end_effector","Moving fingers to joint positions");
+
+  for (std::size_t i = 0; i < joint_positions.size(); ++i)
+  {
+    // Error check
+    if (joint_positions[i] > MAX_JOINT_POSITION || joint_positions[i] < MIN_JOINT_POSITION)
+    {
+      ROS_ERROR_STREAM_NAMED("manipulation","Requested " << joint_positions[i] << " is beyond limits of " << MIN_JOINT_POSITION << "," << MAX_JOINT_POSITION);
+      return false;
+    }
+  }
 
   trajectory_msgs::JointTrajectory grasp_posture;
 
   // Get default grasp posture
   grasp_posture = grasp_datas_[arm_jmg]->grasp_posture_;
 
-  // TODO: This is jacob-specific
-  // set jaco2_joint_finger_1
-  grasp_posture.points.front().positions[0] = joint_position;
-  // set jaco2_joint_finger_2
-  grasp_posture.points.front().positions[1] = joint_position;
-  // set jaco2_joint_finger_3
-  grasp_posture.points.front().positions[2] = joint_position;
+  // Error check
+  if (joint_positions.size() != grasp_posture.points.size())
+  {
+    ROS_WARN_STREAM_NAMED("manipalation","Not enough finger joints passed in");
+  }  
+
+  // Set joint positions
+  grasp_posture.points.front().positions = joint_positions;
 
   return setEEGraspPosture(grasp_posture, arm_jmg);
 }
 
 bool Manipulation::setEEGraspPosture(trajectory_msgs::JointTrajectory grasp_posture, JointModelGroup* arm_jmg)
 {
-  ROS_DEBUG_STREAM_NAMED("manipulation","Moving to grasp posture:\n" << grasp_posture);
+  ROS_DEBUG_STREAM_NAMED("manipulation.end_effector","Moving to grasp posture:\n" << grasp_posture);
 
   // Check status
   if (!config_->isEnabled("end_effector_enabled"))

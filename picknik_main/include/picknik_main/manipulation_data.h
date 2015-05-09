@@ -151,6 +151,9 @@ public:
   // File path to ROS package on drive
   std::string package_path_;
 
+  // End effector configuration
+  double finger_3_offset_;
+
 private:
 
   // A shared node handle

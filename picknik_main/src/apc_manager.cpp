@@ -1921,7 +1921,7 @@ bool APCManager::allowCollisions(JointModelGroup* arm_jmg)
     {
       for (std::size_t j = i+1; j < ee_link_names.size(); ++j)
       {
-        std::cout << "disabling collsion between " << ee_link_names[i] << " and " <<  ee_link_names[j] << std::endl;
+        //std::cout << "disabling collsion between " << ee_link_names[i] << " and " <<  ee_link_names[j] << std::endl;
         collision_matrix.setEntry(ee_link_names[i], ee_link_names[j], true);
       }
     }                                                   
@@ -2434,7 +2434,6 @@ bool APCManager::testGraspWidths()
     // Send joint position commands
     
     double joint_position = 0.0;
-    static const double MAX_JOINT_POSISTION = 0.742;
 
     while (ros::ok())
     {
@@ -2453,8 +2452,8 @@ bool APCManager::testGraspWidths()
       remote_control_->waitForNextStep("move fingers");
 
       // Increment the test
-      joint_position += 0.05;
-      if (joint_position > MAX_JOINT_POSISTION)
+      joint_position += ( MAX_JOINT_POSITION - MIN_JOINT_POSITION) / 10.0;
+      if (joint_position > MAX_JOINT_POSITION)
         joint_position = 0.0;
     }
   }
@@ -2466,9 +2465,7 @@ bool APCManager::testGraspWidths()
     // Send distance between finger commands
 
     // Jaco-specific
-    static const double MAX_WIDTH = 10.2;
-    static const double MIN_WIDTH = 0.4;
-    double space_between_fingers = MIN_WIDTH;
+    double space_between_fingers = MIN_FINGER_WIDTH;
 
     while (ros::ok())
     {
@@ -2476,20 +2473,25 @@ bool APCManager::testGraspWidths()
 
       ROS_WARN_STREAM_NAMED("apc_manger","Setting finger width distance " << space_between_fingers);
 
+      // Wait
+      ros::Duration(1.0).sleep();
+      remote_control_->waitForNextStep("move fingers");
+
       // Change fingers
       if (!manipulation_->setEEFingerWidth(space_between_fingers, config_->right_arm_))
       {
         ROS_ERROR_STREAM_NAMED("apc_manager","Failed to set finger width");
       }
 
-      // Wait
-      ros::Duration(2.0).sleep();
-      remote_control_->waitForNextStep("move fingers");
-
       // Increment the test
-      space_between_fingers += 0.01;
-      if (space_between_fingers > MAX_WIDTH)
-        space_between_fingers = MIN_WIDTH;
+      space_between_fingers += (MAX_FINGER_WIDTH - MIN_FINGER_WIDTH) / 10.0;
+      if (space_between_fingers > MAX_FINGER_WIDTH)
+      {
+        std::cout << std::endl;
+        std::cout << "-------------------------------------------------------" << std::endl;
+        std::cout << "Wrapping around " << std::endl;
+        space_between_fingers = MIN_FINGER_WIDTH;
+      }
     }
   }
 

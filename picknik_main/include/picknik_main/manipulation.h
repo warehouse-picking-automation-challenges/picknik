@@ -51,6 +51,12 @@ namespace picknik_main
 
 MOVEIT_CLASS_FORWARD(Manipulation);
 
+// TODO move these, last minute sloppiness
+static const double MIN_JOINT_POSITION = 0.0;
+static const double MAX_JOINT_POSITION = 0.742;
+static const double MAX_FINGER_WIDTH = 0.102; // meters
+static const double MIN_FINGER_WIDTH = 0.004;
+
 class Manipulation
 {
 public:
@@ -372,7 +378,7 @@ public:
    * \return true on sucess
    */
   bool setEEJointPosition(double joint_position, JointModelGroup* arm_jmg);
-
+  bool setEEJointPosition(std::vector<double> joint_positions, JointModelGroup* arm_jmg);
 
   /**
    * \brief Set the full grasp posture of the finger joints 
