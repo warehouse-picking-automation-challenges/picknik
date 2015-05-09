@@ -365,6 +365,7 @@ public:
    */
   bool openEndEffectorWithVelocity(bool open, JointModelGroup* arm_jmg);
   bool openEndEffectorWithVelocity(double space_between_fingers, JointModelGroup* arm_jmg);
+  bool openEndEffectorWithVelocityJointPos(double joint_position, JointModelGroup* arm_jmg);
   bool openEndEffectorWithVelocity(JointModelGroup* arm_jmg, trajectory_msgs::JointTrajectory grasp_posture);
                                                
   /**

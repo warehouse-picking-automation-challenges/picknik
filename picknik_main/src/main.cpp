@@ -247,6 +247,11 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Requesting perception test for each bin");
       manager.testPerceptionCommEach();
       break;
+    case 20:
+      if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
+      ROS_INFO_STREAM_NAMED("main","Testing variable grasp widths");
+      manager.testGraspWidths();
+      break;
     case 22:
       remove_from_shelf = false;
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;

@@ -1848,15 +1848,10 @@ bool Manipulation::openEndEffectorWithVelocity(double space_between_fingers, Joi
   ROS_INFO_STREAM_NAMED("manipulation","Moving end effector to have space_between_fingers of " 
                         << space_between_fingers);
 
-  trajectory_msgs::JointTrajectory grasp_posture;
-  
-  // Get default grasp posture
-  grasp_posture = grasp_datas_[arm_jmg]->grasp_posture_;
-
   double joint_lower = 0; // open
   double joint_upper = 0.742; // close
   double max_width = 0.0725;
-  double min_width = 0;
+  double min_width = 0.006;
 
   // Silly math method
   double y0 = joint_lower;
@@ -1870,9 +1865,21 @@ bool Manipulation::openEndEffectorWithVelocity(double space_between_fingers, Joi
   double joint_position = y;
 
   // TODO
-  std::cout << " finger_distance_to_joint_ratio: " << grasp_datas_[arm_jmg]->finger_distance_to_joint_ratio_ 
-            << std::endl;
+  //std::cout << " finger_distance_to_joint_ratio: " << grasp_datas_[arm_jmg]->finger_distance_to_joint_ratio_ 
+  //          << std::endl;
 
+  return openEndEffectorWithVelocityJointPos(joint_position, arm_jmg);
+}
+
+bool Manipulation::openEndEffectorWithVelocityJointPos(double joint_position, JointModelGroup* arm_jmg)
+{
+  ROS_INFO_STREAM_NAMED("manipulation","Moving fingers to joint position " << joint_position);
+
+  trajectory_msgs::JointTrajectory grasp_posture;
+
+  // Get default grasp posture
+  grasp_posture = grasp_datas_[arm_jmg]->grasp_posture_;
+  
   // TODO: This is jacob-specific
   // set jaco2_joint_finger_1
   grasp_posture.points.front().positions[0] = joint_position;
@@ -1887,6 +1894,8 @@ bool Manipulation::openEndEffectorWithVelocity(double space_between_fingers, Joi
 bool Manipulation::openEndEffectorWithVelocity(JointModelGroup* arm_jmg, 
                                                trajectory_msgs::JointTrajectory grasp_posture)
 {
+  std::cout << "Moving to grasp posture:\n" << grasp_posture << std::endl;
+
   // Check status
   if (!config_->isEnabled("end_effector_enabled"))
   {

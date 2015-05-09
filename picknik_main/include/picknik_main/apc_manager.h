@@ -391,6 +391,12 @@ public:
    */
   bool playbackWaypointsFromFile();
 
+  /**
+   * \brief Loop through incremental grasp widths for testing
+   * \return true on success
+   */
+  bool testGraspWidths();
+
 private:
 
   // A shared node handle

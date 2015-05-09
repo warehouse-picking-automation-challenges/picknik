@@ -1507,14 +1507,14 @@ bool APCManager::testPerceptionCommEach()
   //createRandomProductPoses();
 
   // Display planning scene
-  planning_scene_manager_->displayShelfWithOpenBins();
+  planning_scene_manager_->displayEmptyShelf();
 
-  for (std::size_t bin_id = 1; bin_id < 10; ++bin_id)
+  for (BinObjectMap::const_iterator bin_it = shelf_->getBins().begin(); bin_it != shelf_->getBins().end(); bin_it++)
   {
     if (!ros::ok())
       break;
 
-    BinObjectPtr bin = shelf_->getBin(bin_id);
+    BinObjectPtr bin = bin_it;
     if (bin->getProducts().size() == 0)
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","No products in bin "<< bin->getName());
@@ -2124,7 +2124,7 @@ bool APCManager::startUnitTest(const std::string &json_file, const std::string &
   for (BinObjectMap::iterator bin_it = shelf_->getBins().begin(); bin_it != shelf_->getBins().end(); bin_it++)
   {
     // Set all products to same exact pose
-    for (std::vector<ProductObjectPtr>::iterator product_it = bin_it->second->getProducts().begin(); 
+    for (std::vector<ProductObjectPtr>::iterator product_it = bin_it->second->getProducts().begin();
          product_it != bin_it->second->getProducts().end(); product_it++)
     {
       ProductObjectPtr product = *product_it;
@@ -2412,6 +2412,63 @@ bool APCManager::playbackWaypointsFromFile()
     return false;
   }
 
+  return true;
+}
+
+// Mode 20
+bool APCManager::testGraspWidths()
+{
+  // Test visualization
+  statusPublisher("Testing open close visualization of EE");
+  double space_between_fingers = 0;
+  static const double MAX_DISTANCE_WIDTH = 0.0725;
+  moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
+
+  // Send distance between finger commands
+  if (false)
+    while (ros::ok())
+    {
+      std::cout << std::endl << std::endl;
+
+      ROS_WARN_STREAM_NAMED("apc_manger","Setting finger joint position " << space_between_fingers);
+
+      // Close right and optionally right EE
+      if (!manipulation_->openEndEffectorWithVelocityJointPos(space_between_fingers, config_->right_arm_))
+      {
+        ROS_ERROR_STREAM_NAMED("apc_manager","Failed to set finger disance");
+      }
+
+      //ros::Duration(4.0).sleep();
+      remote_control_->waitForNextStep("move fingers");
+
+      // Increment test
+      space_between_fingers += 0.05;
+      if (space_between_fingers > 0.742)
+        space_between_fingers = 0.0;
+    }
+
+  // Send joint position commands
+  while (ros::ok())
+  {
+    std::cout << std::endl << std::endl;
+
+    space_between_fingers += 0.01;
+    if (space_between_fingers > MAX_DISTANCE_WIDTH)
+      space_between_fingers = 0.0;
+
+    ROS_WARN_STREAM_NAMED("apc_manger","Setting finger width distance " << space_between_fingers);
+
+    // Close right and optionally right EE
+    if (!manipulation_->openEndEffectorWithVelocity(space_between_fingers, config_->right_arm_))
+    {
+      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to set finger disance");
+    }
+
+    ros::Duration(4.0).sleep();
+  }
+
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Done testing end effectors");
   return true;
 }
 
