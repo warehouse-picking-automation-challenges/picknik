@@ -37,13 +37,19 @@
 #include <ompl/tools/experience/ExperienceSetup.h>
 
 // Grasp generation
-#include <moveit_grasps/grasp_generator.h>
 #include <moveit_grasps/grasp_data.h>
 #include <moveit_grasps/grasp_filter.h>
+#include <moveit_grasps/grasp_planner.h>
 
 namespace planning_pipeline
 {
 MOVEIT_CLASS_FORWARD(PlanningPipeline);
+}
+
+namespace moveit_grasps
+{
+MOVEIT_CLASS_FORWARD(GraspGenerator);
+// TODO add more here
 }
 
 namespace picknik_main
@@ -54,8 +60,6 @@ MOVEIT_CLASS_FORWARD(Manipulation);
 // TODO move these, last minute sloppiness
 static const double MIN_JOINT_POSITION = 0.0;
 static const double MAX_JOINT_POSITION = 0.742;
-//static const double MAX_FINGER_WIDTH = 0.102; // meters
-//static const double MIN_FINGER_WIDTH = 0.004;
 
 class Manipulation
 {
@@ -450,8 +454,8 @@ public:
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool visualizeGrasps(std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates, const moveit::core::JointModelGroup *arm_jmg,
-                       bool show_cartesian_path = true);
+  // bool visualizeGrasps(std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates, const moveit::core::JointModelGroup *arm_jmg,
+  //                     bool show_cartesian_path = true);
 
   /**
    * \brief Visalize ik solutions
@@ -562,6 +566,7 @@ protected:
   // Grasp generator
   moveit_grasps::GraspGeneratorPtr grasp_generator_;
   moveit_grasps::GraspFilterPtr grasp_filter_;
+  moveit_grasps::GraspPlannerPtr grasp_planner_;
 
   // State modification helper
   FixStateBounds fix_state_bounds_;

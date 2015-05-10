@@ -2048,7 +2048,7 @@ bool APCManager::unitTests()
   if (visuals_->isEnabled("unit_test_" + test_name) || unit_test_all)
   {
     const std::string json_file = "expo.json";
-    Eigen::Affine3d product_pose = config_->getTestPose(); //rvt::RvizVisualTools::convertXYZRPY(0.12,0.06,0.03,1.57,0,0); // from testPose()
+    Eigen::Affine3d product_pose = rvt::RvizVisualTools::convertXYZRPY(0.12,0.06,0.03,1.57,0,0); // from testPose()
     if (!startUnitTest(json_file, test_name, product_pose))
       return false;
   }

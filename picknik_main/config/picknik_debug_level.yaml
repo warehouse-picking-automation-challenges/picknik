@@ -14,14 +14,13 @@ debug_level:
   verbose_experience_database_stats: false
   show_experience_database: false
 
-  # Cartesian planning
-  verbose_cartesian_planning: true
-  show_grasp_filter_collision_if_failed: false
+  # Grasp selection
+  show_chosen_grasp_in_world: true
 
   # Seed state
   show_grasping_seed_state: false
 
-  # Simulation
+  # Simulation testing
   show_simulated_paths_moving: true
 
   # Unit testing
