@@ -200,15 +200,15 @@ bool SimplePointCloudFilter::detectObjects(bool remove_outliers)
   }
 
   // get the bounding box of the point cloud
-  bounding_box_.getBodyAlignedBoundingBox(roi_cloud_, Eigen::Affine3d::Identity(), bbox_pose_, bbox_depth_, bbox_width_, bbox_height_);
+  // bounding_box_.getBodyAlignedBoundingBox(roi_cloud_, Eigen::Affine3d::Identity(), bbox_pose_, bbox_depth_, bbox_width_, bbox_height_);
 
   ROS_DEBUG_STREAM_NAMED("simple_point_cloud_filter.detectObjects","roi_cloud_->header.frame_id = " << roi_cloud_->header.frame_id);
 
   // save bounding_box_ point cloud for debugging
-  ROS_DEBUG_STREAM_NAMED("simple_point_cloud_filter.detectObjects","saving bbox_.cloud with " << bounding_box_.cloud_->size() << " points");
-  bounding_box_.cloud_->width = 1;
-  bounding_box_.cloud_->height = bounding_box_.cloud_->size();
-  saveRegionOfInterest(bounding_box_.cloud_);
+  // ROS_DEBUG_STREAM_NAMED("simple_point_cloud_filter.detectObjects","saving bbox_.cloud with " << bounding_box_.cloud_->size() << " points");
+  // bounding_box_.cloud_->width = 1;
+  // bounding_box_.cloud_->height = bounding_box_.cloud_->size();
+  saveRegionOfInterest(roi_cloud_);
   
   // Allow main loop to work again
   processing_ = false;
