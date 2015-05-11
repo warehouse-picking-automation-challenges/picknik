@@ -397,10 +397,12 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     updateBoundingMesh(product, bin);
 
     // Visualize bounding box
-    product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()), rvt::LIME_GREEN);
+    // the mesh is saved in the bin coordinate system by pcl_perception_server
+    Eigen::Affine3d world_to_bin = shelf_->getBottomRight() * bin->getBottomRight();
+    product->visualizeWireframe(world_to_bin, rvt::LIME_GREEN);
 
     // Visualize bounding box in high res display
-    product->visualizeHighResWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()), rvt::LIME_GREEN);
+    product->visualizeHighResWireframe(world_to_bin, rvt::LIME_GREEN);
 
     // Show the new mesh
     if (has_new_mesh)
@@ -484,7 +486,10 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
 
   /***** GET BOUNDING BOX FROM MESH *****/
   // pcl_perception_server saves the mesh in the BIN pose.
+  // drop_pose is set to identity to match the BIN pose.
   Eigen::Affine3d world_to_bin = shelf_->getBottomRight() * bin->getBottomRight();
+  visuals_->visual_tools_->publishAxisLabeled(world_to_bin, "WORLD_TO_BIN");
+
   ROS_DEBUG_STREAM_NAMED("perception_interface","world_to_bin_corner = \n" << world_to_bin.translation() 
                          << "\n" << world_to_bin.rotation());
 
@@ -492,19 +497,20 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   {
     ROS_DEBUG_STREAM_NAMED("perception_interface","Dropping points to plane for " << product->getName());
 
-    bounding_box_.drop_pose_ = world_to_bin;
+    bounding_box_.drop_pose_ = Eigen::Affine3d::Identity();
     bounding_box_.drop_plane_ = bounding_box::XY;
     bounding_box_.drop_points_ = true;
 
-    visuals_->visual_tools_->publishAxisLabeled(bounding_box_.drop_pose_, "BOUNDING_BOX_DROP_POSE");
+    visuals_->visual_tools_->publishAxisLabeled(world_to_bin * bounding_box_.drop_pose_, "BOUNDING_BOX_DROP_POSE");
   }
 
   // Transform from the mesh to the drop pose
-  // NOTE: drop pose and mesh should both be in world.
-  Eigen::Affine3d points_to_drop_pose = Eigen::Affine3d::Identity();
+  // NOTE: drop pose is in the BIN frame
+  // NOTE: mesh is in the BIN frame
+  Eigen::Affine3d points_to_drop_pose = Eigen::Affine3d::Identity(); // no transform needed
 
   // Get bounding box output
-  Eigen::Affine3d mesh_to_bounding; // is actually world_to_bounding in our case since mesh is saved in world frame
+  Eigen::Affine3d mesh_to_bounding; // is actually bin_to_bounding in our case since mesh is saved in BIN frame
   double depth, width, height;
 
   if (!bounding_box_.getBodyAlignedBoundingBox(product->getCollisionMesh(), points_to_drop_pose, mesh_to_bounding, 
@@ -513,15 +519,14 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to get bounding box");
     return false;
   }
+
   product->setDepth(depth);
   product->setWidth(width);
   product->setHeight(height);
 
   // Get transform from bin to bounding box center
-
   Eigen::Affine3d bin_to_bounding_box;
-  bin_to_bounding_box = world_to_bin.inverse() * mesh_to_bounding;
-  bin_to_bounding_box.translation() = mesh_to_bounding.translation() - world_to_bin.translation();
+  bin_to_bounding_box = mesh_to_bounding; // mesh is saved in the BIN frame already
 
   visuals_->visual_tools_->publishAxisLabeled(world_to_bin * bin_to_bounding_box, "WORLD_TO_MESH");
   
