@@ -434,9 +434,17 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // TODO: add this back but sometimes do not if the pregrasp is so close that it would be in collision with wall
         //planning_scene_manager_->displayShelfAsWall();
 
-        current_state = manipulation_->getCurrentState();
-        manipulation_->setStateWithOpenEE(true, current_state);
+        // Set end effector to correct width
+        if (!manipulation_->setEEGraspPosture(grasp_candidates.front()->grasp_.pre_grasp_posture, arm_jmg))
+        {
+          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to set EE to correct grasp posture");
+          return false;
+        }
 
+        current_state = manipulation_->getCurrentState();
+        //manipulation_->setStateWithOpenEE(true, current_state);
+
+        // Move robot to pregrasp state
         if (!manipulation_->move(current_state, pre_grasp_state, arm_jmg, config_->main_velocity_scaling_factor_,
                                  verbose, execute_trajectory))
         {

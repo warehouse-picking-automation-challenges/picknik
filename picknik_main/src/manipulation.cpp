@@ -82,6 +82,9 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   setStateWithOpenEE(true, current_state_); // so that grasp filter is started up with EE open
   grasp_filter_.reset(new moveit_grasps::GraspFilter(current_state_, visuals_->grasp_markers_) );
   grasp_planner_.reset(new moveit_grasps::GraspPlanner(visuals_->trajectory_lines_));
+  grasp_planner_->setWaitForNextStepCallback(boost::bind(&picknik_main::RemoteControl::waitForNextStep, 
+                                                         remote_control_, _1));
+                                             
 
   // Done
   ROS_INFO_STREAM_NAMED("manipulation","Manipulation Ready.");
@@ -137,9 +140,8 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, JointModelGroup* arm_jmg,
 
   // Filter grasps based on IK
   bool filter_pregrasps = true;
-  bool verbose_if_failed = visuals_->isEnabled("show_grasp_filter_collision_if_failed");
   if (!grasp_filter_->filterGrasps(grasp_candidates, planning_scene_monitor_, arm_jmg, seed_state,
-                                   filter_pregrasps, verbose_if_failed))
+                                   filter_pregrasps))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to filter grasps");
     return false;
@@ -147,6 +149,9 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, JointModelGroup* arm_jmg,
 
   // Sort grasp candidates by score
   grasp_filter_->removeInvalidAndFilter(grasp_candidates);
+
+  //ROS_WARN_STREAM_NAMED("manipulation","Debug mode stopping");
+  //remote_control_->setStop();
 
   // For each remaining grasp, calculate entire approach, lift, and retreat path.
   // Remove those that have no valid path
@@ -1525,7 +1530,7 @@ bool Manipulation::moveCameraToBinGantryOnly(BinObjectPtr bin, JointModelGroup* 
   getCurrentState();
 
   // Set goal state to initial pose
-  static const std::string POSE_NAME = "collapsed";
+  static const std::string POSE_NAME = "camera_view";
   moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_)); // Allocate robot states
   if (!goal_state->setToDefaultValues(arm_jmg, POSE_NAME))
   {

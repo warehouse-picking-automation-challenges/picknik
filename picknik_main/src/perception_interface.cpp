@@ -301,6 +301,11 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   // Tweak transform
   Eigen::Affine3d object_pose_offset = Eigen::Affine3d::Identity();
   //getHackOffsetPose(object_pose_offset, time_stamp);
+  if (config_->isEnabled("use_camera_hack_offset"))
+  {
+    ros::Time time_stamp;
+    getCameraPose(object_pose_offset, time_stamp, "object_offset_hack");
+  }
 
   // Get bin location
   const Eigen::Affine3d& world_to_bin = picknik_main::transform(bin->getBottomRight(), shelf_->getBottomRight());
@@ -338,16 +343,16 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     Eigen::Affine3d bin_to_object = world_to_bin.inverse() * world_to_object;
     
     // Apply small hack offset
-    bin_to_object = bin_to_object * object_pose_offset;
+    bin_to_object = object_pose_offset * bin_to_object;
 
     std::cout << std::endl;
     std::cout << "=============== Found Object =============== " << std::endl;
-    std::cout << "object_name:     " << found_object.object_name << std::endl;
-    //std::cout << "expected_object_confidence: " << found_object.expected_object_confidence << std::endl;
-    std::cout << "has mesh:        " << ((found_object.bounding_mesh.triangles.empty() || found_object.bounding_mesh.vertices.empty()) ? "NO" : "YES") << std::endl;
-    std::cout << "original:        "; printTransform(camera_to_object);
-    std::cout << "world_to_object: "; printTransform(world_to_object);
-    std::cout << "bin_to_object:   "; printTransform(bin_to_object);
+    std::cout << "object_name:        " << found_object.object_name << std::endl;
+    std::cout << "has mesh:           " << ((found_object.bounding_mesh.triangles.empty() || found_object.bounding_mesh.vertices.empty()) ? "NO" : "YES") << std::endl;
+    std::cout << "original:           "; printTransform(camera_to_object);
+    std::cout << "world_to_object:    "; printTransform(world_to_object);
+    std::cout << "bin_to_object:      "; printTransform(bin_to_object);
+    std::cout << "object_pose_offset: "; printTransform(object_pose_offset);
     std::cout << std::endl;
 
     // Check bounds
@@ -413,13 +418,10 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   ros::spinOnce();
   ros::Duration(0.1).sleep();
 
-  ROS_WARN_STREAM_NAMED("temp","sleeping");
-  ros::Duration(5).sleep();
-
   return true;
 }
 
-bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::Time& time_stamp, 
+bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_frame, ros::Time& time_stamp, 
                                         const std::string& camera_frame)
 {
   tf::StampedTransform camera_transform;
@@ -438,31 +440,7 @@ bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::T
   }
 
   // Copy results
-  tf::transformTFToEigen(camera_transform, world_to_camera);
-  time_stamp = camera_transform.stamp_;
-  return true;
-}
-
-bool PerceptionInterface::getHackOffsetPose(Eigen::Affine3d& world_to_camera, ros::Time& time_stamp)
-{
-  tf::StampedTransform camera_transform;
-  static const std::string camera_frame = "/object_offset_hack";
-
-  try
-  {
-    // Wait to make sure a transform message has arrived
-    tf_->waitForTransform(config_->world_frame_, camera_frame, ros::Time(0), ros::Duration(1));
-    // Get latest transform available
-    tf_->lookupTransform(config_->world_frame_, camera_frame, ros::Time(0), camera_transform);
-  }
-  catch (tf::TransformException ex)
-  {
-    ROS_ERROR_STREAM_NAMED("perception_interface", "TF error: " << ex.what());
-    return false;
-  }
-
-  // Copy results
-  tf::transformTFToEigen(camera_transform, world_to_camera);
+  tf::transformTFToEigen(camera_transform, world_to_frame);
   time_stamp = camera_transform.stamp_;
   return true;
 }
