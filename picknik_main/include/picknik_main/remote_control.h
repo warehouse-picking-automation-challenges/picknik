@@ -42,6 +42,9 @@
 // MoveIt
 #include <moveit/macros/class_forward.h>
 
+// moveit_grasps
+#include <moveit_grasps/grasp_planner.h>
+
 // ROS
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>

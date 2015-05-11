@@ -382,5 +382,6 @@ If you see something like "mesa", please install Nvidia Video Card Driver Again.
 
 Test camera view
 
-    rosrun image_view image_view image:=/xtion_right/image_raw
+    rosrun image_view image_view image:=/xtion_right/rgb/image_color
+    rosrun image_view image_view image:=/xtion_left/rgb/image_color
 

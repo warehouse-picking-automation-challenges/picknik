@@ -144,7 +144,7 @@ bool PlanningSceneManager::displayShelfOnlyBin( const std::string& bin_name )
   // Create new scene
   bool only_show_shelf_frame = false;
   bool show_all_products = false;
-  ROS_DEBUG_STREAM_NAMED("apc_manager","Showing planning scene shelf with focus on bin " << bin_name);
+  ROS_DEBUG_STREAM_NAMED("planning_scene_manager","Showing planning scene shelf with focus on " << bin_name);
 
   shelf_->createCollisionBodies(bin_name, only_show_shelf_frame, show_all_products);
 
