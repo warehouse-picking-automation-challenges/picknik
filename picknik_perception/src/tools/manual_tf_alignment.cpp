@@ -39,7 +39,7 @@ ManualTFAlignment::ManualTFAlignment()
 
   // default, save in picknik_perception/data
   std::string package_path = ros::package::getPath("picknik_perception");
-  save_path_ = package_path + "/config/" + file_name_ + ".yaml";
+  save_path_ = package_path + "/config/tf/" + file_name_ + ".yaml";
 
   // listen to keyboard topic
   keyboard_sub_ = nh_.subscribe(topic_name_, 100,
@@ -49,7 +49,8 @@ ManualTFAlignment::ManualTFAlignment()
   ROS_INFO_STREAM_NAMED("manualTF","Listening to topic : " << topic_name_);
   ROS_INFO_STREAM_NAMED("manualTF","Transform from     : " << from_);
   ROS_INFO_STREAM_NAMED("manualTF","Transform to       : " << to_);
-  ROS_INFO_STREAM_NAMED("manualTF","Will save TF data to: " << save_path_);  
+  ROS_INFO_STREAM_NAMED("manualTF","Config File        : " << save_path_);  
+  ROS_INFO_STREAM_NAMED("manualTF","Initial transform  : " << x << ", " << y << ", " << z << " | " << roll << ", " << pitch << ", " << yaw );  
 }
 
 void ManualTFAlignment::keyboardCallback(const keyboard::Key::ConstPtr& msg)

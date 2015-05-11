@@ -12,6 +12,7 @@ Panels:
         - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
         - /TF1
+        - /TF1/Frames1
         - /DepthCloud1/Auto Size1
       Splitter Ratio: 0.619256
     Tree Height: 681
@@ -48,7 +49,7 @@ Visualization Manager:
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -154,12 +155,12 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_state
       Show All Links: true
       Show Highlights: true
-      Value: true
+      Value: false
       Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -265,12 +266,12 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_start_state
       Show All Links: true
       Show Highlights: true
-      Value: true
+      Value: false
       Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -376,7 +377,7 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_goal_state
       Show All Links: true
       Show Highlights: true
-      Value: true
+      Value: false
       Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
@@ -494,9 +495,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Markers
       Namespaces:
-        Collision: true
-        Text: true
-        object_pose: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -508,26 +507,19 @@ Visualization Manager:
       Queue Size: 100
       Value: false
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /picknik_main/grasping_markers
       Name: Amazon Grasp Markers
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
-        Collision: true
-        Path: true
-        Sphere: true
-        Text: true
-        grasp: true
-        lifted: true
-        pregrasp: true
-        retreat: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -675,7 +667,7 @@ Visualization Manager:
         Scene Alpha: 1
         Scene Color: 255; 170; 0
         Scene Display Time: 0.2
-        Show Scene Geometry: true
+        Show Scene Geometry: false
         Voxel Coloring: Z-Axis
         Voxel Rendering: Occupied Voxels
       Scene Robot:
@@ -784,19 +776,175 @@ Visualization Manager:
         Show Robot Visual: false
       Value: true
     - Class: rviz/TF
-      Enabled: false
+      Enabled: true
       Frame Timeout: 5
       Frames:
         All Enabled: false
+        base:
+          Value: false
+        bin_A:
+          Value: false
+        bin_B:
+          Value: false
+        bin_C:
+          Value: false
+        bin_D:
+          Value: false
+        bin_E:
+          Value: false
+        bin_F:
+          Value: false
+        bin_G:
+          Value: false
+        bin_H:
+          Value: false
+        bin_I:
+          Value: false
+        bin_J:
+          Value: false
+        bin_K:
+          Value: false
+        bin_L:
+          Value: false
+        calibration_target_frame:
+          Value: true
+        frame:
+          Value: true
+        gantry:
+          Value: true
+        gantry_plate:
+          Value: true
+        jaco2_end_effector:
+          Value: false
+        jaco2_link_1:
+          Value: false
+        jaco2_link_2:
+          Value: false
+        jaco2_link_3:
+          Value: false
+        jaco2_link_4:
+          Value: false
+        jaco2_link_5:
+          Value: false
+        jaco2_link_base:
+          Value: false
+        jaco2_link_finger_1:
+          Value: false
+        jaco2_link_finger_1_tip:
+          Value: false
+        jaco2_link_finger_2:
+          Value: false
+        jaco2_link_finger_2_tip:
+          Value: false
+        jaco2_link_finger_3:
+          Value: false
+        jaco2_link_finger_3_tip:
+          Value: false
+        jaco2_link_hand:
+          Value: false
+        jaco2_wrist:
+          Value: false
+        object_offset_hack:
+          Value: false
+        shelf:
+          Value: true
+        world:
+          Value: true
+        xtion_left_depth_frame:
+          Value: true
+        xtion_left_depth_optical_frame:
+          Value: true
+        xtion_left_link:
+          Value: true
+        xtion_left_rgb_frame:
+          Value: true
+        xtion_left_rgb_optical_frame:
+          Value: true
+        xtion_right_depth_frame:
+          Value: true
+        xtion_right_depth_optical_frame:
+          Value: true
+        xtion_right_link:
+          Value: true
+        xtion_right_rgb_frame:
+          Value: true
+        xtion_right_rgb_optical_frame:
+          Value: true
       Marker Scale: 0.25
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        world:
+          base:
+            frame:
+              gantry:
+                gantry_plate:
+                  jaco2_link_base:
+                    jaco2_link_1:
+                      jaco2_link_2:
+                        jaco2_link_3:
+                          jaco2_link_4:
+                            jaco2_link_5:
+                              jaco2_wrist:
+                                jaco2_link_hand:
+                                  jaco2_end_effector:
+                                    {}
+                                  jaco2_link_finger_1:
+                                    jaco2_link_finger_1_tip:
+                                      {}
+                                  jaco2_link_finger_2:
+                                    jaco2_link_finger_2_tip:
+                                      {}
+                                  jaco2_link_finger_3:
+                                    jaco2_link_finger_3_tip:
+                                      {}
+                  xtion_left_link:
+                    xtion_left_depth_frame:
+                      xtion_left_depth_optical_frame:
+                        {}
+                    xtion_left_rgb_frame:
+                      xtion_left_rgb_optical_frame:
+                        {}
+                  xtion_right_link:
+                    xtion_right_depth_frame:
+                      xtion_right_depth_optical_frame:
+                        {}
+                    xtion_right_rgb_frame:
+                      xtion_right_rgb_optical_frame:
+                        {}
+          object_offset_hack:
+            {}
+          shelf:
+            bin_A:
+              {}
+            bin_B:
+              {}
+            bin_C:
+              {}
+            bin_D:
+              {}
+            bin_E:
+              {}
+            bin_F:
+              {}
+            bin_G:
+              {}
+            bin_H:
+              {}
+            bin_I:
+              {}
+            bin_J:
+              {}
+            bin_K:
+              {}
+            bin_L:
+              {}
+            calibration_target_frame:
+              {}
       Update Interval: 0
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -989,22 +1137,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.83746
+      Distance: 2.901
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.27751
-        Y: 0.00466754
-        Z: 0
+        X: 0.0707698
+        Y: -0.152739
+        Z: -4.76838e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.365398
+      Pitch: 0.895398
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.17539
+      Yaw: 3.88539
     Saved: ~
 Window Geometry:
   Displays:
@@ -1020,5 +1168,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1190
-  X: 1910
+  X: 1913
   Y: 14

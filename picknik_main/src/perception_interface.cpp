@@ -301,7 +301,8 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   // Tweak transform
   Eigen::Affine3d object_pose_offset = Eigen::Affine3d::Identity();
   //getHackOffsetPose(object_pose_offset, time_stamp);
-  if (config_->isEnabled("use_camera_hack_offset"))
+  bool use_camera_hack_offset = config_->isEnabled("use_camera_hack_offset");
+  if (use_camera_hack_offset)
   {
     ros::Time time_stamp;
     getCameraPose(object_pose_offset, time_stamp, "object_offset_hack");
@@ -352,7 +353,8 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     std::cout << "original:           "; printTransform(camera_to_object);
     std::cout << "world_to_object:    "; printTransform(world_to_object);
     std::cout << "bin_to_object:      "; printTransform(bin_to_object);
-    std::cout << "object_pose_offset: "; printTransform(object_pose_offset);
+    if (use_camera_hack_offset)
+      std::cout << "object_pose_offset: "; printTransform(object_pose_offset);
     std::cout << std::endl;
 
     // Check bounds

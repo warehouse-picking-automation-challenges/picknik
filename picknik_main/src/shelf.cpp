@@ -187,7 +187,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   top_left_.translation().z() = shelf_height_;
 
   // Transform debugging
-  visuals_->tf_->publishTransform(world_to_shelf_transform_, "world", "shelf");
+  //visuals_->tf_->publishTransform(world_to_shelf_transform_, "world", "shelf");
 
 
   // Create shelf parts -----------------------------

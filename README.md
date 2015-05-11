@@ -170,7 +170,7 @@ Keys
 
 You might also need the offset transform hack:
 
-    roslaunch picknik_perception tf_keyboard_testing_offset.launch
+    roslaunch picknik_perception tf_keyboard_perception_offset.launch
 
 ### Move Robot to Shutdown Mode
 
@@ -198,11 +198,15 @@ Calibrate x axis
 
     roslaunch picknik_main jacob_apc.launch fake_perception:=1 mode:=9 pose:=x_calibration
 
-### Shelf to Camera Calibration
+### Shelf to Robot Calibration - New Method
 
-Run the pre-recorded trajectory so that perception can build shelf model:
+Get world to target
 
-    OLD roslaunch picknik_main jacob_apc.launch mode:=10 fake_perception:=1
+    steve?
+
+Show target to shelf
+
+    roslaunch picknik_perception tf_keyboard_shelf_offset.launch
 
 ### Jaco Joystick Control
 

@@ -19,7 +19,7 @@
   <!-- NOTE: will open tiny window, keyboard presses register when this is in focus -->
   <node pkg="keyboard" type="keyboard" name="keyboard_$(arg camera)" />
   <node pkg="picknik_perception" type="tf_keyboard" name="tf_keyboard_$(arg camera)" output="screen">
-    <rosparam command="load" file="$(find picknik_perception)/config/tf_$(arg camera).yaml"/>
+    <rosparam command="load" file="$(find picknik_perception)/config/tf/tf_$(arg camera).yaml"/>
   </node>
 
 </launch>
