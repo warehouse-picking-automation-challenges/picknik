@@ -122,7 +122,10 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   // Get test pose
   rvt::getDoubleParameters(parent_name, nh_, "test/test_pose", test_pose_doubles_);
   test_pose_ = rvt::RvizVisualTools::convertXYZRPY(test_pose_doubles_);
-  
+
+  // End effector configuration
+  rvt::getDoubleParameter(parent_name, nh_, "finger_3_offset", finger_3_offset_);
+
   // Load proper groups
   // TODO - check if joint model group exists
   if (dual_arm_)

@@ -123,9 +123,10 @@ Run APC Manager (main program) for JACOB in simulation
 
 ### Run HARDWARE of Jacob
 
-Start roscore:
+Start roscore and sync times
 
     roscore &
+	sudo ntpdate pool.ntp.org
 
 Start controller:
 
@@ -139,6 +140,7 @@ Rviz Visualizers of robot states and debug markers
 
 Start cameras (on correct computer):
 
+    sudo ntpdate pool.ntp.org 
     roslaunch picknik_perception multi_xtion.launch
 
 Camera calibration:
