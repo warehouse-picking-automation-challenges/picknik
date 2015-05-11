@@ -150,10 +150,11 @@ bool Manipulation::chooseGrasp(WorkOrder work_order, JointModelGroup* arm_jmg,
   // Sort grasp candidates by score
   grasp_filter_->removeInvalidAndFilter(grasp_candidates);
 
+  //ROS_WARN_STREAM_NAMED("manipulation","Debug mode stopping");
+  //remote_control_->setStop();
+
   // For each remaining grasp, calculate entire approach, lift, and retreat path.
   // Remove those that have no valid path
-  ROS_WARN_STREAM_NAMED("manipulation","Debug mode stopping");
-  remote_control_->setStop();
   if (!grasp_planner_->planAllApproachLiftRetreat(grasp_candidates, getCurrentState(), 
                                                   planning_scene_monitor_,
                                                   grasp_datas_[arm_jmg],

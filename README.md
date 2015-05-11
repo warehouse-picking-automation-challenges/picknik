@@ -77,7 +77,11 @@ Its help documentation:
 
 ### Run Shelf Calibration
 
-To start:
+First move robot to calibration pose:
+
+    roslaunch picknik_main jacob_apc.launch fake_perception:=1 mode:=9 pose:=camera_view
+	 
+Then change robot to manual mode, move up and down using joystick and this node:
 
     roslaunch picknik_perception perception_server_ddtr_calibrate.launch
 
@@ -163,6 +167,10 @@ Arguments
 Keys
 
  - Press SPACE to switch between two views
+
+You might also need the offset transform hack:
+
+    roslaunch picknik_perception tf_keyboard_testing_offset.launch
 
 ### Move Robot to Shutdown Mode
 
