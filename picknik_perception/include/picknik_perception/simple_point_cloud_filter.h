@@ -137,12 +137,13 @@ public:
   // point clouds
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr roi_cloud_;
 
-private:
-
   // Bounding box pose and dimensions
+  bounding_box::BoundingBox bounding_box_;
   Eigen::Affine3d bbox_pose_;
   double bbox_depth_, bbox_width_, bbox_height_;
 
+
+private:
 
 
   bool verbose_;
@@ -162,7 +163,6 @@ private:
   // Publish bin point cloud
   ros::Publisher roi_cloud_pub_;
 
-  bounding_box::BoundingBox bounding_box_;
 
   double radius_of_outlier_removal_;
 

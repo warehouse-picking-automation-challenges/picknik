@@ -524,15 +524,15 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
     //Eigen::Affine3d cuboid_to_bin;
     ROS_DEBUG_STREAM_NAMED("perception_interface","Dropping points to plane for " << product->getName());
 
-    bounding_box_.drop_pose_ = bin_to_world; //product->getCentroid().inverse();
+    bounding_box_.drop_pose_ = bin_to_world.inverse(); //product->getCentroid().inverse();
     bounding_box_.drop_plane_ = bounding_box::XY;
     bounding_box_.drop_points_ = true;
 
-    visuals_->visual_tools_->publishAxisLabeled(bounding_box_.drop_pose_, "drop_pose");
+    visuals_->visual_tools_->publishAxisLabeled(bounding_box_.drop_pose_, "DROP_POSE");
   }
 
   Eigen::Affine3d mesh_to_world = product->getCentroid() * bin_to_world;
-  //visuals_->visual_tools_->publishAxisLabeled(mesh_to_world, "mesh_to_world");
+  visuals_->visual_tools_->publishAxisLabeled(mesh_to_world.inverse(), "MESH_TO_WORLD");
 
   // Get bounding box
   Eigen::Affine3d bounding_to_mesh; // this is the output
