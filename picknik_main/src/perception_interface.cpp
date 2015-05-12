@@ -92,7 +92,7 @@ bool PerceptionInterface::isPerceptionReady()
 }
 
 bool PerceptionInterface::startPerception(ProductObjectPtr& product, BinObjectPtr& bin)
-{  
+{
   // Setup goal
   ROS_INFO_STREAM_NAMED("perception_interface","Communicating with perception pipeline");
   picknik_msgs::FindObjectsGoal find_object_goal;
@@ -110,7 +110,7 @@ bool PerceptionInterface::startPerception(ProductObjectPtr& product, BinObjectPt
 
   // Get all of the products in the bin
   bin->getProducts(find_object_goal.expected_objects_names);
- 
+
   // Make sure perception is reset
   if (false)
   {
@@ -127,10 +127,10 @@ bool PerceptionInterface::startPerception(ProductObjectPtr& product, BinObjectPt
 
   // Send request
   find_objects_action_.sendGoal(find_object_goal);
- 
+
   // Change state of interface
   is_processing_perception_ = true;
- 
+
   return true;
 }
 
@@ -275,22 +275,37 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     return false;
   }
 
+  if (config_->isEnabled("ddtr_mode"))
+  {
+    // LuMa Mode
+    return processPerceptionResultsDDTR(result, product, bin);
+  }
+  else
+  {
+    // Andy Mode
+    return processPerceptionResultsPCL(result, product, bin);
+  }
+}
+
+bool PerceptionInterface::processPerceptionResultsDDTR(picknik_msgs::FindObjectsResultConstPtr result,
+                                                       ProductObjectPtr& product, BinObjectPtr& bin)
+{
   // Get camera position ------------------------------------------------------------------------
   std::string frame_id = result->found_objects.front().object_pose.header.frame_id;
   Eigen::Affine3d world_to_camera = Eigen::Affine3d::Identity();
 
-  // Set camera pose to that from lu's code 
+  // Set camera pose to that from lu's code
   geometry_msgs::PoseStamped recieved_world_to_camera = result->found_objects.front().camera_pose;
-  if (recieved_world_to_camera.pose.position.x == 0 && 
+  if (recieved_world_to_camera.pose.position.x == 0 &&
       recieved_world_to_camera.pose.position.y == 0 &&
       recieved_world_to_camera.pose.position.z == 0)
   {
     ROS_INFO_STREAM_NAMED("perception_interface","No camera pose returned from perception server, getting one from tf");
     ros::Time time_stamp;
-    getCameraPose(world_to_camera, time_stamp, frame_id);
+    getTFTransform(world_to_camera, time_stamp, frame_id);
   }
   else
-  {    
+  {
     world_to_camera = visuals_->visual_tools_->convertPose(recieved_world_to_camera.pose);
   }
 
@@ -301,10 +316,11 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   // Tweak transform
   Eigen::Affine3d object_pose_offset = Eigen::Affine3d::Identity();
   //getHackOffsetPose(object_pose_offset, time_stamp);
-  if (config_->isEnabled("use_camera_hack_offset"))
+  bool use_camera_hack_offset = config_->isEnabled("use_camera_hack_offset");
+  if (use_camera_hack_offset)
   {
     ros::Time time_stamp;
-    getCameraPose(object_pose_offset, time_stamp, "object_offset_hack");
+    getTFTransform(object_pose_offset, time_stamp, "object_offset_hack");
   }
 
   // Get bin location
@@ -341,7 +357,7 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
 
     // Convert to pose of bin
     Eigen::Affine3d bin_to_object = world_to_bin.inverse() * world_to_object;
-    
+
     // Apply small hack offset
     bin_to_object = object_pose_offset * bin_to_object;
 
@@ -352,7 +368,8 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     std::cout << "original:           "; printTransform(camera_to_object);
     std::cout << "world_to_object:    "; printTransform(world_to_object);
     std::cout << "bin_to_object:      "; printTransform(bin_to_object);
-    std::cout << "object_pose_offset: "; printTransform(object_pose_offset);
+    if (use_camera_hack_offset)
+      std::cout << "object_pose_offset: "; printTransform(object_pose_offset);
     std::cout << std::endl;
 
     // Check bounds
@@ -423,17 +440,138 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   return true;
 }
 
-bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_frame, ros::Time& time_stamp, 
-                                        const std::string& camera_frame)
+bool PerceptionInterface::processPerceptionResultsPCL(picknik_msgs::FindObjectsResultConstPtr result,
+                                                       ProductObjectPtr& product, BinObjectPtr& bin)
 {
-  tf::StampedTransform camera_transform;
+  // Get camera position ------------------------------------------------------------------------
+  std::string frame_id = result->found_objects.front().object_pose.header.frame_id;
+  ROS_INFO_STREAM_NAMED("perception_interface","Frame id is " << frame_id);
+
+  // Get bin location
+  const Eigen::Affine3d& world_to_bin = picknik_main::transform(bin->getBottomRight(), shelf_->getBottomRight());
+
+  // Debug
+  if (visuals_->isEnabled("show_world_to_bin_pose"))
+    visuals_->visual_tools_->publishAxisLabeled(world_to_bin, "world_to_bin");
+
+  // Process each product
+  for (std::size_t i = 0; i < result->found_objects.size(); ++i)
+  {
+    const picknik_msgs::FoundObject& found_object = result->found_objects[i];
+
+    // Error check
+    if (frame_id != found_object.object_pose.header.frame_id)
+    {
+      ROS_WARN_STREAM_NAMED("perception_interface","frame_id has changed between found objects in same perception results message");
+    }
+
+    // Get object's transform
+    Eigen::Affine3d bin_to_object = visuals_->visual_tools_->convertPose(found_object.object_pose.pose);
+
+    // Debug
+    if (visuals_->isEnabled("show_raw_object_pose"))
+      visuals_->visual_tools_->publishArrow(found_object.object_pose);
+
+    // Convert to world frame
+    const Eigen::Affine3d world_to_object = world_to_bin * bin_to_object;
+
+    // Debug
+    if (visuals_->isEnabled("show_world_to_object_pose"))
+      visuals_->visual_tools_->publishAxisLabeled(world_to_object, found_object.object_name);
+
+    std::cout << std::endl;
+    std::cout << "=============== Found Object =============== " << std::endl;
+    std::cout << "object_name:        " << found_object.object_name << std::endl;
+    std::cout << "has mesh:           " << ((found_object.bounding_mesh.triangles.empty() || found_object.bounding_mesh.vertices.empty()) ? "NO" : "YES") << std::endl;
+    std::cout << "original:           "; printTransform(bin_to_object);
+    std::cout << "world_to_object:    "; printTransform(world_to_object);
+    std::cout << std::endl;
+
+    // Check bounds
+    if (!checkBounds(bin_to_object, bin, product))
+    {
+      ROS_ERROR_STREAM_NAMED("perception_interface","Bounds failed");
+      return false;
+    }
+
+    // Save to the product's property
+    product->setCentroid(bin_to_object);
+    product->setMeshCentroid(bin_to_object);
+
+    // Show new mesh if possible
+    const shape_msgs::Mesh& mesh = found_object.bounding_mesh;
+    bool has_new_mesh = false;
+
+    ROS_DEBUG_STREAM_NAMED("perception_interface","Recieved mesh with " << mesh.triangles.size() << " triangles and "
+                           << mesh.vertices.size() << " vertices");
+    if (! (mesh.triangles.empty() || mesh.vertices.empty()))
+    {
+      ROS_INFO_STREAM_NAMED("perception_interface","Setting new bounding mesh");
+      product->setCollisionMesh(mesh);
+
+      static std::size_t mesh_id = 0;
+      const std::string& high_res_mesh_path = config_->package_path_ + "/meshes/detected/current" +
+        boost::lexical_cast<std::string>(mesh_id++) + ".stl";
+
+      // product->writeCollisionBody(high_res_mesh_path);
+      // std::cout << "previous high res mesh path: " << product->getHighResMeshPath() << std::endl;
+      // product->setHighResMeshPath("file://" + high_res_mesh_path);
+      // std::cout << "new high res mesh path: " << product->getHighResMeshPath() << std::endl;
+      has_new_mesh = true;
+    }
+    else
+      ROS_ERROR_STREAM_NAMED("perception_interface","No mesh provided");
+
+    // So that bounding boxes don't build up
+    //visuals_->visual_tools_->deleteAllMarkers();
+
+    // Update the bounding box
+    updateBoundingMesh(product, bin);
+
+    // Visualize bounding box
+    // the mesh is saved in the bin coordinate system by pcl_perception_server
+    //Eigen::Affine3d world_to_bin = shelf_->getBottomRight() * bin->getBottomRight();
+    product->visualizeWireframe(world_to_bin, rvt::LIME_GREEN);
+
+    // Visualize bounding box in high res display
+    product->visualizeHighResWireframe(world_to_bin, rvt::LIME_GREEN);
+
+    // Show the new mesh
+    if (has_new_mesh)
+    {
+      product->createCollisionBodies(world_to_bin);
+
+      product->visualizeHighRes(world_to_bin);
+    }
+
+  } // for each found product
+
+  visuals_->visual_tools_->triggerPlanningSceneUpdate();
+
+  // Allow mesh to display
+  ros::spinOnce();
+  ros::Duration(0.1).sleep();
+
+  return true;
+}
+
+bool PerceptionInterface::getTFTransform(Eigen::Affine3d& world_to_frame, ros::Time& time_stamp,
+                                         const std::string& frame_id)
+{
+  return getTFTransform(world_to_frame, time_stamp, config_->world_frame_, frame_id);
+}
+
+bool PerceptionInterface::getTFTransform(Eigen::Affine3d& world_to_frame, ros::Time& time_stamp,
+                                         const std::string& parent_frame_id, const std::string& frame_id)
+{
+  tf::StampedTransform tf_transform;
 
   try
   {
     // Wait to make sure a transform message has arrived
-    tf_->waitForTransform(config_->world_frame_, camera_frame, ros::Time(0), ros::Duration(1));
+    tf_->waitForTransform(parent_frame_id, frame_id, ros::Time(0), ros::Duration(1));
     // Get latest transform available
-    tf_->lookupTransform(config_->world_frame_, camera_frame, ros::Time(0), camera_transform);
+    tf_->lookupTransform(parent_frame_id, frame_id, ros::Time(0), tf_transform);
   }
   catch (tf::TransformException ex)
   {
@@ -442,8 +580,8 @@ bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_frame, ros::Ti
   }
 
   // Copy results
-  tf::transformTFToEigen(camera_transform, world_to_frame);
-  time_stamp = camera_transform.stamp_;
+  tf::transformTFToEigen(tf_transform, world_to_frame);
+  time_stamp = tf_transform.stamp_;
   return true;
 }
 
@@ -510,10 +648,9 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   Eigen::Affine3d points_to_drop_pose = Eigen::Affine3d::Identity(); // no transform needed
 
   // Get bounding box output
-  Eigen::Affine3d mesh_to_bounding; // is actually bin_to_bounding in our case since mesh is saved in BIN frame
+  Eigen::Affine3d bin_to_bounding_box; // is actually bin_to_bounding in our case since mesh is saved in BIN frame
   double depth, width, height;
-
-  if (!bounding_box_.getBodyAlignedBoundingBox(product->getCollisionMesh(), points_to_drop_pose, mesh_to_bounding, 
+  if (!bounding_box_.getBodyAlignedBoundingBox(product->getCollisionMesh(), points_to_drop_pose, bin_to_bounding_box, 
                                                depth, width, height))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to get bounding box");
@@ -523,10 +660,6 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   product->setDepth(depth);
   product->setWidth(width);
   product->setHeight(height);
-
-  // Get transform from bin to bounding box center
-  Eigen::Affine3d bin_to_bounding_box;
-  bin_to_bounding_box = mesh_to_bounding; // mesh is saved in the BIN frame already
 
   // visuals_->visual_tools_->publishAxisLabeled(world_to_bin * bin_to_bounding_box, "WORLD_TO_MESH");
   
@@ -547,7 +680,7 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   return true;
 }
 
-bool PerceptionInterface::checkBounds(const Eigen::Affine3d &bin_to_object, BinObjectPtr& bin, 
+bool PerceptionInterface::checkBounds(const Eigen::Affine3d &bin_to_object, BinObjectPtr& bin,
                                       ProductObjectPtr& product)
 {
   if (bin_to_object.translation().x() < 0 || bin_to_object.translation().x() > bin->getDepth() ||

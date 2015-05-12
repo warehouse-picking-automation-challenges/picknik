@@ -98,6 +98,10 @@ public:
    */
   bool processPerceptionResults(picknik_msgs::FindObjectsResultConstPtr result,
                                 ProductObjectPtr& product, BinObjectPtr& bin);
+  bool processPerceptionResultsDDTR(picknik_msgs::FindObjectsResultConstPtr result,
+                                ProductObjectPtr& product, BinObjectPtr& bin);
+  bool processPerceptionResultsPCL(picknik_msgs::FindObjectsResultConstPtr result,
+                                ProductObjectPtr& product, BinObjectPtr& bin);
 
   /**
    * \brief Calculate the bouding mesh for a product
@@ -111,15 +115,17 @@ public:
    */
   bool checkBounds(const Eigen::Affine3d &bin_to_object, BinObjectPtr& bin, ProductObjectPtr& product);
 
-private:
-
   /**
-   * \brief Get the latest location of the camera on the robot from ROS
-   * \param world_to_camera 4x4 matrix to fill in with transpose
+   * \brief Get the latest location of the frame on the robot from ROS
+   * \param world_to_frame 4x4 matrix to fill in with transpose
    * \param time_stamp - the time that the arm was in this location
    * \return true on success
    */
-  bool getCameraPose(Eigen::Affine3d& world_to_camera, ros::Time& time_stamp, const std::string& camera_frame);
+  bool getTFTransform(Eigen::Affine3d& world_to_frame, ros::Time& time_stamp, const std::string& frame_id);  
+  bool getTFTransform(Eigen::Affine3d& world_to_frame, ros::Time& time_stamp,
+                      const std::string& parent_frame_id, const std::string& frame_id);
+
+private:
 
   /**
    * \brief Display a visualization of a camera view frame

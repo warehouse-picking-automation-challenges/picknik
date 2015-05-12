@@ -212,6 +212,11 @@ public:
   void setBottomRight(const Eigen::Affine3d& bottom_right);
 
   /**
+   * \brief Setter for BottomRight that also updates top_left
+   */
+  void setBottomRightUpdateAll(const Eigen::Affine3d& bottom_right);
+
+  /**
    * \brief Setter for BottomRight
    */
   void setBottomRight(const double& x, const double& y, const double& z);

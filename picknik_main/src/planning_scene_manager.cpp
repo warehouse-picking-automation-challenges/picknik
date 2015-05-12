@@ -59,9 +59,9 @@ PlanningSceneManager::PlanningSceneManager(bool verbose, VisualsPtr visuals, She
   ROS_INFO_STREAM_NAMED("planning_scene_manager","PlanningSceneManager Ready.");
 }
 
-bool PlanningSceneManager::displayEmptyShelf()
+bool PlanningSceneManager::displayEmptyShelf(bool force)
 {
-  if (mode_ == EMPTY_SHELF)
+  if (!force && mode_ == EMPTY_SHELF)
   {
     return true;
   }
@@ -104,9 +104,9 @@ bool PlanningSceneManager::displayShelfWithOpenBins(bool force)
   return true;
 }
 
-bool PlanningSceneManager::displayShelfAsWall()
+bool PlanningSceneManager::displayShelfAsWall(bool force)
 {
-  if (mode_ == ONLY_COLLISION_WALL)
+  if (!force && mode_ == ONLY_COLLISION_WALL)
   {
     return true;
   }
@@ -128,9 +128,9 @@ bool PlanningSceneManager::displayShelfAsWall()
   return true;
 }
 
-bool PlanningSceneManager::displayShelfOnlyBin( const std::string& bin_name )
+bool PlanningSceneManager::displayShelfOnlyBin( const std::string& bin_name, bool force )
 {
-  if (mode_ == FOCUSED_ON_BIN && focused_bin_ == bin_name)
+  if (!force && mode_ == FOCUSED_ON_BIN && focused_bin_ == bin_name)
   {
     return true;
   }
@@ -155,7 +155,7 @@ bool PlanningSceneManager::displayShelfOnlyBin( const std::string& bin_name )
   return true;
 }
 
-bool PlanningSceneManager::testAllModes()
+bool PlanningSceneManager::testAllModes(bool force)
 {
   while (ros::ok())
   {

@@ -73,6 +73,67 @@ Its help documentation:
     optional arguments:
       -h, --help       show this help message and exit
 
+## Calibrate Cameras with TF
+
+The right camera is master.
+
+Attach calibration target to shelf with it right-aligned to shelf side
+
+### Right Camera to Shelf
+
+Run calibration target service
+
+    steve TODO
+
+Get transform from right camera to calibration target
+
+    rosrun tf tf_echo xtion_right_rgb_optical_frame calibration_target_frame
+
+Edit the launch file
+
+    rosed picknik_perception static_calibration_xtion.launch
+
+Reverse the rpy values to ypr. Then change the first static_transform in ``args`` of the first ``<node>`` using the xyz,ypr.
+
+## Right Camera to Left Camera
+
+Run calibration target service
+
+    steve TODO
+
+Get transform from left camera to calibration target and inverse using a special mode in ``picknik_main``:
+
+    roslaunch picknik_main jacob_apc.launch mode:=40 full_auto:=1
+
+Edit the launch file
+
+    rosed picknik_perception static_calibration_xtion.launch
+
+Reverse the rpy values to ypr. Then change the second static_transform in ``args`` of the first ``<node>`` using the xyz,ypr.
+
+## Robot to Right Camera
+
+Attach the calibration target to the hand, move arm to within view of the right camera.
+
+Run a special tf from wrist to target
+
+    roslaunch picknik_perception tf_keyboard_wrist_offset.launch
+
+Run the calibration taget service
+
+    steve TODO
+
+Get transform from right camera to wrist calibration target
+
+    rosrun tf tf_echo gantry_plate xtion_right_rgb_optical_frame
+
+Edit the launch file
+
+    rosed picknik_perception static_calibration_xtion.launch
+
+Reverse the rpy values to ypr. Then change the fourth static_transform in ``args`` of the first ``<node>`` using the xyz,ypr.
+	
+
 ## Run DDTR Perception Pipeline
 
 ### Run Shelf Calibration
@@ -116,7 +177,8 @@ Rviz Visualizers of robot states and debug markers
 Camera calibration:
 
     roslaunch picknik_perception multi_xtion_calibrate.launch
-
+    roslaunch picknik_perception static_calibration_xtion.launch
+	
 Run fake object recognition server:
 
 	roslaunch picknik_perception perception_server_fake.launch
@@ -147,9 +209,12 @@ Start cameras (on correct computer):
     sudo ntpdate pool.ntp.org 
     roslaunch picknik_perception multi_xtion.launch
 
-Camera calibration:
+Camera calibration (in development):
 
     roslaunch picknik_perception multi_xtion_calibrate.launch
+	roslaunch picknik_perception static_calibration_xtion.launch
+	roslaunch picknik_perception tf_keyboard_shelf_offset.launch
+	#roslaunch picknik_perception tf_keyboard_wrist_offset.launch
  
 Run APC Manager (main program) for JACOB on hardware. It will wait for perception server to start (below)
 
@@ -170,7 +235,7 @@ Keys
 
 You might also need the offset transform hack:
 
-    roslaunch picknik_perception tf_keyboard_testing_offset.launch
+    roslaunch picknik_perception tf_keyboard_perception_offset.launch
 
 ### Move Robot to Shutdown Mode
 
@@ -178,7 +243,7 @@ Safe for power-off:
 
     roslaunch picknik_main jacob_apc.launch fake_perception:=1 mode:=9 pose:=collapsed
 
-### Shelf to Robot Calibration
+### Shelf to Robot Calibration - OLD METHOD
 
 Adjust the values in ``config/apc_jacob.yaml`` for ``world_to_shelf_transform``:
 
@@ -197,12 +262,6 @@ Calibrate y axis
 Calibrate x axis
 
     roslaunch picknik_main jacob_apc.launch fake_perception:=1 mode:=9 pose:=x_calibration
-
-### Shelf to Camera Calibration
-
-Run the pre-recorded trajectory so that perception can build shelf model:
-
-    OLD roslaunch picknik_main jacob_apc.launch mode:=10 fake_perception:=1
 
 ### Jaco Joystick Control
 

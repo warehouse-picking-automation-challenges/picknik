@@ -15,6 +15,11 @@ Unzip the file and build
     unzip ws_picknik.zip
 	cd ws_picknik
 	rosdep install -y --from-paths src --ignore-src --rosdistro indigo
+
+Special instructions for ``industrial_extrinsic_cal`` - if you want to use this calibration package install gflags, glogl, and ceres as documented [here](http://wiki.ros.org/industrial_extrinsic_cal#Dependency_Installation). Or, add the file ``CATKIN_IGNORE`` to the root of the package to skip building this.
+
+Finally, in the root of the catkin workspace:
+
 	catkin build
 
 Setup udev rules to connect USB hardware to computer: see ``README.md`` in ``kinova_control`` and ``zaber_control`` packages.

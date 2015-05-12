@@ -6,5 +6,5 @@ initial_pitch: 0
 initial_yaw: 0
 from: world
 to: object_offset_hack
-file_name: tf_keyboard_hack_offset
-topic_name: /keyboard_hack/keydown
+file_name: tf_keyboard_perception_offset
+topic_name: /keyboard_perception_offset/keydown

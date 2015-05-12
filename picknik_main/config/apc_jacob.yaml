@@ -88,9 +88,10 @@ test:
 
 behavior:
   end_effector_enabled: true
-  super_auto: false
+  super_auto: true
   dropping_bounding_box: true
   use_camera_hack_offset: false
+  ddtr_mode: false
 
 
 
