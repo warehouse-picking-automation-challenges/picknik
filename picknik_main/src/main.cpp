@@ -12,6 +12,7 @@
    Desc:   Main function that processes arguments
 */
 
+#include  <stdlib.h>
 #include <picknik_main/apc_manager.h>
 
 // ROS
@@ -152,6 +153,16 @@ int main(int argc, char** argv)
     return 1; // error
   }
 
+
+  // Sort order according to expected scores
+  std::stringstream order_sorting_command;
+  order_sorting_command << "rosrun picknik_main sort_order.py " << order_file << " " << order_file;
+  // This swallows any type of error or output...
+  system(order_sorting_command.str().c_str());
+  ROS_DEBUG_STREAM_NAMED("main", "order sorted by running:");
+  ROS_DEBUG_STREAM_NAMED("main", order_sorting_command.str());
+
+
   picknik_main::APCManager manager(verbose, order_file, autonomous, full_autonomous, fake_execution, fake_perception);
 
   std::cout << std::endl;
@@ -177,14 +188,14 @@ int main(int argc, char** argv)
       break;
     case 4:
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Moving camera to each bin location");      
+      ROS_INFO_STREAM_NAMED("main","Moving camera to each bin location");
       manager.testCameraPositions();
       break;
     case 5:
       //if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Raise the roof (go up and down)");
       manager.testUpAndDown();
-      break;      
+      break;
     case 6:
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Plan to random valid locations");
@@ -205,7 +216,7 @@ int main(int argc, char** argv)
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Going to pose " << pose);
       manager.gotoPose(pose);
-      break;      
+      break;
     case 10:
       remove_from_shelf = false;
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
@@ -257,16 +268,16 @@ int main(int argc, char** argv)
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Testing approach lift retreat cartesian path");
       manager.testApproachLiftRetreat();
-      break;      
+      break;
     case 23:
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Unit tests for manipulation");
       manager.unitTests();
-      break;      
+      break;
     case 25:
       ROS_INFO_STREAM_NAMED("main","Testing IK solver");
       manager.testIKSolver();
-      break;      
+      break;
     case 26:
       ROS_INFO_STREAM_NAMED("main","Unit test for perception communication");
       manager.unitTestPerceptionComm();
