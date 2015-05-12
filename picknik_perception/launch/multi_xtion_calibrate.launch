@@ -11,7 +11,7 @@
   <!-- LEFT -->
   <include file="$(find picknik_perception)/launch/multi_xtion_calibrate_each.launch">
     <arg name="camera" default="xtion_left" />
-    <arg name="use_keyboard" default="false" />
+    <!-- <arg name="use_keyboard" default="false" /> -->
   </include>
 
 

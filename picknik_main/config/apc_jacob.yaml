@@ -91,6 +91,7 @@ behavior:
   super_auto: true
   dropping_bounding_box: true
   use_camera_hack_offset: false
+  ddtr_mode: false
 
 
 

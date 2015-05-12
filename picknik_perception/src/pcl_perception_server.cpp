@@ -136,7 +136,7 @@ public:
       pointcloud_filter_->setRegionOfInterest(front_bottom_right, back_top_left, roi_reduction_padding_x_, 
                                               roi_reduction_padding_y_, roi_reduction_padding_z_);
 
-      // TODO: this stop command is not really applicable to this method of perception
+      // Unused feature: stop commmand
       while (ros::ok())
       {
         // Wait until camera is done moving
