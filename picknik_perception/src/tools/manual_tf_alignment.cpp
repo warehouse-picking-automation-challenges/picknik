@@ -214,8 +214,9 @@ void ManualTFAlignment::writeTFToFile()
     ROS_ERROR_STREAM_NAMED("tf_align.write","Output file could not be opened: " << save_path_);
   else
   {
-    ROS_INFO_STREAM_NAMED("tf_align.write","Camera translation = \n " << translation_);
-    ROS_INFO_STREAM_NAMED("tf_align.write","Camera rotations = \n" << rotation_);
+    ROS_INFO_STREAM_NAMED("tf_align.write","Initial transform  : " << translation_[0] << ", " << translation_[1] 
+                          << ", " << translation_[2] << " | " << rotation_[0] << ", " << rotation_[1] 
+                          << ", " << rotation_[2] );  
     
     file << "initial_x: " << translation_[0] << std::endl;
     file << "initial_y: " << translation_[1] << std::endl;

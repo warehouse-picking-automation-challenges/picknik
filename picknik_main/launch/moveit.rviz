@@ -7,15 +7,13 @@ Panels:
         - /Grid1/Offset1
         - /Amazon Markers1/Namespaces1
         - /Amazon Trajectory Markers1/Namespaces1
-        - /OMPL Experience1
         - /OMPL Experience1/Namespaces1
         - /PlanningScene1
         - /PlanningScene1/Scene Geometry1
-        - /TF1
         - /TF1/Frames1
         - /DepthCloud1/Auto Size1
-      Splitter Ratio: 0.619256
-    Tree Height: 681
+      Splitter Ratio: 0.719912
+    Tree Height: 709
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -667,7 +665,7 @@ Visualization Manager:
         Scene Alpha: 1
         Scene Color: 255; 170; 0
         Scene Display Time: 0.2
-        Show Scene Geometry: false
+        Show Scene Geometry: true
         Voxel Coloring: Z-Axis
         Voxel Rendering: Occupied Voxels
       Scene Robot:
@@ -776,175 +774,19 @@ Visualization Manager:
         Show Robot Visual: false
       Value: true
     - Class: rviz/TF
-      Enabled: true
+      Enabled: false
       Frame Timeout: 5
       Frames:
-        All Enabled: false
-        base:
-          Value: false
-        bin_A:
-          Value: false
-        bin_B:
-          Value: false
-        bin_C:
-          Value: false
-        bin_D:
-          Value: false
-        bin_E:
-          Value: false
-        bin_F:
-          Value: false
-        bin_G:
-          Value: false
-        bin_H:
-          Value: false
-        bin_I:
-          Value: false
-        bin_J:
-          Value: false
-        bin_K:
-          Value: false
-        bin_L:
-          Value: false
-        calibration_target_frame:
-          Value: true
-        frame:
-          Value: true
-        gantry:
-          Value: true
-        gantry_plate:
-          Value: true
-        jaco2_end_effector:
-          Value: false
-        jaco2_link_1:
-          Value: false
-        jaco2_link_2:
-          Value: false
-        jaco2_link_3:
-          Value: false
-        jaco2_link_4:
-          Value: false
-        jaco2_link_5:
-          Value: false
-        jaco2_link_base:
-          Value: false
-        jaco2_link_finger_1:
-          Value: false
-        jaco2_link_finger_1_tip:
-          Value: false
-        jaco2_link_finger_2:
-          Value: false
-        jaco2_link_finger_2_tip:
-          Value: false
-        jaco2_link_finger_3:
-          Value: false
-        jaco2_link_finger_3_tip:
-          Value: false
-        jaco2_link_hand:
-          Value: false
-        jaco2_wrist:
-          Value: false
-        object_offset_hack:
-          Value: false
-        shelf:
-          Value: true
-        world:
-          Value: true
-        xtion_left_depth_frame:
-          Value: true
-        xtion_left_depth_optical_frame:
-          Value: true
-        xtion_left_link:
-          Value: true
-        xtion_left_rgb_frame:
-          Value: true
-        xtion_left_rgb_optical_frame:
-          Value: true
-        xtion_right_depth_frame:
-          Value: true
-        xtion_right_depth_optical_frame:
-          Value: true
-        xtion_right_link:
-          Value: true
-        xtion_right_rgb_frame:
-          Value: true
-        xtion_right_rgb_optical_frame:
-          Value: true
+        All Enabled: true
       Marker Scale: 0.25
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        world:
-          base:
-            frame:
-              gantry:
-                gantry_plate:
-                  jaco2_link_base:
-                    jaco2_link_1:
-                      jaco2_link_2:
-                        jaco2_link_3:
-                          jaco2_link_4:
-                            jaco2_link_5:
-                              jaco2_wrist:
-                                jaco2_link_hand:
-                                  jaco2_end_effector:
-                                    {}
-                                  jaco2_link_finger_1:
-                                    jaco2_link_finger_1_tip:
-                                      {}
-                                  jaco2_link_finger_2:
-                                    jaco2_link_finger_2_tip:
-                                      {}
-                                  jaco2_link_finger_3:
-                                    jaco2_link_finger_3_tip:
-                                      {}
-                  xtion_left_link:
-                    xtion_left_depth_frame:
-                      xtion_left_depth_optical_frame:
-                        {}
-                    xtion_left_rgb_frame:
-                      xtion_left_rgb_optical_frame:
-                        {}
-                  xtion_right_link:
-                    xtion_right_depth_frame:
-                      xtion_right_depth_optical_frame:
-                        {}
-                    xtion_right_rgb_frame:
-                      xtion_right_rgb_optical_frame:
-                        {}
-          object_offset_hack:
-            {}
-          shelf:
-            bin_A:
-              {}
-            bin_B:
-              {}
-            bin_C:
-              {}
-            bin_D:
-              {}
-            bin_E:
-              {}
-            bin_F:
-              {}
-            bin_G:
-              {}
-            bin_H:
-              {}
-            bin_I:
-              {}
-            bin_J:
-              {}
-            bin_K:
-              {}
-            bin_L:
-              {}
-            calibration_target_frame:
-              {}
+        {}
       Update Interval: 0
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -967,9 +809,9 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 3
+      Size (Pixels): 2
       Size (m): 0.01
-      Style: Flat Squares
+      Style: Points
       Topic: /xtion_left/depth_registered/points
       Use Fixed Frame: true
       Use rainbow: true
@@ -996,7 +838,7 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 2
+      Size (Pixels): 4
       Size (m): 0.01
       Style: Points
       Topic: /xtion_right/depth_registered/points
@@ -1015,7 +857,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -1025,13 +867,13 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 3
+      Size (Pixels): 2
       Size (m): 0.01
       Style: Points
       Topic: /merge_point_clouds/points
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -1054,28 +896,121 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 3
+      Size (Pixels): 2
       Size (m): 0.01
       Style: Points
       Topic: /pcl_perception_server/roi_cloud
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
-    - Alpha: 1
+    - Alpha: 0.5
       Class: rviz/RobotModel
       Collision Enabled: false
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gantry:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gantry_plate:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_end_effector:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        jaco2_link_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_1_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_2_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_3_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_hand:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_wrist:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
       Update Interval: 0
-      Value: false
+      Value: true
       Visual Enabled: true
     - Alpha: 1
       Auto Size:
@@ -1137,36 +1072,36 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 2.901
+      Distance: 4.87064
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.0707698
-        Y: -0.152739
-        Z: -4.76838e-07
+        X: 2.99549
+        Y: 0.814383
+        Z: -1.88445e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.895398
+      Pitch: 0.274797
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.88539
+      Yaw: 3.62536
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1028
+  Height: 1056
   Help:
     collapsed: false
   Hide Left Dock: false
   Hide Right Dock: false
   PickNik:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000001db000003e6fc020000000dfb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c006100790073010000000000000377000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000145000000cb000000b000fffffffb0000000c00430061006d0065007200610000000369000000160000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000230000001b60000000000000000fb0000000c00540065006c0065006f00700000000331000000b50000000000000000fb0000000e005000690063006b004e0069006b010000037d000000690000004300fffffffb0000000c00430061006d00650072006100000003d0000000160000000000000000fb0000000c00430061006d00650072006101000002d6000001100000000000000000000002c5000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000001db00000402fc020000000dfb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c006100790073010000000000000393000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000145000000cb000000b000fffffffb0000000c00430061006d0065007200610000000369000000160000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000230000001b60000000000000000fb0000000c00540065006c0065006f00700000000331000000b50000000000000000fb0000000e005000690063006b004e0069006b0100000399000000690000004300fffffffb0000000c00430061006d00650072006100000003d0000000160000000000000000fb0000000c00430061006d00650072006101000002d60000011000000000000000000000059f0000040200000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
   Views:
     collapsed: false
-  Width: 1190
-  X: 1913
-  Y: 14
+  Width: 1920
+  X: 1193
+  Y: 24

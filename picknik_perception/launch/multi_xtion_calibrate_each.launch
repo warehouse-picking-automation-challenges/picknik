@@ -2,6 +2,7 @@
 
   <arg name="camera" default="camera" />
   <arg name="tf_prefix" default="" />
+  <arg name="use_keyboard" default="true" />
 
   <arg name="pi/2" value="1.5707963267948966" />
   <arg name="optical_rotate" value="0 0 0 -$(arg pi/2) 0 -$(arg pi/2)" />
@@ -15,10 +16,10 @@
   <node pkg="tf" type="static_transform_publisher" name="$(arg camera)_base_link3"
     args="$(arg optical_rotate) $(arg tf_prefix)/$(arg camera)_rgb_frame $(arg tf_prefix)/$(arg camera)_rgb_optical_frame 100" />  
 
-  <!-- Keyboard calibraiton -->
+  <!-- Keyboard calibration -->
   <!-- NOTE: will open tiny window, keyboard presses register when this is in focus -->
-  <node pkg="keyboard" type="keyboard" name="keyboard_$(arg camera)" />
-  <node pkg="picknik_perception" type="tf_keyboard" name="tf_keyboard_$(arg camera)" output="screen">
+  <node pkg="keyboard" type="keyboard" name="keyboard_$(arg camera)" if="$(arg use_keyboard)"/>
+  <node pkg="picknik_perception" type="tf_keyboard" name="tf_keyboard_$(arg camera)" output="screen" if="$(arg use_keyboard)">
     <rosparam command="load" file="$(find picknik_perception)/config/tf/tf_$(arg camera).yaml"/>
   </node>
 
