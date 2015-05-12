@@ -316,6 +316,10 @@ int main(int argc, char** argv)
       manager.testInCollision();
       ros::Duration(5.0).sleep();
       break;
+    case 43:
+      ROS_INFO_STREAM_NAMED("main","Calibrate shelf");
+      manager.calibrateShelf();
+      break;
 
     case 50:
       ROS_INFO_STREAM_NAMED("main","Train experience database mode");

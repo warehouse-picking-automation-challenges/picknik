@@ -1,0 +1,10 @@
+initial_x: 0.713
+initial_y: -0.457
+initial_z: -0.047
+initial_roll: -0.002
+initial_pitch: -0.01
+initial_yaw: 0.012
+from: world
+to: shelf
+file_name: tf_keyboard_world_to_shelf
+topic_name: /keyboard_world_to_shelf/keydown

@@ -626,7 +626,7 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   // pcl_perception_server saves the mesh in the BIN pose.
   // drop_pose is set to identity to match the BIN pose.
   Eigen::Affine3d world_to_bin = shelf_->getBottomRight() * bin->getBottomRight();
-  visuals_->visual_tools_->publishAxisLabeled(world_to_bin, "WORLD_TO_BIN");
+  //visuals_->visual_tools_->publishAxisLabeled(world_to_bin, "WORLD_TO_BIN");
 
   ROS_DEBUG_STREAM_NAMED("perception_interface","world_to_bin_corner = \n" << world_to_bin.translation() 
                          << "\n" << world_to_bin.rotation());
@@ -639,7 +639,7 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
     bounding_box_.drop_plane_ = bounding_box::XY;
     bounding_box_.drop_points_ = true;
 
-    visuals_->visual_tools_->publishAxisLabeled(world_to_bin * bounding_box_.drop_pose_, "BOUNDING_BOX_DROP_POSE");
+    //visuals_->visual_tools_->publishAxisLabeled(world_to_bin * bounding_box_.drop_pose_, "BOUNDING_BOX_DROP_POSE");
   }
 
   // Transform from the mesh to the drop pose
@@ -661,7 +661,7 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   product->setWidth(width);
   product->setHeight(height);
 
-  visuals_->visual_tools_->publishAxisLabeled(world_to_bin * bin_to_bounding_box, "WORLD_TO_MESH");
+  //visuals_->visual_tools_->publishAxisLabeled(world_to_bin * bin_to_bounding_box, "WORLD_TO_MESH");
   
   product->setCentroid(bin_to_bounding_box);
 

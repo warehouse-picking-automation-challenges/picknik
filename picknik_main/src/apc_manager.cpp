@@ -685,9 +685,56 @@ bool APCManager::testVisualizeShelf()
   // Generate random product poses and visualize the shelf
   createRandomProductPoses();
 
+  if (false)
+  {
+    while(ros::ok())
+    {
+      ros::Duration(1).sleep();
+      ROS_INFO_STREAM_NAMED("apc_manager","Updating shelf location");
+
+      // Get the latest shelf pose
+      Eigen::Affine3d world_to_shelf;
+      ros::Time time_stamp;
+      std::string frame_id = "shelf";
+      perception_interface_->getTFTransform(world_to_shelf, time_stamp, frame_id);
+
+      // Update the shelf
+      shelf_->setBottomRightUpdateAll(world_to_shelf);
+      bool force = true;
+      planning_scene_manager_->displayEmptyShelf(force);
+
+      // Debugging - inverse left camera to cal target
+      //getInertedLeftCameraPose();
+    }
+  }
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Ready to shutdown");
+  ros::spin();
+  return true;
+}
+
+// Mode 43
+bool APCManager::calibrateShelf()
+{
+  ROS_INFO_STREAM_NAMED("apc_manager","Visualize shelf");
+
+  // Save first state
+  remote_control_->waitForNextStep("to move to state 1");
+  visuals_->start_state_->publishRobotState(manipulation_->getCurrentState(), rvt::GREEN);
+
+  // Save second state
+  remote_control_->waitForNextStep("to move to state 2");
+  visuals_->goal_state_->publishRobotState(manipulation_->getCurrentState(), rvt::ORANGE);
+
+  // Save third state
+  remote_control_->waitForNextStep("to move to state 3");
+  visuals_->visual_tools_->publishRobotState(manipulation_->getCurrentState(), rvt::PURPLE);
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Now update with keyboard calibration");
+  Eigen::Affine3d world_to_shelf_previous;
   while(ros::ok())
   {
-    ros::Duration(1).sleep();
+    ros::Duration(0.25).sleep();
     ROS_INFO_STREAM_NAMED("apc_manager","Updating shelf location");
 
     // Get the latest shelf pose
@@ -696,18 +743,20 @@ bool APCManager::testVisualizeShelf()
     std::string frame_id = "shelf";
     perception_interface_->getTFTransform(world_to_shelf, time_stamp, frame_id);
 
-    // Update the shelf
+    // Update the shelf if different
+    //if (world_to_shelf.translation().x()
     shelf_->setBottomRightUpdateAll(world_to_shelf);
     bool force = true;
     planning_scene_manager_->displayEmptyShelf(force);
+
+    // Save for next loop
+    world_to_shelf_previous = world_to_shelf;
 
     // Debugging - inverse left camera to cal target
     //getInertedLeftCameraPose();
   }
 
-
   ROS_INFO_STREAM_NAMED("apc_manager","Ready to shutdown");
-  ros::spin();
   return true;
 }
 

@@ -324,7 +324,8 @@ Button Mapings
         DEBUGGING
         40. Visualize shelf
         41. SRDF: Get the current pose of the robot for the SRDF
-		42. Check if current state is in collision		
+		42. Check if current state is in collision
+		43. Calibrate shelf
 
         EXPERIENCE PLANNING
 		50. Train experience database mode / workspace analysis
