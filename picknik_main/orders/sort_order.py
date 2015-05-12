@@ -19,7 +19,7 @@ class ContestInterface(object):
     # objects too often... If this is low, the sorting order will
     # tipically have the easiest items from the most crowded bins
     # first. If it gets higher, single item bins will be preferred.
-    _p_mistakes = 0.2
+    _p_mistakes = 10
     _possible_items = list(_p_grasping_correctly)
     del data
 
