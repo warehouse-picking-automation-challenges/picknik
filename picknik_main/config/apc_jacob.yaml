@@ -90,7 +90,7 @@ behavior:
   end_effector_enabled: true
   super_auto: false
   dropping_bounding_box: true
-  use_camera_hack_offset: true
+  use_camera_hack_offset: false
 
 
 
