@@ -12,11 +12,27 @@
    Desc:   Main function that processes arguments
 */
 
-#include  <stdlib.h>
+#include <string>
+#include <iostream>
+#include <stdio.h>
 #include <picknik_main/apc_manager.h>
 
 // ROS
 #include <ros/ros.h>
+
+// Adapted from http://stackoverflow.com/a/478960/1191119
+std::string exec(const char* cmd) {
+    FILE* pipe = popen(cmd, "r");
+    if (!pipe) return "ERROR";
+    char buffer[128];
+    std::string result = "";
+    while(!feof(pipe)) {
+    	if(fgets(buffer, 128, pipe) != NULL)
+    		result += buffer;
+    }
+    pclose(pipe);
+    return result;
+}
 
 int main(int argc, char** argv)
 {
@@ -157,11 +173,14 @@ int main(int argc, char** argv)
   // Sort order according to expected scores
   std::stringstream order_sorting_command;
   order_sorting_command << "rosrun picknik_main sort_order.py " << order_file << " " << order_file;
-  // This swallows any type of error or output...
-  system(order_sorting_command.str().c_str());
+  std::string result;
+  result = exec(order_sorting_command.str().c_str());
   ROS_DEBUG_STREAM_NAMED("main", "order sorted by running:");
   ROS_DEBUG_STREAM_NAMED("main", order_sorting_command.str());
+  ROS_DEBUG_STREAM_NAMED("main", "returned:");
+  ROS_DEBUG_STREAM_NAMED("main", result);
 
+  if (result.compare("ERROR") == 0) {return 1;}
 
   picknik_main::APCManager manager(verbose, order_file, autonomous, full_autonomous, fake_execution, fake_perception);
 
