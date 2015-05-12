@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
 import json
@@ -5,11 +6,19 @@ from collections import Counter
 from itertools import chain
 import warnings
 
+import inspect
+import os
+
 import pandas as pd
+
+def get_path(fn):
+    filename = inspect.getframeinfo(inspect.currentframe()).filename
+    path = os.path.dirname(os.path.abspath(filename))
+    return os.path.join(path, fn)
 
 
 class ContestInterface(object):
-    data = pd.read_csv('items_data.csv', index_col=0)
+    data = pd.read_csv(get_path('items_data.csv'), index_col=0)
     # These are the probabilites to correctly perform a grasp for each
     # object. Probabilities are not random, but they should be tuned
     # as testing progresses so that the robot starts picking the
