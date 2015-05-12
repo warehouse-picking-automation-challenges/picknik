@@ -139,8 +139,6 @@ public:
       // TODO: this stop command is not really applicable to this method of perception
       while (ros::ok())
       {
-        // Do perception processing HERE
-
         // Wait until camera is done moving
         if (manipulation_interface_->isReadyToStopPerception())
           break;
@@ -148,13 +146,6 @@ public:
         // Wait
         rate.sleep();
       }
-
-      // DROP POINTS NEEDS TO BE TURNED ON HERE!
-      Eigen::Affine3d drop_pose = front_bottom_right;
-      drop_pose.translation() += Eigen::Vector3d(roi_reduction_padding_x_, roi_reduction_padding_y_, roi_reduction_padding_z_);
-      pointcloud_filter_->bounding_box_.drop_pose_ = drop_pose;
-      pointcloud_filter_->bounding_box_.drop_plane_ = bounding_box::XY;
-      pointcloud_filter_->bounding_box_.drop_points_ = true;      
       
       if (!pointcloud_filter_->detectObjects(use_outlier_removal_))
       {
@@ -162,23 +153,25 @@ public:
         return false;
       }
 
-      visual_tools_->publishWireframeCuboid(pointcloud_filter_->bbox_pose_, 
-                                            pointcloud_filter_->bbox_depth_, 
-                                            pointcloud_filter_->bbox_width_, 
-                                            pointcloud_filter_->bbox_height_, 
-                                            rviz_visual_tools::RED);
-      visual_tools_->publishAxisLabeled(pointcloud_filter_->bounding_box_.drop_pose_, "DROP_POSE_X");
-
       // Finish up perception
       ROS_INFO_STREAM_NAMED("pcl_perception_server","Finishing up perception");
 
       // Convert point cloud to mesh
+      // NOTE: mesh is being saved in the BIN coordinate system
+
+      // check that point cloud is given in the world coordinate system (front_bottom_right is world -> bin)
+      std::string frame_check = pointcloud_filter_->roi_cloud_->header.frame_id; 
+      if ( frame_check.compare("/world") != 0 )
+      {
+        ROS_WARN_STREAM_NAMED("pcl_perception_server","input cloud expected to be in world. frame_id = " << frame_check);
+      }
+
+      // create mesh message in BIN frame
       shape_msgs::Mesh mesh_msg;
-      mesh_msg = bounding_box::createMeshMsg(pointcloud_filter_->bounding_box_.cloud_, pointcloud_filter_->getObjectPose());
+      mesh_msg = bounding_box::createMeshMsg(pointcloud_filter_->roi_cloud_, front_bottom_right);
 
       ROS_INFO_STREAM_NAMED("pcl_perception_server","Finished computing mesh msg");
       ROS_DEBUG_STREAM_NAMED("test","sizes = " << mesh_msg.triangles.size() << ", " << mesh_msg.vertices.size());
-      //visual_tools_->publishCollisionMesh(Eigen::Affine3d::Identity(), "object", mesh_msg, rviz_visual_tools::BLUE);
 
       // Create results
       picknik_msgs::FindObjectsResult result;
@@ -193,13 +186,22 @@ public:
         new_product.object_name = request->expected_objects_names[i];
 
         // Object pose
-        pointcloud_filter_->getObjectPose(new_product.object_pose.pose);
-        new_product.object_pose.header.frame_id = "world";
+        // perception_interface assumes that everything is in the BIN frame
+        new_product.object_pose.pose = visual_tools_->convertPose(Eigen::Affine3d::Identity());
 
+        // Check that the product's frame_id is populated correctly
+        std::string product_frame_id = request->bin_name;;
+        if (product_frame_id.compare(0,3,"BIN") !=0)
+        {
+          ROS_WARN_STREAM_NAMED("pcl_perception_server","new_product frame_id. expected BIN_*, got " << request->bin_name);
+        }
+        new_product.object_pose.header.frame_id = product_frame_id;
+        
         // Value between 0 and 1 for each expected object's confidence of its pose
         new_product.expected_object_confidence = 1.0;
 
         // Set mesh
+        // NOTE: the mesh message is with respect to the BIN frame
         new_product.bounding_mesh = mesh_msg;
 
         // Add object to result

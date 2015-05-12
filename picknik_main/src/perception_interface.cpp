@@ -399,10 +399,12 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
     updateBoundingMesh(product, bin);
 
     // Visualize bounding box
-    product->visualizeWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()), rvt::LIME_GREEN);
+    // the mesh is saved in the bin coordinate system by pcl_perception_server
+    Eigen::Affine3d world_to_bin = shelf_->getBottomRight() * bin->getBottomRight();
+    product->visualizeWireframe(world_to_bin, rvt::LIME_GREEN);
 
     // Visualize bounding box in high res display
-    product->visualizeHighResWireframe(transform(bin->getBottomRight(), shelf_->getBottomRight()), rvt::LIME_GREEN);
+    product->visualizeHighResWireframe(world_to_bin, rvt::LIME_GREEN);
 
     // Show the new mesh
     if (has_new_mesh)
@@ -490,67 +492,52 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   ROS_DEBUG_STREAM_NAMED("perception_interface","Updating bounding mesh for product " << product->getName());
   bool verbose_bounding_box = visuals_->isEnabled("verbose_bounding_box");
 
-  // Debug
-  if (verbose_bounding_box)
-  {
-    std::cout << std::endl;
-    std::cout << "-------------------------------------------------------" << std::endl;
+  /***** GET BOUNDING BOX FROM MESH *****/
+  // pcl_perception_server saves the mesh in the BIN pose.
+  // drop_pose is set to identity to match the BIN pose.
+  Eigen::Affine3d world_to_bin = shelf_->getBottomRight() * bin->getBottomRight();
+  visuals_->visual_tools_->publishAxisLabeled(world_to_bin, "WORLD_TO_BIN");
 
-    // std::cout << "Before getBoundingingBoxFromMesh(): " << std::endl;
-    // std::cout << "  Cuboid Pose: "; printTransform(product->getCentroid());
-    // std::cout << "  Height: " << product->getHeight() << std::endl;
-    // std::cout << "  Depth: " << product->getDepth() << std::endl;
-    // std::cout << "  Width: " << product->getWidth() << std::endl;
-    // std::cout << std::endl;
-  }
-  Eigen::Affine3d bin_to_world = shelf_->getBottomRight() * bin->getBottomRight();
+  ROS_DEBUG_STREAM_NAMED("perception_interface","world_to_bin_corner = \n" << world_to_bin.translation() 
+                         << "\n" << world_to_bin.rotation());
 
   if (config_->isEnabled("dropping_bounding_box"))
   {
-    //Eigen::Affine3d cuboid_to_bin;
     ROS_DEBUG_STREAM_NAMED("perception_interface","Dropping points to plane for " << product->getName());
 
-    bounding_box_.drop_pose_ = bin_to_world.inverse(); //product->getCentroid().inverse();
+    bounding_box_.drop_pose_ = Eigen::Affine3d::Identity();
     bounding_box_.drop_plane_ = bounding_box::XY;
     bounding_box_.drop_points_ = true;
 
-    visuals_->visual_tools_->publishAxisLabeled(bounding_box_.drop_pose_, "DROP_POSE");
+    visuals_->visual_tools_->publishAxisLabeled(world_to_bin * bounding_box_.drop_pose_, "BOUNDING_BOX_DROP_POSE");
   }
 
-  Eigen::Affine3d mesh_to_world = product->getCentroid() * bin_to_world;
-  visuals_->visual_tools_->publishAxisLabeled(mesh_to_world.inverse(), "MESH_TO_WORLD");
+  // Transform from the mesh to the drop pose
+  // NOTE: drop pose is in the BIN frame
+  // NOTE: mesh is in the BIN frame
+  Eigen::Affine3d points_to_drop_pose = Eigen::Affine3d::Identity(); // no transform needed
 
-  // Get bounding box
-  Eigen::Affine3d bounding_to_mesh; // this is the output
+  // Get bounding box output
+  Eigen::Affine3d mesh_to_bounding; // is actually bin_to_bounding in our case since mesh is saved in BIN frame
   double depth, width, height;
-  if (!bounding_box_.getBodyAlignedBoundingBox(product->getCollisionMesh(), mesh_to_world, bounding_to_mesh,
+  if (!bounding_box_.getBodyAlignedBoundingBox(product->getCollisionMesh(), points_to_drop_pose, mesh_to_bounding, 
                                                depth, width, height))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to get bounding box");
     return false;
   }
+
   product->setDepth(depth);
   product->setWidth(width);
   product->setHeight(height);
 
-  const Eigen::Affine3d &mesh_to_bin = product->getMeshCentroid(); // perception results (centroid of mesh to bin)
+  // Get transform from bin to bounding box center
+  Eigen::Affine3d bin_to_bounding_box;
+  bin_to_bounding_box = mesh_to_bounding; // mesh is saved in the BIN frame already
 
-  // Debug
-  if (verbose_bounding_box)
-  {
-    std::cout << "Bounding to Mesh: ";
-    printTransform(bounding_to_mesh);
-
-    std::cout << "Mesh to bin:      ";
-    printTransform(mesh_to_bin);
-
-    // View
-    const Eigen::Affine3d bounding_to_world = bounding_to_mesh * mesh_to_bin * bin_to_world;
-    //visuals_->visual_tools_->publishAxisLabeled(bounding_to_world, "bounding_to_world");
-  }
-
-  const Eigen::Affine3d bounding_to_bin = mesh_to_bin * bounding_to_mesh;
-  product->setCentroid(bounding_to_bin);
+  visuals_->visual_tools_->publishAxisLabeled(world_to_bin * bin_to_bounding_box, "WORLD_TO_MESH");
+  
+  product->setCentroid(bin_to_bounding_box);
 
   // Debug
   if (verbose_bounding_box)
