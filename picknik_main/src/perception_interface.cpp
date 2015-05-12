@@ -628,8 +628,8 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   Eigen::Affine3d world_to_bin = shelf_->getBottomRight() * bin->getBottomRight();
   //visuals_->visual_tools_->publishAxisLabeled(world_to_bin, "WORLD_TO_BIN");
 
-  ROS_DEBUG_STREAM_NAMED("perception_interface","world_to_bin_corner = \n" << world_to_bin.translation() 
-                         << "\n" << world_to_bin.rotation());
+  // ROS_DEBUG_STREAM_NAMED("perception_interface","world_to_bin_corner = \n" << world_to_bin.translation() 
+  //                        << "\n" << world_to_bin.rotation());
 
   if (config_->isEnabled("dropping_bounding_box"))
   {
@@ -661,8 +661,6 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   product->setWidth(width);
   product->setHeight(height);
 
-  //visuals_->visual_tools_->publishAxisLabeled(world_to_bin * bin_to_bounding_box, "WORLD_TO_MESH");
-  
   product->setCentroid(bin_to_bounding_box);
 
   // Debug
