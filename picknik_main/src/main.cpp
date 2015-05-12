@@ -176,7 +176,11 @@ int main(int argc, char** argv)
   std::string result;
   result = exec(order_sorting_command.str().c_str());
   ROS_DEBUG_STREAM_NAMED("main", "order sorted by running: \"" << order_sorting_command.str() << "\" returned: " << result);
-  if (result.compare("ERROR") == 0) {return 1;}
+  if (result.compare("ERROR") == 0) {
+    ROS_ERROR_STREAM_NAMED("main", "Running the sorting command failed, aborting.");
+    return 1;
+  }
+  if (!result.empty()) { ROS_DEBUG_STREAM_NAMED("main", "Sorting might have failed, let's try to keep going"); }
 
   picknik_main::APCManager manager(verbose, order_file, autonomous, full_autonomous, fake_execution, fake_perception);
 

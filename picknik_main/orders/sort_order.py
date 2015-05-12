@@ -119,16 +119,22 @@ class ContestInterface(object):
 
 
 if __name__ == '__main__':
+    import sys
+    import traceback
     import argparse
 
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("input_filename", type=str,
-                        help="filename for the json order")
-    parser.add_argument("output_filename", type=str,
-                        help="filename for the sorted order")
+    try:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("input_filename", type=str,
+                            help="filename for the json order")
+        parser.add_argument("output_filename", type=str,
+                            help="filename for the sorted order")
 
-    args = parser.parse_args()
+        args = parser.parse_args()
 
-    contest = ContestInterface.from_json(args.input_filename)
-    contest.to_json(args.output_filename, sort=True)
+        contest = ContestInterface.from_json(args.input_filename)
+        contest.to_json(args.output_filename, sort=True)
+        raise ValueError
+    except:
+        traceback.print_exc(file=sys.stdout)
