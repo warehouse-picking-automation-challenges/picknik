@@ -175,11 +175,7 @@ int main(int argc, char** argv)
   order_sorting_command << "rosrun picknik_main sort_order.py " << order_file << " " << order_file;
   std::string result;
   result = exec(order_sorting_command.str().c_str());
-  ROS_DEBUG_STREAM_NAMED("main", "order sorted by running:");
-  ROS_DEBUG_STREAM_NAMED("main", order_sorting_command.str());
-  ROS_DEBUG_STREAM_NAMED("main", "returned:");
-  ROS_DEBUG_STREAM_NAMED("main", result);
-
+  ROS_DEBUG_STREAM_NAMED("main", "order sorted by running: \"" << order_sorting_command.str() << "\" returned: " << result);
   if (result.compare("ERROR") == 0) {return 1;}
 
   picknik_main::APCManager manager(verbose, order_file, autonomous, full_autonomous, fake_execution, fake_perception);
