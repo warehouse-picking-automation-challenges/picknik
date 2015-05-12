@@ -1,0 +1,34 @@
+<launch>
+  <!-- red - roll, green - pitch, blue - yall -->
+  
+  <!-- RIGHT camera to cal target -->
+  <!-- rosrun tf tf_echo xtion_right_rgb_optical_frame calibration_target_frame -->
+  <!-- YOU HAVE TO REVERSE rpy to ypr -->
+  <!-- Usage: static_transform_publisher x y z yaw pitch roll frame_id child_frame_id  period(milliseconds)  -->
+  <node pkg="tf" type="static_transform_publisher" name="xtion_right_rgb_optical_frame_TO_calibration_target_frame"
+	args="-0.237 0.279 0.771 0.036 0.186 -3.011 /xtion_right_rgb_optical_frame /calibration_target_frame 50" />
+
+  <!-- cal target to LEFT camera -->
+  <node pkg="tf" type="static_transform_publisher"
+	name="calibration_target_frame_TO_xtion_left_rgb_optical_frame_original"
+	args="-0.347004 0.368296 0.643418 -0.00501143 -0.218205 2.83186 /calibration_target_frame /xtion_left_rgb_optical_frame_original 50" />
+
+  <!-- LEFT rgb optical original to LEFT camera link-->
+  <node pkg="tf" type="static_transform_publisher" name="xtion_left_rgb_optical_frame_original_TO_xtion_left_link"
+	args="-0.045 0.0 0.0 0.0 -1.571 1.571 xtion_left_rgb_optical_frame_original xtion_left_link 50" />
+  
+  <!-- gantry_plate to RIGHT rgb optical -->
+  <!-- <node pkg="tf" type="static_transform_publisher" -->
+  <!-- 	name="gantry_plate_TO_xtion_right_rgb_optical_frame_original" -->
+  <!-- 	args=" /gantry_plate /xtion_right_rgb_optical_frame_original 50" /> -->
+
+  <!-- cal target to RIGHT camera -->
+  <node pkg="tf" type="static_transform_publisher"
+	name="calibration_hand_target_TO_xtion_right_rgb_optical_frame_original"
+	args="0.114 0.155 0.603 0.042 0.085 3.001 /calibration_hand_target /xtion_right_rgb_optical_frame_original 50" />
+
+  <!-- RIGHT rgb optical original to RIGHT camera link-->
+  <!-- <node pkg="tf" type="static_transform_publisher" name="xtion_right_rgb_optical_frame_original_TO_xtion_right_link" -->
+  <!-- 	args="-0.045 0.0 0.0 0.0 -1.571 1.571 xtion_right_rgb_optical_frame_original xtion_right_link 50" /> -->
+
+</launch>

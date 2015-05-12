@@ -4,13 +4,13 @@
   <!-- Manual calibration of gantry to camera -->
   <node pkg="keyboard" type="keyboard" name="keyboard_camera_pose" />
   <node pkg="picknik_perception" type="tf_keyboard" name="tf_keyboard_camera_pose" output="screen">
-    <rosparam command="load" file="$(find picknik_perception)/config/tf_keyboard_camera_pose.yaml"/>
+    <rosparam command="load" file="$(find picknik_perception)/config/tf/tf_keyboard_camera_pose.yaml"/>
   </node>
 
   <!-- Manual calibration of product hack offset -->
   <node pkg="keyboard" type="keyboard" name="keyboard_hack" />
   <node pkg="picknik_perception" type="tf_keyboard" name="tf_keyboard_hack" output="screen">
-    <rosparam command="load" file="$(find picknik_perception)/config/tf_keyboard_hack_offset.yaml"/>
+    <rosparam command="load" file="$(find picknik_perception)/config/tf/tf_keyboard_hack_offset.yaml"/>
   </node>
 
   <arg name="camera" default="camera" />

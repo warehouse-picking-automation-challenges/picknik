@@ -188,6 +188,13 @@ void RectangleObject::setBottomRight(const Eigen::Affine3d& bottom_right)
   bottom_right_ = bottom_right;
 }
 
+void RectangleObject::setBottomRightUpdateAll(const Eigen::Affine3d& bottom_right)
+{
+  bottom_right_ = bottom_right;
+  
+  // TODO
+}
+
 void RectangleObject::setBottomRight(const double& x, const double& y, const double& z)
 {
   bottom_right_.translation().x() = x;

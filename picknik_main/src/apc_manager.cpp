@@ -434,9 +434,17 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // TODO: add this back but sometimes do not if the pregrasp is so close that it would be in collision with wall
         //planning_scene_manager_->displayShelfAsWall();
 
-        current_state = manipulation_->getCurrentState();
-        manipulation_->setStateWithOpenEE(true, current_state);
+        // Set end effector to correct width
+        if (!manipulation_->setEEGraspPosture(grasp_candidates.front()->grasp_.pre_grasp_posture, arm_jmg))
+        {
+          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to set EE to correct grasp posture");
+          return false;
+        }
 
+        current_state = manipulation_->getCurrentState();
+        //manipulation_->setStateWithOpenEE(true, current_state);
+
+        // Move robot to pregrasp state
         if (!manipulation_->move(current_state, pre_grasp_state, arm_jmg, config_->main_velocity_scaling_factor_,
                                  verbose, execute_trajectory))
         {
@@ -677,10 +685,49 @@ bool APCManager::testVisualizeShelf()
   // Generate random product poses and visualize the shelf
   createRandomProductPoses();
 
-  //planning_scene_manager_->testAllModes();
+  while(ros::ok())
+  {
+    ros::Duration(1).sleep();
+    ROS_INFO_STREAM_NAMED("apc_manager","Updating shelf location");
+
+    // Get the latest shelf pose
+    Eigen::Affine3d world_to_shelf;
+    ros::Time time_stamp;
+    std::string frame_id = "shelf";
+    perception_interface_->getTFTransform(world_to_shelf, time_stamp, frame_id);
+
+    // Update the shelf
+    shelf_->setBottomRightUpdateAll(world_to_shelf);
+    bool force = true;
+    planning_scene_manager_->displayEmptyShelf(force);
+
+    // Debugging - inverse left camera to cal target
+    //getInertedLeftCameraPose();
+  }
+
 
   ROS_INFO_STREAM_NAMED("apc_manager","Ready to shutdown");
   ros::spin();
+  return true;
+}
+
+bool APCManager::getInertedLeftCameraPose()
+{
+  Eigen::Affine3d left_camera_to_target;
+  const std::string parent_frame_id = "xtion_left_rgb_optical_frame";
+  const std::string frame_id = "xtion_left_cal_target_frame";
+  ros::Time time_stamp;
+  if (!perception_interface_->getTFTransform(left_camera_to_target, time_stamp, parent_frame_id, frame_id))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","No pose found");
+    return false;
+  }
+  Eigen::Affine3d target_to_left_camera = left_camera_to_target.inverse();
+
+  double x, y, z, roll, pitch, yaw;
+  rvt::RvizVisualTools::convertToXYZRPY(target_to_left_camera, x, y, z, roll, pitch, yaw);
+  ROS_INFO_STREAM_NAMED("apc_manager","Inverted transform: " << x << " " << y << " " << z << " "
+                        << roll << " " << pitch << " " << yaw << " ");
   return true;
 }
 
@@ -1870,7 +1917,7 @@ bool APCManager::allowCollisions(JointModelGroup* arm_jmg)
         //std::cout << "disabling collsion between " << ee_link_names[i] << " and " <<  ee_link_names[j] << std::endl;
         collision_matrix.setEntry(ee_link_names[i], ee_link_names[j], true);
       }
-    }                                                   
+    }
   }
 
   return true;
@@ -2379,7 +2426,7 @@ bool APCManager::testGraspWidths()
     //-----------------------------------------------------------------------------
     //-----------------------------------------------------------------------------
     // Send joint position commands
-    
+
     double joint_position = 0.0;
 
     while (ros::ok())
@@ -2427,7 +2474,7 @@ bool APCManager::testGraspWidths()
       // Change fingers
       trajectory_msgs::JointTrajectory grasp_posture;
       grasp_datas_[arm_jmg]->fingerWidthToGraspPosture(space_between_fingers, grasp_posture);
-      
+
       // Send command
       if (!manipulation_->setEEGraspPosture(grasp_posture, arm_jmg))
       {

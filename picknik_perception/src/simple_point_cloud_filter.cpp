@@ -97,7 +97,7 @@ bool SimplePointCloudFilter::publishRegionOfInterest()
     return false;
   }
   // show region of interest
-  visual_tools_->publishAxisLabeled(roi_pose_, "bin");
+  //visual_tools_->publishAxisLabeled(roi_pose_, "bin");
   visual_tools_->publishWireframeCuboid(roi_pose_, roi_depth_, roi_width_, roi_height_, rviz_visual_tools::CYAN);
 }
 

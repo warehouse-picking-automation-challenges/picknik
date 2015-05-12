@@ -1,8 +1,0 @@
-initial_x: 0.0415
-initial_y: -0.003
-initial_z: -0.02
-initial_roll: 0.1
-initial_pitch: 0.07
-initial_yaw: 3.28
-from: xtion
-to: camera_link
