@@ -1,0 +1,99 @@
+{
+    "bin_contents": {
+        "bin_A": [
+            "first_years_take_and_toss_straw_cup",
+            "mead_index_cards"
+        ],
+        "bin_B": [
+            "expo_dry_erase_board_eraser",
+            "expo_dry_erase_board_eraser",
+            "champion_copper_plus_spark_plug"
+        ],
+        "bin_C": [
+            "paper_mate_12_count_mirado_black_warrior",
+            "champion_copper_plus_spark_plug",
+            "cheezit_big_original"
+        ],
+        "bin_D": [
+            "paper_mate_12_count_mirado_black_warrior"
+        ],
+        "bin_E": [
+            "kong_sitting_frog_dog_toy"
+        ],
+        "bin_F": [
+            "kyjen_squeakin_eggs_plush_puppies"
+        ],
+        "bin_G": [
+            "kong_sitting_frog_dog_toy"
+        ],
+        "bin_H": [
+            "rolodex_jumbo_pencil_cup",
+            "laugh_out_loud_joke_book"
+        ],
+        "bin_I": [
+            "safety_works_safety_glasses"
+        ],
+        "bin_J": [
+            "sharpie_accent_tank_style_highlighters",
+            "kong_duck_dog_toy",
+            "kyjen_squeakin_eggs_plush_puppies"
+        ],
+        "bin_K": [
+            "cheezit_big_original",
+            "safety_works_safety_glasses"
+        ],
+        "bin_L": [
+            "dr_browns_bottle_brush"
+        ]
+    },
+    "work_order": [
+        {
+            "bin": "bin_A",
+            "item": "first_years_take_and_toss_straw_cup"
+        },
+        {
+            "bin": "bin_B",
+            "item": "expo_dry_erase_board_eraser"
+        },
+        {
+            "bin": "bin_C",
+            "item": "cheezit_big_original"
+        },
+        {
+            "bin": "bin_D",
+            "item": "paper_mate_12_count_mirado_black_warrior"
+        },
+        {
+            "bin": "bin_E",
+            "item": "kong_sitting_frog_dog_toy"
+        },
+        {
+            "bin": "bin_F",
+            "item": "kyjen_squeakin_eggs_plush_puppies"
+        },
+        {
+            "bin": "bin_G",
+            "item": "kong_sitting_frog_dog_toy"
+        },
+        {
+            "bin": "bin_H",
+            "item": "rolodex_jumbo_pencil_cup"
+        },
+        {
+            "bin": "bin_I",
+            "item": "safety_works_safety_glasses"
+        },
+        {
+            "bin": "bin_J",
+            "item": "kyjen_squeakin_eggs_plush_puppies"
+        },
+        {
+            "bin": "bin_K",
+            "item": "cheezit_big_original"
+        },
+        {
+            "bin": "bin_L",
+            "item": "dr_browns_bottle_brush"
+        }
+    ]
+}

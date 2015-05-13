@@ -1,0 +1,102 @@
+{
+    "bin_contents": {
+        "bin_A": [
+            "paper_mate_12_count_mirado_black_warrior"
+        ],
+        "bin_B": [
+            "mead_index_cards"
+        ],
+        "bin_C": [
+            "oreo_mega_stuf"
+        ],
+        "bin_D": [
+            "sharpie_accent_tank_style_highlighters",
+            "sharpie_accent_tank_style_highlighters",
+            "kyjen_squeakin_eggs_plush_puppies"
+        ],
+        "bin_E": [
+            "first_years_take_and_toss_straw_cup"
+        ],
+        "bin_F": [
+            "safety_works_safety_glasses",
+            "kong_sitting_frog_dog_toy"
+        ],
+        "bin_G": [
+            "oreo_mega_stuf",
+            "champion_copper_plus_spark_plug"
+        ],
+        "bin_H": [
+            "kong_sitting_frog_dog_toy",
+            "kong_sitting_frog_dog_toy"
+        ],
+        "bin_I": [
+            "stanley_66_052",
+            "laugh_out_loud_joke_book",
+            "rolodex_jumbo_pencil_cup"
+        ],
+        "bin_J": [
+            "mommys_helper_outlet_plugs",
+            "cheezit_big_original"
+        ],
+        "bin_K": [
+            "highland_6539_self_stick_notes",
+            "kyjen_squeakin_eggs_plush_puppies",
+            "expo_dry_erase_board_eraser"
+        ],
+        "bin_L": [
+            "champion_copper_plus_spark_plug",
+            "laugh_out_loud_joke_book",
+            "genuine_joe_plastic_stir_sticks"
+        ]
+    },
+    "work_order": [
+        {
+            "bin": "bin_A",
+            "item": "paper_mate_12_count_mirado_black_warrior"
+        },
+        {
+            "bin": "bin_B",
+            "item": "mead_index_cards"
+        },
+        {
+            "bin": "bin_C",
+            "item": "oreo_mega_stuf"
+        },
+        {
+            "bin": "bin_D",
+            "item": "sharpie_accent_tank_style_highlighters"
+        },
+        {
+            "bin": "bin_E",
+            "item": "first_years_take_and_toss_straw_cup"
+        },
+        {
+            "bin": "bin_F",
+            "item": "safety_works_safety_glasses"
+        },
+        {
+            "bin": "bin_G",
+            "item": "champion_copper_plus_spark_plug"
+        },
+        {
+            "bin": "bin_H",
+            "item": "kong_sitting_frog_dog_toy"
+        },
+        {
+            "bin": "bin_I",
+            "item": "laugh_out_loud_joke_book"
+        },
+        {
+            "bin": "bin_J",
+            "item": "mommys_helper_outlet_plugs"
+        },
+        {
+            "bin": "bin_K",
+            "item": "highland_6539_self_stick_notes"
+        },
+        {
+            "bin": "bin_L",
+            "item": "champion_copper_plus_spark_plug"
+        }
+    ]
+}
