@@ -186,6 +186,9 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   top_left_.translation().y() = shelf_width_/2.0;
   top_left_.translation().z() = shelf_height_;
 
+  // Transform debugging
+  //visuals_->tf_->publishTransform(world_to_shelf_transform_, "world", "shelf");
+
 
   // Create shelf parts -----------------------------
   // Note: bottom right is at 0,0,0
@@ -445,6 +448,9 @@ bool ShelfObject::insertBinHelper(int bin_id, double height, double width, doubl
   bottom_right.translation().z() = bin_z;
   new_bin->setBottomRight(bottom_right);
 
+  // Transform debugging
+  visuals_->tf_->publishTransform(bottom_right, "shelf", bin_name);
+
   // Calculate top left
   Eigen::Affine3d top_left = Eigen::Affine3d::Identity();
   top_left.translation().x() += bin_depth_;
@@ -459,7 +465,7 @@ bool ShelfObject::insertBinHelper(int bin_id, double height, double width, doubl
 bool ShelfObject::visualizeAxis(VisualsPtr visuals) const
 {
   // Show coordinate system
-  visuals_->visual_tools_->publishAxis( bottom_right_ );
+  //visuals_->visual_tools_->publishAxis( bottom_right_ );
 
   // Show each bin
   for (BinObjectMap::const_iterator bin_it = bins_.begin(); bin_it != bins_.end(); bin_it++)

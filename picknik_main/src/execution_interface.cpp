@@ -198,7 +198,7 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
     }
     else
     {
-      ROS_WARN_STREAM_NAMED("exceution_interface","Not waiting for execution to finish");
+      ROS_INFO_STREAM_NAMED("exceution_interface","Not waiting for execution to finish");
     }
   }
   else

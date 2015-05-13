@@ -77,7 +77,7 @@ public:
    * \brief Show shelf with no products
    * \return true on success
    */
-  bool displayEmptyShelf();
+  bool displayEmptyShelf(bool force = false);
 
   /**
    * \brief Show shelf with all bins enabled
@@ -89,18 +89,18 @@ public:
    * \brief Show shelf as simple solid wall, not details
    * \return true on success
    */
-  bool displayShelfAsWall();
+  bool displayShelfAsWall(bool force = false);
 
   /**
    * \brief Only show one bin, disable the rest
    * \return true on success
    */
-  bool displayShelfOnlyBin( const std::string& bin_name );
+  bool displayShelfOnlyBin(const std::string& bin_name, bool force = false );
 
   /**
    * \brief Switch between the 3 modes
    */
-  bool testAllModes();
+  bool testAllModes(bool force = false);
 
 private:
 

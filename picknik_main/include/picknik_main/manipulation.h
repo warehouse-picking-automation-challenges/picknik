@@ -37,19 +37,29 @@
 #include <ompl/tools/experience/ExperienceSetup.h>
 
 // Grasp generation
-#include <moveit_grasps/grasp_generator.h>
 #include <moveit_grasps/grasp_data.h>
 #include <moveit_grasps/grasp_filter.h>
+#include <moveit_grasps/grasp_planner.h>
 
 namespace planning_pipeline
 {
 MOVEIT_CLASS_FORWARD(PlanningPipeline);
 }
 
+namespace moveit_grasps
+{
+MOVEIT_CLASS_FORWARD(GraspGenerator);
+// TODO add more here
+}
+
 namespace picknik_main
 {
 
 MOVEIT_CLASS_FORWARD(Manipulation);
+
+// TODO move these, last minute sloppiness
+static const double MIN_JOINT_POSITION = 0.0;
+static const double MAX_JOINT_POSITION = 0.742;
 
 class Manipulation
 {
@@ -347,26 +357,31 @@ public:
    * \brief Open both end effectors in hardware
    * \return true on success
    */
-  bool openEndEffectors(bool open);
+  bool openEEs(bool open);
 
   /**
-   * \brief open/close grippers
+   * \brief Open/close grippers using velocity commands
    * \param bool if it should be open or closed
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on sucess
    */
-  bool openEndEffector(bool open, JointModelGroup* arm_jmg);
+  bool openEE(bool open, JointModelGroup* arm_jmg);
 
   /**
-   * \brief open/close grippers using velocity commands
-   * \param bool if it should be open or closed
+   * \brief Set the joint values of the finger joints - TODO - this is very Jaco-specific
+   * \param joint_position
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on sucess
    */
-  bool openEndEffectorWithVelocity(bool open, JointModelGroup* arm_jmg);
-  bool openEndEffectorWithVelocity(double space_between_fingers, JointModelGroup* arm_jmg);
-  bool openEndEffectorWithVelocityJointPos(double joint_position, JointModelGroup* arm_jmg);
-  bool openEndEffectorWithVelocity(JointModelGroup* arm_jmg, trajectory_msgs::JointTrajectory grasp_posture);
+  bool setEEJointPosition(double joint_position, JointModelGroup* arm_jmg);
+
+  /**
+   * \brief Set the full grasp posture of the finger joints 
+   * \param joint_position
+   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \return true on sucess
+   */
+  bool setEEGraspPosture(trajectory_msgs::JointTrajectory grasp_posture, JointModelGroup* arm_jmg);
                                                
   /**
    * \brief Set a robot state to have an open or closed EE. Does not actually affect hardware
@@ -439,8 +454,8 @@ public:
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \return true on success
    */
-  bool visualizeGrasps(std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates, const moveit::core::JointModelGroup *arm_jmg,
-                       bool show_cartesian_path = true);
+  // bool visualizeGrasps(std::vector<moveit_grasps::GraspCandidatePtr> grasp_candidates, const moveit::core::JointModelGroup *arm_jmg,
+  //                     bool show_cartesian_path = true);
 
   /**
    * \brief Visalize ik solutions
@@ -551,6 +566,7 @@ protected:
   // Grasp generator
   moveit_grasps::GraspGeneratorPtr grasp_generator_;
   moveit_grasps::GraspFilterPtr grasp_filter_;
+  moveit_grasps::GraspPlannerPtr grasp_planner_;
 
   // State modification helper
   FixStateBounds fix_state_bounds_;

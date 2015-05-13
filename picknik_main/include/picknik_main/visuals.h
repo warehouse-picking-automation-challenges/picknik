@@ -18,8 +18,9 @@
 // ROS
 #include <ros/ros.h>
 
-// MoveIt
+// Visual Tools
 #include <moveit_visual_tools/moveit_visual_tools.h>
+#include <rviz_visual_tools/tf_visual_tools.h>
 
 // PickNik
 #include <picknik_main/namespaces.h>
@@ -67,6 +68,7 @@ public:
   mvt::MoveItVisualToolsPtr grasp_markers_; // also used for start state
   mvt::MoveItVisualToolsPtr trajectory_lines_; // also used for goal state
   mvt::MoveItVisualToolsPtr product_perception_; // for bounding boxes
+  rvt::TFVisualToolsPtr tf_; // for debugging transforms
 
 private:
 

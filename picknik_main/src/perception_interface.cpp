@@ -92,7 +92,7 @@ bool PerceptionInterface::isPerceptionReady()
 }
 
 bool PerceptionInterface::startPerception(ProductObjectPtr& product, BinObjectPtr& bin)
-{  
+{
   // Setup goal
   ROS_INFO_STREAM_NAMED("perception_interface","Communicating with perception pipeline");
   picknik_msgs::FindObjectsGoal find_object_goal;
@@ -110,7 +110,7 @@ bool PerceptionInterface::startPerception(ProductObjectPtr& product, BinObjectPt
 
   // Get all of the products in the bin
   bin->getProducts(find_object_goal.expected_objects_names);
- 
+
   // Make sure perception is reset
   if (false)
   {
@@ -127,10 +127,10 @@ bool PerceptionInterface::startPerception(ProductObjectPtr& product, BinObjectPt
 
   // Send request
   find_objects_action_.sendGoal(find_object_goal);
- 
+
   // Change state of interface
   is_processing_perception_ = true;
- 
+
   return true;
 }
 
@@ -279,18 +279,18 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   std::string frame_id = result->found_objects.front().object_pose.header.frame_id;
   Eigen::Affine3d world_to_camera = Eigen::Affine3d::Identity();
 
-  // Set camera pose to that from lu's code 
+  // Set camera pose to that from lu's code
   geometry_msgs::PoseStamped recieved_world_to_camera = result->found_objects.front().camera_pose;
-  if (recieved_world_to_camera.pose.position.x == 0 && 
+  if (recieved_world_to_camera.pose.position.x == 0 &&
       recieved_world_to_camera.pose.position.y == 0 &&
       recieved_world_to_camera.pose.position.z == 0)
   {
     ROS_INFO_STREAM_NAMED("perception_interface","No camera pose returned from perception server, getting one from tf");
     ros::Time time_stamp;
-    getCameraPose(world_to_camera, time_stamp, frame_id);
+    getTFTransform(world_to_camera, time_stamp, frame_id);
   }
   else
-  {    
+  {
     world_to_camera = visuals_->visual_tools_->convertPose(recieved_world_to_camera.pose);
   }
 
@@ -301,6 +301,12 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   // Tweak transform
   Eigen::Affine3d object_pose_offset = Eigen::Affine3d::Identity();
   //getHackOffsetPose(object_pose_offset, time_stamp);
+  bool use_camera_hack_offset = config_->isEnabled("use_camera_hack_offset");
+  if (use_camera_hack_offset)
+  {
+    ros::Time time_stamp;
+    getTFTransform(object_pose_offset, time_stamp, "object_offset_hack");
+  }
 
   // Get bin location
   const Eigen::Affine3d& world_to_bin = picknik_main::transform(bin->getBottomRight(), shelf_->getBottomRight());
@@ -336,18 +342,19 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
 
     // Convert to pose of bin
     Eigen::Affine3d bin_to_object = world_to_bin.inverse() * world_to_object;
-    
+
     // Apply small hack offset
-    bin_to_object = bin_to_object * object_pose_offset;
+    bin_to_object = object_pose_offset * bin_to_object;
 
     std::cout << std::endl;
     std::cout << "=============== Found Object =============== " << std::endl;
-    std::cout << "object_name:     " << found_object.object_name << std::endl;
-    //std::cout << "expected_object_confidence: " << found_object.expected_object_confidence << std::endl;
-    std::cout << "has mesh:        " << ((found_object.bounding_mesh.triangles.empty() || found_object.bounding_mesh.vertices.empty()) ? "NO" : "YES") << std::endl;
-    std::cout << "original:        "; printTransform(camera_to_object);
-    std::cout << "world_to_object: "; printTransform(world_to_object);
-    std::cout << "bin_to_object:   "; printTransform(bin_to_object);
+    std::cout << "object_name:        " << found_object.object_name << std::endl;
+    std::cout << "has mesh:           " << ((found_object.bounding_mesh.triangles.empty() || found_object.bounding_mesh.vertices.empty()) ? "NO" : "YES") << std::endl;
+    std::cout << "original:           "; printTransform(camera_to_object);
+    std::cout << "world_to_object:    "; printTransform(world_to_object);
+    std::cout << "bin_to_object:      "; printTransform(bin_to_object);
+    if (use_camera_hack_offset)
+      std::cout << "object_pose_offset: "; printTransform(object_pose_offset);
     std::cout << std::endl;
 
     // Check bounds
@@ -413,23 +420,26 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   ros::spinOnce();
   ros::Duration(0.1).sleep();
 
-  ROS_WARN_STREAM_NAMED("temp","sleeping");
-  ros::Duration(5).sleep();
-
   return true;
 }
 
-bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::Time& time_stamp, 
-                                        const std::string& camera_frame)
+bool PerceptionInterface::getTFTransform(Eigen::Affine3d& world_to_frame, ros::Time& time_stamp,
+                                         const std::string& frame_id)
 {
-  tf::StampedTransform camera_transform;
+  return getTFTransform(world_to_frame, time_stamp, config_->world_frame_, frame_id);
+}
+
+bool PerceptionInterface::getTFTransform(Eigen::Affine3d& world_to_frame, ros::Time& time_stamp,
+                                         const std::string& parent_frame_id, const std::string& frame_id)
+{
+  tf::StampedTransform tf_transform;
 
   try
   {
     // Wait to make sure a transform message has arrived
-    tf_->waitForTransform(config_->world_frame_, camera_frame, ros::Time(0), ros::Duration(1));
+    tf_->waitForTransform(parent_frame_id, frame_id, ros::Time(0), ros::Duration(1));
     // Get latest transform available
-    tf_->lookupTransform(config_->world_frame_, camera_frame, ros::Time(0), camera_transform);
+    tf_->lookupTransform(parent_frame_id, frame_id, ros::Time(0), tf_transform);
   }
   catch (tf::TransformException ex)
   {
@@ -438,32 +448,8 @@ bool PerceptionInterface::getCameraPose(Eigen::Affine3d& world_to_camera, ros::T
   }
 
   // Copy results
-  tf::transformTFToEigen(camera_transform, world_to_camera);
-  time_stamp = camera_transform.stamp_;
-  return true;
-}
-
-bool PerceptionInterface::getHackOffsetPose(Eigen::Affine3d& world_to_camera, ros::Time& time_stamp)
-{
-  tf::StampedTransform camera_transform;
-  static const std::string camera_frame = "/object_offset_hack";
-
-  try
-  {
-    // Wait to make sure a transform message has arrived
-    tf_->waitForTransform(config_->world_frame_, camera_frame, ros::Time(0), ros::Duration(1));
-    // Get latest transform available
-    tf_->lookupTransform(config_->world_frame_, camera_frame, ros::Time(0), camera_transform);
-  }
-  catch (tf::TransformException ex)
-  {
-    ROS_ERROR_STREAM_NAMED("perception_interface", "TF error: " << ex.what());
-    return false;
-  }
-
-  // Copy results
-  tf::transformTFToEigen(camera_transform, world_to_camera);
-  time_stamp = camera_transform.stamp_;
+  tf::transformTFToEigen(tf_transform, world_to_frame);
+  time_stamp = tf_transform.stamp_;
   return true;
 }
 
@@ -501,7 +487,7 @@ bool PerceptionInterface::publishCameraFrame(Eigen::Affine3d world_to_camera)
 
 bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjectPtr &bin)
 {
-  ROS_INFO_STREAM_NAMED("perception_interface","Updating bounding mesh for product " << product->getName());
+  ROS_DEBUG_STREAM_NAMED("perception_interface","Updating bounding mesh for product " << product->getName());
   bool verbose_bounding_box = visuals_->isEnabled("verbose_bounding_box");
 
   // Debug
@@ -537,7 +523,7 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   // Get bounding box
   Eigen::Affine3d bounding_to_mesh; // this is the output
   double depth, width, height;
-  if (!bounding_box_.getBodyAlignedBoundingBox(product->getCollisionMesh(), mesh_to_world, bounding_to_mesh, 
+  if (!bounding_box_.getBodyAlignedBoundingBox(product->getCollisionMesh(), mesh_to_world, bounding_to_mesh,
                                                depth, width, height))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to get bounding box");
@@ -581,7 +567,7 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   return true;
 }
 
-bool PerceptionInterface::checkBounds(const Eigen::Affine3d &bin_to_object, BinObjectPtr& bin, 
+bool PerceptionInterface::checkBounds(const Eigen::Affine3d &bin_to_object, BinObjectPtr& bin,
                                       ProductObjectPtr& product)
 {
   if (bin_to_object.translation().x() < 0 || bin_to_object.translation().x() > bin->getDepth() ||

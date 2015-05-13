@@ -125,7 +125,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
   visuals_->visualizeDisplayShelf(shelf_);
 
   // Allow collisions between frame of robot and floor
-  allowCollisions();
+  allowCollisions(config_->right_arm_); // jaco-specific
 
   ROS_INFO_STREAM_NAMED("apc_manager","APCManager Ready.");
 }
@@ -343,8 +343,8 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Set planning scene
         planning_scene_manager_->displayShelfWithOpenBins();
 
-        // Open hand
-        if (!manipulation_->openEndEffectors(true))
+        // Open hand all the way
+        if (!manipulation_->setEEJointPosition(MAX_JOINT_POSITION, config_->right_arm_))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to open end effectors");
           return false;
@@ -434,9 +434,17 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // TODO: add this back but sometimes do not if the pregrasp is so close that it would be in collision with wall
         //planning_scene_manager_->displayShelfAsWall();
 
-        current_state = manipulation_->getCurrentState();
-        manipulation_->setStateWithOpenEE(true, current_state);
+        // Set end effector to correct width
+        if (!manipulation_->setEEGraspPosture(grasp_candidates.front()->grasp_.pre_grasp_posture, arm_jmg))
+        {
+          ROS_ERROR_STREAM_NAMED("apc_manager","Unable to set EE to correct grasp posture");
+          return false;
+        }
 
+        current_state = manipulation_->getCurrentState();
+        //manipulation_->setStateWithOpenEE(true, current_state);
+
+        // Move robot to pregrasp state
         if (!manipulation_->move(current_state, pre_grasp_state, arm_jmg, config_->main_velocity_scaling_factor_,
                                  verbose, execute_trajectory))
         {
@@ -495,7 +503,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         visuals_->start_state_->deleteAllMarkers(); // clear all old markers
 
         // Close EE
-        if (!manipulation_->openEndEffectorWithVelocity(false, arm_jmg))
+        if (!manipulation_->openEE(false, arm_jmg))
         {
           ROS_WARN_STREAM_NAMED("apc_manager","Unable to close end effector");
           //return false;
@@ -573,7 +581,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // Set planning scene
         // planning_scene_manager_->displayShelfAsWall();
 
-        if (!manipulation_->openEndEffectorWithVelocity(true, arm_jmg))
+        if (!manipulation_->openEE(true, arm_jmg))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
           return false;
@@ -624,8 +632,6 @@ bool APCManager::trainExperienceDatabase()
 // Mode 8
 bool APCManager::testEndEffectors()
 {
-  bool normal_method = false;
-
   // Test visualization
   statusPublisher("Testing open close visualization of EE");
   std::size_t i = 0;
@@ -642,23 +648,8 @@ bool APCManager::testEndEffectors()
       manipulation_->setStateWithOpenEE(open, current_state);
       visuals_->visual_tools_->publishRobotState(current_state);
 
-      if (normal_method)
-      {
-        // Close right and optionally right EE
-        manipulation_->openEndEffectorWithVelocity(open, config_->right_arm_);
-        if (config_->dual_arm_)
-          manipulation_->openEndEffectorWithVelocity(open, config_->left_arm_);
-      }
-      else
-      {
-        ROS_WARN_STREAM_NAMED("apc_manger","Using experiemntal grasp distance method");
-        double space_between_fingers = config_->test_double_;
-
-        // Close right and optionally right EE
-        manipulation_->openEndEffectorWithVelocity(space_between_fingers, config_->right_arm_);
-        if (config_->dual_arm_)
-          manipulation_->openEndEffectorWithVelocity(space_between_fingers, config_->left_arm_);
-      }
+      // Close all EEs
+      manipulation_->openEEs(open);
 
       ros::Duration(2.0).sleep();
     }
@@ -671,23 +662,8 @@ bool APCManager::testEndEffectors()
 
       visuals_->visual_tools_->publishRobotState(current_state);
 
-      if (normal_method)
-      {
-        // Close right and optionally right EE
-        manipulation_->openEndEffectorWithVelocity(open, config_->right_arm_);
-        if (config_->dual_arm_)
-          manipulation_->openEndEffectorWithVelocity(open, config_->left_arm_);
-      }
-      else
-      {
-        ROS_WARN_STREAM_NAMED("apc_manger","Using experiemntal grasp distance method");
-        double space_between_fingers = 0; // close
-
-        // Open right and optionally right EE
-        manipulation_->openEndEffectorWithVelocity(space_between_fingers, config_->right_arm_);
-        if (config_->dual_arm_)
-          manipulation_->openEndEffectorWithVelocity(space_between_fingers, config_->left_arm_);
-      }
+      // Close all EEs
+      manipulation_->openEEs(open);
 
       ros::Duration(2.0).sleep();
     }
@@ -709,10 +685,49 @@ bool APCManager::testVisualizeShelf()
   // Generate random product poses and visualize the shelf
   createRandomProductPoses();
 
-  //planning_scene_manager_->testAllModes();
+  while(ros::ok())
+  {
+    ros::Duration(1).sleep();
+    ROS_INFO_STREAM_NAMED("apc_manager","Updating shelf location");
+
+    // Get the latest shelf pose
+    Eigen::Affine3d world_to_shelf;
+    ros::Time time_stamp;
+    std::string frame_id = "shelf";
+    perception_interface_->getTFTransform(world_to_shelf, time_stamp, frame_id);
+
+    // Update the shelf
+    shelf_->setBottomRightUpdateAll(world_to_shelf);
+    bool force = true;
+    planning_scene_manager_->displayEmptyShelf(force);
+
+    // Debugging - inverse left camera to cal target
+    //getInertedLeftCameraPose();
+  }
+
 
   ROS_INFO_STREAM_NAMED("apc_manager","Ready to shutdown");
   ros::spin();
+  return true;
+}
+
+bool APCManager::getInertedLeftCameraPose()
+{
+  Eigen::Affine3d left_camera_to_target;
+  const std::string parent_frame_id = "xtion_left_rgb_optical_frame";
+  const std::string frame_id = "xtion_left_cal_target_frame";
+  ros::Time time_stamp;
+  if (!perception_interface_->getTFTransform(left_camera_to_target, time_stamp, parent_frame_id, frame_id))
+  {
+    ROS_ERROR_STREAM_NAMED("apc_manager","No pose found");
+    return false;
+  }
+  Eigen::Affine3d target_to_left_camera = left_camera_to_target.inverse();
+
+  double x, y, z, roll, pitch, yaw;
+  rvt::RvizVisualTools::convertToXYZRPY(target_to_left_camera, x, y, z, roll, pitch, yaw);
+  ROS_INFO_STREAM_NAMED("apc_manager","Inverted transform: " << x << " " << y << " " << z << " "
+                        << roll << " " << pitch << " " << yaw << " ");
   return true;
 }
 
@@ -803,9 +818,7 @@ bool APCManager::testShelfLocation()
   Eigen::Affine3d ee_pose;
 
   // Set EE as closed so that we can touch the tip easier
-  manipulation_->openEndEffectorWithVelocity(false, config_->right_arm_);
-  if (config_->dual_arm_)
-    manipulation_->openEndEffectorWithVelocity(false, config_->left_arm_);
+  manipulation_->openEEs(false);
 
   // Reduce collision world to simple
   planning_scene_manager_->displayShelfAsWall();
@@ -841,32 +854,6 @@ bool APCManager::testShelfLocation()
       ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move arm to desired shelf location");
       continue;
     }
-
-    // std::cout << std::endl;
-    // std::cout << std::endl;
-    // std::cout << "Waiting before moving forward" << std::endl;
-    // remote_control_->waitForNextStep();
-
-
-    // ROS_INFO_STREAM_NAMED("apc_manager","Moving forward");
-    // bool retreat = false;
-    // double desired_approach_distance = 0.02;
-    // if (!manipulation_->executeRetreatPath(arm_jmg, desired_approach_distance, retreat))
-    // {
-    //   ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move forward " << desired_approach_distance);
-    // }
-
-    // std::cout << std::endl;
-    // std::cout << std::endl;
-    // std::cout << "Waiting before retreating" << std::endl;
-    // remote_control_->waitForNextStep();
-
-
-    // retreat = true;
-    // if (!manipulation_->executeRetreatPath(arm_jmg, desired_approach_distance, retreat))
-    // {
-    //   ROS_ERROR_STREAM_NAMED("apc_manager","Failed to move backwards " << desired_approach_distance);
-    // }
 
     remote_control_->waitForNextStep();
   } // end for
@@ -976,7 +963,7 @@ bool APCManager::testGoalBinPose()
   for (std::size_t i = 0; i < dropoff_locations_.size(); ++i)
   {
     // Close end effector
-    if (!manipulation_->openEndEffectorWithVelocity(false, arm_jmg))
+    if (!manipulation_->openEEs(false))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effector");
       return false;
@@ -990,7 +977,7 @@ bool APCManager::testGoalBinPose()
     }
 
     // Open end effector
-    if (!manipulation_->openEndEffectorWithVelocity(true, arm_jmg))
+    if (!manipulation_->openEEs(true))
     {
       ROS_ERROR_STREAM_NAMED("apc_manager","Unable to open end effector");
       return false;
@@ -1152,7 +1139,7 @@ bool APCManager::calibrateCamera(std::size_t id)
   planning_scene_manager_->displayShelfWithOpenBins();
 
   // Close fingers
-  if (!manipulation_->openEndEffectors(false))
+  if (!manipulation_->openEEs(false))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to close end effectors");
     return false;
@@ -1913,13 +1900,24 @@ RemoteControlPtr APCManager::getRemoteControl()
   return remote_control_;
 }
 
-bool APCManager::allowCollisions()
+bool APCManager::allowCollisions(JointModelGroup* arm_jmg)
 {
   // Allow collisions between frame of robot and floor
   {
     planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning
-    scene->getAllowedCollisionMatrixNonConst().setEntry(shelf_->getEnvironmentCollisionObject("floor_wall")->getCollisionName(),
-                                                        "frame", true);
+    collision_detection::AllowedCollisionMatrix& collision_matrix = scene->getAllowedCollisionMatrixNonConst();
+    collision_matrix.setEntry(shelf_->getEnvironmentCollisionObject("floor_wall")->getCollisionName(), "frame", true);
+
+    // Get links of end effector
+    const std::vector<std::string> &ee_link_names = grasp_datas_[arm_jmg]->ee_jmg_->getLinkModelNames();
+    for (std::size_t i = 0; i < ee_link_names.size(); ++i)
+    {
+      for (std::size_t j = i+1; j < ee_link_names.size(); ++j)
+      {
+        //std::cout << "disabling collsion between " << ee_link_names[i] << " and " <<  ee_link_names[j] << std::endl;
+        collision_matrix.setEntry(ee_link_names[i], ee_link_names[j], true);
+      }
+    }
   }
 
   return true;
@@ -2097,7 +2095,7 @@ bool APCManager::unitTests()
   if (visuals_->isEnabled("unit_test_" + test_name) || unit_test_all)
   {
     const std::string json_file = "expo.json";
-    Eigen::Affine3d product_pose = rvt::RvizVisualTools::convertXYZRPY(0.12,0.05,0.03,1.57,0,0); // from testPose()
+    Eigen::Affine3d product_pose = rvt::RvizVisualTools::convertXYZRPY(0.12,0.06,0.03,1.57,0,0); // from testPose()
     if (!startUnitTest(json_file, test_name, product_pose))
       return false;
   }
@@ -2419,54 +2417,81 @@ bool APCManager::playbackWaypointsFromFile()
 bool APCManager::testGraspWidths()
 {
   // Test visualization
-  statusPublisher("Testing open close visualization of EE");
-  double space_between_fingers = 0;
-  static const double MAX_DISTANCE_WIDTH = 0.0725;
-  moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
+  statusPublisher("Testing open close of End Effectors");
 
-  // Send distance between finger commands
+  JointModelGroup* arm_jmg = config_->right_arm_;
   if (false)
+  {
+    //-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    // Send joint position commands
+
+    double joint_position = 0.0;
+
     while (ros::ok())
     {
       std::cout << std::endl << std::endl;
 
-      ROS_WARN_STREAM_NAMED("apc_manger","Setting finger joint position " << space_between_fingers);
+      ROS_WARN_STREAM_NAMED("apc_manger","Setting finger joint position " << joint_position);
 
-      // Close right and optionally right EE
-      if (!manipulation_->openEndEffectorWithVelocityJointPos(space_between_fingers, config_->right_arm_))
+      // Change fingers
+      if (!manipulation_->setEEJointPosition(joint_position, arm_jmg))
       {
         ROS_ERROR_STREAM_NAMED("apc_manager","Failed to set finger disance");
       }
 
-      //ros::Duration(4.0).sleep();
+      // Wait
+      ros::Duration(2.0).sleep();
       remote_control_->waitForNextStep("move fingers");
 
-      // Increment test
-      space_between_fingers += 0.05;
-      if (space_between_fingers > 0.742)
-        space_between_fingers = 0.0;
+      // Increment the test
+      joint_position += ( MAX_JOINT_POSITION - MIN_JOINT_POSITION) / 10.0;
+      if (joint_position > MAX_JOINT_POSITION)
+        joint_position = 0.0;
     }
-
-  // Send joint position commands
-  while (ros::ok())
-  {
-    std::cout << std::endl << std::endl;
-
-    space_between_fingers += 0.01;
-    if (space_between_fingers > MAX_DISTANCE_WIDTH)
-      space_between_fingers = 0.0;
-
-    ROS_WARN_STREAM_NAMED("apc_manger","Setting finger width distance " << space_between_fingers);
-
-    // Close right and optionally right EE
-    if (!manipulation_->openEndEffectorWithVelocity(space_between_fingers, config_->right_arm_))
-    {
-      ROS_ERROR_STREAM_NAMED("apc_manager","Failed to set finger disance");
-    }
-
-    ros::Duration(4.0).sleep();
   }
+  else
+  {
+    //-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    // Send distance between finger commands
 
+    // Jaco-specific
+    double space_between_fingers = grasp_datas_[arm_jmg]->min_finger_width_;
+
+    while (ros::ok())
+    {
+      std::cout << std::endl << std::endl;
+
+      ROS_WARN_STREAM_NAMED("apc_manger","Setting finger width distance " << space_between_fingers);
+
+      // Wait
+      ros::Duration(1.0).sleep();
+      remote_control_->waitForNextStep("move fingers");
+
+      // Change fingers
+      trajectory_msgs::JointTrajectory grasp_posture;
+      grasp_datas_[arm_jmg]->fingerWidthToGraspPosture(space_between_fingers, grasp_posture);
+
+      // Send command
+      if (!manipulation_->setEEGraspPosture(grasp_posture, arm_jmg))
+      {
+        ROS_ERROR_STREAM_NAMED("apc_manager","Failed to set finger width");
+      }
+
+      // Increment the test
+      space_between_fingers += (grasp_datas_[arm_jmg]->max_finger_width_ - grasp_datas_[arm_jmg]->min_finger_width_) / 10.0;
+      if (space_between_fingers > grasp_datas_[arm_jmg]->max_finger_width_)
+      {
+        std::cout << std::endl;
+        std::cout << "-------------------------------------------------------" << std::endl;
+        std::cout << "Wrapping around " << std::endl;
+        space_between_fingers = grasp_datas_[arm_jmg]->min_finger_width_;
+      }
+    }
+  }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Done testing end effectors");
   return true;

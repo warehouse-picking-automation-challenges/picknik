@@ -1,0 +1,10 @@
+<launch>
+  <!-- This launch file is made by Dave -->
+
+  <!-- Manual calibration of product hack offset -->
+  <node pkg="keyboard" type="keyboard" name="keyboard_wrist_offset" />
+  <node pkg="picknik_perception" type="tf_keyboard" name="tf_keyboard_wrist_offset" output="screen">
+    <rosparam command="load" file="$(find picknik_perception)/config/tf/tf_keyboard_wrist_offset.yaml"/>
+  </node>
+
+</launch>

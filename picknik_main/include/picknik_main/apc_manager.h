@@ -119,6 +119,12 @@ public:
   bool testVisualizeShelf();
 
   /**
+   * \brief Convert a calibration pose into its inverse
+   * \return true on success
+   */
+  bool getInertedLeftCameraPose();
+
+  /**
    * \brief Simple script to move hand up and down on z axis from whereever it currently is
    * \return true on success
    */
@@ -315,7 +321,7 @@ public:
   /**
    * \brief Disable collision checking for certain pairs
    */
-  bool allowCollisions();
+  bool allowCollisions(JointModelGroup* arm_jmg);
 
   /**
    * \brief Attach a product to an arm for planning

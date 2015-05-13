@@ -35,7 +35,7 @@ both_arms_name: manipulator_DISABLED
 # 0.035 m is the width of the 8020 bar in front of shelf
 # in-lab distance is 0.5+0.029-0.035 = 0.494
 #world_to_shelf_transform: [0.489, -0.438, 0.002, 0.0, 0.0, 0.0]  # IDEAL
-world_to_shelf_transform: [0.67, -0.453, -0.038, 0.0, 0.0, 0.0]  # After arm offset
+world_to_shelf_transform: [0.67, -0.465, -0.038, 0.0, 0.0, 0.0]  # After arm offset
 
 # Adding 0.38 m offset on arm_mount_joint
 # Actual 0.167 offset
@@ -60,6 +60,9 @@ right_wall_y: 0 # 0 means disabled
 # Top limit
 ceiling_z: 2.4
 
+# End effector configuration - jaco specific
+finger_3_offset: -0.1 # open more than the others TODO remove in favor of grasp_data?
+
 # Perception Data
 camera:
   # THIS IS USED TO OFFSET THE CAMERA TO THE CIRCLAR CALIBRATION LOCATION
@@ -81,13 +84,13 @@ test:
   test_joint_limit_joint: 1  # starts at 0, negative number means test all
   test_double: 0.05 # for anything
   # During development it is nice to have ability to tweak a value
-  test_pose: [0.12, 0.05, 0.03, 1.57, 0, 0] # x,y,z,r,p,y
+  test_pose: [0.12, 0.06, 0.03, 1.57, 0, 0] # x,y,z,r,p,y
 
 behavior:
   end_effector_enabled: true
-  super_auto: false
+  super_auto: true
   dropping_bounding_box: false
-
+  use_camera_hack_offset: false
 
 
 

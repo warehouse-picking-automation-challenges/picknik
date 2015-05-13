@@ -8,12 +8,12 @@
   <!-- NOTE: will open two tiny windows... keyboard presses register when this is in focus -->
   <node pkg="keyboard" type="keyboard" name="keyboard_right" />
   <node pkg="picknik_perception" type="tf_keyboard" name="tf_keyboard_right" output="screen">
-    <rosparam command="load" file="$(find picknik_perception)/config/tf_kinect_right.yaml"/>
+    <rosparam command="load" file="$(find picknik_perception)/config/tf/tf_kinect_right.yaml"/>
   </node>
 
   <node pkg="keyboard" type="keyboard" name="keyboard_left" />
   <node pkg="picknik_perception" type="tf_keyboard" name="tf_keyboard_left" output="screen">
-    <rosparam command="load" file="$(find picknik_perception)/config/tf_kinect_left.yaml"/>
+    <rosparam command="load" file="$(find picknik_perception)/config/tf/tf_kinect_left.yaml"/>
   </node>
 
   <!-- Publish world frame -->

@@ -12,8 +12,8 @@ Panels:
         - /PlanningScene1/Scene Geometry1
         - /TF1/Frames1
         - /DepthCloud1/Auto Size1
-      Splitter Ratio: 0.619256
-    Tree Height: 681
+      Splitter Ratio: 0.719912
+    Tree Height: 709
   - Class: rviz/Help
     Name: Help
   - Class: rviz/Views
@@ -47,7 +47,7 @@ Visualization Manager:
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -153,12 +153,12 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_state
       Show All Links: true
       Show Highlights: true
-      Value: true
+      Value: false
       Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -264,12 +264,12 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_start_state
       Show All Links: true
       Show Highlights: true
-      Value: true
+      Value: false
       Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
@@ -375,7 +375,7 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_goal_state
       Show All Links: true
       Show Highlights: true
-      Value: true
+      Value: false
       Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
@@ -493,21 +493,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Markers
       Namespaces:
-        Axis: true
-        Collision: true
-        Line: true
-        Sphere: true
-        Text: true
-        bin: true
-        crayola_64_ct: true
-        drop_pose: true
-        object: true
-        product_crayola_64_ct_55_wireframe: true
-        product_crayola_64_ct_56_wireframe: true
-        product_crayola_64_ct_57_wireframe: true
-        product_crayola_64_ct_58_wireframe: true
-        product_crayola_64_ct_59_wireframe: true
-        world_to_camera: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -523,7 +509,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/grasping_markers
       Name: Amazon Grasp Markers
       Namespaces:
-        Arrow: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -531,11 +517,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/trajectory_markers
       Name: Amazon Trajectory Markers
       Namespaces:
-        Arrow: true
-        Axis: true
-        Path: true
-        Sphere: true
-        Text: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -543,19 +525,17 @@ Visualization Manager:
       Marker Topic: /picknik_main/product_perception
       Name: APC Product Perception
       Namespaces:
-        Text: true
-        Wireframe Cuboid: true
-        bin: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /ompl_experience_database
       Name: OMPL Experience
       Namespaces:
         {}
       Queue Size: 100
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /picknik_main/display_contacts
@@ -795,12 +775,12 @@ Visualization Manager:
       Value: true
     - Class: rviz/TF
       Enabled: false
-      Frame Timeout: 15
+      Frame Timeout: 5
       Frames:
-        All Enabled: false
-      Marker Scale: 0.5
+        All Enabled: true
+      Marker Scale: 0.25
       Name: TF
-      Show Arrows: false
+      Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
@@ -829,9 +809,9 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 3
+      Size (Pixels): 2
       Size (m): 0.01
-      Style: Flat Squares
+      Style: Points
       Topic: /xtion_left/depth_registered/points
       Use Fixed Frame: true
       Use rainbow: true
@@ -858,39 +838,10 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 2
+      Size (Pixels): 4
       Size (m): 0.01
       Style: Points
       Topic: /xtion_right/depth_registered/points
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: RGB8
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 4096
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: Merged Point Clouds
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.01
-      Style: Points
-      Topic: /merge_point_clouds/points
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
@@ -912,32 +863,154 @@ Visualization Manager:
       Max Intensity: 4096
       Min Color: 0; 0; 0
       Min Intensity: 0
+      Name: Merged Point Clouds
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 2
+      Size (m): 0.01
+      Style: Points
+      Topic: /merge_point_clouds/points
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: RGB8
+      Decay Time: 0
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
       Name: Region of Interest
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 3
+      Size (Pixels): 2
       Size (m): 0.01
       Style: Points
       Topic: /pcl_perception_server/roi_cloud
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
-    - Alpha: 1
+      Value: false
+    - Alpha: 0.5
       Class: rviz/RobotModel
       Collision Enabled: false
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        frame:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gantry:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gantry_plate:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_end_effector:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        jaco2_link_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_base:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_1_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_2_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_finger_3_tip:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_link_hand:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        jaco2_wrist:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
       Update Interval: 0
-      Value: false
+      Value: true
       Visual Enabled: true
     - Alpha: 1
       Auto Size:
@@ -999,36 +1072,36 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 9.55361
+      Distance: 4.87064
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 3.0602
-        Y: 1.12151
-        Z: 5.96046e-07
+        X: 2.99549
+        Y: 0.814383
+        Z: -1.88445e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.245398
+      Pitch: 0.274797
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 3.6004
+      Yaw: 3.62536
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1028
+  Height: 1056
   Help:
     collapsed: false
   Hide Left Dock: false
   Hide Right Dock: false
   PickNik:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd0000000100000000000001db000003e6fc020000000dfb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c006100790073010000000000000377000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000145000000cb000000b000fffffffb0000000c00430061006d0065007200610000000369000000160000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000230000001b60000000000000000fb0000000c00540065006c0065006f00700000000331000000b50000000000000000fb0000000e005000690063006b004e0069006b010000037d000000690000004300fffffffb0000000c00430061006d00650072006100000003d0000000160000000000000000fb0000000c00430061006d00650072006101000002d6000001100000000000000000000002c5000003e600000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000100000000000001db00000402fc020000000dfb0000000a0049006d00610067006500000000410000010d0000000000000000fb0000000a0049006d0061006700650000000041000002090000000000000000fb0000000a0049006d00610067006500000001700000015c0000000000000000fb000000100044006900730070006c006100790073010000000000000393000000dd00fffffffb0000000800480065006c00700000000342000000bb0000007600fffffffb0000000a005600690065007700730000000145000000cb000000b000fffffffb0000000c00430061006d0065007200610000000369000000160000000000000000fb0000000c00430061006d006500720061000000038f000000160000000000000000fb0000001e004d006f00740069006f006e00200050006c0061006e006e0069006e00670100000230000001b60000000000000000fb0000000c00540065006c0065006f00700000000331000000b50000000000000000fb0000000e005000690063006b004e0069006b0100000399000000690000004300fffffffb0000000c00430061006d00650072006100000003d0000000160000000000000000fb0000000c00430061006d00650072006101000002d60000011000000000000000000000059f0000040200000001000000020000000100000002fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
   Views:
     collapsed: false
-  Width: 1190
-  X: 1891
-  Y: 14
+  Width: 1920
+  X: 1193
+  Y: 24
