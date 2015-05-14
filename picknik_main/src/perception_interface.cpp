@@ -664,8 +664,6 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   product->setWidth(width);
   product->setHeight(height);
 
-  // visuals_->visual_tools_->publishAxisLabeled(world_to_bin * bin_to_bounding_box, "WORLD_TO_MESH");
-  
   product->setCentroid(bin_to_bounding_box);
 
   // Debug

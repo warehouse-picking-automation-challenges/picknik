@@ -119,6 +119,12 @@ public:
   bool testVisualizeShelf();
 
   /**
+   * \brief Tweak location of shelf using keyboard calibrate
+   * \return true on success
+   */
+  bool calibrateShelf();
+
+  /**
    * \brief Convert a calibration pose into its inverse
    * \return true on success
    */
