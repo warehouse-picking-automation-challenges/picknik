@@ -9,12 +9,13 @@ import pandas as pd
 
 
 class ContestInterface(object):
-    data = pd.read_csv('items_data.csv', index_col=0)
+    data = pd.read_csv('items_data.csv', index_col=0).to_dict()
     # These are the probabilites to correctly perform a grasp for each
     # object. Probabilities are not random, but they should be tuned
     # as testing progresses so that the robot starts picking the
     # objects with maximum expected score.
-    _p_grasping_correctly = data.to_dict()['p_grasping_correctly']
+    _p_grasping_correctly = data['p_grasping_correctly']
+    _extra_points = data['extra_points']
     # Hopefull we won't pick up the wrong object, or move other
     # objects too often... If this is low, the sorting order will
     # tipically have the easiest items from the most crowded bins
@@ -98,7 +99,7 @@ class ContestInterface(object):
         for wi in self.work_order:
             bin, item = wi['bin'], wi['item']
             n_items = len(self.bin_contents[bin])
-            score = self._p_grasping_correctly[item] * [10, 15, 20][min(3, n_items) - 1]
+            score = self._p_grasping_correctly[item] * [10, 15, 20][min(3, n_items) - 1] + self._extra_points[item]
             if n_items > 1:
                 # If there are more than one item in the bin we may
                 # lose points for moving a non-target item out of a
