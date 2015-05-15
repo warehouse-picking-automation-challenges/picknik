@@ -98,8 +98,8 @@ public:
    */
   bool processPerceptionResults(picknik_msgs::FindObjectsResultConstPtr result,
                                 ProductObjectPtr& product, BinObjectPtr& bin);
-  bool processPerceptionResultsDDTR(picknik_msgs::FindObjectsResultConstPtr result,
-                                ProductObjectPtr& product, BinObjectPtr& bin);
+  // bool processPerceptionResultsDDTR(picknik_msgs::FindObjectsResultConstPtr result,
+  //                               ProductObjectPtr& product, BinObjectPtr& bin);
   bool processPerceptionResultsPCL(picknik_msgs::FindObjectsResultConstPtr result,
                                 ProductObjectPtr& product, BinObjectPtr& bin);
 
