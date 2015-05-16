@@ -84,7 +84,9 @@ SimplePointCloudFilter::SimplePointCloudFilter(rviz_visual_tools::RvizVisualTool
   // Load parameters
   const std::string parent_name = "simple_point_cloud_filter"; // for namespacing logging messages
   rviz_visual_tools::getDoubleParameter(parent_name, nh_, "radius_of_outlier_removal", radius_of_outlier_removal_);
-
+  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "min_number_of_neighbors", min_number_of_neighbors_);
+  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "mean_k", mean_k_);
+  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "std_dev_thresh", std_dev_thresh_);
 
   ROS_DEBUG_STREAM_NAMED("point_cloud_filter","Simple point cloud filter ready.");
 }
@@ -178,13 +180,13 @@ bool SimplePointCloudFilter::detectObjects(bool remove_outliers)
     pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> rad;
     rad.setInputCloud(roi_cloud_);
     rad.setRadiusSearch(radius_of_outlier_removal_);
-    rad.setMinNeighborsInRadius(200);
+    rad.setMinNeighborsInRadius(min_number_of_neighbors_);
     rad.filter(*roi_cloud_);
 
     pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
     sor.setInputCloud(roi_cloud_);
-    sor.setMeanK(50);
-    sor.setStddevMulThresh(1.0);
+    sor.setMeanK(mean_k_);
+    sor.setStddevMulThresh(std_dev_thresh_);
     sor.filter(*roi_cloud_);
   }
 

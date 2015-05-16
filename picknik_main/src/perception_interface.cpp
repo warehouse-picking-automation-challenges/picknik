@@ -75,6 +75,7 @@ PerceptionInterface::PerceptionInterface(bool verbose, VisualsPtr visuals, Shelf
   rvt::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_cx_);
   rvt::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_cy_);
   rvt::getDoubleParameter(parent_name, nh, "camera_intrinsics/min_depth", camera_min_depth_);
+  rvt::getDoubleParameter(parent_name, nh, "bounding_box_reduction", bounding_box_reduction_);
 
   ROS_INFO_STREAM_NAMED("perception_interface","PerceptionInterface Ready.");
 }
@@ -416,9 +417,6 @@ bool PerceptionInterface::processPerceptionResultsPCL(picknik_msgs::FindObjectsR
   // Allow mesh to display
   ros::spinOnce();
 
-  ROS_WARN_STREAM_NAMED("perception_interface","Sleeping for 20 seconds...");
-  // ros::Duration(20).sleep();
-
   return true;
 }
 
@@ -520,13 +518,15 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
   if (!bounding_box_.getBodyAlignedBoundingBox(product->getCollisionMesh(), points_to_drop_pose, bin_to_bounding_box, 
                                                depth, width, height))
   {
-    ROS_ERROR_STREAM_NAMED("manipulation","Failed to get bounding box");
+    ROS_ERROR_STREAM_NAMED("perception_interface","Failed to get bounding box");
     return false;
   }
 
-  product->setDepth(depth);
-  product->setWidth(width);
-  product->setHeight(height);
+  // test... make bounding boxes a little smaller
+  ROS_DEBUG_STREAM_NAMED("perception_interface","reducing bounding box size to " << bounding_box_reduction_);
+  product->setDepth(depth * bounding_box_reduction_);
+  product->setWidth(width * bounding_box_reduction_);
+  product->setHeight(height * bounding_box_reduction_);
 
   product->setCentroid(bin_to_bounding_box);
   // visuals_->visual_tools_->publishAxisLabeled(bin_to_bounding_box, "BIN_TO_BOUNDING_BOX");

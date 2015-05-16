@@ -147,10 +147,20 @@ public:
         rate.sleep();
       }
       
+      ROS_WARN_STREAM_NAMED("pcl_perception_server","Sleeping for 3 seconds to ensure cameras aren't moving...");
+      ros::Duration(3.0).sleep();
+
+      // Create results
+      picknik_msgs::FindObjectsResult result;
+
       if (!pointcloud_filter_->detectObjects(use_outlier_removal_))
       {
         ROS_ERROR_STREAM_NAMED("pcl_perception_server","Error occured when detecting objects");
-        return false;
+        result.succeeded = false;
+        manipulation_interface_->sendPerceptionResults(result);
+        ROS_DEBUG_STREAM_NAMED("pcl_perception_server","sending result.succeeded = false");
+        continue;
+        //return false;
       }
 
       // Finish up perception
@@ -172,9 +182,6 @@ public:
 
       ROS_INFO_STREAM_NAMED("pcl_perception_server","Finished computing mesh msg");
       ROS_DEBUG_STREAM_NAMED("test","sizes = " << mesh_msg.triangles.size() << ", " << mesh_msg.vertices.size());
-
-      // Create results
-      picknik_msgs::FindObjectsResult result;
 
       if (request->expected_objects_names.size() > 1)
         ROS_WARN_STREAM_NAMED("pcl_perception_server","Perception can currently only handle one product");

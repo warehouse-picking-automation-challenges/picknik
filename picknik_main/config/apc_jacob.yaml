@@ -85,6 +85,8 @@ test:
   test_double: 0.05 # for anything
   # During development it is nice to have ability to tweak a value
   test_pose: [0.12, 0.06, 0.03, 1.57, 0, 0] # x,y,z,r,p,y
+  
+bounding_box_reduction: 0.95 # reduce bounding box size slightly
 
 behavior:
   end_effector_enabled: true

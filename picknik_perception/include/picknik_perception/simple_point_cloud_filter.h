@@ -165,6 +165,9 @@ private:
 
 
   double radius_of_outlier_removal_;
+  double min_number_of_neighbors_;
+  double mean_k_;
+  double std_dev_thresh_;
 
 }; // class
 

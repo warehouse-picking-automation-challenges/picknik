@@ -169,6 +169,7 @@ private:
   double camera_min_depth_; 
   
   bounding_box::BoundingBox bounding_box_;  
+  double bounding_box_reduction_;
 }; // end class
 
 // Create boost pointers for this class

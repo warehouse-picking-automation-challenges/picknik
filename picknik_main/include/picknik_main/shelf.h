@@ -343,6 +343,8 @@ private:
   BinObjectMap bins_;
 
   MeshObjectPtr goal_bin_;
+  MeshObjectPtr computer_vision_shelf_;
+
   RectangleObjectPtr front_wall_;
 
   std::map<std::string,RectangleObjectPtr> environment_objects_;
