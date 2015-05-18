@@ -330,7 +330,26 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   // Lu Ma Saves this model in the WORLD COORDINATE SYSTEM
   ROS_DEBUG_STREAM_NAMED("shelf","Loading shelf from computer vision...");
   computer_vision_shelf_.reset(new MeshObject(visuals_, rvt::YELLOW, "computer_vision_shelf"));
-  Eigen::Affine3d computer_vision_shelf_pose = Eigen::Affine3d::Identity();
+
+  // TODO: read this in from yaml if it work well
+  // pose from Lu Ma, mesh file is saved in computer vision orientation of "xtion_right_rgb_frame"
+  Eigen::Affine3d computer_vision_shelf_pose = Eigen::Affine3d::Identity();    
+  //-0.0308827    0.383599    1.0714    0.00241    0.276    -0.2208       
+  Eigen::Vector3d translation = Eigen::Vector3d(-0.0308827, 0.383599, 1.0714);
+  Eigen::Vector3d rotation = Eigen::Vector3d(0.00241, 0.276, -0.2208);
+
+  // construct world pose to camera pose (pose Lu Ma took as origin when constructing the model)
+  computer_vision_shelf_pose *= Eigen::AngleAxisd(rotation[2], Eigen::Vector3d::UnitZ())
+    * Eigen::AngleAxisd(rotation[1], Eigen::Vector3d::UnitY())
+    * Eigen::AngleAxisd(rotation[0], Eigen::Vector3d::UnitX());
+  computer_vision_shelf_pose.translation() = translation;
+
+  // convert to ros frame (mesh is saved in computer vision frame)
+  computer_vision_shelf_pose *= Eigen::AngleAxisd(-M_PI / 2.0, Eigen::Vector3d::UnitX())
+    * Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitY());
+
+  visuals_->visual_tools_->publishAxisLabeled(computer_vision_shelf_pose,"CV_FRAME");
+
   computer_vision_shelf_->setCentroid(computer_vision_shelf_pose);
   computer_vision_shelf_->setMeshCentroid(computer_vision_shelf_pose);
 
@@ -506,6 +525,7 @@ bool ShelfObject::visualizeHighRes(bool show_products) const
 
   // Show goal bin
   goal_bin_->visualizeHighRes(bottom_right_);
+  computer_vision_shelf_->visualizeHighRes(Eigen::Affine3d::Identity());
 
   // Show all other collision objects
   visualizeEnvironmentObjects();
@@ -600,6 +620,7 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
 
   // Show goal bin
   goal_bin_->createCollisionBodies(bottom_right_);
+  computer_vision_shelf_->createCollisionBodies(Eigen::Affine3d::Identity());
 
   // Show axis
   //goal_bin_->visualizeAxis(bottom_right_);

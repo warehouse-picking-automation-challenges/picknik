@@ -380,18 +380,18 @@ bool PerceptionInterface::processPerceptionResultsPCL(picknik_msgs::FindObjectsR
 
     // DEBUG
     // Difference between the camera frame lu ma is using and the frame we are using
-    Eigen::Affine3d world_to_camera = Eigen::Affine3d::Identity();
-    ros::Time time_stamp;
-    std::string frame_id = "xtion_right_depth_frame";
-    getTFTransform(world_to_camera, time_stamp, frame_id);
-    Eigen::Affine3d camera_difference_pose = world_to_camera.inverse() * pose_from_lu;
-    ROS_DEBUG_STREAM_NAMED("perception_interface","difference in frames = \n" << camera_difference_pose.translation() <<
-                           "\n" << camera_difference_pose.rotation());
+    // Eigen::Affine3d world_to_camera = Eigen::Affine3d::Identity();
+    // ros::Time time_stamp;
+    // std::string frame_id = "xtion_right_depth_frame";
+    // getTFTransform(world_to_camera, time_stamp, frame_id);
+    // Eigen::Affine3d camera_difference_pose = world_to_camera.inverse() * pose_from_lu;
+    // ROS_DEBUG_STREAM_NAMED("perception_interface","difference in frames = \n" << camera_difference_pose.translation() <<
+    //                        "\n" << camera_difference_pose.rotation());
 
     // this should be identity
-    Eigen::Affine3d check = world_to_camera * camera_difference_pose * pose_from_lu.inverse();
-    ROS_DEBUG_STREAM_NAMED("perception_interface","difference in frames = \n" << check.translation() <<
-                           "\n" << check.rotation());
+    // Eigen::Affine3d check = world_to_camera * camera_difference_pose * pose_from_lu.inverse();
+    // ROS_DEBUG_STREAM_NAMED("perception_interface","difference in frames = \n" << check.translation() <<
+    //                        "\n" << check.rotation());
 
     // Update the bounding box
     updateBoundingMesh(product, bin);
@@ -409,6 +409,8 @@ bool PerceptionInterface::processPerceptionResultsPCL(picknik_msgs::FindObjectsR
       product->createCollisionBodies(world_to_bin);
       product->visualizeHighRes(world_to_bin);
     }
+    ROS_WARN_STREAM_NAMED("perception_interface","sleeping 10s to view results of multi object perception...");
+    ros::Duration(10.0).sleep();
 
   } // for each found product
 
@@ -503,7 +505,7 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
     bounding_box_.drop_pose_ = Eigen::Affine3d::Identity();
     bounding_box_.drop_plane_ = bounding_box::XY;
     bounding_box_.drop_points_ = true;
-
+    bounding_box_.keep_points_ = false;
     //visuals_->visual_tools_->publishAxisLabeled(world_to_bin * bounding_box_.drop_pose_, "BOUNDING_BOX_DROP_POSE");
   }
 
