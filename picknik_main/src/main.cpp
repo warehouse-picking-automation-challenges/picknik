@@ -48,6 +48,9 @@ int main(int argc, char** argv)
   ros::AsyncSpinner spinner(4);
   spinner.start();
 
+  // start timer for run length
+  ros::Time begin_time = ros::Time::now();
+
   // Random
   srand (time(NULL));
 
@@ -371,6 +374,13 @@ int main(int argc, char** argv)
   std::cout << "-------------------------------------------------------" << std::endl;
   ROS_INFO_STREAM_NAMED("main", "Shutting down.");
   std::cout << std::endl << std::endl << std::endl;
+
+  ros::Time end_time = ros::Time::now();
+
+  ros::Duration duration = (end_time - begin_time);
+  
+  ROS_INFO_STREAM_NAMED("main","Test duration = " << duration << ". Max time allowed = " << 15.0 * 60.0 << " seconds (15 minutes).");
+  
   ros::shutdown();
 
   return 0;
