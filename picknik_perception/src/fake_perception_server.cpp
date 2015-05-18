@@ -62,7 +62,7 @@ int main(int argc, char** argv)
   client.reset(new picknik_perception::ManipulationInterface());
 
   // Load collision body
-  const std::string& collision_mesh_path = "file:///home/dave/ros/ws_picknik/src/picknik/picknik_main/meshes/products/mead_index_cards/collision.stl";
+  const std::string& collision_mesh_path = "file://" + ros::package::getPath("picknik_main") + "/meshes/products/mead_index_cards/collision.stl";
   shapes::Shape *mesh = shapes::createMeshFromResource(collision_mesh_path); // make sure its prepended by file://
   shapes::ShapeMsg shape_msg; // this is a boost::variant type from shape_messages.h
   if (!mesh || !shapes::constructMsgFromShape(mesh, shape_msg))
