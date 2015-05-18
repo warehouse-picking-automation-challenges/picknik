@@ -12,10 +12,29 @@
    Desc:   Main function that processes arguments
 */
 
+#include <string>
+#include <iostream>
+#include <stdio.h>
 #include <picknik_main/apc_manager.h>
 
 // ROS
 #include <ros/ros.h>
+
+// Adapted from http://stackoverflow.com/a/478960/1191119
+std::string exec(const char* cmd)
+{
+  FILE* pipe = popen(cmd, "r");
+  if (!pipe) return "ERROR";
+  char buffer[128];
+  std::string result = "";
+  while (!feof(pipe))
+  {
+  if (fgets(buffer, 128, pipe) != NULL)
+    result += buffer;
+  }
+  pclose(pipe);
+  return result;
+}
 
 int main(int argc, char** argv)
 {
@@ -152,6 +171,19 @@ int main(int argc, char** argv)
     return 1; // error
   }
 
+
+  // Sort order according to expected scores
+  std::stringstream order_sorting_command;
+  order_sorting_command << "rosrun picknik_main sort_order.py " << order_file << " " << order_file;
+  std::string result;
+  result = exec(order_sorting_command.str().c_str());
+  ROS_DEBUG_STREAM_NAMED("main", "order sorted by running: \"" << order_sorting_command.str() << "\" returned: " << result);
+  if (result.compare("ERROR") == 0) {
+    ROS_ERROR_STREAM_NAMED("main", "Running the sorting command failed, aborting.");
+    return 1;
+  }
+  if (!result.empty()) { ROS_DEBUG_STREAM_NAMED("main", "Sorting might have failed, let's try to keep going"); }
+
   picknik_main::APCManager manager(verbose, order_file, autonomous, full_autonomous, fake_execution, fake_perception);
 
   std::cout << std::endl;
@@ -177,14 +209,14 @@ int main(int argc, char** argv)
       break;
     case 4:
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
-      ROS_INFO_STREAM_NAMED("main","Moving camera to each bin location");      
+      ROS_INFO_STREAM_NAMED("main","Moving camera to each bin location");
       manager.testCameraPositions();
       break;
     case 5:
       //if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Raise the roof (go up and down)");
       manager.testUpAndDown();
-      break;      
+      break;
     case 6:
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Plan to random valid locations");
@@ -205,7 +237,7 @@ int main(int argc, char** argv)
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Going to pose " << pose);
       manager.gotoPose(pose);
-      break;      
+      break;
     case 10:
       remove_from_shelf = false;
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
@@ -257,16 +289,16 @@ int main(int argc, char** argv)
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Testing approach lift retreat cartesian path");
       manager.testApproachLiftRetreat();
-      break;      
+      break;
     case 23:
       if (!manager.checkSystemReady(remove_from_shelf)) return 0;;
       ROS_INFO_STREAM_NAMED("main","Unit tests for manipulation");
       manager.unitTests();
-      break;      
+      break;
     case 25:
       ROS_INFO_STREAM_NAMED("main","Testing IK solver");
       manager.testIKSolver();
-      break;      
+      break;
     case 26:
       ROS_INFO_STREAM_NAMED("main","Unit test for perception communication");
       manager.unitTestPerceptionComm();

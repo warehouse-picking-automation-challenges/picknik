@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
 import json
@@ -5,21 +6,30 @@ from collections import Counter
 from itertools import chain
 import warnings
 
+import inspect
+import os
+
 import pandas as pd
+
+def get_path(fn):
+    filename = inspect.getframeinfo(inspect.currentframe()).filename
+    path = os.path.dirname(os.path.abspath(filename))
+    return os.path.join(path, fn)
 
 
 class ContestInterface(object):
-    data = pd.read_csv('items_data.csv', index_col=0)
+    data = pd.read_csv(get_path('items_data.csv'), index_col=0).to_dict()
     # These are the probabilites to correctly perform a grasp for each
     # object. Probabilities are not random, but they should be tuned
     # as testing progresses so that the robot starts picking the
     # objects with maximum expected score.
-    _p_grasping_correctly = data.to_dict()['p_grasping_correctly']
+    _p_grasping_correctly = data['p_grasping_correctly']
+    _extra_points = data['extra_points']
     # Hopefull we won't pick up the wrong object, or move other
     # objects too often... If this is low, the sorting order will
     # tipically have the easiest items from the most crowded bins
     # first. If it gets higher, single item bins will be preferred.
-    _p_mistakes = 0.2
+    _p_mistakes = 10
     _possible_items = list(_p_grasping_correctly)
     del data
 
@@ -98,7 +108,7 @@ class ContestInterface(object):
         for wi in self.work_order:
             bin, item = wi['bin'], wi['item']
             n_items = len(self.bin_contents[bin])
-            score = self._p_grasping_correctly[item] * [10, 15, 20][min(3, n_items) - 1]
+            score = self._p_grasping_correctly[item] * [10, 15, 20][min(3, n_items) - 1] + self._extra_points[item]
             if n_items > 1:
                 # If there are more than one item in the bin we may
                 # lose points for moving a non-target item out of a
@@ -110,16 +120,22 @@ class ContestInterface(object):
 
 
 if __name__ == '__main__':
+    import sys
+    import traceback
     import argparse
 
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("input_filename", type=str,
-                        help="filename for the json order")
-    parser.add_argument("output_filename", type=str,
-                        help="filename for the sorted order")
+    try:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("input_filename", type=str,
+                            help="filename for the json order")
+        parser.add_argument("output_filename", type=str,
+                            help="filename for the sorted order")
 
-    args = parser.parse_args()
+        args = parser.parse_args()
 
-    contest = ContestInterface.from_json(args.input_filename)
-    contest.to_json(args.output_filename, sort=True)
+        contest = ContestInterface.from_json(args.input_filename)
+        contest.to_json(args.output_filename, sort=True)
+        raise ValueError
+    except:
+        traceback.print_exc(file=sys.stdout)
