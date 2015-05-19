@@ -136,6 +136,5 @@ if __name__ == '__main__':
 
         contest = ContestInterface.from_json(args.input_filename)
         contest.to_json(args.output_filename, sort=True)
-        raise ValueError
     except:
         traceback.print_exc(file=sys.stdout)
