@@ -409,8 +409,8 @@ bool PerceptionInterface::processPerceptionResultsPCL(picknik_msgs::FindObjectsR
       product->createCollisionBodies(world_to_bin);
       product->visualizeHighRes(world_to_bin);
     }
-    ROS_WARN_STREAM_NAMED("perception_interface","sleeping 10s to view results of multi object perception...");
-    ros::Duration(10.0).sleep();
+    // ROS_WARN_STREAM_NAMED("perception_interface","sleeping 10s to view results of multi object perception...");
+    // ros::Duration(10.0).sleep();
 
   } // for each found product
 

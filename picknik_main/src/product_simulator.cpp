@@ -55,6 +55,9 @@ ProductSimulator::ProductSimulator(bool verbose, VisualsPtr visuals,
 
 bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, PerceptionInterfacePtr percepetion_interface)
 {
+  // I don't think we need this function any more...
+  return true;
+
   ROS_INFO_STREAM_NAMED("product_simulator","Generating random product poses");
 
   // Setup random pose generator
@@ -89,6 +92,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
   // Loop through each bin
   for (BinObjectMap::const_iterator bin_it = shelf->getBins().begin(); bin_it != shelf->getBins().end(); bin_it++)
   {
+
     if (!ros::ok())
       return false;
 

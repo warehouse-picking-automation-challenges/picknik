@@ -47,12 +47,12 @@
     },
     "work_order": [
         {
-            "bin": "bin_A",
-            "item": "kong_sitting_frog_dog_toy"
+            "bin": "bin_I",
+            "item": "highland_6539_self_stick_notes"
         },
         {
-            "bin": "bin_B",
-            "item": "rolodex_jumbo_pencil_cup"
+            "bin": "bin_E",
+            "item": "paper_mate_12_count_mirado_black_warrior"
         },
         {
             "bin": "bin_C",
@@ -63,36 +63,36 @@
             "item": "mead_index_cards"
         },
         {
-            "bin": "bin_E",
-            "item": "paper_mate_12_count_mirado_black_warrior"
-        },
-        {
-            "bin": "bin_F",
-            "item": "genuine_joe_plastic_stir_sticks"
-        },
-        {
-            "bin": "bin_G",
-            "item": "kong_sitting_frog_dog_toy"
-        },
-        {
-            "bin": "bin_H",
-            "item": "expo_dry_erase_board_eraser"
-        },
-        {
-            "bin": "bin_I",
-            "item": "highland_6539_self_stick_notes"
+            "bin": "bin_L",
+            "item": "feline_greenies_dental_treats"
         },
         {
             "bin": "bin_J",
             "item": "rolodex_jumbo_pencil_cup"
         },
         {
+            "bin": "bin_H",
+            "item": "expo_dry_erase_board_eraser"
+        },
+        {
             "bin": "bin_K",
             "item": "mead_index_cards"
         },
         {
-            "bin": "bin_L",
-            "item": "feline_greenies_dental_treats"
+            "bin": "bin_A",
+            "item": "kong_sitting_frog_dog_toy"
+        },
+        {
+            "bin": "bin_B",
+            "item": "rolodex_jumbo_pencil_cup"
+        },
+        {
+            "bin": "bin_G",
+            "item": "kong_sitting_frog_dog_toy"
+        },
+        {
+            "bin": "bin_F",
+            "item": "genuine_joe_plastic_stir_sticks"
         }
     ]
 }

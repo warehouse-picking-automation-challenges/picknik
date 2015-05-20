@@ -334,8 +334,8 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   // TODO: read this in from yaml if it work well
   // pose from Lu Ma, mesh file is saved in computer vision orientation of "xtion_right_rgb_frame"
   Eigen::Affine3d computer_vision_shelf_pose = Eigen::Affine3d::Identity();    
-  //-0.0308827    0.383599    1.0714    0.00241    0.276    -0.2208       
-  Eigen::Vector3d translation = Eigen::Vector3d(-0.0308827, 0.383599, 1.0714);
+  //-0.0308827    0.383599    1.71748    0.00241    0.276    -0.2208
+  Eigen::Vector3d translation = Eigen::Vector3d(-0.0308827, 0.383599, 1.71748);
   Eigen::Vector3d rotation = Eigen::Vector3d(0.00241, 0.276, -0.2208);
 
   // construct world pose to camera pose (pose Lu Ma took as origin when constructing the model)

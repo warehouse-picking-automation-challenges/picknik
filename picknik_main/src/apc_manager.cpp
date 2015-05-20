@@ -1349,8 +1349,8 @@ bool APCManager::testGraspGenerator()
       ROS_INFO_STREAM_NAMED("apc_manager","Overall success rate: " << std::setprecision(3) << (double(overall_successes)/double(overall_attempts)*100.0));
       ROS_INFO_STREAM_NAMED("apc_manager","Product success rate: " << std::setprecision(3) << (double(product_successes)/double(product_attempts)*100.0));
 
-      std::cout << std::endl << std::endl;
-      std::cout << "-------------------------------------------------------" << std::endl;
+      // std::cout << std::endl << std::endl;
+      // std::cout << "-------------------------------------------------------" << std::endl;
 
       // Show robot
       if (success && verbose_)
@@ -1709,8 +1709,8 @@ bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
   // }
 
   // Communicate with perception pipeline
-  std::cout << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
+  // std::cout << std::endl;
+  // std::cout << "-------------------------------------------------------" << std::endl;
   perception_interface_->startPerception(product, bin);
 
   // Perturb camera
