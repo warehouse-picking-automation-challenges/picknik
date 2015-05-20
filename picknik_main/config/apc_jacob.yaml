@@ -35,7 +35,7 @@ both_arms_name: manipulator_DISABLED
 # 0.035 m is the width of the 8020 bar in front of shelf
 # in-lab distance is 0.5+0.029-0.035 = 0.494
 #world_to_shelf_transform: [0.489, -0.438, 0.002, 0.0, 0.0, 0.0]  # IDEAL
-world_to_shelf_transform: [0.67, -0.465, -0.038, 0.0, 0.0, 0.0]  # After arm offset
+world_to_shelf_transform: [0.69, -0.465, -0.038, 0.0, 0.0, 0.01245]  # After arm offset
 
 # Adding 0.38 m offset on arm_mount_joint
 # Actual 0.167 offset

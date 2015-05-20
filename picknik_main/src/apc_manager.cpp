@@ -388,6 +388,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         if (!manipulation_->chooseGrasp(work_order, arm_jmg, grasp_candidates, verbose))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","No grasps found");
+
           return false;
         }
 

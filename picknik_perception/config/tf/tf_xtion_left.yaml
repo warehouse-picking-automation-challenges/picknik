@@ -1,8 +1,8 @@
 initial_x: -0.44
-initial_y: -0.021
-initial_z: 0.704
+initial_y: 0.021
+initial_z: 0.711
 initial_roll: 0.00241
-initial_pitch: 0.276
+initial_pitch: 0.286
 initial_yaw: 1.35
 from: gantry_plate
 to: xtion_left_link
