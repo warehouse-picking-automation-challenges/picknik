@@ -57,7 +57,7 @@ int main(int argc, char** argv)
   // Command line arguments
   std::size_t mode = 1;
   std::size_t order_start = 0;
-  std::size_t jump_to = 0;
+  std::size_t jump_to = 1;
   std::size_t num_orders = 0;
   std::size_t id = 0;
   bool verbose = false;
@@ -379,7 +379,8 @@ int main(int argc, char** argv)
 
   ros::Duration duration = (end_time - begin_time);
   
-  ROS_INFO_STREAM_NAMED("main","Test duration = " << duration << ". Max time allowed = " << 15.0 * 60.0 << " seconds (15 minutes).");
+  ROS_INFO_STREAM_NAMED("main","Test duration = " << duration << " seconds (" << (duration / 60.0) << " minutes). "
+                        << "Max time allowed = " << (15.0 * 60.0) << " seconds (15 minutes).");
   
   ros::shutdown();
 

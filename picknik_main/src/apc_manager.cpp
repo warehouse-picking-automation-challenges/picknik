@@ -204,7 +204,8 @@ bool APCManager::mainOrderProcessor(std::size_t order_start, std::size_t jump_to
   loadShelfContents(order_file_path_);
 
   // Generate random product poses and visualize the shelf
-  createRandomProductPoses();
+  if (fake_perception_)
+    createRandomProductPoses();
 
   return runOrder(order_start, jump_to, num_orders);
 }
@@ -319,23 +320,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
     {
       // #################################################################################################################
       case 0:
-        //statusPublisher("Moving to initial position");
-
-        //   // Clear the temporary purple robot state image
-        //   visuals_->visual_tools_->hideRobot();
-
-        //   // Set planning scene
-        //   planning_scene_manager_->displayShelfAsWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
-
-        //   // Move
-        //   if (!moveToStartPosition())
-        //   {
-        //     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to initial position");
-        //     return false;
-        //   }
-
-        //   break;
-        step++;
+        ROS_ERROR_STREAM_NAMED("apc_manager","Should not be on step 0");
 
         // #################################################################################################################
       case 1: statusPublisher("Open end effectors");
@@ -645,8 +630,8 @@ bool APCManager::testEndEffectors()
       std::cout << "Showing closed EE of state " << std::endl;
 
       open = false;
-      manipulation_->setStateWithOpenEE(open, current_state);
-      visuals_->visual_tools_->publishRobotState(current_state);
+      // manipulation_->setStateWithOpenEE(open, current_state);
+      // visuals_->visual_tools_->publishRobotState(current_state);
 
       // Close all EEs
       manipulation_->openEEs(open);
@@ -658,9 +643,8 @@ bool APCManager::testEndEffectors()
       std::cout << "Showing open EE of state " << std::endl;
 
       open = true;
-      manipulation_->setStateWithOpenEE(open, current_state);
-
-      visuals_->visual_tools_->publishRobotState(current_state);
+      // manipulation_->setStateWithOpenEE(open, current_state);
+      // visuals_->visual_tools_->publishRobotState(current_state);
 
       // Close all EEs
       manipulation_->openEEs(open);
@@ -1358,8 +1342,8 @@ bool APCManager::testGraspGenerator()
         if (config_->dual_arm_)
           the_grasp_state->setToDefaultValues(config_->both_arms_, config_->start_pose_); // hide the other arm
         the_grasp_state->setJointGroupPositions(arm_jmg, grasp_candidates.front()->grasp_ik_solution_);
-        manipulation_->setStateWithOpenEE(true, the_grasp_state);
-        visuals_->visual_tools_->publishRobotState(the_grasp_state, rvt::PURPLE);
+        // manipulation_->setStateWithOpenEE(true, the_grasp_state);
+        // visuals_->visual_tools_->publishRobotState(the_grasp_state, rvt::PURPLE);
 
         if (verbose_)
           ros::Duration(5.0).sleep();
@@ -2025,7 +2009,6 @@ bool APCManager::generateGoalBinLocations()
   Eigen::Affine3d goal_bin_pose = shelf_->getBottomRight() * shelf_->getGoalBin()->getCentroid();
   Eigen::Affine3d overhead_goal_bin = Eigen::Affine3d::Identity();
   overhead_goal_bin.translation() = goal_bin_pose.translation();
-  ROS_WARN_STREAM_NAMED("apc_manager","Increase goal bin clearance here");
   overhead_goal_bin.translation().z() += config_->goal_bin_clearance_;
 
   // Convert to pose that has z arrow pointing towards object and x out in the grasp dir

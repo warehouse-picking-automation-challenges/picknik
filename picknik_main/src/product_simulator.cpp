@@ -55,7 +55,7 @@ ProductSimulator::ProductSimulator(bool verbose, VisualsPtr visuals,
 
 bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, PerceptionInterfacePtr percepetion_interface)
 {
-  ROS_INFO_STREAM_NAMED("product_simulator","Generating random product poses");
+  ROS_WARN_STREAM_NAMED("product_simulator","Generating random product poses (slightly slow)");
 
   // Setup random pose generator
   Eigen::Affine3d pose;
@@ -96,6 +96,9 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
     BinObjectPtr bin = bin_it->second;
     ROS_DEBUG_STREAM_NAMED("product_simulator","Updating products in " << bin->getName());
 
+    // Calculate once the bin transform
+    world_to_bin_transform = transform(bin->getBottomRight(), shelf->getBottomRight());
+
     // Loop through each product
     for (std::size_t product_id = 0; product_id < bin->getProducts().size(); ++product_id)
     {
@@ -113,8 +116,6 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
         product->setCentroid(pose);
         product->setMeshCentroid(pose);
 
-        // Visualize and show in collision shelf
-        world_to_bin_transform = transform(bin->getBottomRight(), shelf->getBottomRight());
         //product->visualizeHighRes(world_to_bin_transform);
 
         if (!inCollision(product, world_to_bin_transform))
@@ -143,11 +144,17 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
             //product->visualizeHighRes(world_to_bin_transform);
           }
 
+          ROS_WARN_STREAM_NAMED("product_simulator","Before bounding box");
+          printTransform(product->getCentroid());
+
           // Calculate bounding mesh
           if (!percepetion_interface->updateBoundingMesh(product, bin))
           {
             ROS_WARN_STREAM_NAMED("product_simulator","Unable to update bounding mesh");
           }
+
+          ROS_WARN_STREAM_NAMED("product_simulator","After bounding box");
+          printTransform(product->getCentroid());
 
           // Visualize bounding box
           product->visualizeHighResWireframe(world_to_bin_transform, rvt::YELLOW);

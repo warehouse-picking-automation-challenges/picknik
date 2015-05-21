@@ -79,7 +79,7 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
 
   // Load grasp generator
   grasp_generator_.reset( new moveit_grasps::GraspGenerator(visuals_->grasp_markers_) );
-  setStateWithOpenEE(true, current_state_); // so that grasp filter is started up with EE open
+  //setStateWithOpenEE(true, current_state_); // so that grasp filter is started up with EE open
   grasp_filter_.reset(new moveit_grasps::GraspFilter(current_state_, visuals_->grasp_markers_) );
   grasp_planner_.reset(new moveit_grasps::GraspPlanner(visuals_->trajectory_lines_));
   grasp_planner_->setWaitForNextStepCallback(boost::bind(&picknik_main::RemoteControl::waitForNextStep, 
@@ -607,7 +607,10 @@ bool Manipulation::planPostProcessing()
 
 bool Manipulation::printExperienceLogs()
 {
-  if (!planning_context_handle_ || !config_->use_experience_setup_)
+  if (!config_->use_experience_setup_)
+    return true;
+
+  if (!planning_context_handle_)
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to print experience logs");
     return false;
@@ -672,8 +675,8 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_traj, 
   // }
 
   std::size_t modified_num_waypoints = new_robot_traj->getWayPointCount();
-  ROS_INFO_STREAM_NAMED("manipulation","Interpolated trajectory from " << original_num_waypoints
-                        << " to " << modified_num_waypoints);
+  ROS_DEBUG_STREAM_NAMED("manipulation.interpolation","Interpolated trajectory from " << original_num_waypoints
+                         << " to " << modified_num_waypoints);
 
   // Copy back to original datastructure
   *robot_traj = *new_robot_traj;
@@ -1763,25 +1766,25 @@ bool Manipulation::setEEGraspPosture(trajectory_msgs::JointTrajectory grasp_post
   return true;
 }
 
-bool Manipulation::setStateWithOpenEE(bool open, moveit::core::RobotStatePtr robot_state)
-{
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","setStateWithOpenEE()");
+// bool Manipulation::setStateWithOpenEE(bool open, moveit::core::RobotStatePtr robot_state)
+// {
+//   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","setStateWithOpenEE()");
 
-  if (open)
-  {
-    grasp_datas_[config_->right_arm_]->setRobotStatePreGrasp( robot_state );
-    if (config_->dual_arm_)
-      grasp_datas_[config_->left_arm_]->setRobotStatePreGrasp( robot_state );
-  }
-  else
-  {
-    grasp_datas_[config_->right_arm_]->setRobotStateGrasp( robot_state );
-    if (config_->dual_arm_)
-      grasp_datas_[config_->left_arm_]->setRobotStateGrasp( robot_state );
-  }
-  return true;
-}
-
+//   if (open)
+//   {
+//     grasp_datas_[config_->right_arm_]->setRobotStatePreGrasp( robot_state );
+//     if (config_->dual_arm_)
+//       grasp_datas_[config_->left_arm_]->setRobotStatePreGrasp( robot_state );
+//   }
+//   else
+//   {
+//     grasp_datas_[config_->right_arm_]->setRobotStateGrasp( robot_state );
+//     if (config_->dual_arm_)
+//       grasp_datas_[config_->left_arm_]->setRobotStateGrasp( robot_state );
+//   }
+//   return true;
+// }
+ 
 ExecutionInterfacePtr Manipulation::getExecutionInterface()
 {
   return execution_interface_;
