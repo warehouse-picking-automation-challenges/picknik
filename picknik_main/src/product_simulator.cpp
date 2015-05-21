@@ -55,9 +55,6 @@ ProductSimulator::ProductSimulator(bool verbose, VisualsPtr visuals,
 
 bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, PerceptionInterfacePtr percepetion_interface)
 {
-  // I don't think we need this function any more...
-  return true;
-
   ROS_INFO_STREAM_NAMED("product_simulator","Generating random product poses");
 
   // Setup random pose generator
