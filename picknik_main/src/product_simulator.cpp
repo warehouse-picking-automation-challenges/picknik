@@ -148,6 +148,9 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
           printTransform(product->getCentroid());
 
           // Calculate bounding mesh
+          // currently the product centroid is with respect to the bin
+          // and the mesh is with respect to the centroid of the product
+          // but bounding_box expects it to be with respect to the BIN pose
           if (!percepetion_interface->updateBoundingMesh(product, bin))
           {
             ROS_WARN_STREAM_NAMED("product_simulator","Unable to update bounding mesh");
