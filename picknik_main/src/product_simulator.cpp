@@ -77,14 +77,6 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
   
   // Show empty shelf in Rviz DISPLAY
   bool show_random_generated_poses = visuals_->isEnabled("show_random_generated_poses");
-  // if (show_random_generated_poses && false)
-  // {
-  //   visuals_->visual_tools_display_->deleteAllMarkers(); // clear all old markers
-  //   visuals_->visual_tools_display_->enableBatchPublishing(true); // don't show markers yet
-  //   bool show_products = false;
-  //   shelf->visualizeHighRes(show_products);
-  //   shelf->visualizeAxis(visuals_);
-  // }
 
   // Loop through each bin
   for (BinObjectMap::const_iterator bin_it = shelf->getBins().begin(); bin_it != shelf->getBins().end(); bin_it++)
@@ -116,11 +108,6 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
         product->setCentroid(pose);
         product->setMeshCentroid(pose);
 
-        // if (show_random_generated_poses)
-        // {
-        //   product->createCollisionBodies(world_to_bin);
-        // }
-
         if (!inCollision(product, world_to_bin))
         {
           found = true; // this is good enough
@@ -147,11 +134,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
             product->createCollisionBodies(world_to_bin);
           }
 
-          // ROS_WARN_STREAM_NAMED("product_simulator","Before bounding box");
-          // std::cout << "Centoid: "; printTransform(product->getCentroid());
-          // std::cout << "Mesh Centoid: "; printTransform(product->getMeshCentroid());
 
-          // Convert mesh from CENTROID_OF_PRODUCT frame of reference to BIN frame of reference
           // so that bounding_box works correctly
           convertMeshToBinFrame(product);
 
@@ -181,10 +164,6 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
         ROS_ERROR_STREAM_NAMED("product_simulator","A product never had a random pose found and was not added to the planning scene");
     } // for each product
   } // for each bin
-
-  // Show all display markers at once
-  // if (show_random_generated_poses)
-  //   visuals_->visual_tools_display_->triggerBatchPublishAndDisable();
 
   return true;
 }
