@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
 import json
@@ -5,11 +6,19 @@ from collections import Counter
 from itertools import chain
 import warnings
 
+import inspect
+import os
+
 import pandas as pd
+
+def get_path(fn):
+    filename = inspect.getframeinfo(inspect.currentframe()).filename
+    path = os.path.dirname(os.path.abspath(filename))
+    return os.path.join(path, fn)
 
 
 class ContestInterface(object):
-    data = pd.read_csv('items_data.csv', index_col=0).to_dict()
+    data = pd.read_csv(get_path('items_data.csv'), index_col=0).to_dict()
     # These are the probabilites to correctly perform a grasp for each
     # object. Probabilities are not random, but they should be tuned
     # as testing progresses so that the robot starts picking the
@@ -111,16 +120,21 @@ class ContestInterface(object):
 
 
 if __name__ == '__main__':
+    import sys
+    import traceback
     import argparse
 
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("input_filename", type=str,
-                        help="filename for the json order")
-    parser.add_argument("output_filename", type=str,
-                        help="filename for the sorted order")
+    try:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("input_filename", type=str,
+                            help="filename for the json order")
+        parser.add_argument("output_filename", type=str,
+                            help="filename for the sorted order")
 
-    args = parser.parse_args()
+        args = parser.parse_args()
 
-    contest = ContestInterface.from_json(args.input_filename)
-    contest.to_json(args.output_filename, sort=True)
+        contest = ContestInterface.from_json(args.input_filename)
+        contest.to_json(args.output_filename, sort=True)
+    except:
+        traceback.print_exc(file=sys.stdout)
