@@ -59,7 +59,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
 
   // Setup random pose generator
   Eigen::Affine3d pose;
-  Eigen::Affine3d world_to_bin_transform;
+  Eigen::Affine3d world_to_bin;
   rviz_visual_tools::RandomPoseBounds pose_bounds;
   pose_bounds.x_min_ = RAND_PADDING;
   pose_bounds.y_min_ = RAND_PADDING;
@@ -76,15 +76,15 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
   
   // Show empty shelf in Rviz DISPLAY
-  bool change_rviz_displays = false;
-  if (change_rviz_displays)
-  {
-    visuals_->visual_tools_display_->deleteAllMarkers(); // clear all old markers
-    visuals_->visual_tools_display_->enableBatchPublishing(true); // don't show markers yet
-    bool show_products = false;
-    shelf->visualizeHighRes(show_products);
-    shelf->visualizeAxis(visuals_);
-  }
+  bool show_random_generated_poses = visuals_->isEnabled("show_random_generated_poses");
+  // if (show_random_generated_poses && false)
+  // {
+  //   visuals_->visual_tools_display_->deleteAllMarkers(); // clear all old markers
+  //   visuals_->visual_tools_display_->enableBatchPublishing(true); // don't show markers yet
+  //   bool show_products = false;
+  //   shelf->visualizeHighRes(show_products);
+  //   shelf->visualizeAxis(visuals_);
+  // }
 
   // Loop through each bin
   for (BinObjectMap::const_iterator bin_it = shelf->getBins().begin(); bin_it != shelf->getBins().end(); bin_it++)
@@ -97,7 +97,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
     ROS_DEBUG_STREAM_NAMED("product_simulator","Updating products in " << bin->getName());
 
     // Calculate once the bin transform
-    world_to_bin_transform = transform(bin->getBottomRight(), shelf->getBottomRight());
+    world_to_bin = transform(bin->getBottomRight(), shelf->getBottomRight());
 
     // Loop through each product
     for (std::size_t product_id = 0; product_id < bin->getProducts().size(); ++product_id)
@@ -116,9 +116,12 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
         product->setCentroid(pose);
         product->setMeshCentroid(pose);
 
-        //product->visualizeHighRes(world_to_bin_transform);
+        // if (show_random_generated_poses)
+        // {
+        //   product->createCollisionBodies(world_to_bin);
+        // }
 
-        if (!inCollision(product, world_to_bin_transform))
+        if (!inCollision(product, world_to_bin))
         {
           found = true; // this is good enough
           // Lower product and loop until in collision (e.g. crappy gravity simulation)
@@ -129,39 +132,45 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
             product->setMeshCentroid(pose);
 
             //if (verbose_)
-            //  product->visualizeHighRes(world_to_bin_transform);
+            //  product->visualizeHighRes(world_to_bin);
             
-            if (inCollision(product, world_to_bin_transform))
+            if (inCollision(product, world_to_bin))
             {
+              // Use current location, no matter where it ended up
               break;
             }
           } // for lower z height
 
-          // Use current location, no matter where it ended up
-          if (change_rviz_displays)
+          // Debug
+          if (show_random_generated_poses && false)
           {
-            product->createCollisionBodies(world_to_bin_transform);
-            //product->visualizeHighRes(world_to_bin_transform);
+            product->createCollisionBodies(world_to_bin);
           }
 
-          ROS_WARN_STREAM_NAMED("product_simulator","Before bounding box");
-          printTransform(product->getCentroid());
+          // ROS_WARN_STREAM_NAMED("product_simulator","Before bounding box");
+          // std::cout << "Centoid: "; printTransform(product->getCentroid());
+          // std::cout << "Mesh Centoid: "; printTransform(product->getMeshCentroid());
+
+          // Convert mesh from CENTROID_OF_PRODUCT frame of reference to BIN frame of reference
+          // so that bounding_box works correctly
+          convertMeshToBinFrame(product);
 
           // Calculate bounding mesh
-          // currently the product centroid is with respect to the bin
-          // and the mesh is with respect to the centroid of the product
-          // but bounding_box expects it to be with respect to the BIN pose
           if (!percepetion_interface->updateBoundingMesh(product, bin))
           {
             ROS_WARN_STREAM_NAMED("product_simulator","Unable to update bounding mesh");
           }
 
-          ROS_WARN_STREAM_NAMED("product_simulator","After bounding box");
-          printTransform(product->getCentroid());
-
           // Visualize bounding box
-          product->visualizeHighResWireframe(world_to_bin_transform, rvt::YELLOW);
-          product->visualizeHighRes(world_to_bin_transform);
+          product->visualizeHighResWireframe(world_to_bin, rvt::YELLOW);
+          product->visualizeHighRes(world_to_bin);
+
+          // debug
+          if (show_random_generated_poses)
+          {
+            product->createCollisionBodies(world_to_bin);
+            //product->visualizeHighRes(world_to_bin);
+          }
 
           break;
         }
@@ -174,13 +183,17 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
   } // for each bin
 
   // Show all display markers at once
-  if (change_rviz_displays)
-    visuals_->visual_tools_display_->triggerBatchPublishAndDisable();
+  // if (show_random_generated_poses)
+  //   visuals_->visual_tools_display_->triggerBatchPublishAndDisable();
+
   return true;
 }
 
-bool ProductSimulator::addCollisionMesh(ProductObjectPtr& product, const Eigen::Affine3d& trans)
+bool ProductSimulator::addCollisionMesh(ProductObjectPtr& product, const Eigen::Affine3d& world_to_bin)
 {
+  // Get product pose
+  Eigen::Affine3d world_to_product = transform(product->getCentroid(), world_to_bin);
+
   // TODO - don't load the mesh over and over, rather store the mesh
   shapes::Shape *mesh = shapes::createMeshFromResource(product->getCollisionMeshPath());
   shapes::ShapeMsg shape_msg; // this is a boost::variant type from shape_messages.h
@@ -190,7 +203,8 @@ bool ProductSimulator::addCollisionMesh(ProductObjectPtr& product, const Eigen::
     return false;
   }
 
-  Eigen::Affine3d pose = transform(product->getCentroid(), trans);
+  // Convert to proper msg type
+  shape_msgs::Mesh mesh_msg = boost::get<shape_msgs::Mesh>(shape_msg);
 
   // Create collision message
   moveit_msgs::CollisionObject collision_object_msg;
@@ -199,9 +213,9 @@ bool ProductSimulator::addCollisionMesh(ProductObjectPtr& product, const Eigen::
   collision_object_msg.id = "singular_collision_object"; // this will overwrite any pre-existing objects from previous calls
   collision_object_msg.operation = moveit_msgs::CollisionObject::ADD;
   collision_object_msg.mesh_poses.resize(1);
-  collision_object_msg.mesh_poses[0] = visuals_->visual_tools_->convertPose(pose);
+  collision_object_msg.mesh_poses[0] = visuals_->visual_tools_->convertPose(world_to_product);
   collision_object_msg.meshes.resize(1);
-  collision_object_msg.meshes[0] = boost::get<shape_msgs::Mesh>(shape_msg);
+  collision_object_msg.meshes[0] = mesh_msg;
 
   //scene->getCurrentStateNonConst().update(); // hack to prevent bad transforms
   secondary_scene_.processCollisionObjectMsg(collision_object_msg);
@@ -209,10 +223,10 @@ bool ProductSimulator::addCollisionMesh(ProductObjectPtr& product, const Eigen::
   return true;
 }
 
-bool ProductSimulator::inCollision(ProductObjectPtr& product, const Eigen::Affine3d& trans)
+bool ProductSimulator::inCollision(ProductObjectPtr& product, const Eigen::Affine3d& world_to_bin)
 {
   // Create new planning scene and add product with random location
-  addCollisionMesh(product, trans);
+  addCollisionMesh(product, world_to_bin);
 
   // Create request
   collision_detection::CollisionRequest req;
@@ -225,6 +239,21 @@ bool ProductSimulator::inCollision(ProductObjectPtr& product, const Eigen::Affin
     scene->getCollisionWorld()->checkWorldCollision(req, res, *secondary_scene_.getCollisionWorld());
   }
   return res.collision;
+}
+
+bool ProductSimulator::convertMeshToBinFrame(ProductObjectPtr product)
+{
+  shape_msgs::Mesh& mesh_msg = product->getCollisionMesh();
+  Eigen::Vector3d point;
+  for (std::size_t i = 0; i < mesh_msg.vertices.size(); ++i)
+  {
+    point = visuals_->visual_tools_->convertPoint(mesh_msg.vertices[i]);
+    point = product->getCentroid() * point;
+    mesh_msg.vertices[i] = visuals_->visual_tools_->convertPoint(point);
+  }
+  product->setMeshCentroid(Eigen::Affine3d::Identity());
+
+  return true;
 }
 
 } // end namespace

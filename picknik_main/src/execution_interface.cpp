@@ -212,7 +212,7 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
 
 bool ExecutionInterface::waitForExecution()
 {
-  //ROS_DEBUG_STREAM_NAMED("execution_interface","Waiting for executing trajectory to finish");
+  ROS_DEBUG_STREAM_NAMED("execution_interface","Waiting for executing trajectory to finish");
 
   // wait for the trajectory to complete
   moveit_controller_manager::ExecutionStatus execution_status = trajectory_execution_manager_->waitForExecution();

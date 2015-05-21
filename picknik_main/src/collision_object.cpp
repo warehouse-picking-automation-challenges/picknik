@@ -136,14 +136,14 @@ bool RectangleObject::visualizeHighRes(const Eigen::Affine3d& trans) const
 
 bool RectangleObject::visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const
 {
-  ROS_WARN_STREAM_NAMED("temp","viz wireframe todo");
+  ROS_WARN_STREAM_NAMED("collision_object","viz wireframe todo");
   //return visuals_->visual_tools_->publishWireframeCuboid( transform(centroid_, trans), getDepth(), getWidth(), getHeight(), color_);
   return true;
 }
 
 bool RectangleObject::visualizeHighResWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const
 {
-  ROS_WARN_STREAM_NAMED("temp","viz wireframe todo");
+  ROS_WARN_STREAM_NAMED("collision_object","viz wireframe todo");
   //return visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans), getDepth(), getWidth(), getHeight(), color_);
   return true;
 }
@@ -328,7 +328,7 @@ bool MeshObject::writeCollisionBody(const std::string& file_path)
   return true;
 }
 
-const shape_msgs::Mesh& MeshObject::getCollisionMesh()
+shape_msgs::Mesh& MeshObject::getCollisionMesh()
 {
   // Check if mesh needs to be loaded
   if (mesh_msg_.triangles.empty()) // load mesh from file
@@ -354,7 +354,7 @@ bool MeshObject::createCollisionBodies(const Eigen::Affine3d &trans)
   // Check if mesh is provided
   if (collision_mesh_path_.empty())
   {
-    ROS_ERROR_STREAM_NAMED("temp","no collision body provided");
+    ROS_ERROR_STREAM_NAMED("collision_object","no collision body provided");
   }
 
   // Check if mesh needs to be loaded

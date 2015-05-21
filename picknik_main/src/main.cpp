@@ -379,7 +379,7 @@ int main(int argc, char** argv)
 
   ros::Duration duration = (end_time - begin_time);
   
-  ROS_INFO_STREAM_NAMED("main","Test duration = " << duration << " seconds (" << (duration / 60.0) << " minutes). "
+  ROS_INFO_STREAM_NAMED("main","Test duration = " << duration << " seconds (" << (duration.toSec() / 60.0) << " minutes). "
                         << "Max time allowed = " << (15.0 * 60.0) << " seconds (15 minutes).");
   
   ros::shutdown();

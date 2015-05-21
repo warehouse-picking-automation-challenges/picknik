@@ -75,19 +75,27 @@ public:
   /**
    * \brief Add a collision mesh of a product to any scene
    * \param product - object that contains everything needed to know about it
-   * \param trans - translation from world from to the frame of refrence of the product's centroid
+   * \param world_to_bin - translation from world from to the frame of refrence of the product's centroid
    * \return true on success
    */
-  bool addCollisionMesh(ProductObjectPtr& product, const Eigen::Affine3d& trans);
+  bool addCollisionMesh(ProductObjectPtr& product, const Eigen::Affine3d& world_to_bin);
 
   /**
    * \brief Checks if new product is in collision with current planning scene world
    * \param product - object that contains everything needed to know about it
-   * \param trans - translation from world from to the frame of refrence of the product's centroid
+   * \param world_to_bin - translation from world from to the frame of refrence of the product's centroid
    * \return true if in collision
    */
-  bool inCollision(ProductObjectPtr& product, const Eigen::Affine3d& trans);
+  bool inCollision(ProductObjectPtr& product, const Eigen::Affine3d& world_to_bin);
 
+  /**
+   * \brief Convert mesh from CENTROID_OF_PRODUCT frame of reference to BIN frame of reference
+            so that bounding_box works correctly
+   * \param product
+   * \return true on success
+   */
+  bool convertMeshToBinFrame(ProductObjectPtr product);
+  
 private:
 
   // Show more visual and console output, with general slower run time.

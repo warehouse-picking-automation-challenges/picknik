@@ -77,8 +77,13 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
   if( package_path_.empty() )
     ROS_FATAL_STREAM_NAMED("product", "Unable to get " << PACKAGE_NAME << " package path" );
 
+  // Load manipulation data for our robot
+  config_.reset(new ManipulationData());
+  config_->load(robot_model_, fake_execution, package_path_);
+
   // Load shelf
-  shelf_.reset(new ShelfObject(visuals_, rvt::BROWN, "shelf_0"));
+  shelf_.reset(new ShelfObject(visuals_, rvt::BROWN, "shelf_0", 
+                               config_->isEnabled("use_computer_vision_shelf")));
   if (!shelf_->initialize(package_path_, nh_private_))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to load shelf");
@@ -94,10 +99,6 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
   remote_control_.reset(new RemoteControl(verbose, nh_private_, this));
   remote_control_->setAutonomous(autonomous);
   remote_control_->setFullAutonomous(full_autonomous);
-
-  // Load manipulation data for our robot
-  config_.reset(new ManipulationData());
-  config_->load(robot_model_, fake_execution, package_path_);
 
   // Load grasp data specific to our robot
   grasp_datas_[config_->right_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_->right_hand_name_, robot_model_));
@@ -668,29 +669,6 @@ bool APCManager::testVisualizeShelf()
 
   // Generate random product poses and visualize the shelf
   createRandomProductPoses();
-
-  if (false)
-  {
-    while(ros::ok())
-    {
-      ros::Duration(1).sleep();
-      ROS_INFO_STREAM_NAMED("apc_manager","Updating shelf location");
-
-      // Get the latest shelf pose
-      Eigen::Affine3d world_to_shelf;
-      ros::Time time_stamp;
-      std::string frame_id = "shelf";
-      perception_interface_->getTFTransform(world_to_shelf, time_stamp, frame_id);
-
-      // Update the shelf
-      shelf_->setBottomRightUpdateAll(world_to_shelf);
-      bool force = true;
-      planning_scene_manager_->displayEmptyShelf(force);
-
-      // Debugging - inverse left camera to cal target
-      //getInertedLeftCameraPose();
-    }
-  }
 
   ROS_INFO_STREAM_NAMED("apc_manager","Ready to shutdown");
   ros::spin();
