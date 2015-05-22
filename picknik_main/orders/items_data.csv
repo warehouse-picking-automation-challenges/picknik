@@ -24,6 +24,3 @@ sharpie_accent_tank_style_highlighters,1.0,0
 stanley_66_052,1.0,3
 dr_browns_bottle_brush,1.0,2
 laugh_out_loud_joke_book,0.9,3
-
-# add extra_points column. Explore grasps. See if generating one from
-# top to centroid with suction could be easily implemented
