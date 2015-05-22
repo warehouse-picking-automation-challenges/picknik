@@ -1,9 +1,9 @@
-initial_x: -0.44
+initial_x: -0.453
 initial_y: 0.021
-initial_z: 0.711
-initial_roll: 0.00241
-initial_pitch: 0.286
-initial_yaw: 1.35
+initial_z: 0.718
+initial_roll: -0.03259
+initial_pitch: 0.169
+initial_yaw: 1.171
 from: gantry_plate
 to: xtion_left_link
 file_name: tf_xtion_left
