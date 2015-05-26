@@ -50,7 +50,7 @@ ManualTFAlignment::ManualTFAlignment()
   ROS_INFO_STREAM_NAMED("manualTF","Transform from     : " << from_);
   ROS_INFO_STREAM_NAMED("manualTF","Transform to       : " << to_);
   ROS_INFO_STREAM_NAMED("manualTF","Config File        : " << save_path_);  
-  ROS_INFO_STREAM_NAMED("manualTF","Initial transform  : " << x << ", " << y << ", " << z << " | " << roll << ", " << pitch << ", " << yaw );  
+  ROS_INFO_STREAM_NAMED("manualTF","Initial transform  : " << x << ", " << y << ", " << z << ", " << roll << ", " << pitch << ", " << yaw );  
 }
 
 void ManualTFAlignment::keyboardCallback(const keyboard::Key::ConstPtr& msg)

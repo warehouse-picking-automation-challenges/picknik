@@ -41,6 +41,7 @@
 
 // PickNik
 #include <picknik_main/namespaces.h>
+#include <picknik_main/perception_interface.h>
 
 // MoveIt
 #include <moveit/macros/class_forward.h>
@@ -71,7 +72,7 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  PlanningSceneManager(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf);
+  PlanningSceneManager(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf, PerceptionInterfacePtr perception_interface);
 
   /**
    * \brief Show shelf with no products
@@ -102,6 +103,12 @@ public:
    */
   bool testAllModes(bool force = false);
 
+  /**
+   * \brief Update shelf transform
+   * \return true on success
+   */
+  bool updateShelfTransform();
+
 private:
 
   // A shared node handle
@@ -119,6 +126,9 @@ private:
   // Mode switching to reduce redudant scene changes
   SceneModes mode_;
   std::string focused_bin_;
+
+  // Perception interface
+  PerceptionInterfacePtr perception_interface_;
 
 }; // end class
 

@@ -48,11 +48,12 @@
 namespace picknik_main
 {
 
-PlanningSceneManager::PlanningSceneManager(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf)
+PlanningSceneManager::PlanningSceneManager(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf, PerceptionInterfacePtr perception_interface)
   : verbose_(verbose)
   , visuals_(visuals)
   , shelf_(shelf)
   , mode_(NOT_LOADED)
+  , perception_interface_(perception_interface)
   , focused_bin_("")
 {
 
@@ -67,6 +68,9 @@ bool PlanningSceneManager::displayEmptyShelf(bool force)
   }
   ROS_DEBUG_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE empty_shelf");
   mode_ = EMPTY_SHELF;
+
+  // Get new shelf location
+  updateShelfTransform();
 
   // Clear all old collision objects
   visuals_->visual_tools_->removeAllCollisionObjects();
@@ -90,6 +94,9 @@ bool PlanningSceneManager::displayShelfWithOpenBins(bool force)
   ROS_DEBUG_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE all_open_bins");
   mode_ = ALL_OPEN_BINS;
 
+  // Get new shelf location
+  updateShelfTransform();
+
   // Clear all old collision objects
   visuals_->visual_tools_->removeAllCollisionObjects();
 
@@ -112,6 +119,9 @@ bool PlanningSceneManager::displayShelfAsWall(bool force)
   }
   ROS_DEBUG_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE only_collision_wall");
   mode_ = ONLY_COLLISION_WALL;
+
+  // Get new shelf location
+  updateShelfTransform();
 
   // Clear all old collision objects
   visuals_->visual_tools_->removeAllCollisionObjects();
@@ -141,6 +151,9 @@ bool PlanningSceneManager::displayShelfOnlyBin( const std::string& bin_name, boo
   // Clear all old collision objects
   visuals_->visual_tools_->removeAllCollisionObjects();
 
+  // Get new shelf location
+  updateShelfTransform();
+
   // Create new scene
   bool only_show_shelf_frame = false;
   bool show_all_products = false;
@@ -169,6 +182,19 @@ bool PlanningSceneManager::testAllModes(bool force)
     ros::Duration(4.0).sleep();
   }
   return true;
+}
+
+bool PlanningSceneManager::updateShelfTransform()
+{
+  // Get the latest shelf pose
+  Eigen::Affine3d world_to_shelf;
+  ros::Time time_stamp;
+  std::string frame_id = "shelf";
+  perception_interface_->getTFTransform(world_to_shelf, time_stamp, frame_id);
+
+  // Update the shelf if different
+  //if (world_to_shelf.translation().x()
+  shelf_->setBottomRightUpdateAll(world_to_shelf);  
 }
 
 } // end namespace

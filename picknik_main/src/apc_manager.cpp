@@ -119,7 +119,7 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
   perception_interface_.reset(new PerceptionInterface(verbose_, visuals_, shelf_, config_, tf_, nh_private_));
 
   // Load planning scene manager
-  planning_scene_manager_.reset(new PlanningSceneManager(verbose, visuals_, shelf_));
+  planning_scene_manager_.reset(new PlanningSceneManager(verbose, visuals_, shelf_, perception_interface_));
   planning_scene_manager_->displayShelfWithOpenBins();
 
   // Visualize detailed shelf
@@ -694,26 +694,13 @@ bool APCManager::calibrateShelf()
   visuals_->visual_tools_->publishRobotState(manipulation_->getCurrentState(), rvt::PURPLE);
 
   ROS_INFO_STREAM_NAMED("apc_manager","Now update with keyboard calibration");
-  Eigen::Affine3d world_to_shelf_previous;
   while(ros::ok())
   {
     ros::Duration(0.25).sleep();
     ROS_INFO_STREAM_NAMED("apc_manager","Updating shelf location");
 
-    // Get the latest shelf pose
-    Eigen::Affine3d world_to_shelf;
-    ros::Time time_stamp;
-    std::string frame_id = "shelf";
-    perception_interface_->getTFTransform(world_to_shelf, time_stamp, frame_id);
-
-    // Update the shelf if different
-    //if (world_to_shelf.translation().x()
-    shelf_->setBottomRightUpdateAll(world_to_shelf);
     bool force = true;
     planning_scene_manager_->displayEmptyShelf(force);
-
-    // Save for next loop
-    world_to_shelf_previous = world_to_shelf;
 
     // Debugging - inverse left camera to cal target
     //getInertedLeftCameraPose();
