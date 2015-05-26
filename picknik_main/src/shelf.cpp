@@ -352,7 +352,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   // computer vision shelf
   if (use_computer_vision_shelf_)
   {
-    visuals_->visual_tools_->publishAxisLabeled(computer_vision_shelf_pose,"CV_FRAME");
+    //visuals_->visual_tools_->publishAxisLabeled(computer_vision_shelf_pose,"CV_FRAME");
 
     computer_vision_shelf_->setCentroid(computer_vision_shelf_pose);
     computer_vision_shelf_->setMeshCentroid(computer_vision_shelf_pose);

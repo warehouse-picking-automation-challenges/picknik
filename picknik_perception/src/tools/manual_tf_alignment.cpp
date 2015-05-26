@@ -215,7 +215,7 @@ void ManualTFAlignment::writeTFToFile()
   else
   {
     ROS_INFO_STREAM_NAMED("tf_align.write","Initial transform  : " << translation_[0] << ", " << translation_[1] 
-                          << ", " << translation_[2] << " | " << rotation_[0] << ", " << rotation_[1] 
+                          << ", " << translation_[2] << ", " << rotation_[0] << ", " << rotation_[1] 
                           << ", " << rotation_[2] );  
     
     file << "initial_x: " << translation_[0] << std::endl;

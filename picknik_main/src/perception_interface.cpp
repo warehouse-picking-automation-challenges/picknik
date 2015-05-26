@@ -89,6 +89,7 @@ bool PerceptionInterface::isPerceptionReady()
 
     find_objects_action_.waitForServer();
   }
+  ROS_INFO_STREAM_NAMED("perception_interface","Object perception server found");
 
   return true;
 }
