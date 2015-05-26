@@ -45,6 +45,10 @@ world_to_shelf_transform: [ 0.686, -0.444, -0.179, -0.002, -0.014, -0.016] # aft
 
 # 0.52 m from shelf (large frame to leg) before moving shelf 
 
+# From computer vision
+
+#-0.0382675    -0.332647    1.06563    0.0234047    0.125    0.3602
+collision_shelf_transform: [-0.0382675, -0.332647,  1.06563,  0.0234047,  0.125,  0.3602]
 
 # Topics
 joint_state_topic: /joint_states
@@ -52,7 +56,7 @@ joint_state_topic: /joint_states
 # Goal bin - different for each robot
 goal_bin_x: -0.35
 goal_bin_y: 0.0635
-goal_bin_z: 0.5
+goal_bin_z: 0.41 #0.5
 place_goal_down_distance_desired: 0.17
 goal_bin_clearance: 0.4
 
@@ -61,7 +65,7 @@ left_wall_y: 0 # 0 means disabled
 right_wall_y: 0 # 0 means disabled
 
 # Top limit
-ceiling_z: 2.4
+ceiling_z: 5 #2.4
 
 # End effector configuration - jaco specific
 finger_3_offset: -0.1 # open more than the others TODO remove in favor of grasp_data?
@@ -89,7 +93,14 @@ test:
   # During development it is nice to have ability to tweak a value
   test_pose: [0.12, 0.06, 0.03, 1.57, 0, 0] # x,y,z,r,p,y
   
-bounding_box_reduction: 0.95 # reduce bounding box size slightly
+bounding_box_reduction: 1.0 # reduce bounding box size slightly
+
+# Where to put the camera
+bin_height:
+  row1: 0.6767  # top row
+  row2: 0.4462
+  row3: 0.2275
+  row4: 0.0 # bottom row
 
 behavior:
   end_effector_enabled: true
@@ -97,7 +108,7 @@ behavior:
   dropping_bounding_box: true
   use_camera_hack_offset: false
   ddtr_mode: false
-  use_computer_vision_shelf: false
+  use_computer_vision_shelf: true
 
 
 

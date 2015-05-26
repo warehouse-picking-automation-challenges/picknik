@@ -181,6 +181,13 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   if (!rvt::getDoubleParameter(parent_name, nh, "collision_wall_safety_margin", collision_wall_safety_margin_))
     return false;
 
+  // Collision Shelf
+  std::vector<double> collision_shelf_transform_doubles;
+  if (!rvt::getDoubleParameters(parent_name, nh, "collision_shelf_transform", collision_shelf_transform_doubles))
+    return false;
+  if (!rvt::convertDoublesToEigen(parent_name, collision_shelf_transform_doubles, collision_shelf_transform_))
+    return false;
+
   // Calculate shelf corners for *this ShelfObject
   bottom_right_ = world_to_shelf_transform_;
   top_left_.translation().x() = bottom_right_.translation().x() + shelf_depth_;
@@ -335,9 +342,9 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   // TODO: read this in from yaml if it work well
   // pose from Lu Ma, mesh file is saved in computer vision orientation of "xtion_right_rgb_frame"
   Eigen::Affine3d computer_vision_shelf_pose = Eigen::Affine3d::Identity();    
-  //0.0111163    0.383599    1.70677    0.00241    0.286    -0.2208  
-  Eigen::Vector3d translation = Eigen::Vector3d(0.0111163, 0.383599, 1.70677);
-  Eigen::Vector3d rotation = Eigen::Vector3d(0.00241, 0.286, -0.2208);
+  // //0.0111163    0.383599    1.70677    0.00241    0.286    -0.2208  
+  Eigen::Vector3d translation = Eigen::Vector3d(collision_shelf_transform_doubles[0], collision_shelf_transform_doubles[1], collision_shelf_transform_doubles[2]);
+  Eigen::Vector3d rotation = Eigen::Vector3d(collision_shelf_transform_doubles[3], collision_shelf_transform_doubles[4], collision_shelf_transform_doubles[5]);
 
   // construct world pose to camera pose (pose Lu Ma took as origin when constructing the model)
   computer_vision_shelf_pose *= Eigen::AngleAxisd(rotation[2], Eigen::Vector3d::UnitZ())
@@ -346,16 +353,16 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   computer_vision_shelf_pose.translation() = translation;
 
   // convert to ros frame (mesh is saved in computer vision frame)
-  computer_vision_shelf_pose *= Eigen::AngleAxisd(-M_PI / 2.0, Eigen::Vector3d::UnitX())
+  collision_shelf_transform_ = computer_vision_shelf_pose * Eigen::AngleAxisd(-M_PI / 2.0, Eigen::Vector3d::UnitX())
     * Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitY());
 
   // computer vision shelf
   if (use_computer_vision_shelf_)
   {
-    //visuals_->visual_tools_->publishAxisLabeled(computer_vision_shelf_pose,"CV_FRAME");
+    //visuals_->visual_tools_->publishAxisLabeled(collision_shelf_transform_,"CV_FRAME");
 
-    computer_vision_shelf_->setCentroid(computer_vision_shelf_pose);
-    computer_vision_shelf_->setMeshCentroid(computer_vision_shelf_pose);
+    computer_vision_shelf_->setCentroid(collision_shelf_transform_);
+    computer_vision_shelf_->setMeshCentroid(collision_shelf_transform_);
 
     computer_vision_shelf_->setHighResMeshPath("file://" + package_path + "/meshes/computer_vision/shelf.stl");
     computer_vision_shelf_->setCollisionMeshPath("file://" + package_path + "/meshes/computer_vision/shelf.stl");

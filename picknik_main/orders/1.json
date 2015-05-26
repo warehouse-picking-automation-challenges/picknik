@@ -28,10 +28,10 @@
             "mommys_helper_outlet_plugs"
         ],
         "bin_H": [
-            "oreo_mega_stuf"
+            "cheezit_big_original"
         ],
         "bin_I": [
-            "oreo_mega_stuf"
+            "crayola_64_ct"
         ],
         "bin_J": [
             "kong_sitting_frog_dog_toy",
@@ -41,17 +41,37 @@
             "laugh_out_loud_joke_book"
         ],
         "bin_L": [
-            "mark_twain_huckleberry_finn"
+            "expo_dry_erase_board_eraser"
         ]
     },
     "work_order": [
         {
-            "bin": "bin_A",
-            "item": "genuine_joe_plastic_stir_sticks"
+            "bin": "bin_K",
+            "item": "laugh_out_loud_joke_book"
+        },
+        {
+            "bin": "bin_L",
+            "item": "expo_dry_erase_board_eraser"
+        },
+        {
+            "bin": "bin_I",
+            "item": "crayola_64_ct"
+        },
+        {
+            "bin": "bin_H",
+            "item": "cheezit_big_original"
+        },
+        {
+            "bin": "bin_E",
+            "item": "kyjen_squeakin_eggs_plush_puppies"
         },
         {
             "bin": "bin_B",
             "item": "feline_greenies_dental_treats"
+        },
+        {
+            "bin": "bin_F",
+            "item": "rolodex_jumbo_pencil_cup"
         },
         {
             "bin": "bin_C",
@@ -62,36 +82,16 @@
             "item": "sharpie_accent_tank_style_highlighters"
         },
         {
-            "bin": "bin_E",
-            "item": "kyjen_squeakin_eggs_plush_puppies"
-        },
-        {
-            "bin": "bin_F",
-            "item": "rolodex_jumbo_pencil_cup"
+            "bin": "bin_J",
+            "item": "kong_sitting_frog_dog_toy"
         },
         {
             "bin": "bin_G",
             "item": "kong_duck_dog_toy"
         },
         {
-            "bin": "bin_H",
-            "item": "oreo_mega_stuf"
-        },
-        {
-            "bin": "bin_I",
-            "item": "oreo_mega_stuf"
-        },
-        {
-            "bin": "bin_J",
-            "item": "kong_sitting_frog_dog_toy"
-        },
-        {
-            "bin": "bin_K",
-            "item": "laugh_out_loud_joke_book"
-        },
-        {
-            "bin": "bin_L",
-            "item": "mark_twain_huckleberry_finn"
+            "bin": "bin_A",
+            "item": "genuine_joe_plastic_stir_sticks"
         }
     ]
 }

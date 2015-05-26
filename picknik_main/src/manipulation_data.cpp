@@ -108,6 +108,12 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   rvt::getStringParameter(parent_name, nh_, "moveit_ompl/experience_type", experience_type_);
   rvt::getDoubleParameter(parent_name, nh_, "moveit_ompl/planning_time", planning_time_);
 
+  // Camera view positions
+  rvt::getDoubleParameter(parent_name, nh_, "bin_height/row1", bin_height_row1_);
+  rvt::getDoubleParameter(parent_name, nh_, "bin_height/row2", bin_height_row2_);
+  rvt::getDoubleParameter(parent_name, nh_, "bin_height/row3", bin_height_row3_);
+  rvt::getDoubleParameter(parent_name, nh_, "bin_height/row4", bin_height_row4_);
+
   // Behavior configs
   rvt::getBoolMap(parent_name, nh_, "behavior", enabled_);
 

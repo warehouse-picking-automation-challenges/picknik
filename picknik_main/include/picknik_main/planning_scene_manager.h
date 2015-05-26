@@ -78,7 +78,7 @@ public:
    * \brief Show shelf with no products
    * \return true on success
    */
-  bool displayEmptyShelf(bool force = false);
+  bool displayEmptyShelf(bool force = false, bool remove_all = true);
 
   /**
    * \brief Show shelf with all bins enabled

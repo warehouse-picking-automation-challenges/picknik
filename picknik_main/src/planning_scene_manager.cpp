@@ -60,7 +60,7 @@ PlanningSceneManager::PlanningSceneManager(bool verbose, VisualsPtr visuals, She
   ROS_INFO_STREAM_NAMED("planning_scene_manager","PlanningSceneManager Ready.");
 }
 
-bool PlanningSceneManager::displayEmptyShelf(bool force)
+bool PlanningSceneManager::displayEmptyShelf(bool force, bool remove_all)
 {
   if (!force && mode_ == EMPTY_SHELF)
   {
@@ -73,7 +73,8 @@ bool PlanningSceneManager::displayEmptyShelf(bool force)
   updateShelfTransform();
 
   // Clear all old collision objects
-  visuals_->visual_tools_->removeAllCollisionObjects();
+  if (remove_all)
+    visuals_->visual_tools_->removeAllCollisionObjects();
 
   // Create new scene
   bool just_frame = true;

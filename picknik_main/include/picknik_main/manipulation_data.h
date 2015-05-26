@@ -154,6 +154,12 @@ public:
   // End effector configuration
   double finger_3_offset_;
 
+  // Bin heightsi
+  double bin_height_row1_;
+  double bin_height_row2_;
+  double bin_height_row3_;
+  double bin_height_row4_;
+
 private:
 
   // A shared node handle

@@ -700,7 +700,8 @@ bool APCManager::calibrateShelf()
     ROS_INFO_STREAM_NAMED("apc_manager","Updating shelf location");
 
     bool force = true;
-    planning_scene_manager_->displayEmptyShelf(force);
+    bool remove_all = false;
+    planning_scene_manager_->displayEmptyShelf(force, remove_all);
 
     // Debugging - inverse left camera to cal target
     //getInertedLeftCameraPose();

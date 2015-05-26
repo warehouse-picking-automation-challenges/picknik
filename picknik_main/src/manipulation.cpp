@@ -1557,22 +1557,22 @@ bool Manipulation::moveCameraToBinGantryOnly(BinObjectPtr bin, JointModelGroup* 
     case ('A'):
     case ('B'):
     case ('C'):
-      new_gantry_positions[0] = 0.887;
+      new_gantry_positions[0] = config_->bin_height_row1_;
       break;
     case ('D'):
     case ('E'):
     case ('F'):
-      new_gantry_positions[0] = 0.646;      
+      new_gantry_positions[0] = config_->bin_height_row2_;
       break;
     case ('G'):
     case ('H'):
     case ('I'):
-      new_gantry_positions[0] = 0.422;
+      new_gantry_positions[0] = config_->bin_height_row3_;
       break;
     case ('J'):
     case ('K'):
     case ('L'):
-      new_gantry_positions[0] = 0.171;
+      new_gantry_positions[0] = config_->bin_height_row4_;
       break;
     default:
       ROS_WARN_STREAM_NAMED("manipulation","switch on gantry height for bins fell through...");

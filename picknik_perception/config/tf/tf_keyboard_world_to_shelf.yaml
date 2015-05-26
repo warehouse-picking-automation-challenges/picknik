@@ -1,7 +1,7 @@
-initial_x: 0.686
-initial_y: -0.417
+initial_x: 0.676
+initial_y: -0.44
 initial_z: -0.183
-initial_roll: 0.015
+initial_roll: 0.003
 initial_pitch: -0.014
 initial_yaw: -0.016
 from: world

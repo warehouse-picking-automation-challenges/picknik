@@ -298,6 +298,7 @@ public:
   // Loaded shelf parameter values
   //double shelf_distance_from_robot_;
   Eigen::Affine3d world_to_shelf_transform_;
+  Eigen::Affine3d collision_shelf_transform_;
   double shelf_width_;
   double shelf_height_;
   double shelf_depth_;
