@@ -19,8 +19,8 @@
   </node>
 
   <!-- High Resolution World -->
-  <node name="$(anon rviz_display)" launch-prefix="$(arg launch_prefix)" pkg="rviz" type="rviz" respawn="false"
-	args="-d $(find picknik_main)/launch/moveit_display.rviz" output="screen">
-  </node>
+  <!-- <node name="$(anon rviz_display)" launch-prefix="$(arg launch_prefix)" pkg="rviz" type="rviz" respawn="false" -->
+  <!-- 	args="-d $(find picknik_main)/launch/moveit_display.rviz" output="screen"> -->
+  <!-- </node> -->
 
 </launch>

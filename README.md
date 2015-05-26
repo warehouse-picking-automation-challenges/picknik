@@ -212,7 +212,8 @@ Start cameras (on correct computer):
 Camera calibration (in development):
 
     roslaunch picknik_perception multi_xtion_calibrate.launch
-	roslaunch picknik_perception static_calibration_xtion.launch
+	#roslaunch picknik_perception static_calibration_xtion.launch
+	
 	roslaunch picknik_perception tf_keyboard_shelf_offset.launch
 	#roslaunch picknik_perception tf_keyboard_wrist_offset.launch
  
