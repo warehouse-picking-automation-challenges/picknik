@@ -387,7 +387,7 @@ public:
    * \brief Set a robot state to have an open or closed EE. Does not actually affect hardware
    * \return true on success
    */
-  bool setStateWithOpenEE(bool open, moveit::core::RobotStatePtr robot_state);
+  //bool setStateWithOpenEE(bool open, moveit::core::RobotStatePtr robot_state);
 
   /**
    * \brief Get the interface to execution calling

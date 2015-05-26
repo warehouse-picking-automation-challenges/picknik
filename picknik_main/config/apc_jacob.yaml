@@ -95,7 +95,7 @@ behavior:
   dropping_bounding_box: true
   use_camera_hack_offset: false
   ddtr_mode: false
-
+  use_computer_vision_shelf: true
 
 
 

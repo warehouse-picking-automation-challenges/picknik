@@ -20,6 +20,9 @@ debug_level:
   # Seed state
   show_grasping_seed_state: false
 
+  # Product Simulator
+  show_random_generated_poses: false
+
   # Simulation testing
   show_simulated_paths_moving: true
 
