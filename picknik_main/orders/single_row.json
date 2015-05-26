@@ -1,0 +1,60 @@
+{
+    "bin_contents": {
+        "bin_A": [
+            "oreo_mega_stuf",
+            "stanley_66_052"
+        ],
+        "bin_B": [
+            "elmers_washable_no_run_school_glue"
+        ],
+        "bin_C": [
+            "elmers_washable_no_run_school_glue",
+            "champion_copper_plus_spark_plug",
+            "kong_duck_dog_toy"
+        ],
+        "bin_D": [
+            "dr_browns_bottle_brush",
+            "paper_mate_12_count_mirado_black_warrior",
+            "kong_air_dog_squeakair_tennis_ball"
+        ],
+        "bin_E": [
+            "sharpie_accent_tank_style_highlighters"
+        ],
+        "bin_F": [
+            "paper_mate_12_count_mirado_black_warrior"
+        ],
+        "bin_G": [
+            "rolodex_jumbo_pencil_cup"
+        ],
+        "bin_H": [
+            "highland_6539_self_stick_notes"
+        ],
+        "bin_I": [
+            "laugh_out_loud_joke_book"
+        ],
+        "bin_J": [
+            "expo_dry_erase_board_eraser",
+            "crayola_64_ct"
+        ],
+        "bin_K": [
+            "cheezit_big_original"
+        ],
+        "bin_L": [
+            "mead_index_cards"
+        ]
+    },
+    "work_order": [
+        {
+            "bin": "bin_J",
+            "item": "expo_dry_erase_board_eraser"
+        },
+        {
+            "bin": "bin_K",
+            "item": "cheezit_big_original"
+        },
+        {
+            "bin": "bin_L",
+            "item": "mead_index_cards"
+        }
+    ]
+}

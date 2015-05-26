@@ -84,7 +84,9 @@ SimplePointCloudFilter::SimplePointCloudFilter(rviz_visual_tools::RvizVisualTool
   // Load parameters
   const std::string parent_name = "simple_point_cloud_filter"; // for namespacing logging messages
   rviz_visual_tools::getDoubleParameter(parent_name, nh_, "radius_of_outlier_removal", radius_of_outlier_removal_);
-
+  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "min_number_of_neighbors", min_number_of_neighbors_);
+  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "mean_k", mean_k_);
+  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "std_dev_thresh", std_dev_thresh_);
 
   ROS_DEBUG_STREAM_NAMED("point_cloud_filter","Simple point cloud filter ready.");
 }
@@ -178,13 +180,13 @@ bool SimplePointCloudFilter::detectObjects(bool remove_outliers)
     pcl::RadiusOutlierRemoval<pcl::PointXYZRGB> rad;
     rad.setInputCloud(roi_cloud_);
     rad.setRadiusSearch(radius_of_outlier_removal_);
-    rad.setMinNeighborsInRadius(200);
+    rad.setMinNeighborsInRadius(min_number_of_neighbors_);
     rad.filter(*roi_cloud_);
 
     pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
     sor.setInputCloud(roi_cloud_);
-    sor.setMeanK(50);
-    sor.setStddevMulThresh(1.0);
+    sor.setMeanK(mean_k_);
+    sor.setStddevMulThresh(std_dev_thresh_);
     sor.filter(*roi_cloud_);
   }
 
@@ -200,14 +202,15 @@ bool SimplePointCloudFilter::detectObjects(bool remove_outliers)
   }
 
   // get the bounding box of the point cloud
-  bounding_box_.getBodyAlignedBoundingBox(roi_cloud_, Eigen::Affine3d::Identity(), bbox_pose_, bbox_depth_, bbox_width_, bbox_height_);
+  // bounding_box_.getBodyAlignedBoundingBox(roi_cloud_, Eigen::Affine3d::Identity(), bbox_pose_, bbox_depth_, bbox_width_, bbox_height_);
+
+  ROS_DEBUG_STREAM_NAMED("simple_point_cloud_filter.detectObjects","roi_cloud_->header.frame_id = " << roi_cloud_->header.frame_id);
 
   // save bounding_box_ point cloud for debugging
-  saveRegionOfInterest(bounding_box_.cloud_);
-  
-  // Visualize
-  //visual_tools_->publishWireframeCuboid(bbox_pose_, bbox_depth_, bbox_width_, bbox_height_,
-  //                                      rviz_visual_tools::MAGENTA);
+  // ROS_DEBUG_STREAM_NAMED("simple_point_cloud_filter.detectObjects","saving bbox_.cloud with " << bounding_box_.cloud_->size() << " points");
+  // bounding_box_.cloud_->width = 1;
+  // bounding_box_.cloud_->height = bounding_box_.cloud_->size();
+  saveRegionOfInterest(roi_cloud_);
   
   // Allow main loop to work again
   processing_ = false;

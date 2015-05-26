@@ -79,7 +79,7 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
 
   // Load grasp generator
   grasp_generator_.reset( new moveit_grasps::GraspGenerator(visuals_->grasp_markers_) );
-  setStateWithOpenEE(true, current_state_); // so that grasp filter is started up with EE open
+  //setStateWithOpenEE(true, current_state_); // so that grasp filter is started up with EE open
   grasp_filter_.reset(new moveit_grasps::GraspFilter(current_state_, visuals_->grasp_markers_) );
   grasp_planner_.reset(new moveit_grasps::GraspPlanner(visuals_->trajectory_lines_));
   grasp_planner_->setWaitForNextStepCallback(boost::bind(&picknik_main::RemoteControl::waitForNextStep, 
@@ -207,8 +207,8 @@ bool Manipulation::computeCartesianWaypointPath(JointModelGroup* arm_jmg,
   {
     if (attempts > 0)
     {
-      std::cout << std::endl;
-      std::cout << "-------------------------------------------------------" << std::endl;
+      // std::cout << std::endl;
+      // std::cout << "-------------------------------------------------------" << std::endl;
       ROS_DEBUG_STREAM_NAMED("manipulation.waypoints","Attempting IK solution, attempt # " << attempts + 1);
     }
     attempts++;
@@ -607,7 +607,10 @@ bool Manipulation::planPostProcessing()
 
 bool Manipulation::printExperienceLogs()
 {
-  if (!planning_context_handle_ || !config_->use_experience_setup_)
+  if (!config_->use_experience_setup_)
+    return true;
+
+  if (!planning_context_handle_)
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to print experience logs");
     return false;
@@ -672,8 +675,8 @@ bool Manipulation::interpolate(robot_trajectory::RobotTrajectoryPtr robot_traj, 
   // }
 
   std::size_t modified_num_waypoints = new_robot_traj->getWayPointCount();
-  ROS_INFO_STREAM_NAMED("manipulation","Interpolated trajectory from " << original_num_waypoints
-                        << " to " << modified_num_waypoints);
+  ROS_DEBUG_STREAM_NAMED("manipulation.interpolation","Interpolated trajectory from " << original_num_waypoints
+                         << " to " << modified_num_waypoints);
 
   // Copy back to original datastructure
   *robot_traj = *new_robot_traj;
@@ -1343,8 +1346,8 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   JointModelGroup* arm_jmg = chooseArm(ee_pose);
 
   //Move camera left
-  std::cout << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
+  // std::cout << std::endl;
+  // std::cout << "-------------------------------------------------------" << std::endl;
   ROS_INFO_STREAM_NAMED("manipulation","Moving camera left distance " << config_->camera_left_distance_);
   bool left = true;
   if (!executeHorizontalPath(arm_jmg, config_->camera_left_distance_, left))
@@ -1353,8 +1356,8 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   }
 
   // Move camera right
-  std::cout << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
+  // std::cout << std::endl;
+  // std::cout << "-------------------------------------------------------" << std::endl;
   ROS_INFO_STREAM_NAMED("manipulation","Moving camera right distance " << config_->camera_left_distance_ * 2.0);
   left = false;
   if (!executeHorizontalPath(arm_jmg, config_->camera_left_distance_ * 2.0, left))
@@ -1363,8 +1366,8 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   }
 
   // Move back to center
-  std::cout << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
+  // std::cout << std::endl;
+  // std::cout << "-------------------------------------------------------" << std::endl;
   if (!moveCameraToBin(bin))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to move camera to bin " << bin->getName());
@@ -1372,8 +1375,8 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   }
 
   // Move camera up
-  std::cout << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
+  // std::cout << std::endl;
+  // std::cout << "-------------------------------------------------------" << std::endl;
   ROS_INFO_STREAM_NAMED("manipulation","Lifting camera distance " << config_->camera_lift_distance_);
   if (!executeVerticlePath(arm_jmg, config_->camera_lift_distance_, true, config_->lift_velocity_scaling_factor_))
   {
@@ -1381,8 +1384,8 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
   }
 
   // Move camera down
-  std::cout << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
+  // std::cout << std::endl;
+  // std::cout << "-------------------------------------------------------" << std::endl;
   ROS_INFO_STREAM_NAMED("manipulation","Lowering camera distance " << config_->camera_lift_distance_ * 2.0);
   bool up = false;
   if (!executeVerticlePath(arm_jmg, config_->camera_lift_distance_ * 2.0, up, config_->lift_velocity_scaling_factor_))
@@ -1399,8 +1402,8 @@ bool Manipulation::perturbCameraGantryOnly(BinObjectPtr bin, JointModelGroup* ar
   ROS_INFO_STREAM_NAMED("manipulation","Perturbing camera for perception - moving gantry up and down");
 
   // Move gantry down
-  std::cout << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
+  // std::cout << std::endl;
+  // std::cout << "-------------------------------------------------------" << std::endl;
   ROS_INFO_STREAM_NAMED("manipulation","Moving camera down distance " << config_->camera_lift_distance_);
   bool up = false;
   bool best_attempt = true; // even if we can't achieve the desired_list_distance, execute anyway as much as possible
@@ -1411,8 +1414,8 @@ bool Manipulation::perturbCameraGantryOnly(BinObjectPtr bin, JointModelGroup* ar
   }
 
   // Move gantry up
-  std::cout << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
+  // std::cout << std::endl;
+  // std::cout << "-------------------------------------------------------" << std::endl;
   ROS_INFO_STREAM_NAMED("manipulation","Moving camera up distance " << config_->camera_lift_distance_);
   up = true;
   if (!executeVerticlePathGantryOnly(arm_jmg, config_->camera_lift_distance_, config_->lift_velocity_scaling_factor_,
@@ -1420,8 +1423,8 @@ bool Manipulation::perturbCameraGantryOnly(BinObjectPtr bin, JointModelGroup* ar
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Unable to move up");
   }
-  std::cout << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
+  // std::cout << std::endl;
+  // std::cout << "-------------------------------------------------------" << std::endl;
 
   return true;
 }
@@ -1542,10 +1545,44 @@ bool Manipulation::moveCameraToBinGantryOnly(BinObjectPtr bin, JointModelGroup* 
   // Find gantry joint
   const moveit::core::JointModel* gantry_joint = getGantryJoint();
 
-  // Set gantry to correct location
-  Eigen::Affine3d bin_pose = transform(bin->getCentroid(), shelf_->getBottomRight()); // convert to world coordinates
+  //Set distances for gantry given by Lu Ma:
+  ROS_WARN_STREAM_NAMED("manipulation","Gantry moing to " << bin->getName());  
+
+  std::string bin_name = bin->getName();
+  char bin_letter = bin_name.at(4);
   double new_gantry_positions[1];
-  new_gantry_positions[0] = bin_pose.translation().z() + config_->camera_z_translation_from_bin_;
+  
+  switch (bin_letter)
+  {
+    case ('A'):
+    case ('B'):
+    case ('C'):
+      new_gantry_positions[0] = 0.887;
+      break;
+    case ('D'):
+    case ('E'):
+    case ('F'):
+      new_gantry_positions[0] = 0.646;      
+      break;
+    case ('G'):
+    case ('H'):
+    case ('I'):
+      new_gantry_positions[0] = 0.422;
+      break;
+    case ('J'):
+    case ('K'):
+    case ('L'):
+      new_gantry_positions[0] = 0.171;
+      break;
+    default:
+      ROS_WARN_STREAM_NAMED("manipulation","switch on gantry height for bins fell through...");
+      break;
+  }
+
+  // Set gantry to correct location
+  // Eigen::Affine3d bin_pose = transform(bin->getCentroid(), shelf_->getBottomRight()); // convert to world coordinates
+  // double new_gantry_positions[1];
+  // new_gantry_positions[0] = bin_pose.translation().z() + config_->camera_z_translation_from_bin_;
 
   // Check joint limits
   if (!gantry_joint->satisfiesPositionBounds(new_gantry_positions))
@@ -1729,25 +1766,25 @@ bool Manipulation::setEEGraspPosture(trajectory_msgs::JointTrajectory grasp_post
   return true;
 }
 
-bool Manipulation::setStateWithOpenEE(bool open, moveit::core::RobotStatePtr robot_state)
-{
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","setStateWithOpenEE()");
+// bool Manipulation::setStateWithOpenEE(bool open, moveit::core::RobotStatePtr robot_state)
+// {
+//   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","setStateWithOpenEE()");
 
-  if (open)
-  {
-    grasp_datas_[config_->right_arm_]->setRobotStatePreGrasp( robot_state );
-    if (config_->dual_arm_)
-      grasp_datas_[config_->left_arm_]->setRobotStatePreGrasp( robot_state );
-  }
-  else
-  {
-    grasp_datas_[config_->right_arm_]->setRobotStateGrasp( robot_state );
-    if (config_->dual_arm_)
-      grasp_datas_[config_->left_arm_]->setRobotStateGrasp( robot_state );
-  }
-  return true;
-}
-
+//   if (open)
+//   {
+//     grasp_datas_[config_->right_arm_]->setRobotStatePreGrasp( robot_state );
+//     if (config_->dual_arm_)
+//       grasp_datas_[config_->left_arm_]->setRobotStatePreGrasp( robot_state );
+//   }
+//   else
+//   {
+//     grasp_datas_[config_->right_arm_]->setRobotStateGrasp( robot_state );
+//     if (config_->dual_arm_)
+//       grasp_datas_[config_->left_arm_]->setRobotStateGrasp( robot_state );
+//   }
+//   return true;
+// }
+ 
 ExecutionInterfacePtr Manipulation::getExecutionInterface()
 {
   return execution_interface_;
@@ -2259,8 +2296,8 @@ bool Manipulation::fixCurrentCollisionAndBounds(JointModelGroup* arm_jmg)
   {
     result = false;
 
-    std::cout << std::endl;
-    std::cout << "-------------------------------------------------------" << std::endl;
+    // std::cout << std::endl;
+    // std::cout << "-------------------------------------------------------" << std::endl;
     ROS_WARN_STREAM_NAMED("manipulation","State is colliding, attempting to fix...");
 
     // Show collisions

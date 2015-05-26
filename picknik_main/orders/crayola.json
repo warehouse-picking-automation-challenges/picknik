@@ -1,105 +1,90 @@
 {
-    "bin_contents":
-    {
-	"bin_A":
-	[
-	    "crayola_64_ct"
-	],
-	"bin_B":
-	[
-	    "crayola_64_ct"
-	],
-	"bin_C":
-	[
-	    "crayola_64_ct"
-	],
-	"bin_D":
-	[
-	    "crayola_64_ct"
-	],
-	"bin_E":
-	[
-	    "crayola_64_ct"
-	],
-	"bin_F":
-	[
-	    "crayola_64_ct"
-	],
-	"bin_G":
-	[
-	    "crayola_64_ct"
-	],
-	"bin_H":
-	[
-	    "crayola_64_ct"
-	],
-	"bin_I":
-	[
-	    "crayola_64_ct"
-	],
-	"bin_J":
-	[
-	    "crayola_64_ct"
-	],
-	"bin_K":
-	[
-	    "crayola_64_ct"
-	],
-	"bin_L":
-	[
-	    "crayola_64_ct"
-	]
+    "bin_contents": {
+        "bin_A": [
+            "crayola_64_ct"
+        ],
+        "bin_B": [
+            "crayola_64_ct"
+        ],
+        "bin_C": [
+            "crayola_64_ct"
+        ],
+        "bin_D": [
+            "crayola_64_ct"
+        ],
+        "bin_E": [
+            "crayola_64_ct"
+        ],
+        "bin_F": [
+            "crayola_64_ct"
+        ],
+        "bin_G": [
+            "crayola_64_ct"
+        ],
+        "bin_H": [
+            "crayola_64_ct"
+        ],
+        "bin_I": [
+            "crayola_64_ct"
+        ],
+        "bin_J": [
+            "crayola_64_ct"
+        ],
+        "bin_K": [
+            "crayola_64_ct"
+        ],
+        "bin_L": [
+            "crayola_64_ct"
+        ]
     },
-
-    "work_order":
-    [
-	{
-	    "bin": "bin_A",
-	    "item": "crayola_64_ct"
-	},
-	{
-	    "bin": "bin_B",
-	    "item": "crayola_64_ct"
-	},
- 	{
-	    "bin": "bin_C",
-	    "item": "crayola_64_ct"
-	},
-	{
-	    "bin": "bin_D",
-	    "item": "crayola_64_ct"
-	},
-	{
-	    "bin": "bin_E",
-	    "item": "crayola_64_ct"
-	},
-	{
-	    "bin": "bin_F",
-	    "item": "crayola_64_ct"
-	},
-	{
-	    "bin": "bin_G",
-	    "item": "crayola_64_ct"
-	},
-	{
-	    "bin": "bin_H",
-	    "item": "crayola_64_ct"
-	},
-	{
-	    "bin": "bin_I",
-	    "item": "crayola_64_ct"
-	},
-	{
-	    "bin": "bin_J",
-	    "item": "crayola_64_ct"
-	},
-	{
-	    "bin": "bin_K",
-	    "item": "crayola_64_ct"
-	},
-	{
-	    "bin": "bin_L",
-	    "item": "crayola_64_ct"
-	}
+    "work_order": [
+        {
+            "bin": "bin_L",
+            "item": "crayola_64_ct"
+        },
+        {
+            "bin": "bin_K",
+            "item": "crayola_64_ct"
+        },
+        {
+            "bin": "bin_J",
+            "item": "crayola_64_ct"
+        },
+        {
+            "bin": "bin_I",
+            "item": "crayola_64_ct"
+        },
+        {
+            "bin": "bin_H",
+            "item": "crayola_64_ct"
+        },
+        {
+            "bin": "bin_G",
+            "item": "crayola_64_ct"
+        },
+        {
+            "bin": "bin_F",
+            "item": "crayola_64_ct"
+        },
+        {
+            "bin": "bin_E",
+            "item": "crayola_64_ct"
+        },
+        {
+            "bin": "bin_D",
+            "item": "crayola_64_ct"
+        },
+        {
+            "bin": "bin_C",
+            "item": "crayola_64_ct"
+        },
+        {
+            "bin": "bin_B",
+            "item": "crayola_64_ct"
+        },
+        {
+            "bin": "bin_A",
+            "item": "crayola_64_ct"
+        }
     ]
 }

@@ -48,13 +48,16 @@ int main(int argc, char** argv)
   ros::AsyncSpinner spinner(4);
   spinner.start();
 
+  // start timer for run length
+  ros::Time begin_time = ros::Time::now();
+
   // Random
   srand (time(NULL));
 
   // Command line arguments
   std::size_t mode = 1;
   std::size_t order_start = 0;
-  std::size_t jump_to = 0;
+  std::size_t jump_to = 1;
   std::size_t num_orders = 0;
   std::size_t id = 0;
   bool verbose = false;
@@ -348,6 +351,10 @@ int main(int argc, char** argv)
       manager.testInCollision();
       ros::Duration(5.0).sleep();
       break;
+    case 43:
+      ROS_INFO_STREAM_NAMED("main","Calibrate shelf");
+      manager.calibrateShelf();
+      break;
 
     case 50:
       ROS_INFO_STREAM_NAMED("main","Train experience database mode");
@@ -367,6 +374,14 @@ int main(int argc, char** argv)
   std::cout << "-------------------------------------------------------" << std::endl;
   ROS_INFO_STREAM_NAMED("main", "Shutting down.");
   std::cout << std::endl << std::endl << std::endl;
+
+  ros::Time end_time = ros::Time::now();
+
+  ros::Duration duration = (end_time - begin_time);
+  
+  ROS_INFO_STREAM_NAMED("main","Test duration = " << duration << " seconds (" << (duration.toSec() / 60.0) << " minutes). "
+                        << "Max time allowed = " << (15.0 * 60.0) << " seconds (15 minutes).");
+  
   ros::shutdown();
 
   return 0;

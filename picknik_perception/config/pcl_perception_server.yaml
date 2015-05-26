@@ -5,4 +5,7 @@ roi_reduction_padding_z: 0.02
 
 # Outlier Removal
 use_outlier_removal: true
-radius_of_outlier_removal: 0.02
+radius_of_outlier_removal: 0.05
+min_number_of_neighbors: 125
+mean_k: 30
+std_dev_thresh: 1.0

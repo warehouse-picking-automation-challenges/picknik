@@ -77,8 +77,13 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
   if( package_path_.empty() )
     ROS_FATAL_STREAM_NAMED("product", "Unable to get " << PACKAGE_NAME << " package path" );
 
+  // Load manipulation data for our robot
+  config_.reset(new ManipulationData());
+  config_->load(robot_model_, fake_execution, package_path_);
+
   // Load shelf
-  shelf_.reset(new ShelfObject(visuals_, rvt::BROWN, "shelf_0"));
+  shelf_.reset(new ShelfObject(visuals_, rvt::BROWN, "shelf_0", 
+                               config_->isEnabled("use_computer_vision_shelf")));
   if (!shelf_->initialize(package_path_, nh_private_))
   {
     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to load shelf");
@@ -94,10 +99,6 @@ APCManager::APCManager(bool verbose, std::string order_file_path, bool autonomou
   remote_control_.reset(new RemoteControl(verbose, nh_private_, this));
   remote_control_->setAutonomous(autonomous);
   remote_control_->setFullAutonomous(full_autonomous);
-
-  // Load manipulation data for our robot
-  config_.reset(new ManipulationData());
-  config_->load(robot_model_, fake_execution, package_path_);
 
   // Load grasp data specific to our robot
   grasp_datas_[config_->right_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_->right_hand_name_, robot_model_));
@@ -204,7 +205,8 @@ bool APCManager::mainOrderProcessor(std::size_t order_start, std::size_t jump_to
   loadShelfContents(order_file_path_);
 
   // Generate random product poses and visualize the shelf
-  createRandomProductPoses();
+  if (fake_perception_)
+    createRandomProductPoses();
 
   return runOrder(order_start, jump_to, num_orders);
 }
@@ -319,23 +321,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
     {
       // #################################################################################################################
       case 0:
-        //statusPublisher("Moving to initial position");
-
-        //   // Clear the temporary purple robot state image
-        //   visuals_->visual_tools_->hideRobot();
-
-        //   // Set planning scene
-        //   planning_scene_manager_->displayShelfAsWall(); // Reduce collision model to simple wall that prevents Robot from hitting shelf
-
-        //   // Move
-        //   if (!moveToStartPosition())
-        //   {
-        //     ROS_ERROR_STREAM_NAMED("apc_manager","Unable to move to initial position");
-        //     return false;
-        //   }
-
-        //   break;
-        step++;
+        ROS_ERROR_STREAM_NAMED("apc_manager","Should not be on step 0");
 
         // #################################################################################################################
       case 1: statusPublisher("Open end effectors");
@@ -388,6 +374,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         if (!manipulation_->chooseGrasp(work_order, arm_jmg, grasp_candidates, verbose))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","No grasps found");
+
           return false;
         }
 
@@ -645,8 +632,8 @@ bool APCManager::testEndEffectors()
       std::cout << "Showing closed EE of state " << std::endl;
 
       open = false;
-      manipulation_->setStateWithOpenEE(open, current_state);
-      visuals_->visual_tools_->publishRobotState(current_state);
+      // manipulation_->setStateWithOpenEE(open, current_state);
+      // visuals_->visual_tools_->publishRobotState(current_state);
 
       // Close all EEs
       manipulation_->openEEs(open);
@@ -658,9 +645,8 @@ bool APCManager::testEndEffectors()
       std::cout << "Showing open EE of state " << std::endl;
 
       open = true;
-      manipulation_->setStateWithOpenEE(open, current_state);
-
-      visuals_->visual_tools_->publishRobotState(current_state);
+      // manipulation_->setStateWithOpenEE(open, current_state);
+      // visuals_->visual_tools_->publishRobotState(current_state);
 
       // Close all EEs
       manipulation_->openEEs(open);
@@ -685,9 +671,33 @@ bool APCManager::testVisualizeShelf()
   // Generate random product poses and visualize the shelf
   createRandomProductPoses();
 
+  ROS_INFO_STREAM_NAMED("apc_manager","Ready to shutdown");
+  ros::spin();
+  return true;
+}
+
+// Mode 43
+bool APCManager::calibrateShelf()
+{
+  ROS_INFO_STREAM_NAMED("apc_manager","Visualize shelf");
+
+  // Save first state
+  remote_control_->waitForNextStep("to move to state 1");
+  visuals_->start_state_->publishRobotState(manipulation_->getCurrentState(), rvt::GREEN);
+
+  // Save second state
+  remote_control_->waitForNextStep("to move to state 2");
+  visuals_->goal_state_->publishRobotState(manipulation_->getCurrentState(), rvt::ORANGE);
+
+  // Save third state
+  remote_control_->waitForNextStep("to move to state 3");
+  visuals_->visual_tools_->publishRobotState(manipulation_->getCurrentState(), rvt::PURPLE);
+
+  ROS_INFO_STREAM_NAMED("apc_manager","Now update with keyboard calibration");
+  Eigen::Affine3d world_to_shelf_previous;
   while(ros::ok())
   {
-    ros::Duration(1).sleep();
+    ros::Duration(0.25).sleep();
     ROS_INFO_STREAM_NAMED("apc_manager","Updating shelf location");
 
     // Get the latest shelf pose
@@ -696,18 +706,20 @@ bool APCManager::testVisualizeShelf()
     std::string frame_id = "shelf";
     perception_interface_->getTFTransform(world_to_shelf, time_stamp, frame_id);
 
-    // Update the shelf
+    // Update the shelf if different
+    //if (world_to_shelf.translation().x()
     shelf_->setBottomRightUpdateAll(world_to_shelf);
     bool force = true;
     planning_scene_manager_->displayEmptyShelf(force);
+
+    // Save for next loop
+    world_to_shelf_previous = world_to_shelf;
 
     // Debugging - inverse left camera to cal target
     //getInertedLeftCameraPose();
   }
 
-
   ROS_INFO_STREAM_NAMED("apc_manager","Ready to shutdown");
-  ros::spin();
   return true;
 }
 
@@ -1300,8 +1312,8 @@ bool APCManager::testGraspGenerator()
       ROS_INFO_STREAM_NAMED("apc_manager","Overall success rate: " << std::setprecision(3) << (double(overall_successes)/double(overall_attempts)*100.0));
       ROS_INFO_STREAM_NAMED("apc_manager","Product success rate: " << std::setprecision(3) << (double(product_successes)/double(product_attempts)*100.0));
 
-      std::cout << std::endl << std::endl;
-      std::cout << "-------------------------------------------------------" << std::endl;
+      // std::cout << std::endl << std::endl;
+      // std::cout << "-------------------------------------------------------" << std::endl;
 
       // Show robot
       if (success && verbose_)
@@ -1309,8 +1321,8 @@ bool APCManager::testGraspGenerator()
         if (config_->dual_arm_)
           the_grasp_state->setToDefaultValues(config_->both_arms_, config_->start_pose_); // hide the other arm
         the_grasp_state->setJointGroupPositions(arm_jmg, grasp_candidates.front()->grasp_ik_solution_);
-        manipulation_->setStateWithOpenEE(true, the_grasp_state);
-        visuals_->visual_tools_->publishRobotState(the_grasp_state, rvt::PURPLE);
+        // manipulation_->setStateWithOpenEE(true, the_grasp_state);
+        // visuals_->visual_tools_->publishRobotState(the_grasp_state, rvt::PURPLE);
 
         if (verbose_)
           ros::Duration(5.0).sleep();
@@ -1660,8 +1672,8 @@ bool APCManager::perceiveObject(WorkOrder work_order, bool verbose)
   // }
 
   // Communicate with perception pipeline
-  std::cout << std::endl;
-  std::cout << "-------------------------------------------------------" << std::endl;
+  // std::cout << std::endl;
+  // std::cout << "-------------------------------------------------------" << std::endl;
   perception_interface_->startPerception(product, bin);
 
   // Perturb camera
@@ -1976,7 +1988,6 @@ bool APCManager::generateGoalBinLocations()
   Eigen::Affine3d goal_bin_pose = shelf_->getBottomRight() * shelf_->getGoalBin()->getCentroid();
   Eigen::Affine3d overhead_goal_bin = Eigen::Affine3d::Identity();
   overhead_goal_bin.translation() = goal_bin_pose.translation();
-  ROS_WARN_STREAM_NAMED("apc_manager","Increase goal bin clearance here");
   overhead_goal_bin.translation().z() += config_->goal_bin_clearance_;
 
   // Convert to pose that has z arrow pointing towards object and x out in the grasp dir

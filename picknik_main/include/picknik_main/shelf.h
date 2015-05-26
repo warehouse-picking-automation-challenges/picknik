@@ -103,7 +103,7 @@ public:
    * \brief Constructor
    * \param shelf_id
    */
-  ShelfObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name);
+  ShelfObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name, bool use_computer_vision_shelf);
 
   /**
    * \brief Load geometry of shelf and bins (coordinate systems, etc)
@@ -343,12 +343,15 @@ private:
   BinObjectMap bins_;
 
   MeshObjectPtr goal_bin_;
+  MeshObjectPtr computer_vision_shelf_;
+
   RectangleObjectPtr front_wall_;
 
   std::map<std::string,RectangleObjectPtr> environment_objects_;
 
   Eigen::Affine3d high_res_mesh_offset_;
 
+  bool use_computer_vision_shelf_;
 }; // class
 
 // -------------------------------------------------------------------------------------------------

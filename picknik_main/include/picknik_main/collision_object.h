@@ -297,7 +297,7 @@ public:
   /**
    * \brief Getter for CollisionMesh
    */ 
-  const shape_msgs::Mesh& getCollisionMesh();
+  shape_msgs::Mesh& getCollisionMesh();
 
   /**
    * \brief Setter for CollisionMesh

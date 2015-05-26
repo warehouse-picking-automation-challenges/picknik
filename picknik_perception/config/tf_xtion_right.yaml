@@ -1,0 +1,10 @@
+initial_x: 0.271
+initial_y: -0.076
+initial_z: 0.704
+initial_roll: 6.21859
+initial_pitch: 0.02
+initial_yaw: 1.751
+from: gantry_plate
+to: xtion_right_link
+file_name: tf_xtion_right
+topic_name: /keyboard_xtion_right/keydown

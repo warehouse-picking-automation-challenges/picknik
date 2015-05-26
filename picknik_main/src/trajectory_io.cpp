@@ -293,11 +293,11 @@ bool TrajectoryIO::streamToAffine3d(Eigen::Affine3d& pose, const std::string& li
 
   Eigen::Map<Eigen::Matrix<double,4,4,Eigen::RowMajor> > matrix(values.data(),4,4);
 
-  if (false)
-  {
-    std::cout << matrix << std::endl;
-    std::cout << "-------------------------------------------------------" << std::endl;
-  }
+  // if (false)
+  // {
+  //   std::cout << matrix << std::endl;
+  //   std::cout << "-------------------------------------------------------" << std::endl;
+  // }
 
   //Eigen::Affine3d dummy;
   pose.matrix() = matrix;
