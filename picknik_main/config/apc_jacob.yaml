@@ -103,7 +103,7 @@ bin_height:
   row1: 0.8188 # top row
   row2: 0.6002
   row3: 0.3930
-  row4: 0.1143 # bottom row
+  row4: 0.1143 # bottom rowx
 
 behavior:
   end_effector_enabled: true
