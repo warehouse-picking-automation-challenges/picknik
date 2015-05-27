@@ -2451,6 +2451,36 @@ bool Manipulation::getPose(Eigen::Affine3d &pose, const std::string& frame_name)
   return true;
 }
 
+double Manipulation::getMaxJointLimit(const moveit::core::JointModel* joint)
+{
+  // Assume all joints have only one variable
+  if (joint->getVariableCount() > 1)
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Unable to handle joints with more than one variable");
+    return 0;
+  }
+
+  const moveit::core::VariableBounds& bound = joint->getVariableBounds()[0];
+
+  ROS_WARN_STREAM_NAMED("manipulation","max joint limit is " << bound.max_position_);
+  return bound.max_position_;
+}
+
+double Manipulation::getMinJointLimit(const moveit::core::JointModel* joint)
+{
+  // Assume all joints have only one variable
+  if (joint->getVariableCount() > 1)
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Unable to handle joints with more than one variable");
+    return 0;
+  }
+
+  const moveit::core::VariableBounds& bound = joint->getVariableBounds()[0];
+
+  ROS_WARN_STREAM_NAMED("manipulation","min joint limit is " << bound.min_position_);
+  return bound.min_position_;
+}
+
 bool Manipulation::showJointLimits(JointModelGroup* jmg)
 {
   const std::vector<const moveit::core::JointModel*> &joints = jmg->getActiveJointModels();

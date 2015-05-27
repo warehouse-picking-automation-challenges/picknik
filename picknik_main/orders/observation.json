@@ -47,12 +47,16 @@
     },
     "work_order": [
         {
+            "bin": "bin_I",
+            "item": "crayola_64_ct"
+        },
+        {
             "bin": "bin_K",
             "item": "laugh_out_loud_joke_book"
         },
         {
-            "bin": "bin_I",
-            "item": "crayola_64_ct"
+            "bin": "bin_E",
+            "item": "kyjen_squeakin_eggs_plush_puppies"
         },
         {
             "bin": "bin_H",
@@ -63,16 +67,8 @@
             "item": "cheezit_big_original"
         },
         {
-            "bin": "bin_E",
-            "item": "kyjen_squeakin_eggs_plush_puppies"
-        },
-        {
             "bin": "bin_F",
             "item": "rolodex_jumbo_pencil_cup"
-        },
-        {
-            "bin": "bin_C",
-            "item": "stanley_66_052"
         },
         {
             "bin": "bin_L",
@@ -85,6 +81,10 @@
         {
             "bin": "bin_J",
             "item": "kong_sitting_frog_dog_toy"
+        },
+        {
+            "bin": "bin_C",
+            "item": "stanley_66_052"
         },
         {
             "bin": "bin_G",

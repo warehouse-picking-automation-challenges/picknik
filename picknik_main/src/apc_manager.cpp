@@ -294,6 +294,9 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
   moveit::core::RobotStatePtr the_grasp_state(new moveit::core::RobotState(*current_state)); // Allocate robot states
   moveit_msgs::RobotTrajectory approach_trajectory_msg;
 
+  const moveit::core::JointModel* joint = robot_model_->getJointModel("jaco2_joint_finger_1");
+  double max_finger_joint_limit = manipulation_->getMaxJointLimit(joint);
+
   if (!remote_control_->getAutonomous())
   {
     visuals_->start_state_->publishRobotState(current_state, rvt::GREEN);
@@ -330,7 +333,7 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         planning_scene_manager_->displayShelfWithOpenBins();
 
         // Open hand all the way
-        if (!manipulation_->setEEJointPosition(MAX_JOINT_POSITION, config_->right_arm_))
+        if (!manipulation_->setEEJointPosition(max_finger_joint_limit, config_->right_arm_))
         {
           ROS_ERROR_STREAM_NAMED("apc_manager","Unable to open end effectors");
           return false;
@@ -2476,6 +2479,10 @@ bool APCManager::testGraspWidths()
   // Test visualization
   statusPublisher("Testing open close of End Effectors");
 
+  const moveit::core::JointModel* joint = robot_model_->getJointModel("jaco2_joint_finger_1");
+  double max_finger_joint_limit = manipulation_->getMaxJointLimit(joint);
+  double min_finger_joint_limit = manipulation_->getMinJointLimit(joint);
+
   JointModelGroup* arm_jmg = config_->right_arm_;
   if (false)
   {
@@ -2503,8 +2510,8 @@ bool APCManager::testGraspWidths()
       remote_control_->waitForNextStep("move fingers");
 
       // Increment the test
-      joint_position += ( MAX_JOINT_POSITION - MIN_JOINT_POSITION) / 10.0;
-      if (joint_position > MAX_JOINT_POSITION)
+      joint_position += ( max_finger_joint_limit - min_finger_joint_limit) / 10.0; // 
+      if (joint_position > max_finger_joint_limit)
         joint_position = 0.0;
     }
   }

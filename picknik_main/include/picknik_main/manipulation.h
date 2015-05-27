@@ -58,8 +58,8 @@ namespace picknik_main
 MOVEIT_CLASS_FORWARD(Manipulation);
 
 // TODO move these, last minute sloppiness
-static const double MIN_JOINT_POSITION = 0.0;
-static const double MAX_JOINT_POSITION = 0.742;
+//static const double MIN_JOINT_POSITION = 0.0;
+//static const double MAX_JOINT_POSITION = 0.742;
 
 class Manipulation
 {
@@ -506,6 +506,18 @@ public:
    * \return true on success
    */
   bool getPose(Eigen::Affine3d &pose, const std::string& frame_name);
+
+  /**
+   * \brief Get max value of a joint that has only one variable
+   * \return true on success
+   */
+  double getMaxJointLimit(const moveit::core::JointModel* joint);
+
+  /**
+   * \brief Get min value of a joint that has only one variable
+   * \return true on success
+   */
+  double getMinJointLimit(const moveit::core::JointModel* joint);
 
   /**
    * \brief Debug visualization tool for joint limits
