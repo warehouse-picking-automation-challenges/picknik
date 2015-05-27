@@ -43,6 +43,16 @@ class ContestInterface(object):
         self.bin_contents = bin_contents
         self.work_order = work_order
         self.valid = self.validate_order()
+        self.work_order = self.duplicate_single_item_bins()
+
+    def duplicate_single_item_bins(self):
+        """Try single item bins twice to double chance of picking them."""
+        single_item_bins = []
+        for wi in self.work_order:
+            n_items = len(self.bin_contents[wi["bin"]])
+            if n_items == 1:
+                single_item_bins.append(wi)
+        return self.work_order + single_item_bins
 
     @classmethod
     def from_json(cls, json_fn):
