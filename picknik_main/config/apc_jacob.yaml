@@ -100,10 +100,10 @@ bounding_box_reduction: 1.0 # reduce bounding box size slightly
 
 # Where to put the camera
 bin_height:
-  row1: 0.8188 # top row
-  row2: 0.6002
-  row3: 0.3930
-  row4: 0.1143 # bottom rowx
+  row1: 1.0 # top row
+  row2: 0.7913
+  row3: 0.5691
+  row4: 0.3013 # bottom rowx
 
 behavior:
   end_effector_enabled: true

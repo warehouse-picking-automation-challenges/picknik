@@ -177,7 +177,8 @@ int main(int argc, char** argv)
 
   // Sort order according to expected scores
   std::stringstream order_sorting_command;
-  order_sorting_command << "rosrun picknik_main sort_order.py " << order_file << " " << order_file;
+  std::string processed_order_file = order_file + ".processed";
+  order_sorting_command << "rosrun picknik_main sort_order.py " << order_file << " " << processed_order_file;
   std::string result;
   result = exec(order_sorting_command.str().c_str());
   ROS_DEBUG_STREAM_NAMED("main", "order sorted by running: \"" << order_sorting_command.str() << "\" returned: " << result);
@@ -187,7 +188,7 @@ int main(int argc, char** argv)
   }
   if (!result.empty()) { ROS_DEBUG_STREAM_NAMED("main", "Sorting might have failed, let's try to keep going"); }
 
-  picknik_main::APCManager manager(verbose, order_file, autonomous, full_autonomous, fake_execution, fake_perception);
+  picknik_main::APCManager manager(verbose, processed_order_file, autonomous, full_autonomous, fake_execution, fake_perception);
 
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
