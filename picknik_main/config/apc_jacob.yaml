@@ -46,8 +46,9 @@ world_to_shelf_transform: [ 0.686, -0.444, -0.179, -0.002, -0.014, -0.016] # aft
 # 0.52 m from shelf (large frame to leg) before moving shelf 
 
 # From computer vision
-#collision_shelf_transform: [-0.0382675, -0.332647,  1.06563,  0.0234047,  0.125,  0.3602]
-collision_shelf_transform: [-0.052738, -0.330819, 1.35112, -0.0235953, 0.125, 0.3432]
+#collision_shelf_transform: [-0.052738, -0.330819, 1.35112, -0.0235953, 0.125, 0.3432]
+collision_shelf_transform:  [-0.062738, -0.330819, 1.35112, -0.0235953, 0.125, 0.3432]
+collision_shelf_transform_x_offset: 0.01
 
 # Ideal location to have an attached object (crayons)
 ideal_attached_transform: [0, 0, -0.19, 0, 0, 0]

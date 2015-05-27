@@ -191,6 +191,7 @@ public:
    * \return true on success
    */
   bool loadComputerVisionShelf(const std::vector<double>& collision_shelf_transform_doubles,
+                               double collision_shelf_transform_x_offset,
                                const std::string& package_path);
 
   /**

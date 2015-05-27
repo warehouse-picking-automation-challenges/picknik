@@ -183,9 +183,13 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
 
   // Collision Shelf
   std::vector<double> collision_shelf_transform_doubles;
+  double collision_shelf_transform_x_offset;
   if (!rvt::getDoubleParameters(parent_name, nh, "collision_shelf_transform", collision_shelf_transform_doubles))
     return false;
   if (!rvt::convertDoublesToEigen(parent_name, collision_shelf_transform_doubles, collision_shelf_transform_))
+    return false;
+  if (!rvt::getDoubleParameter(parent_name, nh, "collision_shelf_transform_x_offset", 
+                               collision_shelf_transform_x_offset))
     return false;
 
   // Calculate shelf corners for *this ShelfObject
@@ -334,7 +338,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   goal_bin_->setCollisionMeshPath("file://" + package_path + "/meshes/goal_bin/goal_bin.stl");
 
   // Computer vision shelf
-  loadComputerVisionShelf(collision_shelf_transform_doubles, package_path);
+  loadComputerVisionShelf(collision_shelf_transform_doubles, collision_shelf_transform_x_offset, package_path);
 
   // Front wall limit
   front_wall_.reset(new RectangleObject(visuals_, rvt::YELLOW, "front_wall"));
@@ -626,7 +630,7 @@ bool ShelfObject::createCollisionShelfDetailed()
   // Publish mesh
   if (!visuals_->visual_tools_->publishCollisionMesh(high_res_pose, collision_object_name_, high_res_mesh_path_, color_))
     return false;
-    return true;
+  return true;
 }
 
 BinObjectMap& ShelfObject::getBins()
@@ -695,6 +699,7 @@ bool ShelfObject::deleteProduct(BinObjectPtr bin, ProductObjectPtr product)
 }
 
 bool ShelfObject::loadComputerVisionShelf(const std::vector<double>& collision_shelf_transform_doubles,
+                                          double collision_shelf_transform_x_offset,
                                           const std::string& package_path)
 {
   // Lu Ma Saves this model in the WORLD COORDINATE SYSTEM
@@ -720,6 +725,9 @@ bool ShelfObject::loadComputerVisionShelf(const std::vector<double>& collision_s
   // convert to ros frame (mesh is saved in computer vision frame)
   collision_shelf_transform_ = computer_vision_shelf_pose * Eigen::AngleAxisd(-M_PI / 2.0, Eigen::Vector3d::UnitX())
     * Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitY());
+
+  // Add padding for not grazing shelf all the time
+  collision_shelf_transform_.translation().x() -= collision_shelf_transform_x_offset;
 
   // computer vision shelf
   if (use_computer_vision_shelf_)
