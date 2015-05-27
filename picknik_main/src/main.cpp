@@ -355,6 +355,11 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main","Calibrate shelf");
       manager.calibrateShelf();
       break;
+    case 44:
+      ROS_INFO_STREAM_NAMED("main","Testing ideal collision object attachment");
+      manager.testIdealAttachedCollisionObject();
+      ros::spin();
+      break;
 
     case 50:
       ROS_INFO_STREAM_NAMED("main","Train experience database mode");

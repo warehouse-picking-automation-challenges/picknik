@@ -119,6 +119,12 @@ public:
   bool testVisualizeShelf();
 
   /**
+   * \brief Testing ideal attached object
+   * \return true on success
+   */
+  bool testIdealAttachedCollisionObject();
+
+  /**
    * \brief Tweak location of shelf using keyboard calibrate
    * \return true on success
    */
@@ -334,6 +340,12 @@ public:
    * \return true on success
    */
   bool attachProduct(ProductObjectPtr product, JointModelGroup* arm_jmg);
+
+  /**
+   * \brief Update the attached collision object to the ideal shape and location, to prevent collision with cameras and shelf
+   * \return true on success
+   */
+  bool updateAttachedCollisionObject(ProductObjectPtr product, JointModelGroup* arm_jmg);
 
   /**
    * \brief Show experience database

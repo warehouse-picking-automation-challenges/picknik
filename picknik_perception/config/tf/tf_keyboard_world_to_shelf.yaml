@@ -1,9 +1,9 @@
-initial_x: 0.676
-initial_y: -0.44
-initial_z: -0.183
-initial_roll: 0.003
+initial_x: 0.708
+initial_y: -0.43
+initial_z: -0.002
+initial_roll: -0.008
 initial_pitch: -0.014
-initial_yaw: -0.016
+initial_yaw: 0.031
 from: world
 to: shelf
 file_name: tf_keyboard_world_to_shelf

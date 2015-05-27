@@ -160,6 +160,9 @@ public:
   double bin_height_row3_;
   double bin_height_row4_;
 
+  // Ideal location for attached object
+  Eigen::Affine3d ideal_attached_transform_;
+
 private:
 
   // A shared node handle

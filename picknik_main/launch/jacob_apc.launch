@@ -18,7 +18,7 @@
   <arg name="full_auto" default="0" />
   <arg name="verbose" default="1" />
   <arg name="use_experience" default="1" />
-  <arg name="order" default="$(find picknik_main)/orders/1.json" />
+  <arg name="order" default="$(find picknik_main)/orders/observation.json" />
   <arg name="order_start" default="0" />
   <arg name="num_orders" default="0" />
   <arg name="id" default="0" />
@@ -48,7 +48,7 @@
   </include>
 
   <!-- Main process -->
-  <node name="picknik_main" pkg="picknik_main" type="main" respawn="false" 
+  <node name="picknik_main" pkg="picknik_main" type="main" respawn="true" 
 	launch-prefix="$(arg launch_prefix)" output="screen" 
 	args="--mode $(arg mode) --full_auto $(arg full_auto) --auto $(arg auto) --verbose $(arg verbose) --order $(arg order) 
 	      --order_start $(arg order_start) --jump_to $(arg jump_to) --num_orders $(arg num_orders) 

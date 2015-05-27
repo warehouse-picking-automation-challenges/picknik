@@ -187,6 +187,13 @@ public:
   bool deleteProduct(BinObjectPtr bin, ProductObjectPtr product);
 
   /**
+   * \brief Load a shelf from the computer vision system
+   * \return true on success
+   */
+  bool loadComputerVisionShelf(const std::vector<double>& collision_shelf_transform_doubles,
+                               const std::string& package_path);
+
+  /**
    * \brief Get shelf parts for prevent collision with products
    * \return true on success
    */

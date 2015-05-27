@@ -6,7 +6,7 @@
   <arg     if="$(arg debug)" name="launch_prefix" value="gdb --ex run --args" />
 
   <!-- Load Rviz -->
-  <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false"
+  <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="true"
 	args="-d $(find picknik_perception)/launch/rviz/rviz.rviz" output="screen">
   </node>
 

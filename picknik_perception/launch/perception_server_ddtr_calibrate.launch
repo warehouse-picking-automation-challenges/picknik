@@ -9,7 +9,7 @@
 
   <!-- Main process -->
   <node name="perception_server_ddtr_calibrate" pkg="picknik_perception" type="perception_server_ddtr_calibrate" 
-	respawn="false" launch-prefix="$(arg launch_prefix)" output="screen">	
+	respawn="true" launch-prefix="$(arg launch_prefix)" output="screen">	
   </node>
 
 </launch>

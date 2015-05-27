@@ -8,7 +8,7 @@
 	   value="gdb -x $(find picknik_main)/launch/debug_settings.gdb --ex run --args" />
 
   <!-- Main process -->
-  <node name="pcl_perception_server" pkg="picknik_perception" type="pcl_perception_server" respawn="false" 
+  <node name="pcl_perception_server" pkg="picknik_perception" type="pcl_perception_server" respawn="true" 
 	launch-prefix="$(arg launch_prefix)" output="screen">
     <!-- Settings -->
     <rosparam command="load" file="$(find picknik_perception)/config/pcl_perception_server.yaml"/>

@@ -127,7 +127,14 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   
   // Get test pose
   rvt::getDoubleParameters(parent_name, nh_, "test/test_pose", test_pose_doubles_);
-  test_pose_ = rvt::RvizVisualTools::convertXYZRPY(test_pose_doubles_);
+  test_pose_ = rvt::RvizVisualTools::convertXYZRPY(test_pose_doubles_); // TODO
+
+  // Get ideal attached object
+  std::vector<double> ideal_attached_transform_doubles;
+  if (!rvt::getDoubleParameters(parent_name, nh_, "ideal_attached_transform", ideal_attached_transform_doubles))
+    return false;
+  if (!rvt::convertDoublesToEigen(parent_name, ideal_attached_transform_doubles, ideal_attached_transform_))
+    return false;
 
   // End effector configuration
   rvt::getDoubleParameter(parent_name, nh_, "finger_3_offset", finger_3_offset_);

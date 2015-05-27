@@ -551,6 +551,10 @@ bool APCManager::graspObjectPipeline(WorkOrder work_order, bool verbose, std::si
         // #################################################################################################################
       case 11: statusPublisher("Placing product in bin");
 
+        // Update collision object to be ideal type
+        if (!updateAttachedCollisionObject(work_order.product_, arm_jmg))
+          ROS_WARN_STREAM_NAMED("apc_manager","Failed to update attached collision object to ideal type");
+
         // Set planning scene
         //planning_scene_manager_->displayShelfAsWall();
 
@@ -670,6 +674,32 @@ bool APCManager::testVisualizeShelf()
 
   // Generate random product poses and visualize the shelf
   createRandomProductPoses();
+
+   ROS_INFO_STREAM_NAMED("apc_manager","Ready to shutdown");
+  ros::spin();
+  return true;
+}
+
+// Mode 44
+bool APCManager::testIdealAttachedCollisionObject()
+{
+  ROS_INFO_STREAM_NAMED("apc_manager","Testing ideal attached object");
+
+  // Load JSON file
+  loadShelfContents(order_file_path_);
+
+  // Generate random product poses and visualize the shelf
+  //createRandomProductPoses();
+
+  ros::Duration(0.5).sleep();
+  ros::spinOnce();
+
+  // Choose anything
+  const BinObjectPtr bin = shelf_->getBin(1);
+  ProductObjectPtr product = bin->getProducts()[0]; // Choose first object
+
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  updateAttachedCollisionObject(product, arm_jmg);
 
   ROS_INFO_STREAM_NAMED("apc_manager","Ready to shutdown");
   ros::spin();
@@ -1942,6 +1972,34 @@ bool APCManager::attachProduct(ProductObjectPtr product, JointModelGroup* arm_jm
       std::cout << "attached body: " << attached_bodies[i]->getName() << std::endl;
     }
   }
+
+  return true;
+}
+
+bool APCManager::updateAttachedCollisionObject(ProductObjectPtr product, JointModelGroup* arm_jmg)
+{
+  //std::cout << "product: " << product->getName() << std::endl;
+  //std::cout << "arm_jmg: " << arm_jmg->getName() << std::endl;
+
+  // Replace percieved mesh with a crayon box
+  product->setCollisionMeshPath("file://" + config_->package_path_ + "/meshes/products/crayola_64_ct/collision.stl");
+  product->loadCollisionBodies();
+
+  // Move product to within end effector
+  Eigen::Affine3d product_centroid = manipulation_->getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+
+  // Offset from end effector to ideal product location
+  product_centroid = product_centroid * config_->ideal_attached_transform_;
+
+  // Visualize
+  visuals_->visual_tools_->publishCollisionMesh(product_centroid,
+                                                product->getCollisionName(), 
+                                                product->getCollisionMesh(), 
+                                                product->getColor());
+
+  // Attach
+  visuals_->visual_tools_->attachCO(product->getCollisionName(), grasp_datas_[arm_jmg]->parent_link_->getName());
+  visuals_->visual_tools_->triggerPlanningSceneUpdate();
 
   return true;
 }

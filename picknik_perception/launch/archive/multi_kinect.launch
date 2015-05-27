@@ -1,7 +1,7 @@
 <launch>
 
   <!-- Load Rviz -->
-  <!-- <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false" -->
+  <!-- <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="true" -->
   <!-- 	args="-d $(find picknik_perception)/launch/rviz/multi_kinect.rviz" output="screen"> -->
   <!-- </node> -->
 
