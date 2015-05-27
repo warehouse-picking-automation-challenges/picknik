@@ -504,25 +504,10 @@ bool PerceptionInterface::updateBoundingMesh(ProductObjectPtr &product, BinObjec
     ROS_DEBUG_STREAM_NAMED("perception_interface","Dropping points to plane for " << product->getName());
 
     std::string product_name = product->getName();
-    if (product_name.compare("mark_twain_huckleberry_finn") == 0 )
-    {
-      ROS_DEBUG_STREAM_NAMED("perception_interface","Turning off drop points, keeping all points for bounding box");
-      bounding_box_.drop_points_ = false;
-      bounding_box_.keep_points_ = true;      
-    }
-    else if (product_name.compare("laugh_out_loud_joke_book") == 0 )
-    {
-      ROS_DEBUG_STREAM_NAMED("perception_interface","Turning off drop points, keeping all points for bounding box");
-      bounding_box_.drop_points_ = false;
-      bounding_box_.keep_points_ = true;      
-    }
-    else if (product_name.compare("sharpie_accent_tank_style_highlighters") == 0 )
-    {
-      ROS_DEBUG_STREAM_NAMED("perception_interface","Turning off drop points, keeping all points for bounding box");
-      bounding_box_.drop_points_ = false;
-      bounding_box_.keep_points_ = true;      
-    }
-    else if (product_name.compare("stanley_66_052") == 0 )
+    if (product_name.compare("mark_twain_huckleberry_finn") == 0 || 
+        product_name.compare("laugh_out_loud_joke_book") == 0 ||
+        product_name.compare("sharpie_accent_tank_style_highlighters") == 0 ||
+        product_name.compare("stanley_66_052") == 0 )
     {
       ROS_DEBUG_STREAM_NAMED("perception_interface","Turning off drop points, keeping all points for bounding box");
       bounding_box_.drop_points_ = false;
