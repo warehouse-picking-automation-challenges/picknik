@@ -2462,7 +2462,6 @@ double Manipulation::getMaxJointLimit(const moveit::core::JointModel* joint)
 
   const moveit::core::VariableBounds& bound = joint->getVariableBounds()[0];
 
-  ROS_WARN_STREAM_NAMED("manipulation","max joint limit is " << bound.max_position_);
   return bound.max_position_;
 }
 
@@ -2477,7 +2476,6 @@ double Manipulation::getMinJointLimit(const moveit::core::JointModel* joint)
 
   const moveit::core::VariableBounds& bound = joint->getVariableBounds()[0];
 
-  ROS_WARN_STREAM_NAMED("manipulation","min joint limit is " << bound.min_position_);
   return bound.min_position_;
 }
 

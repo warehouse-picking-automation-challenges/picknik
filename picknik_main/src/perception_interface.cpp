@@ -229,7 +229,7 @@ bool PerceptionInterface::processPerceptionResults(picknik_msgs::FindObjectsResu
   std::vector<std::string> missing_products;
   bin->getProducts(missing_products);
   bool found_desired_product = false;
-  ROS_WARN_STREAM_NAMED("perception_interface","result->found_objects.size() = " << result->found_objects.size());
+  //ROS_WARN_STREAM_NAMED("perception_interface","result->found_objects.size() = " << result->found_objects.size());
   for (std::size_t i = 0; i < result->found_objects.size(); ++i)
   {
     ROS_INFO_STREAM_NAMED("perception_interface","Perception found " << result->found_objects[i].object_name);
