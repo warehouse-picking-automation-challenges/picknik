@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   tf_conversions
   bounding_box
+  ros_param_shortcuts
 )
 
 find_package(Eigen REQUIRED)

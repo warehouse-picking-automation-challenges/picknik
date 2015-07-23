@@ -10,12 +10,16 @@ find_package(catkin REQUIRED COMPONENTS
   cmake_modules
   picknik_msgs
   controller_manager_msgs
-  bounding_box
+  bounding_box  
+  ros_param_shortcuts
 )
 
 find_package(Eigen REQUIRED)
 find_package(Boost REQUIRED)
 find_package(OMPL REQUIRED)
+
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+find_package(Gflags REQUIRED)
 
 catkin_package(
   CATKIN_DEPENDS
@@ -26,6 +30,7 @@ catkin_package(
     picknik_msgs
     controller_manager_msgs
     bounding_box
+    ros_param_shortcuts
   DEPENDS
     Eigen
   INCLUDE_DIRS 

@@ -47,7 +47,7 @@
 #include <picknik_msgs/StopPerception.h>
 
 // Parameter loading
-#include <rviz_visual_tools/ros_param_utilities.h>
+#include <ros_param_shortcuts/ros_param_utilities.h>
 
 namespace picknik_main
 {
@@ -70,12 +70,12 @@ PerceptionInterface::PerceptionInterface(bool verbose, VisualsPtr visuals, Shelf
   //***** WHAT IS THIS USED FOR?
   // Load camera intrinsics
   const std::string parent_name = "perception_interface"; // for namespacing logging messages
-  rvt::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_fx_);
-  rvt::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_fy_);
-  rvt::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_cx_);
-  rvt::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_cy_);
-  rvt::getDoubleParameter(parent_name, nh, "camera_intrinsics/min_depth", camera_min_depth_);
-  rvt::getDoubleParameter(parent_name, nh, "bounding_box_reduction", bounding_box_reduction_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_fx_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_fy_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_cx_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_cy_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh, "camera_intrinsics/min_depth", camera_min_depth_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh, "bounding_box_reduction", bounding_box_reduction_);
 
   ROS_INFO_STREAM_NAMED("perception_interface","PerceptionInterface Ready.");
 }

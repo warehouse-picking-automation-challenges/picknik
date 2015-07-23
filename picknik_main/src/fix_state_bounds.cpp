@@ -44,7 +44,7 @@
 #include <picknik_main/namespaces.h>
 
 // Parameter loading
-#include <rviz_visual_tools/ros_param_utilities.h>
+#include <ros_param_shortcuts/ros_param_utilities.h>
 
 namespace picknik_main
 {
@@ -54,8 +54,8 @@ FixStateBounds::FixStateBounds()
 {
   const std::string parent_name = "fix_state_bounds"; // for namespacing logging messages
 
-  rvt::getDoubleParameter(parent_name, nh_, BOUNDS_PARAM_NAME, bounds_dist_);
-  rvt::getDoubleParameter(parent_name, nh_, DT_PARAM_NAME, max_dt_offset_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, BOUNDS_PARAM_NAME, bounds_dist_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, DT_PARAM_NAME, max_dt_offset_);
 }
 
 bool FixStateBounds::fixBounds(robot_state::RobotState& robot_state,

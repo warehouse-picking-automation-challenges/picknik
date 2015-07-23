@@ -47,7 +47,7 @@
 #include <rviz_visual_tools/rviz_visual_tools.h>
 
 // Parameter loading
-#include <rviz_visual_tools/ros_param_utilities.h>
+#include <ros_param_shortcuts/ros_param_utilities.h>
 
 namespace picknik_perception
 {
@@ -78,10 +78,10 @@ public:
 
     // Load parameters
     const std::string parent_name = "pcl_perception_server"; // for namespacing logging messages
-    rviz_visual_tools::getDoubleParameter(parent_name, nh_, "roi_reduction_padding_x", roi_reduction_padding_x_);
-    rviz_visual_tools::getDoubleParameter(parent_name, nh_, "roi_reduction_padding_y", roi_reduction_padding_y_);
-    rviz_visual_tools::getDoubleParameter(parent_name, nh_, "roi_reduction_padding_z", roi_reduction_padding_z_);
-    rviz_visual_tools::getBoolParameter(parent_name, nh_, "use_outlier_removal", use_outlier_removal_);
+    ros_param_utilities::getDoubleParameter(parent_name, nh_, "roi_reduction_padding_x", roi_reduction_padding_x_);
+    ros_param_utilities::getDoubleParameter(parent_name, nh_, "roi_reduction_padding_y", roi_reduction_padding_y_);
+    ros_param_utilities::getDoubleParameter(parent_name, nh_, "roi_reduction_padding_z", roi_reduction_padding_z_);
+    ros_param_utilities::getBoolParameter(parent_name, nh_, "use_outlier_removal", use_outlier_removal_);
 
     // Show whole shelf
     loadShelfROI();

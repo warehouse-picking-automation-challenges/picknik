@@ -26,7 +26,8 @@
 
 // OMPL
 #include <ompl/tools/lightning/Lightning.h>
-#include <ompl_thunder/Thunder.h>
+#include <ompl/tools/thunder/Thunder.h>
+//#include <ompl_thunder/Thunder.h>
 
 // moveit_grasps
 #include <moveit_grasps/grasp_generator.h>

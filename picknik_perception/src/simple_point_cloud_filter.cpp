@@ -56,7 +56,7 @@
 #include <pcl/surface/gp3.h>
 
 // Parameter loading
-#include <rviz_visual_tools/ros_param_utilities.h>
+#include <ros_param_shortcuts/ros_param_utilities.h>
 
 namespace picknik_perception
 {
@@ -83,10 +83,10 @@ SimplePointCloudFilter::SimplePointCloudFilter(rviz_visual_tools::RvizVisualTool
 
   // Load parameters
   const std::string parent_name = "simple_point_cloud_filter"; // for namespacing logging messages
-  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "radius_of_outlier_removal", radius_of_outlier_removal_);
-  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "min_number_of_neighbors", min_number_of_neighbors_);
-  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "mean_k", mean_k_);
-  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "std_dev_thresh", std_dev_thresh_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "radius_of_outlier_removal", radius_of_outlier_removal_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "min_number_of_neighbors", min_number_of_neighbors_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "mean_k", mean_k_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "std_dev_thresh", std_dev_thresh_);
 
   ROS_DEBUG_STREAM_NAMED("point_cloud_filter","Simple point cloud filter ready.");
 }

@@ -6,7 +6,7 @@
 #include <picknik_perception/simple_point_cloud_filter.h>
 
 #include <rviz_visual_tools/rviz_visual_tools.h>
-#include <rviz_visual_tools/ros_param_utilities.h>
+#include <ros_param_shortcuts/ros_param_utilities.h>
 
 
 namespace picknik_perception

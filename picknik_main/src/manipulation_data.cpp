@@ -40,7 +40,7 @@
 #include <picknik_main/namespaces.h>
 
 // Parameter loading
-#include <rviz_visual_tools/ros_param_utilities.h>
+#include <ros_param_shortcuts/ros_param_utilities.h>
 #include <rviz_visual_tools/rviz_visual_tools.h>
 
 namespace picknik_main
@@ -58,11 +58,11 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   const std::string parent_name = "manipulation_data"; // for namespacing logging messages
 
   // Load performance variables
-  rvt::getDoubleParameter(parent_name, nh_, "main_velocity_scaling_factor", main_velocity_scaling_factor_);
-  rvt::getDoubleParameter(parent_name, nh_, "approach_velocity_scaling_factor", approach_velocity_scaling_factor_);
-  rvt::getDoubleParameter(parent_name, nh_, "lift_velocity_scaling_factor", lift_velocity_scaling_factor_);
-  rvt::getDoubleParameter(parent_name, nh_, "retreat_velocity_scaling_factor", retreat_velocity_scaling_factor_);
-  rvt::getDoubleParameter(parent_name, nh_, "calibration_velocity_scaling_factor", calibration_velocity_scaling_factor_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "main_velocity_scaling_factor", main_velocity_scaling_factor_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "approach_velocity_scaling_factor", approach_velocity_scaling_factor_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "lift_velocity_scaling_factor", lift_velocity_scaling_factor_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "retreat_velocity_scaling_factor", retreat_velocity_scaling_factor_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "calibration_velocity_scaling_factor", calibration_velocity_scaling_factor_);
 
   if (fake_execution_)
   {
@@ -74,70 +74,70 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
     calibration_velocity_scaling_factor_ = 1.0;
   }
 
-  rvt::getDoubleParameter(parent_name, nh_, "wait_before_grasp", wait_before_grasp_);
-  rvt::getDoubleParameter(parent_name, nh_, "wait_after_grasp", wait_after_grasp_);
-  rvt::getDoubleParameter(parent_name, nh_, "place_goal_down_distance_desired", place_goal_down_distance_desired_);
-  rvt::getDoubleParameter(parent_name, nh_, "goal_bin_clearance", goal_bin_clearance_);
-  rvt::getDoubleParameter(parent_name, nh_, "jump_threshold", jump_threshold_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "wait_before_grasp", wait_before_grasp_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "wait_after_grasp", wait_after_grasp_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "place_goal_down_distance_desired", place_goal_down_distance_desired_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "goal_bin_clearance", goal_bin_clearance_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "jump_threshold", jump_threshold_);
 
   // Load perception variables
-  rvt::getDoubleParameter(parent_name, nh_, "camera/x_translation_from_bin", camera_x_translation_from_bin_);
-  rvt::getDoubleParameter(parent_name, nh_, "camera/y_translation_from_bin", camera_y_translation_from_bin_);
-  rvt::getDoubleParameter(parent_name, nh_, "camera/z_translation_from_bin", camera_z_translation_from_bin_);
-  rvt::getDoubleParameter(parent_name, nh_, "camera/x_rotation_from_standard_grasp", camera_x_rotation_from_standard_grasp_);
-  rvt::getDoubleParameter(parent_name, nh_, "camera/y_rotation_from_standard_grasp", camera_y_rotation_from_standard_grasp_);
-  rvt::getDoubleParameter(parent_name, nh_, "camera/z_rotation_from_standard_grasp", camera_z_rotation_from_standard_grasp_);
-  rvt::getDoubleParameter(parent_name, nh_, "camera/lift_distance", camera_lift_distance_);
-  rvt::getDoubleParameter(parent_name, nh_, "camera/left_distance", camera_left_distance_);
-  rvt::getDoubleParameter(parent_name, nh_, "camera/camera_frame_display_scale", camera_frame_display_scale_);
-  rvt::getStringParameter(parent_name, nh_, "camera/left_camera_frame", left_camera_frame_);
-  rvt::getStringParameter(parent_name, nh_, "camera/right_camera_frame", right_camera_frame_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/x_translation_from_bin", camera_x_translation_from_bin_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/y_translation_from_bin", camera_y_translation_from_bin_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/z_translation_from_bin", camera_z_translation_from_bin_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/x_rotation_from_standard_grasp", camera_x_rotation_from_standard_grasp_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/y_rotation_from_standard_grasp", camera_y_rotation_from_standard_grasp_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/z_rotation_from_standard_grasp", camera_z_rotation_from_standard_grasp_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/lift_distance", camera_lift_distance_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/left_distance", camera_left_distance_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/camera_frame_display_scale", camera_frame_display_scale_);
+  ros_param_utilities::getStringParameter(parent_name, nh_, "camera/left_camera_frame", left_camera_frame_);
+  ros_param_utilities::getStringParameter(parent_name, nh_, "camera/right_camera_frame", right_camera_frame_);
 
   // Load robot semantics
-  rvt::getStringParameter(parent_name, nh_, "start_pose", start_pose_);
-  rvt::getStringParameter(parent_name, nh_, "right_arm_dropoff_pose", right_arm_dropoff_pose_);
-  rvt::getStringParameter(parent_name, nh_, "left_arm_dropoff_pose", left_arm_dropoff_pose_);
-  rvt::getStringParameter(parent_name, nh_, "right_hand_name", right_hand_name_);
-  rvt::getStringParameter(parent_name, nh_, "left_hand_name", left_hand_name_);
-  rvt::getStringParameter(parent_name, nh_, "right_arm_name", right_arm_name_);
-  rvt::getStringParameter(parent_name, nh_, "left_arm_name", left_arm_name_);
-  rvt::getStringParameter(parent_name, nh_, "both_arms_name", both_arms_name_);
+  ros_param_utilities::getStringParameter(parent_name, nh_, "start_pose", start_pose_);
+  ros_param_utilities::getStringParameter(parent_name, nh_, "right_arm_dropoff_pose", right_arm_dropoff_pose_);
+  ros_param_utilities::getStringParameter(parent_name, nh_, "left_arm_dropoff_pose", left_arm_dropoff_pose_);
+  ros_param_utilities::getStringParameter(parent_name, nh_, "right_hand_name", right_hand_name_);
+  ros_param_utilities::getStringParameter(parent_name, nh_, "left_hand_name", left_hand_name_);
+  ros_param_utilities::getStringParameter(parent_name, nh_, "right_arm_name", right_arm_name_);
+  ros_param_utilities::getStringParameter(parent_name, nh_, "left_arm_name", left_arm_name_);
+  ros_param_utilities::getStringParameter(parent_name, nh_, "both_arms_name", both_arms_name_);
 
   // Load planning configs
-  rvt::getBoolParameter(parent_name, nh_, "moveit_ompl/use_experience_setup", use_experience_setup_);
-  rvt::getStringParameter(parent_name, nh_, "moveit_ompl/experience_type", experience_type_);
-  rvt::getDoubleParameter(parent_name, nh_, "moveit_ompl/planning_time", planning_time_);
+  ros_param_utilities::getBoolParameter(parent_name, nh_, "moveit_ompl/use_experience_setup", use_experience_setup_);
+  ros_param_utilities::getStringParameter(parent_name, nh_, "moveit_ompl/experience_type", experience_type_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "moveit_ompl/planning_time", planning_time_);
 
   // Camera view positions
-  rvt::getDoubleParameter(parent_name, nh_, "bin_height/row1", bin_height_row1_);
-  rvt::getDoubleParameter(parent_name, nh_, "bin_height/row2", bin_height_row2_);
-  rvt::getDoubleParameter(parent_name, nh_, "bin_height/row3", bin_height_row3_);
-  rvt::getDoubleParameter(parent_name, nh_, "bin_height/row4", bin_height_row4_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "bin_height/row1", bin_height_row1_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "bin_height/row2", bin_height_row2_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "bin_height/row3", bin_height_row3_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "bin_height/row4", bin_height_row4_);
 
   // Behavior configs
-  rvt::getBoolMap(parent_name, nh_, "behavior", enabled_);
+  ros_param_utilities::getBoolMap(parent_name, nh_, "behavior", enabled_);
 
   // Decide on dual arm mode we are in
   int temp_value;
-  rvt::getIntParameter(parent_name, nh_, "dual_arm", temp_value);
+  ros_param_utilities::getIntParameter(parent_name, nh_, "dual_arm", temp_value);
   dual_arm_ = temp_value;
 
   // Generic test variable
-  rvt::getDoubleParameter(parent_name, nh_, "test/test_double", test_double_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "test/test_double", test_double_);
   
   // Get test pose
-  rvt::getDoubleParameters(parent_name, nh_, "test/test_pose", test_pose_doubles_);
+  ros_param_utilities::getDoubleParameters(parent_name, nh_, "test/test_pose", test_pose_doubles_);
   test_pose_ = rvt::RvizVisualTools::convertXYZRPY(test_pose_doubles_); // TODO
 
   // Get ideal attached object
   std::vector<double> ideal_attached_transform_doubles;
-  if (!rvt::getDoubleParameters(parent_name, nh_, "ideal_attached_transform", ideal_attached_transform_doubles))
+  if (!ros_param_utilities::getDoubleParameters(parent_name, nh_, "ideal_attached_transform", ideal_attached_transform_doubles))
     return false;
-  if (!rvt::convertDoublesToEigen(parent_name, ideal_attached_transform_doubles, ideal_attached_transform_))
+  if (!ros_param_utilities::convertDoublesToEigen(parent_name, ideal_attached_transform_doubles, ideal_attached_transform_))
     return false;
 
   // End effector configuration
-  rvt::getDoubleParameter(parent_name, nh_, "finger_3_offset", finger_3_offset_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "finger_3_offset", finger_3_offset_);
 
   // Load proper groups
   // TODO - check if joint model group exists

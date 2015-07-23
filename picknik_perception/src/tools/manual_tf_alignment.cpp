@@ -6,7 +6,7 @@
 #include <picknik_perception/manual_tf_alignment.h>
 
 // Parameter loading
-#include <rviz_visual_tools/ros_param_utilities.h>
+#include <ros_param_shortcuts/ros_param_utilities.h>
 
 namespace picknik_perception
 {
@@ -23,19 +23,19 @@ ManualTFAlignment::ManualTFAlignment()
   // initial camera transform
   const std::string parent_name = "manipulation_data"; // for namespacing logging messages
   double x, y, z, roll, pitch, yaw;
-  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "initial_x", x);
-  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "initial_y", y);
-  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "initial_z", z);
-  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "initial_roll", roll);
-  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "initial_pitch", pitch);
-  rviz_visual_tools::getDoubleParameter(parent_name, nh_, "initial_yaw", yaw);
-  rviz_visual_tools::getStringParameter(parent_name, nh_, "file_name", file_name_);
-  rviz_visual_tools::getStringParameter(parent_name, nh_, "topic_name", topic_name_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "initial_x", x);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "initial_y", y);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "initial_z", z);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "initial_roll", roll);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "initial_pitch", pitch);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "initial_yaw", yaw);
+  ros_param_utilities::getStringParameter(parent_name, nh_, "file_name", file_name_);
+  ros_param_utilities::getStringParameter(parent_name, nh_, "topic_name", topic_name_);
   setPose(Eigen::Vector3d(x, y, z), Eigen::Vector3d(roll, pitch, yaw));
 
   // get frame names
-  rviz_visual_tools::getStringParameter(parent_name, nh_, "from", from_);
-  rviz_visual_tools::getStringParameter(parent_name, nh_, "to", to_);
+  ros_param_utilities::getStringParameter(parent_name, nh_, "from", from_);
+  ros_param_utilities::getStringParameter(parent_name, nh_, "to", to_);
 
   // default, save in picknik_perception/data
   std::string package_path = ros::package::getPath("picknik_perception");

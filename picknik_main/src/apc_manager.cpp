@@ -17,7 +17,7 @@
 #include <picknik_main/product_simulator.h>
 
 // Parameter loading
-#include <rviz_visual_tools/ros_param_utilities.h>
+#include <ros_param_shortcuts/ros_param_utilities.h>
 
 // MoveIt
 #include <moveit/robot_state/conversions.h>
@@ -1395,7 +1395,7 @@ bool APCManager::testJointLimits()
   int test_joint_limit_joint;
   std::size_t first_joint;
   std::size_t last_joint;
-  rvt::getIntParameter("apc_manager", nh_private_, "test/test_joint_limit_joint", test_joint_limit_joint);
+  ros_param_utilities::getIntParameter("apc_manager", nh_private_, "test/test_joint_limit_joint", test_joint_limit_joint);
   if (test_joint_limit_joint < 0)
   {
     first_joint = 0;
@@ -1873,7 +1873,7 @@ bool APCManager::loadPlanningSceneMonitor()
 
   // Get the joint state topic
   std::string joint_state_topic;
-  rvt::getStringParameter("apc_manager", nh_private_, "joint_state_topic", joint_state_topic);
+  ros_param_utilities::getStringParameter("apc_manager", nh_private_, "joint_state_topic", joint_state_topic);
   if (planning_scene_monitor_->getPlanningScene())
   {
     // Optional monitors to start:

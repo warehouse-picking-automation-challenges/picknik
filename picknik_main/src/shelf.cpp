@@ -15,7 +15,7 @@
 #include <picknik_main/shelf.h>
 
 // Parameter loading
-#include <rviz_visual_tools/ros_param_utilities.h>
+#include <ros_param_shortcuts/ros_param_utilities.h>
 
 namespace picknik_main
 {
@@ -122,73 +122,73 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
 
   // Loaded shelf parameter values
   std::vector<double> world_to_shelf_transform_doubles;
-  if (!rvt::getDoubleParameters(parent_name, nh, "world_to_shelf_transform", world_to_shelf_transform_doubles))
+  if (!ros_param_utilities::getDoubleParameters(parent_name, nh, "world_to_shelf_transform", world_to_shelf_transform_doubles))
     return false;
-  if (!rvt::convertDoublesToEigen(parent_name, world_to_shelf_transform_doubles, world_to_shelf_transform_))
+  if (!ros_param_utilities::convertDoublesToEigen(parent_name, world_to_shelf_transform_doubles, world_to_shelf_transform_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "shelf_width", shelf_width_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "shelf_width", shelf_width_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "shelf_height", shelf_height_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "shelf_height", shelf_height_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "shelf_depth", shelf_depth_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "shelf_depth", shelf_depth_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "shelf_wall_width", shelf_wall_width_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "shelf_wall_width", shelf_wall_width_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "shelf_inner_wall_width", shelf_inner_wall_width_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "shelf_inner_wall_width", shelf_inner_wall_width_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "shelf_surface_thickness", shelf_surface_thickness_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "shelf_surface_thickness", shelf_surface_thickness_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "first_bin_from_bottom", first_bin_from_bottom_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "first_bin_from_bottom", first_bin_from_bottom_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "first_bin_from_right", first_bin_from_right_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "first_bin_from_right", first_bin_from_right_))
     return false;
 
   // Loaded bin parameter values
-  if (!rvt::getDoubleParameter(parent_name, nh, "bin_right_width", bin_right_width_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_right_width", bin_right_width_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "bin_middle_width", bin_middle_width_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_middle_width", bin_middle_width_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "bin_left_width", bin_left_width_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_left_width", bin_left_width_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "bin_short_height", bin_short_height_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_short_height", bin_short_height_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "bin_tall_height", bin_tall_height_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_tall_height", bin_tall_height_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "bin_depth", bin_depth_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_depth", bin_depth_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "bin_top_margin", bin_top_margin_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_top_margin", bin_top_margin_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "bin_left_margin", bin_left_margin_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_left_margin", bin_left_margin_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "num_bins", num_bins_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "num_bins", num_bins_))
     return false;
 
   // Goal bin
-  if (!rvt::getDoubleParameter(parent_name, nh, "goal_bin_x", goal_bin_x_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "goal_bin_x", goal_bin_x_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "goal_bin_y", goal_bin_y_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "goal_bin_y", goal_bin_y_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "goal_bin_z", goal_bin_z_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "goal_bin_z", goal_bin_z_))
     return false;
 
   // Side limits (walls)
-  if (!rvt::getDoubleParameter(parent_name, nh, "left_wall_y", left_wall_y_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "left_wall_y", left_wall_y_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "right_wall_y", right_wall_y_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "right_wall_y", right_wall_y_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "ceiling_z", ceiling_z_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "ceiling_z", ceiling_z_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "collision_wall_safety_margin", collision_wall_safety_margin_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "collision_wall_safety_margin", collision_wall_safety_margin_))
     return false;
 
   // Collision Shelf
   std::vector<double> collision_shelf_transform_doubles;
   double collision_shelf_transform_x_offset;
-  if (!rvt::getDoubleParameters(parent_name, nh, "collision_shelf_transform", collision_shelf_transform_doubles))
+  if (!ros_param_utilities::getDoubleParameters(parent_name, nh, "collision_shelf_transform", collision_shelf_transform_doubles))
     return false;
-  if (!rvt::convertDoublesToEigen(parent_name, collision_shelf_transform_doubles, collision_shelf_transform_))
+  if (!ros_param_utilities::convertDoublesToEigen(parent_name, collision_shelf_transform_doubles, collision_shelf_transform_))
     return false;
-  if (!rvt::getDoubleParameter(parent_name, nh, "collision_shelf_transform_x_offset", 
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "collision_shelf_transform_x_offset", 
                                collision_shelf_transform_x_offset))
     return false;
 

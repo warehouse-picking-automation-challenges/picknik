@@ -17,7 +17,7 @@
 #include <picknik_main/shelf.h>
 
 // Parameter loading
-#include <rviz_visual_tools/ros_param_utilities.h>
+#include <ros_param_shortcuts/ros_param_utilities.h>
 
 namespace picknik_main
 {
@@ -78,7 +78,7 @@ Visuals::Visuals(robot_model::RobotModelPtr robot_model,
 
   // Load verbose/visualization settings
   const std::string parent_name = "visuals"; // for namespacing logging messages
-  rvt::getBoolMap(parent_name, nh_, "debug_level", enabled_);
+  ros_param_utilities::getBoolMap(parent_name, nh_, "debug_level", enabled_);
 }
 
 bool Visuals::visualizeDisplayShelf(ShelfObjectPtr shelf)
