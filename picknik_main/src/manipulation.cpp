@@ -933,6 +933,12 @@ bool Manipulation::generateApproachPath(moveit_grasps::GraspCandidatePtr chosen_
 
 const moveit::core::JointModel* Manipulation::getGantryJoint()
 {
+  if (!config_->has_gantry_)
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Attempt to use gantry on robot that does not have one");
+    return false;
+  }
+    
   const moveit::core::JointModel* gantry_joint = robot_model_->getJointModel("gantry_joint");
   if (!gantry_joint)
   {
@@ -951,9 +957,9 @@ bool Manipulation::executeVerticlePath(JointModelGroup *arm_jmg, const double &d
                                        const double &velocity_scaling_factor, bool up, bool ignore_collision)
 {
   ROS_INFO_STREAM_NAMED("manipulation","Executing verticle path " << (up ? "up" : "down"));
-
+  
   // Attempt to only use gantry, then fall back to IK
-  if (!executeVerticlePathGantryOnly(arm_jmg, desired_lift_distance, velocity_scaling_factor, up, ignore_collision))
+  if (config_->has_gantry_ && !executeVerticlePathGantryOnly(arm_jmg, desired_lift_distance, velocity_scaling_factor, up, ignore_collision))
   {
     ROS_INFO_STREAM_NAMED("manipulation","Falling back to IK-based solution");
     return executeVerticlePathWithIK(arm_jmg, desired_lift_distance, up, ignore_collision);
@@ -966,6 +972,12 @@ bool Manipulation::executeVerticlePathGantryOnly(JointModelGroup *arm_jmg,
                                                  const double &velocity_scaling_factor, bool up,
                                                  bool ignore_collision, bool best_attempt)
 {
+  if (!config_->has_gantry_)
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Attempt to use gantry on robot that does not have one");
+    return false;
+  }
+  
   // Find joint property
   const moveit::core::JointModel* gantry_joint = getGantryJoint();
 
@@ -1399,6 +1411,12 @@ bool Manipulation::perturbCamera(BinObjectPtr bin)
 
 bool Manipulation::perturbCameraGantryOnly(BinObjectPtr bin, JointModelGroup* arm_jmg)
 {
+  if (!config_->has_gantry_)
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Attempt to use gantry on robot that does not have one");
+    return false;
+  }
+    
   // Note: assumes arm is already pointing at centroid of desired bin
   ROS_INFO_STREAM_NAMED("manipulation","Perturbing camera for perception - moving gantry up and down");
 
@@ -1530,6 +1548,12 @@ bool Manipulation::moveCameraToBin(BinObjectPtr bin)
 
 bool Manipulation::moveCameraToBinGantryOnly(BinObjectPtr bin, JointModelGroup* arm_jmg)
 {
+  if (!config_->has_gantry_)
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Attempt to use gantry on robot that does not have one");
+    return false;
+  }
+
   // Set new state to current state
   getCurrentState();
 

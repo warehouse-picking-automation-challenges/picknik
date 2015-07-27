@@ -106,6 +106,7 @@ public:
   std::string right_hand_name_;
   std::string left_hand_name_;
   std::string right_arm_name_;
+  std::string right_arm_only_name_;  
   std::string left_arm_name_;
   std::string both_arms_name_;
 
@@ -135,6 +136,7 @@ public:
 
   // Logic on type of robot
   bool dual_arm_;
+  bool has_gantry_;
 
   // Execution mode
   bool fake_execution_;

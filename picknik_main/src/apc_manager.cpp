@@ -1891,6 +1891,11 @@ bool APCManager::loadPlanningSceneMonitor()
   ros::Duration(0.5).sleep(); // when at 0.1, i believe sometimes vjoint not properly loaded
 
   // Wait for complete state to be recieved
+  bool wait_for_complete_state = false;
+  // Break early
+  if (!wait_for_complete_state)
+      return true;
+  
   std::vector<std::string> missing_joints;
   std::size_t counter = 0;
   while( !planning_scene_monitor_->getStateMonitor()->haveCompleteState() && ros::ok() )
@@ -1907,6 +1912,7 @@ bool APCManager::loadPlanningSceneMonitor()
         ROS_WARN_STREAM_NAMED("apc_manager","Unpublished joints: " << missing_joints[i]);
     }
     counter++;
+
   }
   ros::spinOnce();
 

@@ -100,6 +100,7 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   ros_param_utilities::getStringParameter(parent_name, nh_, "right_hand_name", right_hand_name_);
   ros_param_utilities::getStringParameter(parent_name, nh_, "left_hand_name", left_hand_name_);
   ros_param_utilities::getStringParameter(parent_name, nh_, "right_arm_name", right_arm_name_);
+  ros_param_utilities::getStringParameter(parent_name, nh_, "right_arm_only_name", right_arm_only_name_);  
   ros_param_utilities::getStringParameter(parent_name, nh_, "left_arm_name", left_arm_name_);
   ros_param_utilities::getStringParameter(parent_name, nh_, "both_arms_name", both_arms_name_);
 
@@ -118,9 +119,8 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   ros_param_utilities::getBoolMap(parent_name, nh_, "behavior", enabled_);
 
   // Decide on dual arm mode we are in
-  int temp_value;
-  ros_param_utilities::getIntParameter(parent_name, nh_, "dual_arm", temp_value);
-  dual_arm_ = temp_value;
+  ros_param_utilities::getBoolParameter(parent_name, nh_, "dual_arm", dual_arm_);
+  ros_param_utilities::getBoolParameter(parent_name, nh_, "has_gantry", has_gantry_);  
 
   // Generic test variable
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "test/test_double", test_double_);
@@ -152,7 +152,7 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   {
     // Load arm groups
     right_arm_ = robot_model->getJointModelGroup(right_arm_name_);
-    arm_only_ = robot_model->getJointModelGroup("jaco_arm"); // hack
+    arm_only_ = robot_model->getJointModelGroup(right_arm_only_name_);
   }
 
   // Set world frame

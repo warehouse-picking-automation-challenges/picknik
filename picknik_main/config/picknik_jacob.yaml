@@ -23,10 +23,12 @@ jump_threshold: 4
 collision_wall_safety_margin: 0.01 # 0.02
 
 # Semantics
-dual_arm: 0
+dual_arm: false
+has_gantry: true
 right_hand_name: gripper
 left_hand_name: gripper_DISABLED
 right_arm_name: manipulator
+right_arm_only_name: jaco_arm
 left_arm_name: manipulator_DISABLED
 both_arms_name: manipulator_DISABLED
 

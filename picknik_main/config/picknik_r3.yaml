@@ -12,8 +12,8 @@ wait_before_grasp: 0.1
 wait_after_grasp: 1.0
 
 # Poses
-start_pose: manipulator_home
-right_arm_dropoff_pose: goal_bin_pose
+start_pose: park
+right_arm_dropoff_pose: home
 left_arm_dropoff_pose: left_goal_bin_pose_DISABLED
 
 # Cartesian path config
@@ -23,10 +23,12 @@ jump_threshold: 4
 collision_wall_safety_margin: 0.01 # 0.02
 
 # Semantics
-dual_arm: 0
+dual_arm: false
+has_gantry: false
 right_hand_name: gripper
 left_hand_name: gripper_DISABLED
-right_arm_name: manipulator
+right_arm_name: arm
+right_arm_only_name: arm
 left_arm_name: manipulator_DISABLED
 both_arms_name: manipulator_DISABLED
 

@@ -48,7 +48,7 @@
   </include>
 
   <!-- Main process -->
-  <node name="picknik_main" pkg="picknik_main" type="main" respawn="true" 
+  <node name="picknik_main" pkg="picknik_main" type="main" respawn="false" 
 	launch-prefix="$(arg launch_prefix)" output="screen" 
 	args="--mode $(arg mode) --full_auto $(arg full_auto) --auto $(arg auto) --verbose $(arg verbose) --order $(arg order) 
 	      --order_start $(arg order_start) --jump_to $(arg jump_to) --num_orders $(arg num_orders) 
