@@ -8,3 +8,4 @@ CATKIN_IGNORE
 
 #ignore pcd files
 *.pcd
+*.processed

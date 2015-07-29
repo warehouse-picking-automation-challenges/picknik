@@ -959,12 +959,14 @@ bool Manipulation::executeVerticlePath(JointModelGroup *arm_jmg, const double &d
   ROS_INFO_STREAM_NAMED("manipulation","Executing verticle path " << (up ? "up" : "down"));
   
   // Attempt to only use gantry, then fall back to IK
-  if (config_->has_gantry_ && !executeVerticlePathGantryOnly(arm_jmg, desired_lift_distance, velocity_scaling_factor, up, ignore_collision))
-  {
-    ROS_INFO_STREAM_NAMED("manipulation","Falling back to IK-based solution");
-    return executeVerticlePathWithIK(arm_jmg, desired_lift_distance, up, ignore_collision);
+  if (config_->has_gantry_) {
+    if (executeVerticlePathGantryOnly(arm_jmg, desired_lift_distance, velocity_scaling_factor, up, ignore_collision))
+      return true;
+    else
+      ROS_INFO_STREAM_NAMED("manipulation","Falling back to IK-based solution");
   }
-  return true;
+
+  return executeVerticlePathWithIK(arm_jmg, desired_lift_distance, up, ignore_collision); 
 }
 
 bool Manipulation::executeVerticlePathGantryOnly(JointModelGroup *arm_jmg,

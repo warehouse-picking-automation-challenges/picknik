@@ -172,12 +172,16 @@ Start this separate to speed up launching:
 
 Rviz Visualizers of robot states and debug markers 
 
-    roslaunch picknik_main rviz.launch
+    roslaunch picknik_main jacob_rviz.launch
 
 Camera calibration:
 
     roslaunch picknik_perception multi_xtion_calibrate.launch
     roslaunch picknik_perception static_calibration_xtion.launch
+
+Shelf calibration:
+
+    roslaunch picknik_perception tf_keyboard_world_to_shelf.launch
 	
 Run fake object recognition server:
 
@@ -202,7 +206,7 @@ Then calibrate the gantry by checking that it is safe to lower the robot to the 
 
 Rviz Visualizers of robot states and debug markers
 
-    roslaunch picknik_main rviz.launch
+    roslaunch picknik_main jacob_rviz.launch
 
 Start cameras (on correct computer):
 

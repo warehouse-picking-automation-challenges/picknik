@@ -9,10 +9,7 @@ Panels:
         - /Amazon Trajectory Markers1/Namespaces1
         - /OMPL Experience1/Namespaces1
         - /PlanningScene1/Scene Geometry1
-        - /TF1
-        - /TF1/Status1
         - /TF1/Frames1
-        - /Left Point Cloud1
         - /DepthCloud1/Auto Size1
       Splitter Ratio: 0.504886
     Tree Height: 683
@@ -323,7 +320,7 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Markers
       Namespaces:
-        Text: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -510,55 +507,19 @@ Visualization Manager:
         Show Robot Visual: false
       Value: true
     - Class: rviz/TF
-      Enabled: true
+      Enabled: false
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        base:
-          Value: true
-        bin_A:
-          Value: true
-        bin_B:
-          Value: true
-        bin_C:
-          Value: true
-        bin_D:
-          Value: true
-        bin_E:
-          Value: true
-        bin_F:
-          Value: true
-        bin_G:
-          Value: true
-        bin_H:
-          Value: true
-        bin_I:
-          Value: true
-        bin_J:
-          Value: true
-        bin_K:
-          Value: true
-        bin_L:
-          Value: true
-        calibration_target_frame:
-          Value: true
-        shelf:
-          Value: true
-        world:
-          Value: true
       Marker Scale: 0.5
       Name: TF
       Show Arrows: false
       Show Axes: true
       Show Names: true
       Tree:
-        world:
-          base:
-            {}
-          shelf:
-            {}
+        {}
       Update Interval: 0
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -801,22 +762,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 3.91274
+      Distance: 0.728793
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.05278
-        Y: -0.126585
-        Z: 0
+        X: -0.0688627
+        Y: 1.06031
+        Z: 2.38419e-07
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.190399
+      Pitch: 0.280399
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 2.5354
+      Yaw: 1.6104
     Saved: ~
 Window Geometry:
   Displays:

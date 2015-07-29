@@ -245,16 +245,18 @@ bool ExecutionInterface::checkExecutionManager()
   }
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
-  // Check active controllers are running
-  if (!trajectory_execution_manager_->ensureActiveControllersForGroup(arm_jmg->getName()))
-  {
-    ROS_ERROR_STREAM_NAMED("execution_interface","Group " << arm_jmg->getName() << " does not have controllers loaded");
-    return false;
-  }
   // Get the controllers List
   std::vector<std::string> controller_list;
   trajectory_execution_manager_->getControllerManager()->getControllersList(controller_list);
-  //std::copy(controller_list.begin(), controller_list.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
+
+  // Check active controllers are running
+  if (!trajectory_execution_manager_->ensureActiveControllersForGroup(arm_jmg->getName()))
+  {
+    ROS_ERROR_STREAM_NAMED("execution_interface","Group '" << arm_jmg->getName() << "' does not have controllers loaded");
+    std::cout << "Available controllers: " << std::endl;
+    std::copy(controller_list.begin(), controller_list.end(), std::ostream_iterator<std::string>(std::cout, "\n"));    
+    return false;
+  }
 
   // Check active controllers are running
   if (!trajectory_execution_manager_->ensureActiveControllers(controller_list))
@@ -264,23 +266,26 @@ bool ExecutionInterface::checkExecutionManager()
   }
 
   // Check that correct controllers are running
-  bool has_error = true;
+  // TODO - make this not jacob-specific
+  if (false) {
+    bool has_error = true;
 
-  while (has_error && ros::ok())
-  {
-    has_error = false;
-    if (!checkTrajectoryController(zaber_list_controllers_client_, "zaber"))
-    {
-      has_error = true;
-    }
+    while (has_error && ros::ok())
+      {
+	has_error = false;
+	if (!checkTrajectoryController(zaber_list_controllers_client_, "zaber"))
+	  {
+	    has_error = true;
+	  }
 
-    bool has_ee = true;
-    if (!checkTrajectoryController(kinova_list_controllers_client_, "kinova", has_ee))
-    {
-      has_error = true;
-    }
+	bool has_ee = true;
+	if (!checkTrajectoryController(kinova_list_controllers_client_, "kinova", has_ee))
+	  {
+	    has_error = true;
+	  }
 
-    ros::Duration(0.5).sleep();
+	ros::Duration(0.5).sleep();
+      }
   }
 
   return true;

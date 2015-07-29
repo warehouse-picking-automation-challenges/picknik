@@ -77,6 +77,11 @@ PickNikPanel::PickNikPanel( QWidget* parent )
   btn_stop_ = new QPushButton(this);
   btn_stop_->setText("Stop");
   connect( btn_stop_, SIGNAL( clicked() ), this, SLOT( moveStop() ) );
+
+  // Create a push button
+  btn_mode_ = new QPushButton(this);
+  btn_mode_->setText("Toggle Joint Mode");
+  connect( btn_mode_, SIGNAL( clicked() ), this, SLOT( changeJointMode() ) );
   
   // Buttons horizontal
   QHBoxLayout* hlayout = new QHBoxLayout;
@@ -84,6 +89,7 @@ PickNikPanel::PickNikPanel( QWidget* parent )
   hlayout->addWidget( btn_auto_ );
   hlayout->addWidget( btn_full_auto_ );
   hlayout->addWidget( btn_stop_ );
+  hlayout->addWidget( btn_mode_ );  
 
   // Lay out the topic field above the control widget.
   QVBoxLayout* layout = new QVBoxLayout;
@@ -95,6 +101,7 @@ PickNikPanel::PickNikPanel( QWidget* parent )
   auto_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/auto_command", 1 );
   full_auto_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/full_auto_command", 1 );
   stop_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/stop_command", 1 );
+  mode_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/mode_command", 1 );
 
   // Make the control widget start disabled, since we don't start with an output topic.
   btn_next_->setEnabled( true );
@@ -132,6 +139,14 @@ void PickNikPanel::moveStop()
   std_msgs::Bool result;
   result.data = true;
   stop_publisher_.publish( result );
+}
+
+void PickNikPanel::changeJointMode()
+{
+  ROS_INFO_STREAM_NAMED("picknik","Changing joint mode");
+  std_msgs::Bool result;
+  result.data = true;
+  mode_publisher_.publish( result );
 }
 
 // Save all configuration data from this panel to the given

@@ -90,18 +90,23 @@ protected Q_SLOTS:
   /// User has chosen to stop
   void moveStop();
 
+  /// User wants to change joint mode (velocity/gravity compensation)
+  void changeJointMode();
+
   // Then we finish up with protected member variables.
 protected:
   QPushButton *btn_next_;
   QPushButton *btn_auto_;
   QPushButton *btn_full_auto_;
   QPushButton *btn_stop_;
+  QPushButton *btn_mode_;
 
   // The ROS publishers
   ros::Publisher next_publisher_;
   ros::Publisher auto_publisher_;
   ros::Publisher full_auto_publisher_;
   ros::Publisher stop_publisher_;
+  ros::Publisher mode_publisher_;
 
   // The ROS node handle.
   ros::NodeHandle nh_;

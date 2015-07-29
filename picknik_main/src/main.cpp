@@ -179,6 +179,7 @@ int main(int argc, char** argv)
   std::stringstream order_sorting_command;
   std::string processed_order_file = order_file + ".processed";
   order_sorting_command << "rosrun picknik_main sort_order.py " << order_file << " " << processed_order_file;
+  std::cout << "Order sorting command: " << order_sorting_command.str() << std::endl;
   std::string result;
   result = exec(order_sorting_command.str().c_str());
   ROS_DEBUG_STREAM_NAMED("main", "order sorted by running: \"" << order_sorting_command.str() << "\" returned: " << result);
