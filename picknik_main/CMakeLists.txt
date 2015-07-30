@@ -38,11 +38,8 @@ catkin_package(
     ${OMPL_INCLUDE_DIRS}
   LIBRARIES
     jsoncpp
-    amazon_json_parser
-    shelf
     fix_state_bounds
     manipulation    
-    #learning_pipeline
     visuals
     ${OMPL_LIBRARIES}
 )
@@ -54,6 +51,7 @@ include_directories(
   include 
   ${catkin_INCLUDE_DIRS}
   ${OMPL_INCLUDE_DIRS}
+  ${Gflags_INCLUDE_DIRS}
 )
 
 include_directories(SYSTEM 
@@ -90,15 +88,15 @@ target_link_libraries(jsoncpp
 )
 
 # Amazon Parser
-add_library(amazon_json_parser
-  src/amazon_json_parser.cpp
-)
-target_link_libraries(amazon_json_parser
-  jsoncpp
-  visuals
-  ${catkin_LIBRARIES} 
-  ${Boost_LIBRARIES}
-)
+# add_library(amazon_json_parser
+#   src/amazon_json_parser.cpp
+# )
+# target_link_libraries(amazon_json_parser
+#   jsoncpp
+#   visuals
+#   ${catkin_LIBRARIES} 
+#   ${Boost_LIBRARIES}
+# )
 
 # Planning Scene Library
 add_library(planning_scene_manager
@@ -129,16 +127,16 @@ target_link_libraries(collision_object
 )
 
 # Shelf library
-add_library(shelf
-  src/shelf.cpp
-)
-target_link_libraries(shelf
-  visuals
-  collision_object
-  manipulation_data
-  ${catkin_LIBRARIES} 
-  ${Boost_LIBRARIES}
-)
+# add_library(shelf
+#   src/shelf.cpp
+# )
+# target_link_libraries(shelf
+#   visuals
+#   collision_object
+#   manipulation_data
+#   ${catkin_LIBRARIES} 
+#   ${Boost_LIBRARIES}
+# )
 
 # Fix_state_bounds library
 add_library(fix_state_bounds
@@ -150,15 +148,15 @@ target_link_libraries(fix_state_bounds
 )
 
 # Product_simulator library
-add_library(product_simulator
-  src/product_simulator.cpp
-)
-target_link_libraries(product_simulator
-  visuals
-  shelf
-  ${catkin_LIBRARIES} 
-  ${Boost_LIBRARIES}
-)
+# add_library(product_simulator
+#   src/product_simulator.cpp
+# )
+# target_link_libraries(product_simulator
+#   visuals
+#   shelf
+#   ${catkin_LIBRARIES} 
+#   ${Boost_LIBRARIES}
+#)
 
 # perception_interface library
 add_library(perception_interface
@@ -166,7 +164,6 @@ add_library(perception_interface
 )
 target_link_libraries(perception_interface
   visuals
-  shelf
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
@@ -189,8 +186,6 @@ target_link_libraries(manipulation
   visuals
   manipulation_data
   execution_interface
-  product_simulator
-  shelf
   fix_state_bounds
   remote_control  
   ${catkin_LIBRARIES} 
@@ -218,25 +213,51 @@ target_link_libraries(trajectory_io
 # )
 
 # Main logic of APC
-add_library(apc_manager
-  src/apc_manager.cpp
+# add_library(apc_manager
+#   src/apc_manager.cpp
+# )
+# target_link_libraries(apc_manager
+#   trajectory_io
+#   amazon_json_parser
+#   manipulation
+#   perception_interface
+#   planning_scene_manager
+#   ${catkin_LIBRARIES} 
+#   ${Boost_LIBRARIES}
+# )
+
+# # Main Executable
+# add_executable(main src/main.cpp)
+# target_link_libraries(main 
+#   amazon_json_parser
+#   apc_manager
+#   visuals
+#   ${catkin_LIBRARIES} 
+#   ${Boost_LIBRARIES}
+# )
+
+# Main logic of Picking
+add_library(pick_manager
+  src/pick_manager.cpp
 )
-target_link_libraries(apc_manager
+target_link_libraries(pick_manager
   trajectory_io
-  amazon_json_parser
+#  amazon_json_parser
   manipulation
   perception_interface
   planning_scene_manager
+  gflags
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
 
 # Main Executable
-add_executable(main src/main.cpp)
-target_link_libraries(main 
-  amazon_json_parser
-  apc_manager
+add_executable(main2 src/main2.cpp)
+target_link_libraries(main2 
+#  amazon_json_parser
+  pick_manager
   visuals
+  gflags
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
@@ -247,11 +268,3 @@ target_link_libraries(mesh_publisher
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
-
-# Install
-install(
-  TARGETS
-    apc_manager
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

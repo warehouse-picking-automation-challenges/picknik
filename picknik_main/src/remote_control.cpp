@@ -37,7 +37,7 @@
 */
 
 #include <picknik_main/remote_control.h>
-#include <picknik_main/apc_manager.h>
+#include <picknik_main/pick_manager.h>
 #include <moveit/macros/console_colors.h>
 
 namespace picknik_main
@@ -47,7 +47,7 @@ namespace picknik_main
  * \brief Constructor
  * \param verbose - run in debug mode
  */
-RemoteControl::RemoteControl(bool verbose, ros::NodeHandle nh, APCManager* parent)
+RemoteControl::RemoteControl(bool verbose, ros::NodeHandle nh, PickManager* parent)
   : verbose_(verbose)
   , nh_(nh)
   , parent_(parent)
@@ -104,7 +104,7 @@ void RemoteControl::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
   // 5 - RB
   // 6 - back
   if (msg->buttons[6])
-    parent_->moveToStartPosition();
+    parent_->testGoHome();
   // 7 - start
   // 8 - power
   if (msg->buttons[8])

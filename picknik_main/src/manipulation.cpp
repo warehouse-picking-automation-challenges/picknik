@@ -39,7 +39,7 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
                            planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                            ManipulationDataPtr config, moveit_grasps::GraspDatas grasp_datas,
                            RemoteControlPtr remote_control,
-                           ShelfObjectPtr shelf, bool fake_execution)
+                           bool fake_execution)
   : nh_("~")
   , verbose_(verbose)
   , visuals_(visuals)
@@ -47,7 +47,6 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   , config_(config)
   , grasp_datas_(grasp_datas)
   , remote_control_(remote_control)
-  , shelf_(shelf)
   , use_logging_(true)
 {
   // Create initial robot state
@@ -89,85 +88,6 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
 
   // Done
   ROS_INFO_STREAM_NAMED("manipulation","Manipulation Ready.");
-}
-
-bool Manipulation::chooseGrasp(WorkOrder work_order, JointModelGroup* arm_jmg,
-                               std::vector<moveit_grasps::GraspCandidatePtr> &grasp_candidates, bool verbose,
-                               moveit::core::RobotStatePtr seed_state)
-{
-  BinObjectPtr& bin = work_order.bin_;
-  ProductObjectPtr& product = work_order.product_;
-
-  // Reset
-  grasp_candidates.clear();
-
-  // Create seed state if none provided
-  if (!seed_state)
-  {
-    ROS_INFO_STREAM_NAMED("manipulation","Creating seed state for grasping");
-    seed_state.reset(new moveit::core::RobotState(*current_state_));
-    if (!getGraspingSeedState(work_order.bin_, seed_state, arm_jmg))
-    {
-      ROS_WARN_STREAM_NAMED("manipulation","Unable to create seed state for IK solver. Not criticle failure though.");
-    }
-  }
-
-  Eigen::Affine3d world_to_product = product->getWorldPose(shelf_, bin);
-
-  // Debug
-  if (visuals_->isEnabled("show_chosen_grasp_in_world"))
-  {
-    visuals_->visual_tools_->publishAxisLabeled(world_to_product, "object_pose");
-
-    ROS_DEBUG_STREAM_NAMED("manipulation","Generating grasps with product depth: " << product->getDepth()
-                           << " width: " << product->getWidth() << " height: " << product->getHeight());
-  }
-
-  // Generate grasps
-  if (!grasp_generator_->generateGrasps( world_to_product, product->getDepth(), product->getWidth(), product->getHeight(),
-                                         grasp_datas_[arm_jmg], grasp_candidates))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Unable to generate grasps");
-    return false;
-  }
-
-  // Add cutting plane filters
-  const Eigen::Affine3d& world_to_bin = transform(bin->getBottomRight(), shelf_->getBottomRight());
-  if (!grasp_filter_->addCuttingPlanesForBin(world_to_bin, product->getCentroid(), bin->getWidth(), bin->getHeight()))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Unable to add cutting plane");
-    return false;
-  }
-
-  // Filter grasps based on IK
-  bool filter_pregrasps = true;
-  if (!grasp_filter_->filterGrasps(grasp_candidates, planning_scene_monitor_, arm_jmg, seed_state,
-                                   filter_pregrasps))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Unable to filter grasps");
-    return false;
-  }
-
-  // Sort grasp candidates by score
-  grasp_filter_->removeInvalidAndFilter(grasp_candidates);
-
-  //ROS_WARN_STREAM_NAMED("manipulation","Debug mode stopping");
-  //remote_control_->setStop();
-
-  // For each remaining grasp, calculate entire approach, lift, and retreat path.
-  // Remove those that have no valid path
-  if (!grasp_planner_->planAllApproachLiftRetreat(grasp_candidates, getCurrentState(), 
-                                                  planning_scene_monitor_,
-                                                  grasp_datas_[arm_jmg],
-                                                  bin->getHeight(), product->getCentroid()))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Unable to find any grasp candidates");
-    return false;
-  }
-
-  // TODO: a better scoring function using the whole path and clearance?
-
-  return grasp_candidates.size(); // return false if no candidates remaining
 }
 
 bool Manipulation::computeCartesianWaypointPath(JointModelGroup* arm_jmg,
@@ -936,7 +856,7 @@ const moveit::core::JointModel* Manipulation::getGantryJoint()
   if (!config_->has_gantry_)
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Attempt to use gantry on robot that does not have one");
-    return false;
+    return NULL;
   }
     
   const moveit::core::JointModel* gantry_joint = robot_model_->getJointModel("gantry_joint");
@@ -1351,139 +1271,6 @@ JointModelGroup* Manipulation::chooseArm(const Eigen::Affine3d& ee_pose)
   }
 }
 
-bool Manipulation::perturbCamera(BinObjectPtr bin)
-{
-  // Note: assumes arm is already pointing at centroid of desired bin
-  ROS_INFO_STREAM_NAMED("manipulation","Perturbing camera for perception");
-
-  // Choose which arm to utilize for task
-  Eigen::Affine3d ee_pose = transform(bin->getCentroid(), shelf_->getBottomRight()); // convert to world coordinates
-  JointModelGroup* arm_jmg = chooseArm(ee_pose);
-
-  //Move camera left
-  // std::cout << std::endl;
-  // std::cout << "-------------------------------------------------------" << std::endl;
-  ROS_INFO_STREAM_NAMED("manipulation","Moving camera left distance " << config_->camera_left_distance_);
-  bool left = true;
-  if (!executeHorizontalPath(arm_jmg, config_->camera_left_distance_, left))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move left");
-  }
-
-  // Move camera right
-  // std::cout << std::endl;
-  // std::cout << "-------------------------------------------------------" << std::endl;
-  ROS_INFO_STREAM_NAMED("manipulation","Moving camera right distance " << config_->camera_left_distance_ * 2.0);
-  left = false;
-  if (!executeHorizontalPath(arm_jmg, config_->camera_left_distance_ * 2.0, left))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move right");
-  }
-
-  // Move back to center
-  // std::cout << std::endl;
-  // std::cout << "-------------------------------------------------------" << std::endl;
-  if (!moveCameraToBin(bin))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move camera to bin " << bin->getName());
-    return false;
-  }
-
-  // Move camera up
-  // std::cout << std::endl;
-  // std::cout << "-------------------------------------------------------" << std::endl;
-  ROS_INFO_STREAM_NAMED("manipulation","Lifting camera distance " << config_->camera_lift_distance_);
-  if (!executeVerticlePath(arm_jmg, config_->camera_lift_distance_, true, config_->lift_velocity_scaling_factor_))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move up");
-  }
-
-  // Move camera down
-  // std::cout << std::endl;
-  // std::cout << "-------------------------------------------------------" << std::endl;
-  ROS_INFO_STREAM_NAMED("manipulation","Lowering camera distance " << config_->camera_lift_distance_ * 2.0);
-  bool up = false;
-  if (!executeVerticlePath(arm_jmg, config_->camera_lift_distance_ * 2.0, up, config_->lift_velocity_scaling_factor_))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move down");
-  }
-
-  return true;
-}
-
-bool Manipulation::perturbCameraGantryOnly(BinObjectPtr bin, JointModelGroup* arm_jmg)
-{
-  if (!config_->has_gantry_)
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Attempt to use gantry on robot that does not have one");
-    return false;
-  }
-    
-  // Note: assumes arm is already pointing at centroid of desired bin
-  ROS_INFO_STREAM_NAMED("manipulation","Perturbing camera for perception - moving gantry up and down");
-
-  // Move gantry down
-  // std::cout << std::endl;
-  // std::cout << "-------------------------------------------------------" << std::endl;
-  ROS_INFO_STREAM_NAMED("manipulation","Moving camera down distance " << config_->camera_lift_distance_);
-  bool up = false;
-  bool best_attempt = true; // even if we can't achieve the desired_list_distance, execute anyway as much as possible
-  if (!executeVerticlePathGantryOnly(arm_jmg, config_->camera_lift_distance_, config_->lift_velocity_scaling_factor_,
-                                     up, best_attempt))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move down");
-  }
-
-  // Move gantry up
-  // std::cout << std::endl;
-  // std::cout << "-------------------------------------------------------" << std::endl;
-  ROS_INFO_STREAM_NAMED("manipulation","Moving camera up distance " << config_->camera_lift_distance_);
-  up = true;
-  if (!executeVerticlePathGantryOnly(arm_jmg, config_->camera_lift_distance_, config_->lift_velocity_scaling_factor_,
-                                     up, best_attempt))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move up");
-  }
-  // std::cout << std::endl;
-  // std::cout << "-------------------------------------------------------" << std::endl;
-
-  return true;
-}
-
-bool Manipulation::getGraspingSeedState(BinObjectPtr bin, moveit::core::RobotStatePtr& seed_state,
-                                        JointModelGroup* arm_jmg)
-{
-  bool visualize_grasping_seed_state = visuals_->isEnabled("show_grasping_seed_state");
-
-  // Create pose to find IK solver
-  Eigen::Affine3d ee_pose = transform(bin->getCentroid(), shelf_->getBottomRight()); // convert to world coordinates
-
-  // Move centroid backwards
-  ee_pose.translation().x() -= bin->getDepth() / 2.0 + 0;
-
-  // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
-  ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
-  ee_pose = ee_pose * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ());
-
-  // Translate to custom end effector geometry
-  ee_pose = ee_pose * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
-
-  // Debug
-  if (visualize_grasping_seed_state)
-    visuals_->visual_tools_->publishAxisLabeled(ee_pose, "ee_pose");
-
-  if (!getRobotStateFromPose(ee_pose, seed_state, arm_jmg))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation", "Unable to get robot state from pose");
-    return false;
-  }
-
-  if (visualize_grasping_seed_state)
-    visuals_->visual_tools_->publishRobotState(seed_state, rvt::BLUE);
-
-  return true;
-}
-
 bool Manipulation::getRobotStateFromPose(const Eigen::Affine3d &ee_pose, moveit::core::RobotStatePtr& robot_state,
                                          JointModelGroup* arm_jmg)
 {
@@ -1510,128 +1297,6 @@ bool Manipulation::getRobotStateFromPose(const Eigen::Affine3d &ee_pose, moveit:
   } // end scoped pointer of locked planning scene
 
   ROS_INFO_STREAM_NAMED("manipulation","Found solution to pose request");
-  return true;
-}
-
-bool Manipulation::moveCameraToBin(BinObjectPtr bin)
-{
-  // Create pose to find IK solver
-  Eigen::Affine3d ee_pose = transform(bin->getCentroid(), shelf_->getBottomRight()); // convert to world coordinates
-
-  // Move centroid backwards
-  ee_pose.translation().x() += config_->camera_x_translation_from_bin_;
-  ee_pose.translation().y() += config_->camera_y_translation_from_bin_;
-  ee_pose.translation().z() += config_->camera_z_translation_from_bin_;
-
-  // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
-  ee_pose = ee_pose * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY());
-  ee_pose = ee_pose * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ());
-
-  // Debug
-  visuals_->visual_tools_->publishAxis(ee_pose);
-  visuals_->visual_tools_->publishText(ee_pose, "ee_pose", rvt::BLACK, rvt::SMALL, false);
-
-  // Choose which arm to utilize for task
-  JointModelGroup* arm_jmg = chooseArm(ee_pose);
-
-  // Translate to custom end effector geometry
-  ee_pose = ee_pose * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
-
-  // Customize the direction it is pointing
-  // Roll Angle
-  ee_pose = ee_pose * Eigen::AngleAxisd(config_->camera_z_rotation_from_standard_grasp_, Eigen::Vector3d::UnitZ());
-  // Pitch Angle
-  ee_pose = ee_pose * Eigen::AngleAxisd(config_->camera_x_rotation_from_standard_grasp_, Eigen::Vector3d::UnitX());
-  // Yaw Angle
-  ee_pose = ee_pose * Eigen::AngleAxisd(config_->camera_y_rotation_from_standard_grasp_, Eigen::Vector3d::UnitY());
-
-  return moveToEEPose(ee_pose, config_->main_velocity_scaling_factor_, arm_jmg);
-}
-
-bool Manipulation::moveCameraToBinGantryOnly(BinObjectPtr bin, JointModelGroup* arm_jmg)
-{
-  if (!config_->has_gantry_)
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Attempt to use gantry on robot that does not have one");
-    return false;
-  }
-
-  // Set new state to current state
-  getCurrentState();
-
-  // Set goal state to initial pose
-  static const std::string POSE_NAME = "camera_view";
-  moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state_)); // Allocate robot states
-  if (!goal_state->setToDefaultValues(arm_jmg, POSE_NAME))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Failed to set pose '" << POSE_NAME << "' for planning group '"
-                           << arm_jmg->getName() << "'");
-    return false;
-  }
-
-  // Find gantry joint
-  const moveit::core::JointModel* gantry_joint = getGantryJoint();
-
-  //Set distances for gantry given by Lu Ma:
-  ROS_WARN_STREAM_NAMED("manipulation","Gantry moing to " << bin->getName());  
-
-  std::string bin_name = bin->getName();
-  char bin_letter = bin_name.at(4);
-  double new_gantry_positions[1];
-  
-  switch (bin_letter)
-  {
-    case ('A'):
-    case ('B'):
-    case ('C'):
-      new_gantry_positions[0] = config_->bin_height_row1_;
-      break;
-    case ('D'):
-    case ('E'):
-    case ('F'):
-      new_gantry_positions[0] = config_->bin_height_row2_;
-      break;
-    case ('G'):
-    case ('H'):
-    case ('I'):
-      new_gantry_positions[0] = config_->bin_height_row3_;
-      break;
-    case ('J'):
-    case ('K'):
-    case ('L'):
-      new_gantry_positions[0] = config_->bin_height_row4_;
-      break;
-    default:
-      ROS_WARN_STREAM_NAMED("manipulation","switch on gantry height for bins fell through...");
-      break;
-  }
-
-  // Set gantry to correct location
-  // Eigen::Affine3d bin_pose = transform(bin->getCentroid(), shelf_->getBottomRight()); // convert to world coordinates
-  // double new_gantry_positions[1];
-  // new_gantry_positions[0] = bin_pose.translation().z() + config_->camera_z_translation_from_bin_;
-
-  // Check joint limits
-  if (!gantry_joint->satisfiesPositionBounds(new_gantry_positions))
-  {
-    ROS_INFO_STREAM_NAMED("manipulation","New gantry position of " << new_gantry_positions[0]
-                          << " does not satisfy joint limit bounds.");
-    return false;
-  }
-
-  // Create new movemenet state
-  goal_state->setJointPositions(gantry_joint, new_gantry_positions);
-
-  // Plan
-  bool execute_trajectory = true;
-  bool check_validity = true;
-  if (!move(current_state_, goal_state, arm_jmg, config_->main_velocity_scaling_factor_,
-            verbose_, execute_trajectory, check_validity))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation","Unable to move to new position");
-    return false;
-  }
-
   return true;
 }
 
@@ -1983,47 +1648,6 @@ bool Manipulation::moveToStartPosition(JointModelGroup* arm_jmg, bool check_vali
   if (arm_jmg == NULL)
     arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
   return moveToSRDFPose(arm_jmg, config_->start_pose_, config_->main_velocity_scaling_factor_, check_validity);
-}
-
-bool Manipulation::allowFingerTouch(const std::string& object_name, JointModelGroup* arm_jmg)
-{
-  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","allowFingerTouch()");
-
-  // TODO does this reset properly i.e. clear the matrix?
-
-  // Lock planning scene
-  {
-    planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning scene
-
-    // Get links of end effector
-    const std::vector<std::string> &ee_link_names = grasp_datas_[arm_jmg]->ee_jmg_->getLinkModelNames();
-
-    // Prevent fingers from causing collision with object
-    for (std::size_t i = 0; i < ee_link_names.size(); ++i)
-    {
-      ROS_DEBUG_STREAM_NAMED("manipulation.collision_matrix","Prevent collision between " << object_name
-                             << " and " << ee_link_names[i]);
-      scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, ee_link_names[i], true);
-    }
-
-    // Prevent object from causing collision with shelf
-    for (std::size_t i = 0; i < shelf_->getShelfParts().size(); ++i)
-    {
-      ROS_DEBUG_STREAM_NAMED("manipulation.collision_matrix","Prevent collision between " << object_name
-                             << " and " << shelf_->getShelfParts()[i].getName());
-      scene->getAllowedCollisionMatrixNonConst().setEntry(object_name, shelf_->getShelfParts()[i].getName(), true);
-    }
-  } // end lock planning scene
-
-    // Debug current matrix
-  if (false)
-  {
-    moveit_msgs::AllowedCollisionMatrix msg;
-    planning_scene_monitor_->getPlanningScene()->getAllowedCollisionMatrix().getMessage(msg);
-    std::cout << "Current collision matrix: " << msg << std::endl;
-  }
-
-  return true;
 }
 
 void Manipulation::loadPlanningPipeline()

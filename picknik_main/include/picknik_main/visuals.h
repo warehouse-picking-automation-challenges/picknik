@@ -31,8 +31,6 @@
 namespace picknik_main
 {
 
-MOVEIT_CLASS_FORWARD(ShelfObject);
-
 class Visuals : public boost::enable_shared_from_this<Visuals>
 {
 public:
@@ -43,8 +41,6 @@ public:
    */
   Visuals(moveit::core::RobotModelPtr robot_model, 
           planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor);
-
-  bool visualizeDisplayShelf(ShelfObjectPtr shelf);
 
   /**
    * \brief Allow visual_tools to have the correct virtual joint

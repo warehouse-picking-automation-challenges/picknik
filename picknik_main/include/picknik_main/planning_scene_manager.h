@@ -52,7 +52,6 @@
 namespace picknik_main
 {
 
-MOVEIT_CLASS_FORWARD(ShelfObject);
 MOVEIT_CLASS_FORWARD(Visuals);
 
 enum SceneModes {
@@ -72,7 +71,7 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  PlanningSceneManager(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf, PerceptionInterfacePtr perception_interface);
+  PlanningSceneManager(bool verbose, VisualsPtr visuals, PerceptionInterfacePtr perception_interface);
 
   /**
    * \brief Show shelf with no products
@@ -119,9 +118,6 @@ private:
 
   // For visualizing things in rviz
   VisualsPtr visuals_;
-
-  // Properties
-  ShelfObjectPtr shelf_;
 
   // Mode switching to reduce redudant scene changes
   SceneModes mode_;

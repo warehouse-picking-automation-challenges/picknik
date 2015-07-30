@@ -81,16 +81,6 @@ Visuals::Visuals(robot_model::RobotModelPtr robot_model,
   ros_param_utilities::getBoolMap(parent_name, nh_, "debug_level", enabled_);
 }
 
-bool Visuals::visualizeDisplayShelf(ShelfObjectPtr shelf)
-{
-  visual_tools_display_->deleteAllMarkers(); // clear all old markers
-  visual_tools_display_->enableBatchPublishing(true);
-  shelf->visualizeHighRes();
-  shelf->visualizeAxis(shared_from_this());
-  visual_tools_display_->triggerBatchPublishAndDisable();
-  return true;
-}
-
 bool Visuals::setSharedRobotState(moveit::core::RobotStatePtr current_state)
 {
   // allow visual_tools to have the correct virtual joint

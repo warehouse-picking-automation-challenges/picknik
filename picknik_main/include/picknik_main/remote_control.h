@@ -53,7 +53,7 @@
 namespace picknik_main
 {
 
-MOVEIT_CLASS_FORWARD(APCManager);
+MOVEIT_CLASS_FORWARD(PickManager);
 
 class RemoteControl
 {
@@ -63,7 +63,7 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  RemoteControl(bool verbose, ros::NodeHandle nh, APCManager* parent);
+  RemoteControl(bool verbose, ros::NodeHandle nh, PickManager* parent);
 
   /**
    * \brief Remote control from Rviz
@@ -133,7 +133,7 @@ private:
   ros::NodeHandle nh_;
 
   // The overall manager for sending commands
-  APCManager* parent_;
+  PickManager* parent_;
 
   // Remote control
   ros::Subscriber remote_next_control_;

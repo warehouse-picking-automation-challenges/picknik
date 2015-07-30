@@ -47,8 +47,8 @@
 
 // Picknik
 #include <picknik_main/namespaces.h>
-#include <picknik_main/shelf.h>
 #include <picknik_main/visuals.h>
+#include <picknik_main/manipulation_data.h>
 
 // Picknik Msgs
 #include <picknik_msgs/FindObjectsAction.h>
@@ -70,7 +70,7 @@ public:
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  PerceptionInterface(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf, ManipulationDataPtr config, 
+  PerceptionInterface(bool verbose, VisualsPtr visuals, ManipulationDataPtr config, 
                   boost::shared_ptr<tf::TransformListener> tf, ros::NodeHandle nh);
 
   /**
@@ -80,41 +80,6 @@ public:
    */
   bool isPerceptionReady();
   
-  /**
-   * \brief Call perception pipeline to start looking around
-   * \return true on success
-   */
-  bool startPerception(ProductObjectPtr& product, BinObjectPtr& bin);
-
-  /**
-   * \brief Get result from actionserver and process
-   * \return true on success
-   */
-  bool endPerception(ProductObjectPtr& product, BinObjectPtr& bin, bool fake_perception);
-
-  /**
-   * \brief Update the poses, and optionally the mesh, of the products in a bin
-   * \return false if outside the error tolerance bounds of a pose within a bin
-   */
-  bool processPerceptionResults(picknik_msgs::FindObjectsResultConstPtr result,
-                                ProductObjectPtr& product, BinObjectPtr& bin);
-  // bool processPerceptionResultsDDTR(picknik_msgs::FindObjectsResultConstPtr result,
-  //                               ProductObjectPtr& product, BinObjectPtr& bin);
-  bool processPerceptionResultsPCL(picknik_msgs::FindObjectsResultConstPtr result,
-                                ProductObjectPtr& product, BinObjectPtr& bin);
-
-  /**
-   * \brief Calculate the bouding mesh for a product
-   * \return true on success
-   */
-  bool updateBoundingMesh(ProductObjectPtr &product, BinObjectPtr &bin);
-
-  /**
-   * \brief Error checking that product is inside shelf bin
-   * \return true on success
-   */
-  bool checkBounds(const Eigen::Affine3d &bin_to_object, BinObjectPtr& bin, ProductObjectPtr& product);
-
   /**
    * \brief Get the latest location of the frame on the robot from ROS
    * \param world_to_frame 4x4 matrix to fill in with transpose
@@ -138,9 +103,6 @@ private:
 
   // Visualization classes
   VisualsPtr visuals_;
-
-  // Contents
-  ShelfObjectPtr shelf_;
 
   // Robot-sepcific data for the APC
   ManipulationDataPtr config_;

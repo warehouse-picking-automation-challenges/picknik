@@ -40,7 +40,6 @@
 #include <picknik_main/planning_scene_manager.h>
 #include <picknik_main/namespaces.h>
 #include <picknik_main/visuals.h>
-#include <picknik_main/shelf.h>
 
 // ROS
 #include <ros/ros.h>
@@ -48,154 +47,15 @@
 namespace picknik_main
 {
 
-PlanningSceneManager::PlanningSceneManager(bool verbose, VisualsPtr visuals, ShelfObjectPtr shelf, PerceptionInterfacePtr perception_interface)
+PlanningSceneManager::PlanningSceneManager(bool verbose, VisualsPtr visuals, PerceptionInterfacePtr perception_interface)
   : verbose_(verbose)
   , visuals_(visuals)
-  , shelf_(shelf)
   , mode_(NOT_LOADED)
   , perception_interface_(perception_interface)
   , focused_bin_("")
 {
 
   ROS_INFO_STREAM_NAMED("planning_scene_manager","PlanningSceneManager Ready.");
-}
-
-bool PlanningSceneManager::displayEmptyShelf(bool force, bool remove_all)
-{
-  if (!force && mode_ == EMPTY_SHELF)
-  {
-    return true;
-  }
-  ROS_DEBUG_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE empty_shelf");
-  mode_ = EMPTY_SHELF;
-
-  // Get new shelf location
-  updateShelfTransform();
-
-  // Clear all old collision objects
-  if (remove_all)
-    visuals_->visual_tools_->removeAllCollisionObjects();
-
-  // Create new scene
-  bool just_frame = true;
-  bool show_products = false;
-  shelf_->createCollisionBodies("", just_frame, show_products); // only show the frame
-
-  // Output planning scene
-  visuals_->visual_tools_->triggerPlanningSceneUpdate();
-  return true;
-}
-
-bool PlanningSceneManager::displayShelfWithOpenBins(bool force)
-{
-  if (!force && mode_ == ALL_OPEN_BINS)
-  {
-    return true;
-  }
-  ROS_DEBUG_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE all_open_bins");
-  mode_ = ALL_OPEN_BINS;
-
-  // Get new shelf location
-  updateShelfTransform();
-
-  // Clear all old collision objects
-  visuals_->visual_tools_->removeAllCollisionObjects();
-
-  // Create new scene
-  bool just_frame = false;
-  bool show_products = true;
-  shelf_->createCollisionBodies("", just_frame, show_products); // only show the frame
-
-  // Output planning scene
-  visuals_->visual_tools_->triggerPlanningSceneUpdate();
-
-  return true;
-}
-
-bool PlanningSceneManager::displayShelfAsWall(bool force)
-{
-  if (!force && mode_ == ONLY_COLLISION_WALL)
-  {
-    return true;
-  }
-  ROS_DEBUG_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE only_collision_wall");
-  mode_ = ONLY_COLLISION_WALL;
-
-  // Get new shelf location
-  updateShelfTransform();
-
-  // Clear all old collision objects
-  visuals_->visual_tools_->removeAllCollisionObjects();
-
-  // Create new scene
-  shelf_->getFrontWall()->createCollisionBodies(shelf_->getBottomRight());
-  shelf_->getGoalBin()->createCollisionBodies(shelf_->getBottomRight());
-  shelf_->createCollisionBodiesEnvironmentObjects();
-
-  // Output planning scene
-  visuals_->visual_tools_->triggerPlanningSceneUpdate();
-  ros::Duration(0.1).sleep(); // TODO remove?
-
-  return true;
-}
-
-bool PlanningSceneManager::displayShelfOnlyBin( const std::string& bin_name, bool force )
-{
-  if (!force && mode_ == FOCUSED_ON_BIN && focused_bin_ == bin_name)
-  {
-    return true;
-  }
-  ROS_DEBUG_STREAM_NAMED("planning_scene_manager","SWITCHING TO MODE focused_on_bin");
-  mode_ = FOCUSED_ON_BIN;
-  focused_bin_ = bin_name;
-
-  // Clear all old collision objects
-  visuals_->visual_tools_->removeAllCollisionObjects();
-
-  // Get new shelf location
-  updateShelfTransform();
-
-  // Create new scene
-  bool only_show_shelf_frame = false;
-  bool show_all_products = false;
-  ROS_DEBUG_STREAM_NAMED("planning_scene_manager","Showing planning scene shelf with focus on " << bin_name);
-
-  shelf_->createCollisionBodies(bin_name, only_show_shelf_frame, show_all_products);
-
-  // Output planning scene
-  visuals_->visual_tools_->triggerPlanningSceneUpdate();
-  ros::Duration(0.5).sleep();
-
-  return true;
-}
-
-bool PlanningSceneManager::testAllModes(bool force)
-{
-  while (ros::ok())
-  {
-    displayShelfWithOpenBins();
-    ros::Duration(4.0).sleep();
-
-    displayShelfAsWall();
-    ros::Duration(4.0).sleep();
-
-    displayShelfOnlyBin("bin_B");
-    ros::Duration(4.0).sleep();
-  }
-  return true;
-}
-
-bool PlanningSceneManager::updateShelfTransform()
-{
-  // Get the latest shelf pose
-  Eigen::Affine3d world_to_shelf;
-  ros::Time time_stamp;
-  std::string frame_id = "shelf";
-  perception_interface_->getTFTransform(world_to_shelf, time_stamp, frame_id);
-
-  // Update the shelf if different
-  //if (world_to_shelf.translation().x()
-  shelf_->setBottomRightUpdateAll(world_to_shelf);  
 }
 
 } // end namespace
