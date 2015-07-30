@@ -82,6 +82,16 @@ PickNikPanel::PickNikPanel( QWidget* parent )
   btn_mode_ = new QPushButton(this);
   btn_mode_->setText("Toggle Joint Mode");
   connect( btn_mode_, SIGNAL( clicked() ), this, SLOT( changeJointMode() ) );
+
+  // Create a push button
+  btn_reset_ = new QPushButton(this);
+  btn_reset_->setText("Reset Robot");
+  connect( btn_reset_, SIGNAL( clicked() ), this, SLOT( resetRobot() ) );
+
+  // Create a push button
+  btn_bringup_ = new QPushButton(this);
+  btn_bringup_->setText("Bringup Robot");
+  connect( btn_bringup_, SIGNAL( clicked() ), this, SLOT( bringupRobot() ) );    
   
   // Buttons horizontal
   QHBoxLayout* hlayout = new QHBoxLayout;
@@ -89,12 +99,17 @@ PickNikPanel::PickNikPanel( QWidget* parent )
   hlayout->addWidget( btn_auto_ );
   hlayout->addWidget( btn_full_auto_ );
   hlayout->addWidget( btn_stop_ );
-  hlayout->addWidget( btn_mode_ );  
+
+  QHBoxLayout* hlayout2 = new QHBoxLayout;
+  hlayout2->addWidget( btn_bringup_ );  
+  hlayout2->addWidget( btn_reset_ );
+  hlayout2->addWidget( btn_mode_ );  
 
   // Lay out the topic field above the control widget.
   QVBoxLayout* layout = new QVBoxLayout;
   //layout->addLayout( topic_layout );
   layout->addLayout( hlayout );
+  layout->addLayout( hlayout2 );  
   setLayout( layout );
 
   next_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/next_command", 1 );
@@ -102,6 +117,8 @@ PickNikPanel::PickNikPanel( QWidget* parent )
   full_auto_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/full_auto_command", 1 );
   stop_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/stop_command", 1 );
   mode_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/mode_command", 1 );
+  reset_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/reset_command", 1 );
+  bringup_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/bringup_command", 1 );    
 
   // Make the control widget start disabled, since we don't start with an output topic.
   btn_next_->setEnabled( true );
@@ -147,6 +164,22 @@ void PickNikPanel::changeJointMode()
   std_msgs::Bool result;
   result.data = true;
   mode_publisher_.publish( result );
+}
+
+void PickNikPanel::resetRobot()
+{
+  ROS_INFO_STREAM_NAMED("picknik","Resetting robot");
+  std_msgs::Bool result;
+  result.data = true;
+  reset_publisher_.publish( result );
+}
+
+void PickNikPanel::bringupRobot()
+{
+  ROS_INFO_STREAM_NAMED("picknik","Bringing robot");
+  std_msgs::Bool result;
+  result.data = true;
+  bringup_publisher_.publish( result );
 }
 
 // Save all configuration data from this panel to the given

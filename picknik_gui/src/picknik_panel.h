@@ -93,6 +93,12 @@ protected Q_SLOTS:
   /// User wants to change joint mode (velocity/gravity compensation)
   void changeJointMode();
 
+  /// User wants to reset robot
+  void resetRobot();
+
+  /// User wants to bringup robot
+  void bringupRobot();
+
   // Then we finish up with protected member variables.
 protected:
   QPushButton *btn_next_;
@@ -100,13 +106,17 @@ protected:
   QPushButton *btn_full_auto_;
   QPushButton *btn_stop_;
   QPushButton *btn_mode_;
-
+  QPushButton *btn_reset_;
+  QPushButton *btn_bringup_;
+  
   // The ROS publishers
   ros::Publisher next_publisher_;
   ros::Publisher auto_publisher_;
   ros::Publisher full_auto_publisher_;
   ros::Publisher stop_publisher_;
   ros::Publisher mode_publisher_;
+  ros::Publisher reset_publisher_;
+  ros::Publisher bringup_publisher_;  
 
   // The ROS node handle.
   ros::NodeHandle nh_;
