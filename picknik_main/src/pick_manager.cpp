@@ -12,6 +12,7 @@
    Desc:   Main logic of picking
 */
 
+// Command line arguments
 #include <gflags/gflags.h>
 
 // PickNik
@@ -31,11 +32,17 @@
 namespace picknik_main
 {
 
-DEFINE_bool(fake_execution, true, "Fake execution of motions");
+DEFINE_bool(fake_execution, false, "Fake execution of motions");
+DEFINE_bool(fake_perception, true, "Fake perception of things");
+DEFINE_bool(use_experience, true, "Plan with an experience database");
+DEFINE_bool(show_database, true, "Show experience database");
+DEFINE_int32(id, 0, "Identification number for various component modes");
+
 
 PickManager::PickManager(bool verbose)
         : nh_private_("~")
         , verbose_(verbose)
+        , fake_perception_(FLAGS_fake_perception)
 {
     /*
       , fake_perception_(fake_perception)

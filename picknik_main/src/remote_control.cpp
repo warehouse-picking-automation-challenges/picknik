@@ -38,11 +38,18 @@
 
 #include <picknik_main/remote_control.h>
 #include <picknik_main/pick_manager.h>
+#include <picknik_msgs/PickNikDashboard.h>
 #include <moveit/macros/console_colors.h>
+
+// Command line arguments
+#include <gflags/gflags.h>
 
 namespace picknik_main
 {
 
+DEFINE_bool(auto_step, true, "Automatically go through each step");
+DEFINE_bool(full_auto, true, "Automatically run ignoring all errors");
+  
 /**
  * \brief Constructor
  * \param verbose - run in debug mode
@@ -53,39 +60,32 @@ RemoteControl::RemoteControl(bool verbose, ros::NodeHandle nh, PickManager* pare
   , parent_(parent)
   , is_waiting_(false)
   , next_step_ready_(false)
-  , autonomous_(false)
-  , full_autonomous_(false)
+  , autonomous_(FLAGS_auto_step)
+  , full_autonomous_(FLAGS_full_auto)
   , stop_(false)
 {
   // Subscribe to remote control topic
   std::size_t queue_size = 10;
-  remote_next_control_ = nh_.subscribe("/picknik_main/next_command", queue_size, &RemoteControl::remoteNextCallback, this);
-  remote_auto_control_ = nh_.subscribe("/picknik_main/auto_command", queue_size, &RemoteControl::remoteAutoCallback, this);
-  remote_full_auto_control_ = nh_.subscribe("/picknik_main/full_auto_command", queue_size, &RemoteControl::remoteFullAutoCallback, this);
-  remote_stop_control_ = nh_.subscribe("/picknik_main/stop_command", queue_size, &RemoteControl::remoteStopCallback, this);
+  remote_control_ = nh_.subscribe("/picknik_main/remote_command", queue_size, &RemoteControl::remoteCallback, this);
+  // remote_auto_control_ = nh_.subscribe("/picknik_main/auto_command", queue_size, &RemoteControl::remoteAutoCallback, this);
+  // remote_full_auto_control_ = nh_.subscribe("/picknik_main/full_auto_command", queue_size, &RemoteControl::remoteFullAutoCallback, this);
+  // remote_stop_control_ = nh_.subscribe("/picknik_main/stop_command", queue_size, &RemoteControl::remoteStopCallback, this);
   remote_joy_ = nh_.subscribe("/joy", queue_size, &RemoteControl::joyCallback, this);
 
   ROS_INFO_STREAM_NAMED("remote_control","RemoteControl Ready.");
 }
 
-void RemoteControl::remoteNextCallback(const std_msgs::Bool::ConstPtr& msg)
+void RemoteControl::remoteCallback(const picknik_msgs::PickNikDashboard::ConstPtr& msg)
 {
-  setReadyForNextStep();
-}
-
-void RemoteControl::remoteAutoCallback(const std_msgs::Bool::ConstPtr& msg)
-{
-  setAutonomous();
-}
-
-void RemoteControl::remoteFullAutoCallback(const std_msgs::Bool::ConstPtr& msg)
-{
-  setFullAutonomous();
-}
-
-void RemoteControl::remoteStopCallback(const std_msgs::Bool::ConstPtr& msg)
-{
-  setStop();
+  std::cout << "debug " << msg << std::endl;
+  if (msg->next_step)
+    setReadyForNextStep();
+  else if (msg->auto_step)
+    setAutonomous();
+  else if (msg->full_auto)
+    setFullAutonomous();    
+  else if (msg->stop)
+    setStop();    
 }
 
 void RemoteControl::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)

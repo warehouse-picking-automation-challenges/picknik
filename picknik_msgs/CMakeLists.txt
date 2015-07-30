@@ -13,7 +13,10 @@ find_package(catkin REQUIRED COMPONENTS
   genmsg ${MSG_DEPS}
 )
 
-add_message_files(DIRECTORY msg FILES FoundObject.msg)
+add_message_files(DIRECTORY msg FILES 
+  FoundObject.msg
+  PickNikDashboard.msg
+)
 
 add_service_files(DIRECTORY srv FILES StopPerception.srv)
 

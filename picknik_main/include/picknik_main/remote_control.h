@@ -47,7 +47,7 @@
 
 // ROS
 #include <ros/ros.h>
-#include <std_msgs/Bool.h>
+#include <picknik_msgs/PickNikDashboard.h>
 #include <sensor_msgs/Joy.h>
 
 namespace picknik_main
@@ -68,19 +68,8 @@ public:
   /**
    * \brief Remote control from Rviz
    */
-  void remoteNextCallback(const std_msgs::Bool::ConstPtr& msg);
-
-  /**
-   * \brief Remote control from Rviz
-   */
-  void remoteAutoCallback(const std_msgs::Bool::ConstPtr& msg);
-  void remoteFullAutoCallback(const std_msgs::Bool::ConstPtr& msg);
-
-  /**
-   * \brief Remote control from Rviz
-   */
-  void remoteStopCallback(const std_msgs::Bool::ConstPtr& msg);
-
+  void remoteCallback(const picknik_msgs::PickNikDashboard::ConstPtr& msg);
+  
   /**
    * \brief Recieves inputs from joystick
    * \param input - description
@@ -136,10 +125,7 @@ private:
   PickManager* parent_;
 
   // Remote control
-  ros::Subscriber remote_next_control_;
-  ros::Subscriber remote_auto_control_;
-  ros::Subscriber remote_full_auto_control_;
-  ros::Subscriber remote_stop_control_;
+  ros::Subscriber remote_control_;
   ros::Subscriber remote_joy_;
 
   // Remote control

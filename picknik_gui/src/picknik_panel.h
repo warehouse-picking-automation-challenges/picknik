@@ -36,6 +36,8 @@
 #endif
 
 #include <QPushButton>
+#include <QComboBox>
+#include <picknik_msgs/PickNikDashboard.h>
 
 class QLineEdit;
 
@@ -91,7 +93,7 @@ protected Q_SLOTS:
   void moveStop();
 
   /// User wants to change joint mode (velocity/gravity compensation)
-  void changeJointMode();
+  void changeJointMode(int mode);
 
   /// User wants to reset robot
   void resetRobot();
@@ -99,24 +101,22 @@ protected Q_SLOTS:
   /// User wants to bringup robot
   void bringupRobot();
 
+  /// User wants to bringup robot
+  void homeRobot();
+
   // Then we finish up with protected member variables.
 protected:
   QPushButton *btn_next_;
   QPushButton *btn_auto_;
   QPushButton *btn_full_auto_;
   QPushButton *btn_stop_;
-  QPushButton *btn_mode_;
   QPushButton *btn_reset_;
   QPushButton *btn_bringup_;
+  QPushButton *btn_home_;  
+  QComboBox *combo_mode_;
   
   // The ROS publishers
-  ros::Publisher next_publisher_;
-  ros::Publisher auto_publisher_;
-  ros::Publisher full_auto_publisher_;
-  ros::Publisher stop_publisher_;
-  ros::Publisher mode_publisher_;
-  ros::Publisher reset_publisher_;
-  ros::Publisher bringup_publisher_;  
+  ros::Publisher remote_publisher_;
 
   // The ROS node handle.
   ros::NodeHandle nh_;

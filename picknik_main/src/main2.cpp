@@ -14,7 +14,9 @@
 
 #include <string>
 #include <iostream>
-#include <stdio.h>
+//#include <stdio.h>
+
+// Command line arguments
 #include <gflags/gflags.h>
 #include <picknik_main/pick_manager.h>
 
@@ -22,6 +24,8 @@
 #include <ros/ros.h>
 
 DEFINE_string(pose, "", "Requested robot pose");
+DEFINE_int32(mode, 2, "Mode");
+DEFINE_bool(verbose, false, "Verbose");
 
 int main(int argc, char** argv)
 {
@@ -29,7 +33,7 @@ int main(int argc, char** argv)
   google::SetUsageMessage("MoveIt!-based picking framework");
   google::ParseCommandLineFlags(&argc, &argv, true);
       
-  ros::init(argc, argv, "pick_manager");
+  ros::init(argc, argv, "picknik_main");
   
   std::cout << std::endl;
   std::cout << std::endl;
@@ -46,24 +50,14 @@ int main(int argc, char** argv)
   // Random
   srand (time(NULL));
 
-  // Command line arguments
-  std::size_t mode = 1;
-  bool verbose = false;
-
-  // TODO
-  // PARSE
-
   // Main program
-  picknik_main::PickManager manager(verbose);
+  picknik_main::PickManager manager(FLAGS_verbose);
 
   std::cout << std::endl;
   std::cout << "-------------------------------------------------------" << std::endl;
 
-  switch (mode)
+  switch (FLAGS_mode)
   {
-    case 1:
-
-      break;
     case 2:
       ROS_INFO_STREAM_NAMED("main","Go to home position");
       manager.testGoHome();
@@ -103,7 +97,7 @@ int main(int argc, char** argv)
       break;
 
     default:
-      ROS_WARN_STREAM_NAMED("main","Unkown mode: " << mode);
+      ROS_WARN_STREAM_NAMED("main","Unkown mode: " << FLAGS_mode);
   }
 
   // Shutdown

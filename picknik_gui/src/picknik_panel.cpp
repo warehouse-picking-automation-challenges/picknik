@@ -79,11 +79,6 @@ PickNikPanel::PickNikPanel( QWidget* parent )
   connect( btn_stop_, SIGNAL( clicked() ), this, SLOT( moveStop() ) );
 
   // Create a push button
-  btn_mode_ = new QPushButton(this);
-  btn_mode_->setText("Toggle Joint Mode");
-  connect( btn_mode_, SIGNAL( clicked() ), this, SLOT( changeJointMode() ) );
-
-  // Create a push button
   btn_reset_ = new QPushButton(this);
   btn_reset_->setText("Reset Robot");
   connect( btn_reset_, SIGNAL( clicked() ), this, SLOT( resetRobot() ) );
@@ -91,8 +86,24 @@ PickNikPanel::PickNikPanel( QWidget* parent )
   // Create a push button
   btn_bringup_ = new QPushButton(this);
   btn_bringup_->setText("Bringup Robot");
-  connect( btn_bringup_, SIGNAL( clicked() ), this, SLOT( bringupRobot() ) );    
+  connect( btn_bringup_, SIGNAL( clicked() ), this, SLOT( bringupRobot() ) );
+
+  // Create a push button
+  btn_home_ = new QPushButton(this);
+  btn_home_->setText("Home Robot");
+  connect( btn_home_, SIGNAL( clicked() ), this, SLOT( homeRobot() ) );      
+
+  // Drop down box
+  combo_mode_ = new QComboBox(this);
+  combo_mode_->addItem("Brake");
+  combo_mode_->addItem("Joint Position");
+  combo_mode_->addItem("Gravity Compensation");    
+  combo_mode_->addItem("Joint Impedence - Low");
+  combo_mode_->addItem("Joint Impedence - Medium");
+  combo_mode_->addItem("Joint Impedence - High");
+  connect( combo_mode_, SIGNAL( currentIndexChanged(int) ), this, SLOT( changeJointMode(int) ) );
   
+  // Create a push button
   // Buttons horizontal
   QHBoxLayout* hlayout = new QHBoxLayout;
   hlayout->addWidget( btn_next_ );
@@ -101,9 +112,10 @@ PickNikPanel::PickNikPanel( QWidget* parent )
   hlayout->addWidget( btn_stop_ );
 
   QHBoxLayout* hlayout2 = new QHBoxLayout;
-  hlayout2->addWidget( btn_bringup_ );  
+  hlayout2->addWidget( btn_bringup_ );
+  hlayout2->addWidget( btn_home_ );    
   hlayout2->addWidget( btn_reset_ );
-  hlayout2->addWidget( btn_mode_ );  
+  hlayout2->addWidget( combo_mode_ );  
 
   // Lay out the topic field above the control widget.
   QVBoxLayout* layout = new QVBoxLayout;
@@ -112,13 +124,7 @@ PickNikPanel::PickNikPanel( QWidget* parent )
   layout->addLayout( hlayout2 );  
   setLayout( layout );
 
-  next_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/next_command", 1 );
-  auto_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/auto_command", 1 );
-  full_auto_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/full_auto_command", 1 );
-  stop_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/stop_command", 1 );
-  mode_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/mode_command", 1 );
-  reset_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/reset_command", 1 );
-  bringup_publisher_ = nh_.advertise<std_msgs::Bool>( "/picknik_main/bringup_command", 1 );    
+  remote_publisher_ = nh_.advertise<picknik_msgs::PickNikDashboard>( "/picknik_main/remote_control", 1 );
 
   // Make the control widget start disabled, since we don't start with an output topic.
   btn_next_->setEnabled( true );
@@ -129,57 +135,73 @@ PickNikPanel::PickNikPanel( QWidget* parent )
 void PickNikPanel::moveNext()
 {
   ROS_INFO_STREAM_NAMED("picknik","Move to next step");
-  std_msgs::Bool result;
-  result.data = true;
-  next_publisher_.publish( result );
+
+  picknik_msgs::PickNikDashboard msg;
+  msg.next_step = true;
+  remote_publisher_.publish( msg );
 }
 
 void PickNikPanel::moveAuto()
 {
   ROS_INFO_STREAM_NAMED("picknik","Running auto step");
-  std_msgs::Bool result;
-  result.data = true;
-  auto_publisher_.publish( result );
+
+  picknik_msgs::PickNikDashboard msg;
+  msg.auto_step = true;
+  remote_publisher_.publish( msg );  
 }
 
 void PickNikPanel::moveFullAuto()
 {
   ROS_INFO_STREAM_NAMED("picknik","Running auto trajectory");
-  std_msgs::Bool result;
-  result.data = true;
-  full_auto_publisher_.publish( result );
+
+  picknik_msgs::PickNikDashboard msg;
+  msg.full_auto = true;
+  remote_publisher_.publish( msg );  
 }
 
 void PickNikPanel::moveStop()
 {
   ROS_INFO_STREAM_NAMED("picknik","Stopping");
-  std_msgs::Bool result;
-  result.data = true;
-  stop_publisher_.publish( result );
+
+  picknik_msgs::PickNikDashboard msg;
+  msg.stop = true;
+  remote_publisher_.publish( msg );    
 }
 
-void PickNikPanel::changeJointMode()
+void PickNikPanel::changeJointMode(int mode)
 {
   ROS_INFO_STREAM_NAMED("picknik","Changing joint mode");
-  std_msgs::Bool result;
-  result.data = true;
-  mode_publisher_.publish( result );
+
+  picknik_msgs::PickNikDashboard msg;
+  msg.joint_mode = mode;
+  remote_publisher_.publish( msg );    
 }
 
 void PickNikPanel::resetRobot()
 {
   ROS_INFO_STREAM_NAMED("picknik","Resetting robot");
-  std_msgs::Bool result;
-  result.data = true;
-  reset_publisher_.publish( result );
+
+  picknik_msgs::PickNikDashboard msg;
+  msg.robot_reset = true;
+  remote_publisher_.publish( msg );    
 }
 
 void PickNikPanel::bringupRobot()
 {
-  ROS_INFO_STREAM_NAMED("picknik","Bringing robot");
-  std_msgs::Bool result;
-  result.data = true;
-  bringup_publisher_.publish( result );
+  ROS_INFO_STREAM_NAMED("picknik","Bringing up robot");
+
+  picknik_msgs::PickNikDashboard msg;
+  msg.robot_bringup = true;
+  remote_publisher_.publish( msg );  
+}
+
+void PickNikPanel::homeRobot()
+{
+  ROS_INFO_STREAM_NAMED("picknik","Sending robot home");
+
+  picknik_msgs::PickNikDashboard msg;
+  msg.robot_home = true;
+  remote_publisher_.publish( msg );  
 }
 
 // Save all configuration data from this panel to the given

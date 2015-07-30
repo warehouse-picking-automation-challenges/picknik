@@ -251,7 +251,7 @@ private:
 
     // Perception
     bool fake_perception_;
-    bool skip_homing_step_;
+    //bool skip_homing_step_;
 
     // Allow Rviz to request the entire scene at startup
     ros::ServiceServer get_scene_service_;
