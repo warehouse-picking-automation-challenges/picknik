@@ -670,22 +670,15 @@ bool Manipulation::executeState(const moveit::core::RobotStatePtr goal_state, Jo
   std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
   robot_state_trajectory.push_back(current_state_);
 
-  // Create an interpolated trajectory between states
-  // THIS IS DONE IN convertRobotStatesToTrajectory
-  // double resolution = 0.1;
-  // for (double t = 0; t < 1; t += resolution)
-  // {
-  //   moveit::core::RobotStatePtr interpolated_state = moveit::core::RobotStatePtr(new moveit::core::RobotState(*current_state_));
-  //   current_state_->interpolate(*goal_state, t, *interpolated_state);
-  //   robot_state_trajectory.push_back(interpolated_state);
-  // }
-
   // Add goal state
   robot_state_trajectory.push_back(goal_state);
 
   // Get trajectory message
   moveit_msgs::RobotTrajectory trajectory_msg;
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, trajectory_msg, jmg, velocity_scaling_factor))
+
+  // Convert trajectory to a message
+  bool interpolate = false;
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, trajectory_msg, jmg, velocity_scaling_factor, interpolate))
   {
     ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
     return false;
@@ -1008,6 +1001,68 @@ bool Manipulation::executeRetreatPath(JointModelGroup *arm_jmg, double desired_r
   return true;
 }
 
+bool Manipulation::executeInsertionPath(JointModelGroup *arm_jmg, double desired_distance, bool in, 
+                                        double velocity_scaling_factor)
+{
+  const moveit::core::LinkModel *ik_tip_link = grasp_datas_[arm_jmg]->parent_link_;
+
+  moveit::core::RobotStatePtr robot_state(new moveit::core::RobotState(*getCurrentState()));
+
+  // Get current pose
+  Eigen::Affine3d ee_start_pose = robot_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+
+  // Visualize current pose
+  visuals_->visual_tools_->publishZArrow(ee_start_pose, rvt::ORANGE);
+
+  // Move in and out
+  Eigen::Vector3d approach_direction;
+  approach_direction << 0, 0, (in ? 1 : -1); 
+
+  // Compute Cartesian Path
+  //the direction can be in the local reference frame (in which case we rotate it)
+  const Eigen::Vector3d rotated_direction = ee_start_pose.rotation() * approach_direction;
+
+  //The target pose is built by applying a translation to the start pose for the desired direction and distance
+  Eigen::Affine3d target_pose = ee_start_pose;
+  target_pose.translation() += rotated_direction * desired_distance;
+  visuals_->visual_tools_->publishZArrow(target_pose, rvt::GREEN);
+
+  // Resolution of trajectory
+  double max_step = 0.01; // 0.01 // The maximum distance in Cartesian space between consecutive points on the resulting path
+
+  // Jump threshold for preventing consequtive joint values from 'jumping' by a large amount in joint space
+  double jump_threshold = config_->jump_threshold_; // aka jump factor
+
+  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
+  double last_valid_percentage = robot_state->computeCartesianPath(arm_jmg, robot_state_trajectory, 
+                                                                   ik_tip_link,
+                                                                   target_pose, 
+                                                                   true, max_step, jump_threshold, 
+                                                                   NULL);
+  std::cout << "last_valid_percentage: " << last_valid_percentage << std::endl;
+
+  visuals_->visual_tools_->publishTrajectoryPoints(robot_state_trajectory, ik_tip_link);
+
+
+  // Get approach trajectory message
+  moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg,
+                                      velocity_scaling_factor))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to convert to parameterized trajectory");
+    return false;
+  }
+
+  // Execute
+  if( !execution_interface_->executeTrajectory(cartesian_trajectory_msg, arm_jmg) )
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation","Failed to execute trajectory");
+    return false;
+  }
+
+  return true;
+}
+
 bool Manipulation::executeCartesianPath(JointModelGroup *arm_jmg,
                                         const Eigen::Vector3d& direction,
                                         double desired_distance, double velocity_scaling_factor,
@@ -1296,7 +1351,7 @@ bool Manipulation::getRobotStateFromPose(const Eigen::Affine3d &ee_pose, moveit:
     }
   } // end scoped pointer of locked planning scene
 
-  ROS_INFO_STREAM_NAMED("manipulation","Found solution to pose request");
+  ROS_DEBUG_STREAM_NAMED("manipulation","Found solution to pose request");
   return true;
 }
 
@@ -1315,7 +1370,8 @@ bool Manipulation::straightProjectPose( const Eigen::Affine3d& original_pose, Ei
 
 bool Manipulation::convertRobotStatesToTrajectory(const std::vector<moveit::core::RobotStatePtr>& robot_state_traj,
                                                   moveit_msgs::RobotTrajectory& trajectory_msg,
-                                                  JointModelGroup* jmg, const double &velocity_scaling_factor)
+                                                  JointModelGroup* jmg, const double &velocity_scaling_factor,
+                                                  bool use_interpolation)
 {
   ROS_DEBUG_STREAM_NAMED("manipulation.superdebug","convertRobotStatesToTrajectory()");
 
@@ -1331,15 +1387,18 @@ bool Manipulation::convertRobotStatesToTrajectory(const std::vector<moveit::core
   }
 
   // Interpolate any path with two few points
-  static const std::size_t MIN_TRAJECTORY_POINTS = 20;
-  if (robot_traj->getWayPointCount() < MIN_TRAJECTORY_POINTS)
-  {
-    ROS_INFO_STREAM_NAMED("manipulation","Interpolating trajectory because two few points ("
-                          << robot_traj->getWayPointCount() << ")");
+  if (use_interpolation) {
+    static const std::size_t MIN_TRAJECTORY_POINTS = 20;
+    if (robot_traj->getWayPointCount() < MIN_TRAJECTORY_POINTS)
+    {
+      ROS_INFO_STREAM_NAMED("manipulation","Interpolating trajectory because two few points ("
+                            << robot_traj->getWayPointCount() << ")");
 
-    // Interpolate between each point
-    double discretization = 0.25;
-    interpolate(robot_traj, discretization);
+      // Interpolate between each point
+      double discretization = 0.25;
+      interpolate(robot_traj, discretization);
+    }
+
   }
 
   // Perform iterative parabolic smoothing

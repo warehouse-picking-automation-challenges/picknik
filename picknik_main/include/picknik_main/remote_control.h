@@ -49,6 +49,8 @@
 #include <ros/ros.h>
 #include <picknik_msgs/PickNikDashboard.h>
 #include <sensor_msgs/Joy.h>
+#include <interactive_markers/interactive_marker_server.h>
+#include <interactive_markers/menu_handler.h>
 
 namespace picknik_main
 {
@@ -113,7 +115,16 @@ public:
   bool waitForNextStep(const std::string &caption = "go to next step");
   bool waitForNextFullStep(const std::string &caption = "go to next full step");
 
+  void initializeInteractiveMarkers(const geometry_msgs::Pose& pose);
+
 private:
+
+  void make6DofMarker( bool fixed, unsigned int interaction_mode, const geometry_msgs::Pose& pose,
+                       bool show_6dof );
+
+  visualization_msgs::InteractiveMarkerControl& makeBoxControl( visualization_msgs::InteractiveMarker &msg );
+
+  void processFeedback( const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback );
 
   // Show more visual and console output, with general slower run time.
   bool verbose_;
@@ -134,6 +145,10 @@ private:
   bool next_step_ready_;
   bool is_waiting_;
   bool stop_;
+
+  // Interactive markers
+  boost::shared_ptr<interactive_markers::InteractiveMarkerServer> imarker_server_;
+  interactive_markers::MenuHandler menu_handler_;
 
 }; // end class
 

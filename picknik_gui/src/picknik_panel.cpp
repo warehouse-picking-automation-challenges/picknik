@@ -35,6 +35,8 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QTimer>
+#include <QGroupBox>
+#include <QSpinBox>
 
 #include <std_msgs/Bool.h>
 
@@ -80,18 +82,23 @@ PickNikPanel::PickNikPanel( QWidget* parent )
 
   // Create a push button
   btn_reset_ = new QPushButton(this);
-  btn_reset_->setText("Reset Robot");
+  btn_reset_->setText("Reset");
   connect( btn_reset_, SIGNAL( clicked() ), this, SLOT( resetRobot() ) );
 
   // Create a push button
   btn_bringup_ = new QPushButton(this);
-  btn_bringup_->setText("Bringup Robot");
+  btn_bringup_->setText("Bringup");
   connect( btn_bringup_, SIGNAL( clicked() ), this, SLOT( bringupRobot() ) );
 
   // Create a push button
   btn_home_ = new QPushButton(this);
-  btn_home_->setText("Home Robot");
+  btn_home_->setText("Home");
   connect( btn_home_, SIGNAL( clicked() ), this, SLOT( homeRobot() ) );      
+
+  // Create a push button
+  btn_grip_ = new QPushButton(this);
+  btn_grip_->setText("Toggle Gripper");
+  connect( btn_grip_, SIGNAL( clicked() ), this, SLOT( toggleGripper() ) );      
 
   // Drop down box
   combo_mode_ = new QComboBox(this);
@@ -102,26 +109,46 @@ PickNikPanel::PickNikPanel( QWidget* parent )
   combo_mode_->addItem("Joint Impedence - Medium");
   combo_mode_->addItem("Joint Impedence - High");
   connect( combo_mode_, SIGNAL( currentIndexChanged(int) ), this, SLOT( changeJointMode(int) ) );
-  
-  // Create a push button
-  // Buttons horizontal
-  QHBoxLayout* hlayout = new QHBoxLayout;
-  hlayout->addWidget( btn_next_ );
-  hlayout->addWidget( btn_auto_ );
-  hlayout->addWidget( btn_full_auto_ );
-  hlayout->addWidget( btn_stop_ );
 
+  // Gripping force
+  spin_box_ = new QSpinBox(this);
+  spin_box_->setRange(5, 50);
+  spin_box_->setWrapping(true);
+  spin_box_->setValue(20);
+  spin_box_->stepBy(1);
+  
+  // Horizontal Layout
+  QHBoxLayout* hlayout1 = new QHBoxLayout;
+  hlayout1->addWidget( btn_next_ );
+  hlayout1->addWidget( btn_auto_ );
+  hlayout1->addWidget( btn_full_auto_ );
+  hlayout1->addWidget( btn_stop_ );
+
+  // Horizontal Layout
   QHBoxLayout* hlayout2 = new QHBoxLayout;
+  hlayout2->addWidget( new QLabel(QString("Robot:")) );
   hlayout2->addWidget( btn_bringup_ );
   hlayout2->addWidget( btn_home_ );    
   hlayout2->addWidget( btn_reset_ );
+  hlayout2->addWidget( btn_grip_ );
+  hlayout2->addWidget( spin_box_ );
   hlayout2->addWidget( combo_mode_ );  
+  
+  // Horizontal Layout
+  //QHBoxLayout* hlayout3 = new QHBoxLayout;
 
-  // Lay out the topic field above the control widget.
+  this->setStyleSheet("QGroupBox {  border: 1px solid gray; padding-top: 5px; }");
+
+  // Group box
+  QGroupBox *group_box = new QGroupBox();
+  group_box->setLayout( hlayout2 );
+  group_box->setFlat( false );
+
+  // Verticle layout
   QVBoxLayout* layout = new QVBoxLayout;
-  //layout->addLayout( topic_layout );
-  layout->addLayout( hlayout );
-  layout->addLayout( hlayout2 );  
+  layout->addLayout( hlayout1 );
+  layout->addWidget( group_box );
+  //layout->addLayout( hlayout3 );  
   setLayout( layout );
 
   remote_publisher_ = nh_.advertise<picknik_msgs::PickNikDashboard>( "/picknik_main/remote_control", 1 );
@@ -201,6 +228,17 @@ void PickNikPanel::homeRobot()
 
   picknik_msgs::PickNikDashboard msg;
   msg.robot_home = true;
+  remote_publisher_.publish( msg );  
+}
+
+void PickNikPanel::toggleGripper()
+{
+  ROS_INFO_STREAM_NAMED("picknik","Toggling gripping");
+
+  picknik_msgs::PickNikDashboard msg;
+  msg.toggle_gripper = true;
+  int force = spin_box_->value(); 
+  msg.toggle_gripper_force = force;
   remote_publisher_.publish( msg );  
 }
 

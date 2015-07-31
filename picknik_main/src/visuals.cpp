@@ -30,13 +30,15 @@ Visuals::Visuals(robot_model::RobotModelPtr robot_model,
   // Load the Robot Viz Tools for publishing to Rviz
   visual_tools_.reset(new mvt::MoveItVisualTools(robot_model->getModelFrame(), "/picknik_main/markers",
                                                  planning_scene_monitor));
+
+
   visual_tools_->loadRobotStatePub("/picknik_main/robot_state");
   visual_tools_->loadTrajectoryPub("/picknik_main/display_trajectory");
   visual_tools_->loadMarkerPub();
   visual_tools_->setAlpha(0.8);
-  visual_tools_->hideRobot(); // show that things have been reset
   visual_tools_->deleteAllMarkers(); // clear all old markers
   visual_tools_->setManualSceneUpdating(true);
+  visual_tools_->hideRobot(); // show that things have been reset
 
   // ------------------------------------------------------------------------------------------------------
   // Load the COLLISION Robot Viz Tools for publishing to Rviz

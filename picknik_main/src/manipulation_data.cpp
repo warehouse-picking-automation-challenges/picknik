@@ -127,14 +127,13 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   
   // Get test pose
   ros_param_utilities::getDoubleParameters(parent_name, nh_, "test/test_pose", test_pose_doubles_);
-  test_pose_ = rvt::RvizVisualTools::convertXYZRPY(test_pose_doubles_); // TODO
+  ros_param_utilities::convertDoublesToEigen(parent_name, test_pose_doubles_, test_pose_);
+  //test_pose_ = rvt::RvizVisualTools::convertXYZRPY(test_pose_doubles_); // TODO
 
-  // Get ideal attached object
-  std::vector<double> ideal_attached_transform_doubles;
-  if (!ros_param_utilities::getDoubleParameters(parent_name, nh_, "ideal_attached_transform", ideal_attached_transform_doubles))
-    return false;
-  if (!ros_param_utilities::convertDoublesToEigen(parent_name, ideal_attached_transform_doubles, ideal_attached_transform_))
-    return false;
+  // Get grasp location doubles
+  std::vector<double> grasp_location_transform_doubles;
+  ros_param_utilities::getDoubleParameters(parent_name, nh_, "grasp_location_transform", grasp_location_transform_doubles);
+  ros_param_utilities::convertDoublesToEigen(parent_name, grasp_location_transform_doubles, grasp_location_transform_);
 
   // End effector configuration
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "finger_3_offset", finger_3_offset_);

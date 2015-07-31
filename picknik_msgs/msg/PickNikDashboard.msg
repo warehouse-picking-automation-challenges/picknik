@@ -5,4 +5,6 @@ bool stop
 bool robot_bringup
 bool robot_reset
 bool robot_home
+bool toggle_gripper
+float32 toggle_gripper_force
 uint32 joint_mode

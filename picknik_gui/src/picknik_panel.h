@@ -40,6 +40,7 @@
 #include <picknik_msgs/PickNikDashboard.h>
 
 class QLineEdit;
+class QSpinBox;
 
 namespace picknik_gui
 {
@@ -101,8 +102,11 @@ protected Q_SLOTS:
   /// User wants to bringup robot
   void bringupRobot();
 
-  /// User wants to bringup robot
+  /// User wants to send robot home
   void homeRobot();
+
+  /// User wants to bringup robot
+  void toggleGripper();
 
   // Then we finish up with protected member variables.
 protected:
@@ -113,8 +117,10 @@ protected:
   QPushButton *btn_reset_;
   QPushButton *btn_bringup_;
   QPushButton *btn_home_;  
+  QPushButton *btn_grip_;  
+  QSpinBox *spin_box_;
   QComboBox *combo_mode_;
-  
+
   // The ROS publishers
   ros::Publisher remote_publisher_;
 

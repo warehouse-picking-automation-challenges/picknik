@@ -82,18 +82,21 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
   ROS_INFO_STREAM_NAMED("execution_interface","Executing trajectory with " << trajectory.points.size()
                         << " waypoints");
 
-  // Remove acceleration command, not to be used with Baxter
-  if (false)
+  // Jacob only: Remove acceleration command
+  if (false) {
     for (std::size_t i = 0; i < trajectory.points.size(); ++i)
     {
       trajectory.points[i].accelerations.clear();
     }
+  }
 
   // Debug
   ROS_DEBUG_STREAM_NAMED("execution_interface.trajectory","Publishing:\n" << trajectory_msg);
 
+  bool run_fast = true;
+
   // Save to file
-  if (true)
+  if (!run_fast)
   {
     // Only save non-finger trajectories
     if (trajectory.joint_names.size() > 3)
@@ -106,21 +109,23 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
   }
 
   // Visualize the hand/wrist path in Rviz
-  if (trajectory.points.size() > 1 && !jmg->isEndEffector())
-  {
-    visuals_->trajectory_lines_->deleteAllMarkers();
-    ros::spinOnce(); // TODO remove?
+  if (!run_fast) {
+    if (trajectory.points.size() > 1 && !jmg->isEndEffector())
+    {
+      visuals_->trajectory_lines_->deleteAllMarkers();
+      ros::spinOnce(); // TODO remove?
 
-    visuals_->trajectory_lines_->publishTrajectoryLine(trajectory_msg, grasp_datas_[jmg]->parent_link_,
-                                                       config_->right_arm_, rvt::LIME_GREEN);
+      visuals_->trajectory_lines_->publishTrajectoryLine(trajectory_msg, grasp_datas_[jmg]->parent_link_,
+                                                         config_->right_arm_, rvt::LIME_GREEN);
+    }
+    else
+      ROS_WARN_STREAM_NAMED("execution_interface","Not visualizing path because trajectory only has "
+                            << trajectory.points.size() << " points or because is end effector");
+
+    // Visualize trajectory in Rviz
+    bool wait_for_trajetory = false;
+    visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, getCurrentState(), wait_for_trajetory);
   }
-  else
-    ROS_WARN_STREAM_NAMED("execution_interface","Not visualizing path because trajectory only has "
-                          << trajectory.points.size() << " points or because is end effector");
-
-  // Visualize trajectory in Rviz
-  bool wait_for_trajetory = false;
-  visuals_->visual_tools_->publishTrajectoryPath(trajectory_msg, getCurrentState(), wait_for_trajetory);
 
   // Debug: check for errors in trajectory
   static const double MAX_TIME_STEP_SEC = 4.0;

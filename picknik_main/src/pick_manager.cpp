@@ -38,570 +38,563 @@ DEFINE_bool(use_experience, true, "Plan with an experience database");
 DEFINE_bool(show_database, true, "Show experience database");
 DEFINE_int32(id, 0, "Identification number for various component modes");
 
-
 PickManager::PickManager(bool verbose)
-        : nh_private_("~")
-        , verbose_(verbose)
-        , fake_perception_(FLAGS_fake_perception)
+  : nh_private_("~")
+  , verbose_(verbose)
+  , fake_perception_(FLAGS_fake_perception)
 {
-    /*
-      , fake_perception_(fake_perception)
-      , skip_homing_step_(true)
-      , next_dropoff_location_(0)
-      , order_file_path_(order_file_path)
-      {
-    */
+  // Warn of fake modes
+  if (fake_perception_)
+    ROS_WARN_STREAM_NAMED("pick_manager","In fake perception mode");
+  if (FLAGS_fake_execution)
+    ROS_WARN_STREAM_NAMED("pick_manager","In fake execution mode");
 
-    // Warn of fake modes
-    if (fake_perception_)
-        ROS_WARN_STREAM_NAMED("pick_manager","In fake perception mode");
-    if (FLAGS_fake_execution)
-        ROS_WARN_STREAM_NAMED("pick_manager","In fake execution mode");
+  // Load the loader
+  robot_model_loader_.reset(new robot_model_loader::RobotModelLoader(ROBOT_DESCRIPTION));
 
-    // Load the loader
-    robot_model_loader_.reset(new robot_model_loader::RobotModelLoader(ROBOT_DESCRIPTION));
+  // Load the robot model
+  robot_model_ = robot_model_loader_->getModel(); // Get a shared pointer to the robot
 
-    // Load the robot model
-    robot_model_ = robot_model_loader_->getModel(); // Get a shared pointer to the robot
+  // Create the planning scene
+  planning_scene_.reset(new planning_scene::PlanningScene(robot_model_));
 
-    // Create the planning scene
-    planning_scene_.reset(new planning_scene::PlanningScene(robot_model_));
+  // Create the planning scene service
+  //get_scene_service_ = nh_root_.advertiseService(GET_PLANNING_SCENE_SERVICE_NAME, &PickManager::getPlanningSceneService, this);
 
-    // Create the planning scene service
-    //get_scene_service_ = nh_root_.advertiseService(GET_PLANNING_SCENE_SERVICE_NAME, &PickManager::getPlanningSceneService, this);
+  // Create tf transformer
+  tf_.reset(new tf::TransformListener(nh_private_));
+  // TODO: remove these lines, only an attempt to fix loadPlanningSceneMonitor bug
+  ros::spinOnce();
 
-    // Create tf transformer
-    tf_.reset(new tf::TransformListener(nh_private_));
-    // TODO: remove these lines, only an attempt to fix loadPlanningSceneMonitor bug
-    ros::spinOnce();
+  // Load planning scene monitor
+  if (!loadPlanningSceneMonitor())
+  {
+    ROS_ERROR_STREAM_NAMED("pick_manager","Unable to load planning scene monitor");
+  }
 
-    // Load planning scene monitor
-    if (!loadPlanningSceneMonitor())
-    {
-        ROS_ERROR_STREAM_NAMED("pick_manager","Unable to load planning scene monitor");
-    }
+  // Load multiple visual_tools classes
+  visuals_.reset(new Visuals(robot_model_, planning_scene_monitor_));
 
-    // Load multiple visual_tools classes
-    visuals_.reset(new Visuals(robot_model_, planning_scene_monitor_));
+  // Get package path
+  package_path_ = ros::package::getPath(PACKAGE_NAME);
+  if( package_path_.empty() )
+    ROS_FATAL_STREAM_NAMED("product", "Unable to get " << PACKAGE_NAME << " package path" );
 
-    // Get package path
-    package_path_ = ros::package::getPath(PACKAGE_NAME);
-    if( package_path_.empty() )
-        ROS_FATAL_STREAM_NAMED("product", "Unable to get " << PACKAGE_NAME << " package path" );
+  // Load manipulation data for our robot
+  config_.reset(new ManipulationData());
+  config_->load(robot_model_, FLAGS_fake_execution, package_path_);
 
-    // Load manipulation data for our robot
-    config_.reset(new ManipulationData());
-    config_->load(robot_model_, FLAGS_fake_execution, package_path_);
+  // Load the remote control for dealing with GUIs
+  remote_control_.reset(new RemoteControl(verbose, nh_private_, this));
 
-    // Load the remote control for dealing with GUIs
-    remote_control_.reset(new RemoteControl(verbose, nh_private_, this));
+  // Load grasp data specific to our robot
+  grasp_datas_[config_->right_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_->right_hand_name_, robot_model_));
+  // special for jaco
+  //grasp_datas_[config_->arm_only_].reset(new moveit_grasps::GraspData(nh_private_, config_->right_hand_name_, robot_model_));
 
-    // Load grasp data specific to our robot
-    grasp_datas_[config_->right_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_->right_hand_name_, robot_model_));
-    // special for jaco
-    //grasp_datas_[config_->arm_only_].reset(new moveit_grasps::GraspData(nh_private_, config_->right_hand_name_, robot_model_));
+  if (config_->dual_arm_)
+    grasp_datas_[config_->left_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_->left_hand_name_, robot_model_));
 
-    if (config_->dual_arm_)
-        grasp_datas_[config_->left_arm_].reset(new moveit_grasps::GraspData(nh_private_, config_->left_hand_name_, robot_model_));
+  // Create manipulation manager
+  manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
+                                       remote_control_, FLAGS_fake_execution));
 
-    // Create manipulation manager
-    manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_, grasp_datas_,
-                                         remote_control_, FLAGS_fake_execution));
+  // Load trajectory IO class
+  trajectory_io_.reset(new TrajectoryIO(remote_control_, visuals_, config_, manipulation_));
 
-    // Load trajectory IO class
-    trajectory_io_.reset(new TrajectoryIO(remote_control_, visuals_, config_, manipulation_));
+  // Load perception layer
+  perception_interface_.reset(new PerceptionInterface(verbose_, visuals_, config_, tf_, nh_private_));
 
-    // Load perception layer
-    perception_interface_.reset(new PerceptionInterface(verbose_, visuals_, config_, tf_, nh_private_));
+  // Load planning scene manager
+  planning_scene_manager_.reset(new PlanningSceneManager(verbose, visuals_, perception_interface_));
 
-    // Load planning scene manager
-    planning_scene_manager_.reset(new PlanningSceneManager(verbose, visuals_, perception_interface_));
+  // Show interactive marker 
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  Eigen::Affine3d ee_pose = manipulation_->getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+  ee_pose = ee_pose * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_.inverse();
+  geometry_msgs::Pose pose_msg = visuals_->visual_tools_->convertPose(ee_pose);
+  //geometry_msgs::Pose pose = visuals_->visual_tools_->convertPose(config_->grasp_location_transform_);
+  remote_control_->initializeInteractiveMarkers(pose_msg);
 
-    // Visualize detailed shelf
-    //visuals_->visualizeDisplayShelf(shelf_);
-
-    // Allow collisions between frame of robot and floor
-    //allowCollisions(config_->right_arm_); // jaco-specific
-
-    ROS_INFO_STREAM_NAMED("pick_manager","PickManager Ready.");
+  ROS_INFO_STREAM_NAMED("pick_manager","PickManager Ready.");
 }
 
 bool PickManager::checkSystemReady()
 {
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << "-------------------------------------------------------" << std::endl;
-    ROS_INFO_STREAM_NAMED("pick_manager","Starting system ready check:");
+  std::cout << std::endl;
+  std::cout << std::endl;
+  std::cout << "-------------------------------------------------------" << std::endl;
+  ROS_INFO_STREAM_NAMED("pick_manager","Starting system ready check:");
 
-    // Check joint model groups, assuming we are the jaco arm
-    if (config_->right_arm_->getVariableCount() < 6 || config_->right_arm_->getVariableCount() > 7)
-    {
-        ROS_FATAL_STREAM_NAMED("pick_manager","Incorrect number of joints for group " << config_->right_arm_->getName()
-                               << ", joints: " << config_->right_arm_->getVariableCount());
-        return false;
-    }
-    JointModelGroup* ee_jmg = grasp_datas_[config_->right_arm_]->ee_jmg_;
-    if (ee_jmg->getVariableCount() > 6)
-    {
-        ROS_FATAL_STREAM_NAMED("pick_manager","Incorrect number of joints for group " << ee_jmg->getName() << ", joints: "
-                               << ee_jmg->getVariableCount());
-        return false;
-    }
+  // Check joint model groups, assuming we are the jaco arm
+  if (config_->right_arm_->getVariableCount() < 6 || config_->right_arm_->getVariableCount() > 7)
+  {
+    ROS_FATAL_STREAM_NAMED("pick_manager","Incorrect number of joints for group " << config_->right_arm_->getName()
+                           << ", joints: " << config_->right_arm_->getVariableCount());
+    return false;
+  }
+  JointModelGroup* ee_jmg = grasp_datas_[config_->right_arm_]->ee_jmg_;
+  if (ee_jmg->getVariableCount() > 6)
+  {
+    ROS_FATAL_STREAM_NAMED("pick_manager","Incorrect number of joints for group " << ee_jmg->getName() << ", joints: "
+                           << ee_jmg->getVariableCount());
+    return false;
+  }
 
-    // Check trajectory execution manager
-    if( !manipulation_->getExecutionInterface()->checkExecutionManager() )
-    {
-        ROS_FATAL_STREAM_NAMED("pick_manager","Trajectory controllers unable to connect");
-        return false;
-    }
+  // Check trajectory execution manager
+  if( !manipulation_->getExecutionInterface()->checkExecutionManager() )
+  {
+    ROS_FATAL_STREAM_NAMED("pick_manager","Trajectory controllers unable to connect");
+    return false;
+  }
 
-    // Check Perception
-    if (!fake_perception_)
-    {
-        ROS_INFO_STREAM_NAMED("pick_manager","Checking perception");
-        perception_interface_->isPerceptionReady();
-    }
+  // Check Perception
+  if (!fake_perception_)
+  {
+    ROS_INFO_STREAM_NAMED("pick_manager","Checking perception");
+    perception_interface_->isPerceptionReady();
+  }
 
-    // Choose which planning group to use
-    JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  // Choose which planning group to use
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
-    // Check robot calibrated
-    // TODO
+  // Check robot calibrated
+  // TODO
 
-    // Check gantry calibrated
-    // TODO
+  // Check gantry calibrated
+  // TODO
 
-    // Check end effectors calibrated
-    // TODO
+  // Check end effectors calibrated
+  // TODO
 
-    ROS_INFO_STREAM_NAMED("pick_manager","System ready check COMPLETE");
-    std::cout << "-------------------------------------------------------" << std::endl;
-    return true;
+  ROS_INFO_STREAM_NAMED("pick_manager","System ready check COMPLETE");
+  std::cout << "-------------------------------------------------------" << std::endl;
+  return true;
 }
 
 // Mode 8
 bool PickManager::testEndEffectors()
 {
-    // Test visualization
-    std::size_t i = 0;
-    bool open;
-    moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
-    while (ros::ok())
+  // Test visualization
+  std::size_t i = 0;
+  bool open;
+  moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
+  while (ros::ok())
+  {
+    std::cout << std::endl << std::endl;
+    if (i % 2 == 0)
     {
-        std::cout << std::endl << std::endl;
-        if (i % 2 == 0)
-        {
-            std::cout << "Showing closed EE of state " << std::endl;
+      std::cout << "Showing closed EE of state " << std::endl;
 
-            open = false;
-            // manipulation_->setStateWithOpenEE(open, current_state);
-            // visuals_->visual_tools_->publishRobotState(current_state);
+      open = false;
+      // manipulation_->setStateWithOpenEE(open, current_state);
+      // visuals_->visual_tools_->publishRobotState(current_state);
 
-            // Close all EEs
-            manipulation_->openEEs(open);
+      // Close all EEs
+      manipulation_->openEEs(open);
 
-            ros::Duration(2.0).sleep();
-        }
-        else
-        {
-            std::cout << "Showing open EE of state " << std::endl;
-
-            open = true;
-            // manipulation_->setStateWithOpenEE(open, current_state);
-            // visuals_->visual_tools_->publishRobotState(current_state);
-
-            // Close all EEs
-            manipulation_->openEEs(open);
-
-            ros::Duration(2.0).sleep();
-        }
-        ++i;
+      ros::Duration(2.0).sleep();
     }
+    else
+    {
+      std::cout << "Showing open EE of state " << std::endl;
 
-    ROS_INFO_STREAM_NAMED("pick_manager","Done testing end effectors");
-    return true;
+      open = true;
+      // manipulation_->setStateWithOpenEE(open, current_state);
+      // visuals_->visual_tools_->publishRobotState(current_state);
+
+      // Close all EEs
+      manipulation_->openEEs(open);
+
+      ros::Duration(2.0).sleep();
+    }
+    ++i;
+  }
+
+  ROS_INFO_STREAM_NAMED("pick_manager","Done testing end effectors");
+  return true;
 }
 
 // Mode 5
 bool PickManager::testUpAndDown()
 {
-    double lift_distance_desired = 0.5;
+  double lift_distance_desired = 0.5;
 
-    // Test
-    std::size_t i = 0;
-    while (ros::ok())
+  // Test
+  std::size_t i = 0;
+  while (ros::ok())
+  {
+    std::cout << std::endl << std::endl;
+    if (i % 2 == 0)
     {
-        std::cout << std::endl << std::endl;
-        if (i % 2 == 0)
-        {
-            std::cout << "Moving up --------------------------------------" << std::endl;
-            manipulation_->executeVerticlePath(config_->right_arm_, lift_distance_desired, config_->lift_velocity_scaling_factor_, true);
-            if (config_->dual_arm_)
-                manipulation_->executeVerticlePath(config_->left_arm_, lift_distance_desired, config_->lift_velocity_scaling_factor_, true);
-            ros::Duration(1.0).sleep();
-        }
-        else
-        {
-            std::cout << "Moving down ------------------------------------" << std::endl;
-            manipulation_->executeVerticlePath(config_->right_arm_, lift_distance_desired, config_->lift_velocity_scaling_factor_, false);
-            if (config_->dual_arm_)
-                manipulation_->executeVerticlePath(config_->left_arm_, lift_distance_desired, config_->lift_velocity_scaling_factor_, false);
-            ros::Duration(1.0).sleep();
-        }
-        ++i;
+      std::cout << "Moving up --------------------------------------" << std::endl;
+      manipulation_->executeVerticlePath(config_->right_arm_, lift_distance_desired, config_->lift_velocity_scaling_factor_, true);
+      if (config_->dual_arm_)
+        manipulation_->executeVerticlePath(config_->left_arm_, lift_distance_desired, config_->lift_velocity_scaling_factor_, true);
+      ros::Duration(1.0).sleep();
     }
+    else
+    {
+      std::cout << "Moving down ------------------------------------" << std::endl;
+      manipulation_->executeVerticlePath(config_->right_arm_, lift_distance_desired, config_->lift_velocity_scaling_factor_, false);
+      if (config_->dual_arm_)
+        manipulation_->executeVerticlePath(config_->left_arm_, lift_distance_desired, config_->lift_velocity_scaling_factor_, false);
+      ros::Duration(1.0).sleep();
+    }
+    ++i;
+  }
 
-    ROS_INFO_STREAM_NAMED("pick_manager","Done testing up and down");
-    return true;
+  ROS_INFO_STREAM_NAMED("pick_manager","Done testing up and down");
+  return true;
 }
 
 // Mode 10
 bool PickManager::testInAndOut()
 {
-    double approach_distance_desired = 1.0;
+  double approach_distance_desired = 1.0;
 
-    // Test
-    std::size_t i = 1;
-    while (ros::ok())
+  // Test
+  std::size_t i = 1;
+  while (ros::ok())
+  {
+    visuals_->visual_tools_->deleteAllMarkers();
+
+    std::cout << std::endl << std::endl;
+    if (i % 2 == 0)
     {
-        visuals_->visual_tools_->deleteAllMarkers();
-
-        std::cout << std::endl << std::endl;
-        if (i % 2 == 0)
-        {
-            std::cout << "Moving in --------------------------------------" << std::endl;
-            if (!manipulation_->executeRetreatPath(config_->right_arm_, approach_distance_desired, false))
-                return false;
-            if (config_->dual_arm_)
-                if (!manipulation_->executeRetreatPath(config_->left_arm_, approach_distance_desired, false))
-                    return false;
-            ros::Duration(1.0).sleep();
-        }
-        else
-        {
-            std::cout << "Moving out ------------------------------------" << std::endl;
-            if (!manipulation_->executeRetreatPath(config_->right_arm_, approach_distance_desired, true))
-                return false;
-            if (config_->dual_arm_)
-                if (!manipulation_->executeRetreatPath(config_->left_arm_, approach_distance_desired, true))
-                    return false;
-            ros::Duration(1.0).sleep();
-        }
-        ++i;
+      std::cout << "Moving in --------------------------------------" << std::endl;
+      if (!manipulation_->executeRetreatPath(config_->right_arm_, approach_distance_desired, false))
+        return false;
+      if (config_->dual_arm_)
+        if (!manipulation_->executeRetreatPath(config_->left_arm_, approach_distance_desired, false))
+          return false;
+      ros::Duration(1.0).sleep();
     }
+    else
+    {
+      std::cout << "Moving out ------------------------------------" << std::endl;
+      if (!manipulation_->executeRetreatPath(config_->right_arm_, approach_distance_desired, true))
+        return false;
+      if (config_->dual_arm_)
+        if (!manipulation_->executeRetreatPath(config_->left_arm_, approach_distance_desired, true))
+          return false;
+      ros::Duration(1.0).sleep();
+    }
+    ++i;
+  }
 
-    ROS_INFO_STREAM_NAMED("pick_manager","Done testing in and out");
-    return true;
+  ROS_INFO_STREAM_NAMED("pick_manager","Done testing in and out");
+  return true;
 }
 
 // Mode 41
 bool PickManager::getSRDFPose()
 {
-    ROS_DEBUG_STREAM_NAMED("pick_manager","Get SRDF pose");
+  ROS_DEBUG_STREAM_NAMED("pick_manager","Get SRDF pose");
 
-    // Choose which planning group to use
-    JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
-    const std::vector<const moveit::core::JointModel*> joints = arm_jmg->getJointModels();
+  // Choose which planning group to use
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  const std::vector<const moveit::core::JointModel*> joints = arm_jmg->getJointModels();
 
-    while(ros::ok())
+  while(ros::ok())
+  {
+    ROS_INFO_STREAM("SDF Code for joint values pose:\n");
+
+    // Get current state after grasping
+    moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
+
+    // Check if current state is valid
+    //manipulation_->fixCurrentCollisionAndBounds(arm_jmg);
+
+    // Output XML
+    std::cout << "<group_state name=\"\" group=\"" << arm_jmg->getName() << "\">\n";
+    for (std::size_t i = 0; i < joints.size(); ++i)
     {
-        ROS_INFO_STREAM("SDF Code for joint values pose:\n");
-
-        // Get current state after grasping
-        moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
-
-        // Check if current state is valid
-        //manipulation_->fixCurrentCollisionAndBounds(arm_jmg);
-
-        // Output XML
-        std::cout << "<group_state name=\"\" group=\"" << arm_jmg->getName() << "\">\n";
-        for (std::size_t i = 0; i < joints.size(); ++i)
-        {
-            std::cout << "  <joint name=\"" << joints[i]->getName() <<"\" value=\""
-                      << current_state->getJointPositions(joints[i])[0] << "\" />\n";
-        }
-        std::cout << "</group_state>\n\n\n\n";
-
-        ros::Duration(4.0).sleep();
+      std::cout << "  <joint name=\"" << joints[i]->getName() <<"\" value=\""
+                << current_state->getJointPositions(joints[i])[0] << "\" />\n";
     }
-    return true;
+    std::cout << "</group_state>\n\n\n\n";
+
+    ros::Duration(4.0).sleep();
+  }
+  return true;
 }
 
 // Mode 42
 bool PickManager::testInCollision()
 {
-    // Choose which planning group to use
-    JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  // Choose which planning group to use
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
-    while (ros::ok())
-    {
-        std::cout << std::endl;
+  while (ros::ok())
+  {
+    std::cout << std::endl;
 
-        // For debugging in console
-        manipulation_->showJointLimits(config_->right_arm_);
+    // For debugging in console
+    manipulation_->showJointLimits(config_->right_arm_);
 
-        //manipulation_->fixCurrentCollisionAndBounds(arm_jmg);
-        manipulation_->checkCollisionAndBounds(manipulation_->getCurrentState());
-        ros::Duration(0.1).sleep();
-    }
+    //manipulation_->fixCurrentCollisionAndBounds(arm_jmg);
+    manipulation_->checkCollisionAndBounds(manipulation_->getCurrentState());
+    ros::Duration(0.1).sleep();
+  }
 
-    ROS_INFO_STREAM_NAMED("pick_manager","Done checking if in collision");
-    return true;
+  ROS_INFO_STREAM_NAMED("pick_manager","Done checking if in collision");
+  return true;
 }
 
 // Mode 6
 bool PickManager::testRandomValidMotions()
 {
-    // Allow collision between Jacob and bottom for most links
+  // Allow collision between Jacob and bottom for most links
+  {
+    planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning scene
+
+    scene->getAllowedCollisionMatrixNonConst().setEntry("base_39", "frame", true);
+    scene->getAllowedCollisionMatrixNonConst().setEntry("base_39", "gantry", true);
+    scene->getAllowedCollisionMatrixNonConst().setEntry("base_39", "gantry_plate", true);
+    scene->getAllowedCollisionMatrixNonConst().setEntry("base_39", "jaco2_link_base", true);
+    scene->getAllowedCollisionMatrixNonConst().setEntry("base_39", "jaco2_link_1", true);
+  }
+
+  // Plan to random
+  while (ros::ok())
+  {
+
+    static const std::size_t MAX_ATTEMPTS = 200;
+    for (std::size_t i = 0; i < MAX_ATTEMPTS; ++i)
     {
-        planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning scene
+      ROS_DEBUG_STREAM_NAMED("pick_manager","Attempt " << i << " to plan to a random location");
 
-        scene->getAllowedCollisionMatrixNonConst().setEntry("base_39", "frame", true);
-        scene->getAllowedCollisionMatrixNonConst().setEntry("base_39", "gantry", true);
-        scene->getAllowedCollisionMatrixNonConst().setEntry("base_39", "gantry_plate", true);
-        scene->getAllowedCollisionMatrixNonConst().setEntry("base_39", "jaco2_link_base", true);
-        scene->getAllowedCollisionMatrixNonConst().setEntry("base_39", "jaco2_link_1", true);
-    }
+      // Create start
+      moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
 
-    // Plan to random
-    while (ros::ok())
-    {
+      // Create goal
+      moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state));
 
-        static const std::size_t MAX_ATTEMPTS = 200;
-        for (std::size_t i = 0; i < MAX_ATTEMPTS; ++i)
+      // Choose arm
+      JointModelGroup* arm_jmg = config_->right_arm_;
+      if (config_->dual_arm_)
+        if (visuals_->visual_tools_->iRand(0,1) == 0)
+          arm_jmg = config_->left_arm_;
+
+      goal_state->setToRandomPositions(arm_jmg);
+
+      // Check if random goal state is valid
+      bool collision_verbose = false;
+      if (manipulation_->checkCollisionAndBounds(current_state, goal_state, collision_verbose))
+      {
+        // Plan to this position
+        bool verbose = true;
+        bool execute_trajectory = true;
+        if (manipulation_->move(current_state, goal_state, arm_jmg, config_->main_velocity_scaling_factor_, verbose,
+                                execute_trajectory))
         {
-            ROS_DEBUG_STREAM_NAMED("pick_manager","Attempt " << i << " to plan to a random location");
-
-            // Create start
-            moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
-
-            // Create goal
-            moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state));
-
-            // Choose arm
-            JointModelGroup* arm_jmg = config_->right_arm_;
-            if (config_->dual_arm_)
-                if (visuals_->visual_tools_->iRand(0,1) == 0)
-                    arm_jmg = config_->left_arm_;
-
-            goal_state->setToRandomPositions(arm_jmg);
-
-            // Check if random goal state is valid
-            bool collision_verbose = false;
-            if (manipulation_->checkCollisionAndBounds(current_state, goal_state, collision_verbose))
-            {
-                // Plan to this position
-                bool verbose = true;
-                bool execute_trajectory = true;
-                if (manipulation_->move(current_state, goal_state, arm_jmg, config_->main_velocity_scaling_factor_, verbose,
-                                        execute_trajectory))
-                {
-                    ROS_INFO_STREAM_NAMED("pick_manager","Planned to random valid state successfullly");
-                }
-                else
-                {
-                    ROS_ERROR_STREAM_NAMED("pick_manager","Failed to plan to random valid state");
-                    return false;
-                }
-            }
+          ROS_INFO_STREAM_NAMED("pick_manager","Planned to random valid state successfullly");
         }
-        ROS_ERROR_STREAM_NAMED("pick_manager","Unable to find random valid state after " << MAX_ATTEMPTS << " attempts");
+        else
+        {
+          ROS_ERROR_STREAM_NAMED("pick_manager","Failed to plan to random valid state");
+          return false;
+        }
+      }
+    }
+    ROS_ERROR_STREAM_NAMED("pick_manager","Unable to find random valid state after " << MAX_ATTEMPTS << " attempts");
 
-        ros::Duration(1).sleep();
-    } // while
+    ros::Duration(1).sleep();
+  } // while
 
-    ROS_INFO_STREAM_NAMED("pick_manager","Done planning to random valid");
-    return true;
+  ROS_INFO_STREAM_NAMED("pick_manager","Done planning to random valid");
+  return true;
 }
 
 // Mode 2
 bool PickManager::testGoHome()
 {
-    ROS_DEBUG_STREAM_NAMED("pick_manager","Going home");
+  ROS_DEBUG_STREAM_NAMED("pick_manager","Going home");
 
-    // Choose which planning group to use
-    JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
-    moveToStartPosition(arm_jmg);
-    return true;
+  // Choose which planning group to use
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  moveToStartPosition(arm_jmg);
+  return true;
 }
 
 // Mode 17
 bool PickManager::testJointLimits()
 {
-    ROS_INFO_STREAM_NAMED("pick_manager","Testing joint limits");
-    ROS_WARN_STREAM_NAMED("pick_manager","DOES NOT CHECK FOR COLLISION");
+  ROS_INFO_STREAM_NAMED("pick_manager","Testing joint limits");
+  ROS_WARN_STREAM_NAMED("pick_manager","DOES NOT CHECK FOR COLLISION");
 
-    moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
+  moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
 
-    // Create goal
-    moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state));
+  // Create goal
+  moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*current_state));
 
-    // Setup data
-    std::vector<double> joint_position;
-    joint_position.resize(1);
-    const std::vector<const moveit::core::JointModel*> &joints = config_->right_arm_->getActiveJointModels();
+  // Setup data
+  std::vector<double> joint_position;
+  joint_position.resize(1);
+  const std::vector<const moveit::core::JointModel*> &joints = config_->right_arm_->getActiveJointModels();
 
-    // Decide if we are testing 1 joint or all
-    int test_joint_limit_joint;
-    std::size_t first_joint;
-    std::size_t last_joint;
-    ros_param_utilities::getIntParameter("pick_manager", nh_private_, "test/test_joint_limit_joint", test_joint_limit_joint);
-    if (test_joint_limit_joint < 0)
+  // Decide if we are testing 1 joint or all
+  int test_joint_limit_joint;
+  std::size_t first_joint;
+  std::size_t last_joint;
+  ros_param_utilities::getIntParameter("pick_manager", nh_private_, "test/test_joint_limit_joint", test_joint_limit_joint);
+  if (test_joint_limit_joint < 0)
+  {
+    first_joint = 0;
+    last_joint = joints.size();
+  }
+  else
+  {
+    first_joint = test_joint_limit_joint;
+    last_joint = test_joint_limit_joint + 1;
+  }
+
+  // Keep testing
+  while (true)
+  {
+    // Loop through each joint, assuming each joint has only 1 variable
+    for (std::size_t i = first_joint; i < last_joint; ++i)
     {
-        first_joint = 0;
-        last_joint = joints.size();
+      if (!ros::ok())
+        return false;
+
+      const moveit::core::VariableBounds& bound = joints[i]->getVariableBounds()[0];
+      double reduce_bound = 0.01;
+
+      // Move to min bound
+      std::cout << std::endl;
+      std::cout << "-------------------------------------------------------" << std::endl;
+      joint_position[0] = bound.min_position_ + reduce_bound;
+      ROS_INFO_STREAM_NAMED("pick_manager","Sending joint " << joints[i]->getName() << " to min position of " << joint_position[0]);
+      goal_state->setJointPositions(joints[i], joint_position);
+
+      if (!manipulation_->executeState(goal_state, config_->right_arm_, config_->main_velocity_scaling_factor_))
+      {
+        ROS_ERROR_STREAM_NAMED("pick_manager","Unable to move to min bound of " << joint_position[0] << " on joint "
+                               << joints[i]->getName());
+      }
+      ros::Duration(1.0).sleep();
+
+      // Move to max bound
+      std::cout << std::endl;
+      std::cout << "-------------------------------------------------------" << std::endl;
+      joint_position[0] = bound.max_position_ - reduce_bound;
+      ROS_INFO_STREAM_NAMED("pick_manager","Sending joint " << joints[i]->getName() << " to max position of " << joint_position[0]);
+      goal_state->setJointPositions(joints[i], joint_position);
+
+      if (!manipulation_->executeState(goal_state, config_->right_arm_, config_->main_velocity_scaling_factor_))
+      {
+        ROS_ERROR_STREAM_NAMED("pick_manager","Unable to move to max bound of " << joint_position[0] << " on joint "
+                               << joints[i]->getName());
+      }
+      ros::Duration(1.0).sleep();
     }
-    else
-    {
-        first_joint = test_joint_limit_joint;
-        last_joint = test_joint_limit_joint + 1;
-    }
+  }
 
-    // Keep testing
-    while (true)
-    {
-        // Loop through each joint, assuming each joint has only 1 variable
-        for (std::size_t i = first_joint; i < last_joint; ++i)
-        {
-            if (!ros::ok())
-                return false;
-
-            const moveit::core::VariableBounds& bound = joints[i]->getVariableBounds()[0];
-            double reduce_bound = 0.01;
-
-            // Move to min bound
-            std::cout << std::endl;
-            std::cout << "-------------------------------------------------------" << std::endl;
-            joint_position[0] = bound.min_position_ + reduce_bound;
-            ROS_INFO_STREAM_NAMED("pick_manager","Sending joint " << joints[i]->getName() << " to min position of " << joint_position[0]);
-            goal_state->setJointPositions(joints[i], joint_position);
-
-            if (!manipulation_->executeState(goal_state, config_->right_arm_, config_->main_velocity_scaling_factor_))
-            {
-                ROS_ERROR_STREAM_NAMED("pick_manager","Unable to move to min bound of " << joint_position[0] << " on joint "
-                                       << joints[i]->getName());
-            }
-            ros::Duration(1.0).sleep();
-
-            // Move to max bound
-            std::cout << std::endl;
-            std::cout << "-------------------------------------------------------" << std::endl;
-            joint_position[0] = bound.max_position_ - reduce_bound;
-            ROS_INFO_STREAM_NAMED("pick_manager","Sending joint " << joints[i]->getName() << " to max position of " << joint_position[0]);
-            goal_state->setJointPositions(joints[i], joint_position);
-
-            if (!manipulation_->executeState(goal_state, config_->right_arm_, config_->main_velocity_scaling_factor_))
-            {
-                ROS_ERROR_STREAM_NAMED("pick_manager","Unable to move to max bound of " << joint_position[0] << " on joint "
-                                       << joints[i]->getName());
-            }
-            ros::Duration(1.0).sleep();
-        }
-    }
-
-    ROS_INFO_STREAM_NAMED("pick_manager","Done testing joint limits");
-    return true;
+  ROS_INFO_STREAM_NAMED("pick_manager","Done testing joint limits");
+  return true;
 }
 
 bool PickManager::recordTrajectory()
 {
-    std::string file_path;
-    const std::string file_name = "test_trajectory";
-    trajectory_io_->getFilePath(file_path, file_name);
+  std::string file_path;
+  const std::string file_name = "test_trajectory";
+  trajectory_io_->getFilePath(file_path, file_name);
 
-    // Start recording
-    trajectory_io_->recordTrajectoryToFile(file_path);
+  // Start recording
+  trajectory_io_->recordTrajectoryToFile(file_path);
 
-    ROS_INFO_STREAM_NAMED("pick_manager","Done recording");
+  ROS_INFO_STREAM_NAMED("pick_manager","Done recording");
 
-    return true;
+  return true;
 }
 
 // Mode 34
 bool PickManager::playbackTrajectory()
 {
-    // Choose which planning group to use
-    JointModelGroup* arm_jmg = config_->arm_only_;
-    if (!arm_jmg)
-    {
-        ROS_ERROR_STREAM_NAMED("pick_manager","No joint model group for arm");
-        return false;
-    }
+  // Choose which planning group to use
+  JointModelGroup* arm_jmg = config_->arm_only_;
+  if (!arm_jmg)
+  {
+    ROS_ERROR_STREAM_NAMED("pick_manager","No joint model group for arm");
+    return false;
+  }
 
-    // Start playing back file
-    std::string file_path;
-    const std::string file_name = "calibration_waypoints";
-    trajectory_io_->getFilePath(file_path, file_name);
+  // Start playing back file
+  std::string file_path;
+  const std::string file_name = "calibration_waypoints";
+  trajectory_io_->getFilePath(file_path, file_name);
 
-    if (!trajectory_io_->playbackWaypointsFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
-    {
-        ROS_ERROR_STREAM_NAMED("pick_manager","Unable to playback CSV from file for pose waypoints");
-        return false;
-    }
+  if (!trajectory_io_->playbackWaypointsFromFile(file_path, arm_jmg, config_->calibration_velocity_scaling_factor_))
+  {
+    ROS_ERROR_STREAM_NAMED("pick_manager","Unable to playback CSV from file for pose waypoints");
+    return false;
+  }
 
-    return true;
+  return true;
 }
 
 bool PickManager::moveToStartPosition(JointModelGroup* arm_jmg, bool check_validity)
 {
-    return manipulation_->moveToStartPosition(arm_jmg, check_validity);
+  return manipulation_->moveToStartPosition(arm_jmg, check_validity);
 }
 
 bool PickManager::loadPlanningSceneMonitor()
 {
-    // Allows us to sycronize to Rviz and also publish collision objects to ourselves
-    ROS_DEBUG_STREAM_NAMED("pick_manager","Loading Planning Scene Monitor");
-    static const std::string PLANNING_SCENE_MONITOR_NAME = "AmazonShelfWorld";
-    planning_scene_monitor_.reset(new planning_scene_monitor::PlanningSceneMonitor(planning_scene_, robot_model_loader_,
-                                                                                   tf_, PLANNING_SCENE_MONITOR_NAME));
-    ros::spinOnce();
+  // Allows us to sycronize to Rviz and also publish collision objects to ourselves
+  ROS_DEBUG_STREAM_NAMED("pick_manager","Loading Planning Scene Monitor");
+  static const std::string PLANNING_SCENE_MONITOR_NAME = "AmazonShelfWorld";
+  planning_scene_monitor_.reset(new planning_scene_monitor::PlanningSceneMonitor(planning_scene_, robot_model_loader_,
+                                                                                 tf_, PLANNING_SCENE_MONITOR_NAME));
+  ros::spinOnce();
 
-    // Get the joint state topic
-    std::string joint_state_topic;
-    ros_param_utilities::getStringParameter("pick_manager", nh_private_, "joint_state_topic", joint_state_topic);
-    if (planning_scene_monitor_->getPlanningScene())
-    {
-        // Optional monitors to start:
-        planning_scene_monitor_->startStateMonitor(joint_state_topic, ""); ///attached_collision_object");
-        planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE,
-                                                              "picknik_planning_scene");
-        planning_scene_monitor_->getPlanningScene()->setName("picknik_planning_scene");
-    }
-    else
-    {
-        ROS_ERROR_STREAM_NAMED("pick_manager","Planning scene not configured");
-        return false;
-    }
-    ros::spinOnce();
-    ros::Duration(0.5).sleep(); // when at 0.1, i believe sometimes vjoint not properly loaded
+  // Get the joint state topic
+  std::string joint_state_topic;
+  ros_param_utilities::getStringParameter("pick_manager", nh_private_, "joint_state_topic", joint_state_topic);
+  if (planning_scene_monitor_->getPlanningScene())
+  {
+    // Optional monitors to start:
+    planning_scene_monitor_->startStateMonitor(joint_state_topic, ""); ///attached_collision_object");
+    planning_scene_monitor_->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE,
+                                                          "picknik_planning_scene");
+    planning_scene_monitor_->getPlanningScene()->setName("picknik_planning_scene");
+  }
+  else
+  {
+    ROS_ERROR_STREAM_NAMED("pick_manager","Planning scene not configured");
+    return false;
+  }
+  ros::spinOnce();
+  ros::Duration(0.5).sleep(); // when at 0.1, i believe sometimes vjoint not properly loaded
 
-    // Wait for complete state to be recieved
-    bool wait_for_complete_state = false;
-    // Break early
-    if (!wait_for_complete_state)
-        return true;
-
-    std::vector<std::string> missing_joints;
-    std::size_t counter = 0;
-    while( !planning_scene_monitor_->getStateMonitor()->haveCompleteState() && ros::ok() )
-    {
-        ROS_INFO_STREAM_THROTTLE_NAMED(1, "pick_manager","Waiting for complete state from topic " << joint_state_topic);
-        ros::Duration(0.1).sleep();
-        ros::spinOnce();
-
-        // Show unpublished joints
-        if( counter % 10 == 0)
-        {
-            planning_scene_monitor_->getStateMonitor()->haveCompleteState( missing_joints );
-            for(std::size_t i = 0; i < missing_joints.size(); ++i)
-                ROS_WARN_STREAM_NAMED("pick_manager","Unpublished joints: " << missing_joints[i]);
-        }
-        counter++;
-
-    }
-    ros::spinOnce();
-
+  // Wait for complete state to be recieved
+  bool wait_for_complete_state = false;
+  // Break early
+  if (!wait_for_complete_state)
     return true;
+
+  std::vector<std::string> missing_joints;
+  std::size_t counter = 0;
+  while( !planning_scene_monitor_->getStateMonitor()->haveCompleteState() && ros::ok() )
+  {
+    ROS_INFO_STREAM_THROTTLE_NAMED(1, "pick_manager","Waiting for complete state from topic " << joint_state_topic);
+    ros::Duration(0.1).sleep();
+    ros::spinOnce();
+
+    // Show unpublished joints
+    if( counter % 10 == 0)
+    {
+      planning_scene_monitor_->getStateMonitor()->haveCompleteState( missing_joints );
+      for(std::size_t i = 0; i < missing_joints.size(); ++i)
+        ROS_WARN_STREAM_NAMED("pick_manager","Unpublished joints: " << missing_joints[i]);
+    }
+    counter++;
+
+  }
+  ros::spinOnce();
+
+  return true;
 }
 
 void PickManager::publishCurrentState()
@@ -859,6 +852,61 @@ bool PickManager::testGraspWidths()
 
     ROS_INFO_STREAM_NAMED("pick_manager","Done testing end effectors");
     return true;
+}
+
+void PickManager::processMarkerPose(const geometry_msgs::Pose& pose, bool move)
+{
+  visuals_->visual_tools_->deleteAllMarkers();
+
+  // Choose arm
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+
+  // Get pose and visualize
+  Eigen::Affine3d ee_pose = visuals_->visual_tools_->convertPose(pose);
+  //visuals_->visual_tools_->printTransformRPY(ee_pose);
+
+  // Offset ee pose
+  ee_pose = ee_pose * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
+  visuals_->visual_tools_->publishZArrow(ee_pose); // Z should point away from gripper
+
+  // Find robot pose
+  moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*manipulation_->getCurrentState()));
+  // Eigen::Affine3d ee_curr_location = manipulation_->getCurrentState()->
+  //   getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+  // visuals_->visual_tools_->printTransformRPY(ee_pose);
+
+  manipulation_->getRobotStateFromPose(ee_pose, goal_state, arm_jmg);
+  visuals_->goal_state_->publishRobotState(goal_state);
+
+  // Execute robot pose
+  if (move || true)
+  {
+    double velocity_scaling_factor = 1.0;
+    manipulation_->executeState(goal_state, arm_jmg, velocity_scaling_factor);
+  }
+}
+
+// Mode 3
+void PickManager::insertion()
+{
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+
+  double velocity_scaling_factor = 0.1;
+  bool in = true;
+  while (ros::ok()) {
+    double desired_distance = 0.1;
+
+    if (!manipulation_->executeInsertionPath(arm_jmg, desired_distance, in, velocity_scaling_factor))
+    {
+      ROS_ERROR_STREAM_NAMED("pick_manager","Unable to execute insertion path");
+      break;
+    }
+
+    ros::Duration(5.0).sleep();
+    in = !in;
+  }
+
+  ROS_INFO_STREAM_NAMED("manipulation","Finished insertion path");
 }
 
 } // end namespace

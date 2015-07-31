@@ -35,10 +35,8 @@ int main(int argc, char** argv)
       
   ros::init(argc, argv, "picknik_main");
   
-  std::cout << std::endl;
-  std::cout << std::endl;
+  std::cout << std::endl << std::endl << std::endl;
   ROS_INFO_STREAM_NAMED("main", "Starting Pick Manager");
-  std::cout << std::endl;
 
   // Allow the action server to recieve and send ros messages
   ros::AsyncSpinner spinner(4);
@@ -58,9 +56,17 @@ int main(int argc, char** argv)
 
   switch (FLAGS_mode)
   {
+    case 1:
+      ROS_INFO_STREAM_NAMED("main","Do nothing");
+      ros::spin();
+      break;
     case 2:
       ROS_INFO_STREAM_NAMED("main","Go to home position");
       manager.testGoHome();
+      break;
+    case 3:
+      ROS_INFO_STREAM_NAMED("main","Insertion");
+      manager.insertion();
       break;
     case 5:
       ROS_INFO_STREAM_NAMED("main","Raise the roof (go up and down)");
