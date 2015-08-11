@@ -14,8 +14,8 @@
 
   <!-- Command line arguments -->
   <arg name="mode" default="1" />
-  <arg name="auto_step" default="0" />
-  <arg name="full_auto" default="0" />
+  <arg name="auto_step" default="false" />
+  <arg name="full_auto" default="false" />
   <arg name="verbose" default="1" />
   <arg name="use_experience" default="1" />
   <arg name="id" default="0" />
@@ -44,9 +44,9 @@
   </include>
 
   <!-- Main process -->
-  <node name="picknik_main" pkg="picknik_main" type="main2" respawn="false" 
+  <node name="picknik_main" pkg="picknik_main" type="picknik_main" respawn="false" 
 	launch-prefix="$(arg launch_prefix)" output="screen" 
-	args="--mode $(arg mode) --full_auto $(arg full_auto) --auto_step $(arg auto_step) --verbose $(arg verbose)
+	args="--mode $(arg mode) --verbose $(arg verbose) --full_auto=$(arg full_auto) --auto_step=$(arg auto_step)
 	      --id $(arg id) --fake_execution $(arg fake_execution) --fake_perception $(arg fake_perception)
 	      --show_database $(arg show_database) --use_experience $(arg use_experience) --pose $(arg pose)">
 

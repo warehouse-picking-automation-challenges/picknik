@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(picknik_main)
 
+# C++ 11
+set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
+
 find_package(catkin REQUIRED COMPONENTS
   moveit_core
   moveit_grasps
@@ -202,6 +205,17 @@ target_link_libraries(trajectory_io
   ${Boost_LIBRARIES}
 )
 
+# show a sensor line
+add_library(line_tracking
+  src/line_tracking.cpp
+)
+target_link_libraries(line_tracking
+  visuals
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
+
 # Experience trainer library
 # add_library(learning_pipeline
 #   src/learning_pipeline.cpp
@@ -212,37 +226,13 @@ target_link_libraries(trajectory_io
 #   manipulation
 # )
 
-# Main logic of APC
-# add_library(apc_manager
-#   src/apc_manager.cpp
-# )
-# target_link_libraries(apc_manager
-#   trajectory_io
-#   amazon_json_parser
-#   manipulation
-#   perception_interface
-#   planning_scene_manager
-#   ${catkin_LIBRARIES} 
-#   ${Boost_LIBRARIES}
-# )
-
-# # Main Executable
-# add_executable(main src/main.cpp)
-# target_link_libraries(main 
-#   amazon_json_parser
-#   apc_manager
-#   visuals
-#   ${catkin_LIBRARIES} 
-#   ${Boost_LIBRARIES}
-# )
-
 # Main logic of Picking
 add_library(pick_manager
   src/pick_manager.cpp
 )
 target_link_libraries(pick_manager
   trajectory_io
-#  amazon_json_parser
+  line_tracking
   manipulation
   perception_interface
   planning_scene_manager
@@ -252,8 +242,8 @@ target_link_libraries(pick_manager
 )
 
 # Main Executable
-add_executable(main2 src/main2.cpp)
-target_link_libraries(main2 
+add_executable(picknik_main src/picknik_main.cpp)
+target_link_libraries(picknik_main
 #  amazon_json_parser
   pick_manager
   visuals

@@ -93,10 +93,16 @@ public:
   bool waitForExecution();
 
   /**
-   * \brief Ensure controllers are ready and in correct state
+   * \brief Ensure that execution manager has been loaded
    * \return true on success
    */
   bool checkExecutionManager();
+
+  /**
+   * \brief Ensure controllers are ready and in correct state
+   * \return true on success
+   */
+  bool loadExecutionManager();
 
   /**
    * \brief Turn on unit testingn

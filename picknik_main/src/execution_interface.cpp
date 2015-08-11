@@ -79,8 +79,11 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
 {
   trajectory_msgs::JointTrajectory& trajectory = trajectory_msg.joint_trajectory;
 
-  ROS_INFO_STREAM_NAMED("execution_interface","Executing trajectory with " << trajectory.points.size()
-                        << " waypoints");
+  bool run_fast = true;
+
+  if (!run_fast)
+    ROS_INFO_STREAM_NAMED("execution_interface","Executing trajectory with " << trajectory.points.size()
+                          << " waypoints");
 
   // Jacob only: Remove acceleration command
   if (false) {
@@ -91,9 +94,8 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
   }
 
   // Debug
-  ROS_DEBUG_STREAM_NAMED("execution_interface.trajectory","Publishing:\n" << trajectory_msg);
-
-  bool run_fast = true;
+  if (!run_fast)  
+    ROS_DEBUG_STREAM_NAMED("execution_interface.trajectory","Publishing:\n" << trajectory_msg);
 
   // Save to file
   if (!run_fast)
@@ -161,12 +163,8 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
     }
   }
 
-  // Create trajectory execution manager
-  if( !trajectory_execution_manager_ )
-  {
-    trajectory_execution_manager_.reset(new trajectory_execution_manager::
-                                        TrajectoryExecutionManager(planning_scene_monitor_->getRobotModel()));
-  }
+  // Ensure that execution manager has been loaded
+  loadExecutionManager();
 
   // Check if in unit testing mode
   if (unit_testing_enabled_)
@@ -203,7 +201,8 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
     }
     else
     {
-      ROS_INFO_STREAM_NAMED("exceution_interface","Not waiting for execution to finish");
+      if (!run_fast)      
+        ROS_INFO_STREAM_NAMED("exceution_interface","Not waiting for execution to finish");
     }
   }
   else
@@ -219,6 +218,9 @@ bool ExecutionInterface::waitForExecution()
 {
   ROS_DEBUG_STREAM_NAMED("execution_interface","Waiting for executing trajectory to finish");
 
+  // Ensure that execution manager has been loaded
+  loadExecutionManager();
+  
   // wait for the trajectory to complete
   moveit_controller_manager::ExecutionStatus execution_status = trajectory_execution_manager_->waitForExecution();
   if (execution_status == moveit_controller_manager::ExecutionStatus::SUCCEEDED)
@@ -237,17 +239,24 @@ bool ExecutionInterface::waitForExecution()
   return false;
 }
 
-bool ExecutionInterface::checkExecutionManager()
+bool ExecutionInterface::loadExecutionManager()
 {
-  ROS_INFO_STREAM_NAMED("execution_interface","Checking that execution manager is loaded.");
-
-  // Load MoveIt! managers
   if (!trajectory_execution_manager_)
   {
     ROS_DEBUG_STREAM_NAMED("execution_interface","Loading trajectory execution manager");
     trajectory_execution_manager_.reset(new trajectory_execution_manager::
                                         TrajectoryExecutionManager(planning_scene_monitor_->getRobotModel()));
   }
+  return true;
+}
+
+bool ExecutionInterface::checkExecutionManager()
+{
+  ROS_INFO_STREAM_NAMED("execution_interface","Checking that execution manager is loaded.");
+
+  // Ensure that execution manager has been loaded
+  loadExecutionManager();
+
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Get the controllers List

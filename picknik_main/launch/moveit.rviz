@@ -6,13 +6,13 @@ Panels:
       Expanded:
         - /Global Options1
         - /Grid1/Offset1
+        - /Planning Goal State1
         - /Amazon Markers1/Namespaces1
         - /Amazon Trajectory Markers1/Namespaces1
         - /OMPL Experience1/Namespaces1
         - /PlanningScene1/Scene Geometry1
         - /TF1/Frames1
         - /DepthCloud1/Auto Size1
-        - /InteractiveMarkers1
       Splitter Ratio: 0.504886
     Tree Height: 623
   - Class: rviz/Help
@@ -95,7 +95,17 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        robot_table_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         schunk_finger_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        schunk_finger_link_fixed:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -116,7 +126,7 @@ Visualization Manager:
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Bicep:
@@ -163,7 +173,17 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        robot_table_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         schunk_finger_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        schunk_finger_link_fixed:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -179,12 +199,12 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_start_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
       Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
-      Enabled: false
+      Enabled: true
       Links:
         All Links Enabled: true
         Bicep:
@@ -231,7 +251,17 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        robot_table_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         schunk_finger_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        schunk_finger_link_fixed:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -247,7 +277,7 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_goal_state
       Show All Links: true
       Show Highlights: true
-      Value: false
+      Value: true
       Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
@@ -299,7 +329,17 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        robot_table_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         schunk_finger_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        schunk_finger_link_fixed:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -322,7 +362,10 @@ Visualization Manager:
       Marker Topic: /picknik_main/markers
       Name: Amazon Markers
       Namespaces:
-        {}
+        Arrow: true
+        LineObject: true
+        Sphere1: true
+        Sphere2: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -413,7 +456,17 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        robot_table_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         schunk_finger_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        schunk_finger_link_fixed:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -494,7 +547,17 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
+          robot_table_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
           schunk_finger_link:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
+          schunk_finger_link_fixed:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -513,7 +576,7 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-      Marker Scale: 0.5
+      Marker Scale: 0.1
       Name: TF
       Show Arrows: false
       Show Axes: true
@@ -688,7 +751,17 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        robot_table_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         schunk_finger_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        schunk_finger_link_fixed:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -758,9 +831,21 @@ Visualization Manager:
       Show Visual Aids: false
       Update Topic: /basic_controls/update
       Value: true
+    - Alpha: 1
+      Arrow Width: 0.25
+      Class: rviz/WrenchStamped
+      Enabled: true
+      Force Arrow Scale: 0.05
+      Force Color: 204; 51; 51
+      History Length: 1
+      Name: WrenchStamped
+      Topic: /force_topic
+      Torque Arrow Scale: 2
+      Torque Color: 204; 204; 51
+      Value: true
   Enabled: true
   Global Options:
-    Background Color: 227; 227; 227
+    Background Color: 220; 255; 255
     Fixed Frame: world
     Frame Rate: 30
   Name: root
@@ -773,22 +858,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 0.728122
+      Distance: 1.02185
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.353272
-        Y: 0.0965804
-        Z: -3.41237e-06
+        X: 0.245227
+        Y: -0.496843
+        Z: 5.96046e-08
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: -0.144601
+      Pitch: 0.700398
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 0.840399
+      Yaw: 4.45359
     Saved: ~
 Window Geometry:
   Displays:

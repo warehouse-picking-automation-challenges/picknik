@@ -180,6 +180,10 @@ public:
   bool executeState(const moveit::core::RobotStatePtr goal_state, const moveit::core::JointModelGroup *jmg,
                     double velocity_scaling_factor);
 
+  /** \brief Move real fast */
+  bool moveDirectToState(const moveit::core::RobotStatePtr goal_state, JointModelGroup *jmg,
+                         double velocity_scaling_factor);
+  
   /**
    * \brief Using the current EE pose and the goal grasp pose, move forward into the target object
    * \param chosen - the grasp we are using
@@ -315,7 +319,7 @@ public:
    * \return true on success
    */
   bool getRobotStateFromPose(const Eigen::Affine3d &ee_pose, moveit::core::RobotStatePtr& robot_state,
-                             JointModelGroup* arm_jmg);
+                             JointModelGroup* arm_jmg, bool use_consistency_limits = false);
 
   /**
    * \brief Move a pose in a specified direction and specified length, where all poses are in the world frame

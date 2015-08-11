@@ -102,6 +102,7 @@ PickNikPanel::PickNikPanel( QWidget* parent )
 
   // Drop down box
   combo_mode_ = new QComboBox(this);
+  combo_mode_->addItem("");  
   combo_mode_->addItem("Brake");
   combo_mode_->addItem("Joint Position");
   combo_mode_->addItem("Gravity Compensation");    
@@ -114,7 +115,7 @@ PickNikPanel::PickNikPanel( QWidget* parent )
   spin_box_ = new QSpinBox(this);
   spin_box_->setRange(5, 50);
   spin_box_->setWrapping(true);
-  spin_box_->setValue(20);
+  spin_box_->setValue(5);
   spin_box_->stepBy(1);
   
   // Horizontal Layout
@@ -200,6 +201,7 @@ void PickNikPanel::changeJointMode(int mode)
   ROS_INFO_STREAM_NAMED("picknik","Changing joint mode");
 
   picknik_msgs::PickNikDashboard msg;
+  msg.change_joint_mode = true;
   msg.joint_mode = mode;
   remote_publisher_.publish( msg );    
 }
@@ -225,6 +227,9 @@ void PickNikPanel::bringupRobot()
 void PickNikPanel::homeRobot()
 {
   ROS_INFO_STREAM_NAMED("picknik","Sending robot home");
+
+  // Ensure robot is in joint position or impedance mode
+  combo_mode_->setCurrentIndex(4); // Low impedance
 
   picknik_msgs::PickNikDashboard msg;
   msg.robot_home = true;

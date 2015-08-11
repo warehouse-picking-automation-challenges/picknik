@@ -56,54 +56,46 @@ int main(int argc, char** argv)
 
   switch (FLAGS_mode)
   {
-    case 1:
-      ROS_INFO_STREAM_NAMED("main","Do nothing");
+    case 0: ROS_INFO_STREAM_NAMED("main","Do nothing"); 
+      ros::spin();
+      break;    
+    case 1: ROS_INFO_STREAM_NAMED("main","Interactive marker teleoperation");      
+      manager.enableTeleoperation();
       ros::spin();
       break;
-    case 2:
-      ROS_INFO_STREAM_NAMED("main","Go to home position");
+    case 2: ROS_INFO_STREAM_NAMED("main","Go to home position");
       manager.testGoHome();
       break;
-    case 3:
-      ROS_INFO_STREAM_NAMED("main","Insertion");
+    case 3: ROS_INFO_STREAM_NAMED("main","Insertion");
       manager.insertion();
       break;
-    case 5:
-      ROS_INFO_STREAM_NAMED("main","Raise the roof (go up and down)");
+    case 5: ROS_INFO_STREAM_NAMED("main","Raise the roof (go up and down)");
       manager.testUpAndDown();
       break;
-    case 6:
-      ROS_INFO_STREAM_NAMED("main","Plan to random valid locations");
+    case 6: ROS_INFO_STREAM_NAMED("main","Plan to random valid locations");
       manager.testRandomValidMotions();
       break;
-    case 8:
-      ROS_INFO_STREAM_NAMED("main","Test end effectors mode");
+    case 8: ROS_INFO_STREAM_NAMED("main","Test end effectors mode");
       manager.testEndEffectors();
       break;
-    case 9:
-      ROS_INFO_STREAM_NAMED("main","Going to pose " << FLAGS_pose);
+    case 9: ROS_INFO_STREAM_NAMED("main","Going to pose " << FLAGS_pose);
       manager.gotoPose(FLAGS_pose);
       break;
-    case 11:
-      ROS_INFO_STREAM_NAMED("main","Going in circle for calibration");
+    case 11: ROS_INFO_STREAM_NAMED("main","Going in circle for calibration");
       manager.calibrateInCircle();
       break;
-    case 17:
-      ROS_INFO_STREAM_NAMED("main","Test joint limits");
+    case 17: ROS_INFO_STREAM_NAMED("main","Test joint limits");
       manager.testJointLimits();
       break;
-    case 41:
-      ROS_INFO_STREAM_NAMED("main","Get SRDF pose");
+    case 41: ROS_INFO_STREAM_NAMED("main","Get SRDF pose");
       manager.getSRDFPose();
       break;
-    case 42:
-      ROS_INFO_STREAM_NAMED("main","Check if current state is in collision");
+    case 42: ROS_INFO_STREAM_NAMED("main","Check if current state is in collision");
       manager.testInCollision();
       ros::Duration(5.0).sleep();
       break;
 
-    default:
-      ROS_WARN_STREAM_NAMED("main","Unkown mode: " << FLAGS_mode);
+    default: ROS_WARN_STREAM_NAMED("main","Unkown mode: " << FLAGS_mode);
   }
 
   // Shutdown

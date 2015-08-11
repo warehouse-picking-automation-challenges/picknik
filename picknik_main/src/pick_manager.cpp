@@ -42,6 +42,7 @@ PickManager::PickManager(bool verbose)
   : nh_private_("~")
   , verbose_(verbose)
   , fake_perception_(FLAGS_fake_perception)
+  , teleoperation_enabled_(false)
 {
   // Warn of fake modes
   if (fake_perception_)
@@ -108,11 +109,14 @@ PickManager::PickManager(bool verbose)
   // Load planning scene manager
   planning_scene_manager_.reset(new PlanningSceneManager(verbose, visuals_, perception_interface_));
 
-  // Show interactive marker 
+  // Load line tracker
+  line_tracking_.reset(new LineTracking(visuals_));
+  
+  // Show interactive marker
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
-  Eigen::Affine3d ee_pose = manipulation_->getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
-  ee_pose = ee_pose * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_.inverse();
-  geometry_msgs::Pose pose_msg = visuals_->visual_tools_->convertPose(ee_pose);
+  interactive_marker_pose_ = manipulation_->getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+  interactive_marker_pose_ = interactive_marker_pose_ * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_.inverse();
+  geometry_msgs::Pose pose_msg = visuals_->visual_tools_->convertPose(interactive_marker_pose_);
   //geometry_msgs::Pose pose = visuals_->visual_tools_->convertPose(config_->grasp_location_transform_);
   remote_control_->initializeInteractiveMarkers(pose_msg);
 
@@ -599,314 +603,378 @@ bool PickManager::loadPlanningSceneMonitor()
 
 void PickManager::publishCurrentState()
 {
-    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
-    visuals_->visual_tools_->publishRobotState(scene->getCurrentState(), rvt::PURPLE);
+  planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_); // Lock planning scene
+  visuals_->visual_tools_->publishRobotState(scene->getCurrentState(), rvt::PURPLE);
 }
 
 bool PickManager::getPlanningSceneService(moveit_msgs::GetPlanningScene::Request &req, moveit_msgs::GetPlanningScene::Response &res)
 {
-    if (req.components.components & moveit_msgs::PlanningSceneComponents::TRANSFORMS)
-        planning_scene_monitor_->updateFrameTransforms();
-    planning_scene_monitor::LockedPlanningSceneRO ps(planning_scene_monitor_);
-    ps->getPlanningSceneMsg(res.scene, req.components);
-    return true;
+  if (req.components.components & moveit_msgs::PlanningSceneComponents::TRANSFORMS)
+    planning_scene_monitor_->updateFrameTransforms();
+  planning_scene_monitor::LockedPlanningSceneRO ps(planning_scene_monitor_);
+  ps->getPlanningSceneMsg(res.scene, req.components);
+  return true;
 }
 
 RemoteControlPtr PickManager::getRemoteControl()
 {
-    return remote_control_;
+  return remote_control_;
 }
 
 bool PickManager::allowCollisions(JointModelGroup* arm_jmg)
 {
-    // Allow collisions between frame of robot and floor
+  // Allow collisions between frame of robot and floor
+  {
+    planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning
+    collision_detection::AllowedCollisionMatrix& collision_matrix = scene->getAllowedCollisionMatrixNonConst();
+
+    // Get links of end effector
+    const std::vector<std::string> &ee_link_names = grasp_datas_[arm_jmg]->ee_jmg_->getLinkModelNames();
+    for (std::size_t i = 0; i < ee_link_names.size(); ++i)
     {
-        planning_scene_monitor::LockedPlanningSceneRW scene(planning_scene_monitor_); // Lock planning
-        collision_detection::AllowedCollisionMatrix& collision_matrix = scene->getAllowedCollisionMatrixNonConst();
-
-        // Get links of end effector
-        const std::vector<std::string> &ee_link_names = grasp_datas_[arm_jmg]->ee_jmg_->getLinkModelNames();
-        for (std::size_t i = 0; i < ee_link_names.size(); ++i)
-        {
-            for (std::size_t j = i+1; j < ee_link_names.size(); ++j)
-            {
-                //std::cout << "disabling collsion between " << ee_link_names[i] << " and " <<  ee_link_names[j] << std::endl;
-                collision_matrix.setEntry(ee_link_names[i], ee_link_names[j], true);
-            }
-        }
+      for (std::size_t j = i+1; j < ee_link_names.size(); ++j)
+      {
+        //std::cout << "disabling collsion between " << ee_link_names[i] << " and " <<  ee_link_names[j] << std::endl;
+        collision_matrix.setEntry(ee_link_names[i], ee_link_names[j], true);
+      }
     }
+  }
 
-    return true;
+  return true;
 }
 
 // Mode 9
 bool PickManager::gotoPose(const std::string& pose_name)
 {
-    ROS_INFO_STREAM_NAMED("pick_manager","Going to pose " << pose_name);
-    ros::Duration(1).sleep();
-    ros::spinOnce();
+  ROS_INFO_STREAM_NAMED("pick_manager","Going to pose " << pose_name);
+  ros::Duration(1).sleep();
+  ros::spinOnce();
 
-    JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
-    bool check_validity = true;
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  bool check_validity = true;
 
-    if (!manipulation_->moveToSRDFPose(arm_jmg, pose_name, config_->main_velocity_scaling_factor_, check_validity))
-    {
-        ROS_ERROR_STREAM_NAMED("pick_manager","Unable to move to pose");
-        return false;
-    }
-    ROS_INFO_STREAM_NAMED("pick_manager","Spinning until shutdown requested");
-    ros::spin();
-    return true;
+  if (!manipulation_->moveToSRDFPose(arm_jmg, pose_name, config_->main_velocity_scaling_factor_, check_validity))
+  {
+    ROS_ERROR_STREAM_NAMED("pick_manager","Unable to move to pose");
+    return false;
+  }
+  ROS_INFO_STREAM_NAMED("pick_manager","Spinning until shutdown requested");
+  ros::spin();
+  return true;
 }
 
 // Mode 25
 bool PickManager::testIKSolver()
 {
-    moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*manipulation_->getCurrentState()));
+  moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*manipulation_->getCurrentState()));
 
-    JointModelGroup* arm_jmg = config_->right_arm_;
-    Eigen::Affine3d ee_pose = Eigen::Affine3d::Identity();
-    ee_pose.translation().x() += 0.3;
-    ee_pose.translation().y() += 0.2;
-    ee_pose.translation().z() += 1.4;
-    ee_pose = ee_pose * Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitY());
+  JointModelGroup* arm_jmg = config_->right_arm_;
+  Eigen::Affine3d ee_pose = Eigen::Affine3d::Identity();
+  ee_pose.translation().x() += 0.3;
+  ee_pose.translation().y() += 0.2;
+  ee_pose.translation().z() += 1.4;
+  ee_pose = ee_pose * Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitY());
 
-    visuals_->visual_tools_->publishAxisLabeled(ee_pose, "desired");
+  visuals_->visual_tools_->publishAxisLabeled(ee_pose, "desired");
 
-    // Transform from world frame to 'gantry' frame
-    if (visuals_->isEnabled("generic_bool"))
-        ee_pose = goal_state->getGlobalLinkTransform("gantry") * ee_pose;
+  // Transform from world frame to 'gantry' frame
+  if (visuals_->isEnabled("generic_bool"))
+    ee_pose = goal_state->getGlobalLinkTransform("gantry") * ee_pose;
 
-    for (std::size_t i = 0; i < 100; ++i)
+  for (std::size_t i = 0; i < 100; ++i)
+  {
+    // Solve IK problem for arm
+    std::size_t attempts = 0; // use default
+    double timeout = 0; // use default
+    if (!goal_state->setFromIK(arm_jmg, ee_pose, attempts, timeout))
     {
-        // Solve IK problem for arm
-        std::size_t attempts = 0; // use default
-        double timeout = 0; // use default
-        if (!goal_state->setFromIK(arm_jmg, ee_pose, attempts, timeout))
-        {
-            ROS_ERROR_STREAM_NAMED("manipulation","Unable to find arm solution for desired pose");
-            return false;
-        }
-
-        ROS_INFO_STREAM_NAMED("pick_manager","SOLVED");
-
-        // Show solution
-        visuals_->visual_tools_->publishRobotState(goal_state, rvt::RAND);
-
-        ros::Duration(0.5).sleep();
-        goal_state->setToRandomPositions(arm_jmg);
+      ROS_ERROR_STREAM_NAMED("manipulation","Unable to find arm solution for desired pose");
+      return false;
     }
 
-    return true;
+    ROS_INFO_STREAM_NAMED("pick_manager","SOLVED");
+
+    // Show solution
+    visuals_->visual_tools_->publishRobotState(goal_state, rvt::RAND);
+
+    ros::Duration(0.5).sleep();
+    goal_state->setToRandomPositions(arm_jmg);
+  }
+
+  return true;
 }
 
 // Mode 11
 bool PickManager::calibrateInCircle()
 {
-    // Choose which planning group to use
-    JointModelGroup* arm_jmg = config_->arm_only_;
-    if (!arm_jmg)
-    {
-        ROS_ERROR_STREAM_NAMED("pick_manager","No joint model group for arm");
-        return false;
-    }
+  // Choose which planning group to use
+  JointModelGroup* arm_jmg = config_->arm_only_;
+  if (!arm_jmg)
+  {
+    ROS_ERROR_STREAM_NAMED("pick_manager","No joint model group for arm");
+    return false;
+  }
 
-    // Get location of camera
-    Eigen::Affine3d camera_pose;
-    manipulation_->getPose(camera_pose, config_->right_camera_frame_);
+  // Get location of camera
+  Eigen::Affine3d camera_pose;
+  manipulation_->getPose(camera_pose, config_->right_camera_frame_);
 
-    // Move camera pose forward away from camera
-    Eigen::Affine3d translate_forward = Eigen::Affine3d::Identity();
-    translate_forward.translation().x() += config_->camera_x_translation_from_bin_;
-    translate_forward.translation().z() -= 0.15;
-    camera_pose = translate_forward * camera_pose;
+  // Move camera pose forward away from camera
+  Eigen::Affine3d translate_forward = Eigen::Affine3d::Identity();
+  translate_forward.translation().x() += config_->camera_x_translation_from_bin_;
+  translate_forward.translation().z() -= 0.15;
+  camera_pose = translate_forward * camera_pose;
+
+  // Debug
+  visuals_->visual_tools_->publishSphere(camera_pose, rvt::GREEN, rvt::LARGE);
+  visuals_->visual_tools_->publishXArrow(camera_pose, rvt::GREEN);
+
+  // Collection of goal positions
+  EigenSTL::vector_Affine3d waypoints;
+
+  // Create circle of poses around center
+  double radius = 0.05;
+  double increment = 2 * M_PI / 4;
+  visuals_->visual_tools_->enableBatchPublishing(true);
+  for (double angle = 0; angle <= 2*M_PI; angle += increment)
+  {
+    // Rotate around circle
+    Eigen::Affine3d rotation_transform = Eigen::Affine3d::Identity();
+    rotation_transform.translation().z() += radius * cos( angle );
+    rotation_transform.translation().y() += radius * sin( angle );
+
+    Eigen::Affine3d new_point = rotation_transform * camera_pose;
+
+    // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
+    new_point = new_point * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitY());
+    //new_point = new_point * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ());
 
     // Debug
-    visuals_->visual_tools_->publishSphere(camera_pose, rvt::GREEN, rvt::LARGE);
-    visuals_->visual_tools_->publishXArrow(camera_pose, rvt::GREEN);
+    //visuals_->visual_tools_->publishZArrow(new_point, rvt::RED);
 
-    // Collection of goal positions
-    EigenSTL::vector_Affine3d waypoints;
+    // Translate to custom end effector geometry
+    Eigen::Affine3d grasp_pose = new_point * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
+    //visuals_->visual_tools_->publishZArrow(grasp_pose, rvt::PURPLE);
+    visuals_->visual_tools_->publishAxis(grasp_pose);
 
-    // Create circle of poses around center
-    double radius = 0.05;
-    double increment = 2 * M_PI / 4;
-    visuals_->visual_tools_->enableBatchPublishing(true);
-    for (double angle = 0; angle <= 2*M_PI; angle += increment)
-    {
-        // Rotate around circle
-        Eigen::Affine3d rotation_transform = Eigen::Affine3d::Identity();
-        rotation_transform.translation().z() += radius * cos( angle );
-        rotation_transform.translation().y() += radius * sin( angle );
+    // Add to trajectory
+    waypoints.push_back(grasp_pose);
+  }
+  visuals_->visual_tools_->triggerBatchPublishAndDisable();
 
-        Eigen::Affine3d new_point = rotation_transform * camera_pose;
+  if (!manipulation_->moveCartesianWaypointPath(arm_jmg, waypoints))
+  {
+    ROS_ERROR_STREAM_NAMED("pick_manager","Error executing path");
+    return false;
+  }
 
-        // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
-        new_point = new_point * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitY());
-        //new_point = new_point * Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitZ());
-
-        // Debug
-        //visuals_->visual_tools_->publishZArrow(new_point, rvt::RED);
-
-        // Translate to custom end effector geometry
-        Eigen::Affine3d grasp_pose = new_point * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
-        //visuals_->visual_tools_->publishZArrow(grasp_pose, rvt::PURPLE);
-        visuals_->visual_tools_->publishAxis(grasp_pose);
-
-        // Add to trajectory
-        waypoints.push_back(grasp_pose);
-    }
-    visuals_->visual_tools_->triggerBatchPublishAndDisable();
-
-    if (!manipulation_->moveCartesianWaypointPath(arm_jmg, waypoints))
-    {
-        ROS_ERROR_STREAM_NAMED("pick_manager","Error executing path");
-        return false;
-    }
-
-    return true;
+  return true;
 }
 
 // Mode 20
 bool PickManager::testGraspWidths()
 {
-    // Test visualization
+  // Test visualization
 
-    const moveit::core::JointModel* joint = robot_model_->getJointModel("jaco2_joint_finger_1");
-    double max_finger_joint_limit = manipulation_->getMaxJointLimit(joint);
-    double min_finger_joint_limit = manipulation_->getMinJointLimit(joint);
+  const moveit::core::JointModel* joint = robot_model_->getJointModel("jaco2_joint_finger_1");
+  double max_finger_joint_limit = manipulation_->getMaxJointLimit(joint);
+  double min_finger_joint_limit = manipulation_->getMinJointLimit(joint);
 
-    JointModelGroup* arm_jmg = config_->right_arm_;
-    if (false)
+  JointModelGroup* arm_jmg = config_->right_arm_;
+  if (false)
+  {
+    //-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    // Send joint position commands
+
+    double joint_position = 0.0;
+
+    while (ros::ok())
     {
-        //-----------------------------------------------------------------------------
-        //-----------------------------------------------------------------------------
-        //-----------------------------------------------------------------------------
-        // Send joint position commands
+      std::cout << std::endl << std::endl;
 
-        double joint_position = 0.0;
+      ROS_WARN_STREAM_NAMED("apc_manger","Setting finger joint position " << joint_position);
 
-        while (ros::ok())
-        {
-            std::cout << std::endl << std::endl;
+      // Change fingers
+      if (!manipulation_->setEEJointPosition(joint_position, arm_jmg))
+      {
+        ROS_ERROR_STREAM_NAMED("pick_manager","Failed to set finger disance");
+      }
 
-            ROS_WARN_STREAM_NAMED("apc_manger","Setting finger joint position " << joint_position);
+      // Wait
+      ros::Duration(2.0).sleep();
+      remote_control_->waitForNextStep("move fingers");
 
-            // Change fingers
-            if (!manipulation_->setEEJointPosition(joint_position, arm_jmg))
-            {
-                ROS_ERROR_STREAM_NAMED("pick_manager","Failed to set finger disance");
-            }
-
-            // Wait
-            ros::Duration(2.0).sleep();
-            remote_control_->waitForNextStep("move fingers");
-
-            // Increment the test
-            joint_position += ( max_finger_joint_limit - min_finger_joint_limit) / 10.0; //
-            if (joint_position > max_finger_joint_limit)
-                joint_position = 0.0;
-        }
+      // Increment the test
+      joint_position += ( max_finger_joint_limit - min_finger_joint_limit) / 10.0; //
+      if (joint_position > max_finger_joint_limit)
+        joint_position = 0.0;
     }
-    else
+  }
+  else
+  {
+    //-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
+    // Send distance between finger commands
+
+    // Jaco-specific
+    double space_between_fingers = grasp_datas_[arm_jmg]->min_finger_width_;
+
+    while (ros::ok())
     {
-        //-----------------------------------------------------------------------------
-        //-----------------------------------------------------------------------------
-        //-----------------------------------------------------------------------------
-        // Send distance between finger commands
+      std::cout << std::endl << std::endl;
 
-        // Jaco-specific
-        double space_between_fingers = grasp_datas_[arm_jmg]->min_finger_width_;
+      ROS_WARN_STREAM_NAMED("apc_manger","Setting finger width distance " << space_between_fingers);
 
-        while (ros::ok())
-        {
-            std::cout << std::endl << std::endl;
+      // Wait
+      ros::Duration(1.0).sleep();
+      remote_control_->waitForNextStep("move fingers");
 
-            ROS_WARN_STREAM_NAMED("apc_manger","Setting finger width distance " << space_between_fingers);
+      // Change fingers
+      trajectory_msgs::JointTrajectory grasp_posture;
+      grasp_datas_[arm_jmg]->fingerWidthToGraspPosture(space_between_fingers, grasp_posture);
 
-            // Wait
-            ros::Duration(1.0).sleep();
-            remote_control_->waitForNextStep("move fingers");
+      // Send command
+      if (!manipulation_->setEEGraspPosture(grasp_posture, arm_jmg))
+      {
+        ROS_ERROR_STREAM_NAMED("pick_manager","Failed to set finger width");
+      }
 
-            // Change fingers
-            trajectory_msgs::JointTrajectory grasp_posture;
-            grasp_datas_[arm_jmg]->fingerWidthToGraspPosture(space_between_fingers, grasp_posture);
-
-            // Send command
-            if (!manipulation_->setEEGraspPosture(grasp_posture, arm_jmg))
-            {
-                ROS_ERROR_STREAM_NAMED("pick_manager","Failed to set finger width");
-            }
-
-            // Increment the test
-            space_between_fingers += (grasp_datas_[arm_jmg]->max_finger_width_ - grasp_datas_[arm_jmg]->min_finger_width_) / 10.0;
-            if (space_between_fingers > grasp_datas_[arm_jmg]->max_finger_width_)
-            {
-                std::cout << std::endl;
-                std::cout << "-------------------------------------------------------" << std::endl;
-                std::cout << "Wrapping around " << std::endl;
-                space_between_fingers = grasp_datas_[arm_jmg]->min_finger_width_;
-            }
-        }
+      // Increment the test
+      space_between_fingers += (grasp_datas_[arm_jmg]->max_finger_width_ - grasp_datas_[arm_jmg]->min_finger_width_) / 10.0;
+      if (space_between_fingers > grasp_datas_[arm_jmg]->max_finger_width_)
+      {
+        std::cout << std::endl;
+        std::cout << "-------------------------------------------------------" << std::endl;
+        std::cout << "Wrapping around " << std::endl;
+        space_between_fingers = grasp_datas_[arm_jmg]->min_finger_width_;
+      }
     }
+  }
 
-    ROS_INFO_STREAM_NAMED("pick_manager","Done testing end effectors");
-    return true;
+  ROS_INFO_STREAM_NAMED("pick_manager","Done testing end effectors");
+  return true;
 }
 
 void PickManager::processMarkerPose(const geometry_msgs::Pose& pose, bool move)
 {
-  visuals_->visual_tools_->deleteAllMarkers();
+  // NOTE this is in a separate thread, so we should only use visuals_->trajectory_lines_ for debugging!
+  
+  // Get pose and visualize
+  interactive_marker_pose_ = visuals_->visual_tools_->convertPose(pose);
 
+  if (!teleoperation_enabled_)  
+    return;
+  
+  //visuals_->trajectory_lines_->publishArrow(pose);
+  //return;
+  
+  // Debug
+  if (false)
+    visuals_->visual_tools_->printTransformRPY(interactive_marker_pose_);
+
+  // if (!teleoperation_enabled_)
+  move = true;
+  // else
+  //move = true; // allow continous movements
+    
+  teleoperation(interactive_marker_pose_, move);
+}
+
+bool PickManager::teleoperation(Eigen::Affine3d ee_pose, bool move)
+{
+  // NOTE this is in a separate thread, so we should only use visuals_->trajectory_lines_ for debugging!
+  
   // Choose arm
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
-  // Get pose and visualize
-  Eigen::Affine3d ee_pose = visuals_->visual_tools_->convertPose(pose);
-  //visuals_->visual_tools_->printTransformRPY(ee_pose);
-
-  // Offset ee pose
+  // Offset ee pose forward
   ee_pose = ee_pose * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
-  visuals_->visual_tools_->publishZArrow(ee_pose); // Z should point away from gripper
 
-  // Find robot pose
-  moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*manipulation_->getCurrentState()));
-  // Eigen::Affine3d ee_curr_location = manipulation_->getCurrentState()->
-  //   getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
-  // visuals_->visual_tools_->printTransformRPY(ee_pose);
-
-  manipulation_->getRobotStateFromPose(ee_pose, goal_state, arm_jmg);
-  visuals_->goal_state_->publishRobotState(goal_state);
+  // Solve IK
+  bool use_consistency_limits = true;
+  if (!manipulation_->getRobotStateFromPose(ee_pose, teleop_state_, arm_jmg, use_consistency_limits))
+    return false;
 
   // Execute robot pose
-  if (move || true)
+  if (move)
   {
-    double velocity_scaling_factor = 1.0;
-    manipulation_->executeState(goal_state, arm_jmg, velocity_scaling_factor);
+    const double velocity_scaling_factor = 1.0;
+    if (!manipulation_->moveDirectToState(teleop_state_, arm_jmg, velocity_scaling_factor)) {
+      ROS_ERROR_STREAM_NAMED("pick_manager","Failed to execute state");
+      return false;
+    }
+  } else {
+    // Visualize what we would have done
+    visuals_->goal_state_->publishRobotState(teleop_state_, rvt::BLUE);
   }
+
+  return true;
 }
 
 // Mode 3
 void PickManager::insertion()
 {
+  // Note: The pre-insertion pose is from interactive_marker_pose_
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
-  double velocity_scaling_factor = 0.1;
-  bool in = true;
-  while (ros::ok()) {
-    double desired_distance = 0.1;
+  moveit::core::RobotStatePtr goal_state(new moveit::core::RobotState(*manipulation_->getCurrentState()));
 
-    if (!manipulation_->executeInsertionPath(arm_jmg, desired_distance, in, velocity_scaling_factor))
-    {
-      ROS_ERROR_STREAM_NAMED("pick_manager","Unable to execute insertion path");
-      break;
+  double velocity_scaling_factor = 0.1;
+  bool in = true; // prentend that at first we are inserted so that it moves to the correct pre-position
+  while (ros::ok()) {
+    const double desired_distance = 0.05;
+
+    if (in) {
+      // Move to pre-pose
+      std::cout << "-------------------------------------------------------" << std::endl;
+      std::cout << "MOVING TO MARKER POSE " << std::endl;
+
+      Eigen::Affine3d ee_pose = interactive_marker_pose_ * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
+
+      // Find robot pose
+      if (!manipulation_->getRobotStateFromPose(ee_pose, goal_state, arm_jmg)) {
+        ROS_ERROR_STREAM_NAMED("pick_manager","Unable to get robot state from pose");
+        break;
+      }
+
+      // Execute robot pose
+      velocity_scaling_factor = 0.1;
+      if (!manipulation_->executeState(goal_state, arm_jmg, velocity_scaling_factor)) {
+        ROS_ERROR_STREAM_NAMED("pick_manager","Failed to execute state");
+        break;
+      }
+
+    } else if (true) {
+      // Move in
+      std::cout << "-------------------------------------------------------" << std::endl;
+      std::cout << "MOVING IN " << std::endl;
+      bool direction_in = true;
+      velocity_scaling_factor = 0.05;
+      if (!manipulation_->executeInsertionPath(arm_jmg, desired_distance, direction_in,
+                                               velocity_scaling_factor))
+      {
+        ROS_ERROR_STREAM_NAMED("pick_manager","Unable to execute insertion path");
+        break;
+      }
     }
 
-    ros::Duration(5.0).sleep();
+    ros::Duration(2.0).sleep();
+    visuals_->visual_tools_->deleteAllMarkers();
     in = !in;
   }
 
   ROS_INFO_STREAM_NAMED("manipulation","Finished insertion path");
+}
+
+// Mode 1
+void PickManager::enableTeleoperation()
+{
+  ROS_INFO_STREAM_NAMED("pick_manager","Teleoperation enabled");
+  teleoperation_enabled_ = true;
+  teleop_state_.reset(new moveit::core::RobotState(*manipulation_->getCurrentState()));
 }
 
 } // end namespace

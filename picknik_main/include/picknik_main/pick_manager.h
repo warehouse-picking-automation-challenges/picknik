@@ -24,6 +24,7 @@
 #include <picknik_main/manipulation_data.h>
 #include <picknik_main/perception_interface.h>
 #include <picknik_main/remote_control.h>
+#include <picknik_main/line_tracking.h>
 
 // Picknik Msgs
 #include <picknik_msgs/FindObjectsAction.h>
@@ -204,14 +205,18 @@ public:
 
   void processMarkerPose(const geometry_msgs::Pose& pose, bool move);
 
-  // ManipulationDataPtr getConfig()
-  // {
-  //   return config_;
-  // }
+  bool teleoperation(Eigen::Affine3d ee_pose, bool move);
 
   /** \brief Peg in hole demo */
   void insertion();
 
+  /** \brief Allow interactive markers to control robot */
+  void enableTeleoperation();
+
+  VisualsPtr getVisuals() { return visuals_;}
+
+  planning_scene_monitor::PlanningSceneMonitorPtr getPlanningSceneMonitor() const { return planning_scene_monitor_; }
+  
 private:
 
   // A shared node handle
@@ -221,7 +226,7 @@ private:
 
   // Show more visual and console output, with general slower run time.
   bool verbose_;
-
+  
   // For visualizing things in rviz
   VisualsPtr visuals_;
   PlanningSceneManagerPtr planning_scene_manager_;
@@ -250,6 +255,9 @@ private:
   // Perception interface
   PerceptionInterfacePtr perception_interface_;
 
+  // Line tracking interface
+  LineTrackingPtr line_tracking_;
+
   // Helper classes
   //LearningPipelinePtr learning_;
 
@@ -273,6 +281,10 @@ private:
   // Allow loading and saving trajectories to file
   TrajectoryIOPtr trajectory_io_;
 
+  bool teleoperation_enabled_;
+  Eigen::Affine3d interactive_marker_pose_;
+  moveit::core::RobotStatePtr teleop_state_;
+  
 }; // end class
 
 } // end namespace

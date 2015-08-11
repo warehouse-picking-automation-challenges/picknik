@@ -52,6 +52,12 @@
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
 
+//#include <moveit/robot_interaction/robot_interaction.h>
+
+// Boost
+#include <boost/thread/mutex.hpp>
+
+
 namespace picknik_main
 {
 
@@ -126,6 +132,9 @@ private:
 
   void processFeedback( const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback );
 
+  /** \brief Not sure what this does */
+  //void publishInteractiveMarkers(bool pose_update);
+  
   // Show more visual and console output, with general slower run time.
   bool verbose_;
 
@@ -149,7 +158,18 @@ private:
   // Interactive markers
   boost::shared_ptr<interactive_markers::InteractiveMarkerServer> imarker_server_;
   interactive_markers::MenuHandler menu_handler_;
+  bool teleoperation_ready_ = true;
 
+  // robot interaction
+  // robot_interaction::RobotInteractionPtr robot_interaction_;
+  // robot_interaction::RobotInteraction::InteractionHandlerPtr query_goal_state_;
+  // boost::shared_ptr<interactive_markers::MenuHandler> menu_handler_goal_;
+  // moveit::core::RobotStatePtr goal_;
+  //std::map<std::string, LinkDisplayStatus> status_links_goal_;
+
+  ros::Time throttle_time_;
+  boost::mutex interactive_mutex_;
+    
 }; // end class
 
 // Create boost pointers for this class
