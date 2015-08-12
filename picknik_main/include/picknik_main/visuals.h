@@ -30,16 +30,14 @@
 
 namespace picknik_main
 {
-
 class Visuals : public boost::enable_shared_from_this<Visuals>
 {
 public:
-
   /**
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  Visuals(moveit::core::RobotModelPtr robot_model, 
+  Visuals(moveit::core::RobotModelPtr robot_model,
           planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor);
 
   /**
@@ -55,30 +53,28 @@ public:
   bool isEnabled(const std::string& setting_name);
 
 public:
-
   // Public vars
   mvt::MoveItVisualToolsPtr visual_tools_;
   mvt::MoveItVisualToolsPtr visual_tools_display_;
-  mvt::MoveItVisualToolsPtr start_state_; // also used for grasp markers
-  mvt::MoveItVisualToolsPtr goal_state_; // also used for trajectory lines
-  mvt::MoveItVisualToolsPtr grasp_markers_; // also used for start state
-  mvt::MoveItVisualToolsPtr trajectory_lines_; // also used for goal state
-  mvt::MoveItVisualToolsPtr product_perception_; // for bounding boxes
-  rvt::TFVisualToolsPtr tf_; // for debugging transforms
+  mvt::MoveItVisualToolsPtr start_state_;         // also used for grasp markers
+  mvt::MoveItVisualToolsPtr goal_state_;          // also used for trajectory lines
+  mvt::MoveItVisualToolsPtr grasp_markers_;       // also used for start state
+  mvt::MoveItVisualToolsPtr trajectory_lines_;    // also used for goal state
+  mvt::MoveItVisualToolsPtr product_perception_;  // for bounding boxes
+  rvt::TFVisualToolsPtr tf_;                      // for debugging transforms
 
 private:
-
   // Visualization settings
   std::map<std::string, bool> enabled_;
 
   // A shared node handle
   ros::NodeHandle nh_;
 
-}; // end class
+};  // end class
 
 // Create boost pointers for this class
 typedef boost::shared_ptr<Visuals> VisualsPtr;
 
-} // end namespace
+}  // end namespace
 
 #endif

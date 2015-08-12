@@ -48,25 +48,24 @@
 
 namespace picknik_main
 {
-
 FixStateBounds::FixStateBounds()
   : nh_("~")
 {
-  const std::string parent_name = "fix_state_bounds"; // for namespacing logging messages
+  const std::string parent_name = "fix_state_bounds";  // for namespacing logging messages
 
   ros_param_utilities::getDoubleParameter(parent_name, nh_, BOUNDS_PARAM_NAME, bounds_dist_);
   ros_param_utilities::getDoubleParameter(parent_name, nh_, DT_PARAM_NAME, max_dt_offset_);
 }
 
-bool FixStateBounds::fixBounds(robot_state::RobotState& robot_state,
-                               const moveit::core::JointModelGroup* jmg)
+bool FixStateBounds::fixBounds(robot_state::RobotState &robot_state,
+                               const moveit::core::JointModelGroup *jmg)
 {
-  ROS_INFO_STREAM_NAMED("fix_state_bounds","Fixing bounds");
+  ROS_INFO_STREAM_NAMED("fix_state_bounds", "Fixing bounds");
 
-  const std::vector<const robot_model::JointModel*> &joint_models = jmg->getJointModels();
+  const std::vector<const robot_model::JointModel *> &joint_models = jmg->getJointModels();
 
   bool change_req = false;
-  for (std::size_t i = 0 ; i < joint_models.size() ; ++i)
+  for (std::size_t i = 0; i < joint_models.size(); ++i)
   {
     // Check if we have a revolute, continuous joint. If we do, then we only need to make sure
     // it is within de model's declared bounds (usually -Pi, Pi), since the values wrap around.
@@ -74,10 +73,10 @@ bool FixStateBounds::fixBounds(robot_state::RobotState& robot_state,
     // how many times the joint was wrapped. Because of this, we remember the offsets for continuous
     // joints, and we un-do them when the plan comes from the planner
 
-    const robot_model::JointModel* jm = joint_models[i];
+    const robot_model::JointModel *jm = joint_models[i];
     if (jm->getType() == robot_model::JointModel::REVOLUTE)
     {
-      if (static_cast<const robot_model::RevoluteJointModel*>(jm)->isContinuous())
+      if (static_cast<const robot_model::RevoluteJointModel *>(jm)->isContinuous())
       {
         double initial = robot_state.getJointPositions(jm)[0];
         robot_state.enforceBounds(jm);
@@ -87,33 +86,32 @@ bool FixStateBounds::fixBounds(robot_state::RobotState& robot_state,
       }
     }
     else
-      // Normalize yaw; no offset needs to be remembered
-      if (jm->getType() == robot_model::JointModel::PLANAR)
+        // Normalize yaw; no offset needs to be remembered
+        if (jm->getType() == robot_model::JointModel::PLANAR)
+    {
+      const double *p = robot_state.getJointPositions(jm);
+      double copy[3] = {p[0], p[1], p[2]};
+      if (static_cast<const robot_model::PlanarJointModel *>(jm)->normalizeRotation(copy))
       {
-        const double *p = robot_state.getJointPositions(jm);
-        double copy[3] = {p[0], p[1], p[2]};
-        if (static_cast<const robot_model::PlanarJointModel*>(jm)->normalizeRotation(copy))
-        {
-          robot_state.setJointPositions(jm, copy);
-          change_req = true;
-        }
+        robot_state.setJointPositions(jm, copy);
+        change_req = true;
       }
-      else
+    }
+    else
         // Normalize quaternions
         if (jm->getType() == robot_model::JointModel::FLOATING)
-        {
-          const double *p = robot_state.getJointPositions(jm);
-          double copy[7] = {p[0], p[1], p[2], p[3], p[4], p[5], p[6]};
-          if (static_cast<const robot_model::FloatingJointModel*>(jm)->normalizeRotation(copy))
-          {
-            robot_state.setJointPositions(jm, copy);
-            change_req = true;
-          }
-        }
+    {
+      const double *p = robot_state.getJointPositions(jm);
+      double copy[7] = {p[0], p[1], p[2], p[3], p[4], p[5], p[6]};
+      if (static_cast<const robot_model::FloatingJointModel *>(jm)->normalizeRotation(copy))
+      {
+        robot_state.setJointPositions(jm, copy);
+        change_req = true;
+      }
+    }
   }
 
-
-  for (std::size_t i = 0 ; i < joint_models.size() ; ++i)
+  for (std::size_t i = 0; i < joint_models.size(); ++i)
   {
     if (!robot_state.satisfiesBounds(joint_models[i]))
     {
@@ -124,24 +122,27 @@ bool FixStateBounds::fixBounds(robot_state::RobotState& robot_state,
       std::stringstream joint_bounds_low;
       std::stringstream joint_bounds_hi;
       const double *p = robot_state.getJointPositions(joint_models[i]);
-      for (std::size_t k = 0 ; k < joint_models[i]->getVariableCount() ; ++k)
+      for (std::size_t k = 0; k < joint_models[i]->getVariableCount(); ++k)
         joint_values << p[k] << " ";
       const robot_model::JointModel::Bounds &b = joint_models[i]->getVariableBounds();
-      for (std::size_t k = 0 ; k < b.size() ; ++k)
+      for (std::size_t k = 0; k < b.size(); ++k)
       {
         joint_bounds_low << b[k].min_position_ << " ";
         joint_bounds_hi << b[k].max_position_ << " ";
       }
-      ROS_WARN_STREAM_NAMED("fix_state_bounds","Joint '" << joint_models[i]->getName() << "' is outside bounds by: [ "
-                            << joint_values.str() << "]. Joint value hould be in the range [ " << joint_bounds_low.str() <<
-                            "], [ " << joint_bounds_hi.str() << "])");
+      ROS_WARN_STREAM_NAMED(
+          "fix_state_bounds",
+          "Joint '" << joint_models[i]->getName() << "' is outside bounds by: [ "
+                    << joint_values.str() << "]. Joint value hould be in the range [ "
+                    << joint_bounds_low.str() << "], [ " << joint_bounds_hi.str() << "])");
 
       /*
         if (robot_state.satisfiesBounds(joint_models[i], bounds_dist_))
         {
         robot_state.enforceBounds(joint_models[i]);
         change_req = true;
-        ROS_INFO_NAMED("fix_state_bounds","Starting state is just outside bounds (joint '%s'). Assuming within bounds.", joint_models[i]->getName().c_str());
+        ROS_INFO_NAMED("fix_state_bounds","Starting state is just outside bounds (joint '%s').
+        Assuming within bounds.", joint_models[i]->getName().c_str());
         }
         else
         {
@@ -157,17 +158,19 @@ bool FixStateBounds::fixBounds(robot_state::RobotState& robot_state,
         joint_bounds_low << b[k].min_position_ << " ";
         joint_bounds_hi << b[k].max_position_ << " ";
         }
-        ROS_WARN_STREAM_NAMED("fix_state_bounds","Joint '" << joint_models[i]->getName() << "' from the starting state is outside bounds by a significant margin: [ " << joint_values.str() << "]. Joint value hould be in the range [ " << joint_bounds_low.str() <<
-        "], [ " << joint_bounds_hi.str() << "] but the error is above the ~" << BOUNDS_PARAM_NAME << " parameter (currently set to " << bounds_dist_ << ")");
+        ROS_WARN_STREAM_NAMED("fix_state_bounds","Joint '" << joint_models[i]->getName() << "' from
+        the starting state is outside bounds by a significant margin: [ " << joint_values.str() <<
+        "]. Joint value hould be in the range [ " << joint_bounds_low.str() <<
+        "], [ " << joint_bounds_hi.str() << "] but the error is above the ~" << BOUNDS_PARAM_NAME <<
+        " parameter (currently set to " << bounds_dist_ << ")");
         }
       */
     }
   }
 
   if (change_req)
-    ROS_INFO_STREAM_NAMED("fix_state_bounds","Change was made");
+    ROS_INFO_STREAM_NAMED("fix_state_bounds", "Change was made");
 
   return change_req;
 }
-
 }

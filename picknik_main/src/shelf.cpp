@@ -19,38 +19,36 @@
 
 namespace picknik_main
 {
-
 // -------------------------------------------------------------------------------------------------
 // Bin Object
 // -------------------------------------------------------------------------------------------------
 
-BinObject::BinObject(VisualsPtr visuals,
-                     const rvt::colors &color,
-                     const std::string &name)
+BinObject::BinObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name)
   : RectangleObject(visuals, color, name)
 {
 }
 
-bool BinObject::visualizeHighRes(const Eigen::Affine3d& trans) const
+bool BinObject::visualizeHighRes(const Eigen::Affine3d &trans) const
 {
   // Show bin
-  //visuals_->visual_tools_display_->publishCuboid( transform(bottom_right_, trans).translation(),
+  // visuals_->visual_tools_display_->publishCuboid( transform(bottom_right_, trans).translation(),
   //                                 transform(top_left_, trans).translation(),
   //                                 color_);
 
   // Show products
   for (std::size_t product_id = 0; product_id < products_.size(); ++product_id)
   {
-    products_[product_id]->visualizeHighRes(trans * bottom_right_); // send transform from world to bin
+    products_[product_id]->visualizeHighRes(trans *
+                                            bottom_right_);  // send transform from world to bin
   }
 
   return true;
 }
 
-bool BinObject::visualizeAxis(const Eigen::Affine3d& trans, VisualsPtr visuals) const
+bool BinObject::visualizeAxis(const Eigen::Affine3d &trans, VisualsPtr visuals) const
 {
   // Show coordinate system
-  //visuals_->visual_tools_->publishAxisLabled( transform(bottom_right_, trans), name_ );
+  // visuals_->visual_tools_->publishAxisLabled( transform(bottom_right_, trans), name_ );
 
   // Show label
   // Eigen::Affine3d text_location = transform( bottom_right_, trans);
@@ -67,16 +65,13 @@ bool BinObject::createCollisionBodiesProducts(const Eigen::Affine3d &trans) cons
   // Show products
   for (std::size_t product_id = 0; product_id < products_.size(); ++product_id)
   {
-    products_[product_id]->createCollisionBodies(trans * bottom_right_); // send transform from world to bin
+    products_[product_id]->createCollisionBodies(
+        trans * bottom_right_);  // send transform from world to bin
   }
   return true;
 }
 
-std::vector<ProductObjectPtr>& BinObject::getProducts()
-{
-  return products_;
-}
-
+std::vector<ProductObjectPtr> &BinObject::getProducts() { return products_; }
 void BinObject::getProducts(std::vector<std::string> &products)
 {
   products.clear();
@@ -86,7 +81,7 @@ void BinObject::getProducts(std::vector<std::string> &products)
   }
 }
 
-ProductObjectPtr BinObject::getProduct(const std::string& name)
+ProductObjectPtr BinObject::getProduct(const std::string &name)
 {
   // Find correct product
   for (std::size_t prod_id = 0; prod_id < products_.size(); ++prod_id)
@@ -109,8 +104,8 @@ Eigen::Affine3d BinObject::getBinToWorld(ShelfObjectPtr &shelf)
 // Shelf Object
 // -------------------------------------------------------------------------------------------------
 
-ShelfObject::ShelfObject(VisualsPtr visuals,
-                         const rvt::colors &color, const std::string &name, bool use_computer_vision_shelf)
+ShelfObject::ShelfObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name,
+                         bool use_computer_vision_shelf)
   : RectangleObject(visuals, color, name)
   , use_computer_vision_shelf_(use_computer_vision_shelf)
 {
@@ -118,13 +113,15 @@ ShelfObject::ShelfObject(VisualsPtr visuals,
 
 bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &nh)
 {
-  const std::string parent_name = "shelf"; // for namespacing logging messages
+  const std::string parent_name = "shelf";  // for namespacing logging messages
 
   // Loaded shelf parameter values
   std::vector<double> world_to_shelf_transform_doubles;
-  if (!ros_param_utilities::getDoubleParameters(parent_name, nh, "world_to_shelf_transform", world_to_shelf_transform_doubles))
+  if (!ros_param_utilities::getDoubleParameters(parent_name, nh, "world_to_shelf_transform",
+                                                world_to_shelf_transform_doubles))
     return false;
-  if (!ros_param_utilities::convertDoublesToEigen(parent_name, world_to_shelf_transform_doubles, world_to_shelf_transform_))
+  if (!ros_param_utilities::convertDoublesToEigen(parent_name, world_to_shelf_transform_doubles,
+                                                  world_to_shelf_transform_))
     return false;
   if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "shelf_width", shelf_width_))
     return false;
@@ -132,33 +129,43 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     return false;
   if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "shelf_depth", shelf_depth_))
     return false;
-  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "shelf_wall_width", shelf_wall_width_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "shelf_wall_width",
+                                               shelf_wall_width_))
     return false;
-  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "shelf_inner_wall_width", shelf_inner_wall_width_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "shelf_inner_wall_width",
+                                               shelf_inner_wall_width_))
     return false;
-  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "shelf_surface_thickness", shelf_surface_thickness_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "shelf_surface_thickness",
+                                               shelf_surface_thickness_))
     return false;
-  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "first_bin_from_bottom", first_bin_from_bottom_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "first_bin_from_bottom",
+                                               first_bin_from_bottom_))
     return false;
-  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "first_bin_from_right", first_bin_from_right_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "first_bin_from_right",
+                                               first_bin_from_right_))
     return false;
 
   // Loaded bin parameter values
-  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_right_width", bin_right_width_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_right_width",
+                                               bin_right_width_))
     return false;
-  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_middle_width", bin_middle_width_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_middle_width",
+                                               bin_middle_width_))
     return false;
   if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_left_width", bin_left_width_))
     return false;
-  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_short_height", bin_short_height_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_short_height",
+                                               bin_short_height_))
     return false;
-  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_tall_height", bin_tall_height_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_tall_height",
+                                               bin_tall_height_))
     return false;
   if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_depth", bin_depth_))
     return false;
   if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_top_margin", bin_top_margin_))
     return false;
-  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_left_margin", bin_left_margin_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "bin_left_margin",
+                                               bin_left_margin_))
     return false;
   if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "num_bins", num_bins_))
     return false;
@@ -178,29 +185,32 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     return false;
   if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "ceiling_z", ceiling_z_))
     return false;
-  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "collision_wall_safety_margin", collision_wall_safety_margin_))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "collision_wall_safety_margin",
+                                               collision_wall_safety_margin_))
     return false;
 
   // Collision Shelf
   std::vector<double> collision_shelf_transform_doubles;
   double collision_shelf_transform_x_offset;
-  if (!ros_param_utilities::getDoubleParameters(parent_name, nh, "collision_shelf_transform", collision_shelf_transform_doubles))
+  if (!ros_param_utilities::getDoubleParameters(parent_name, nh, "collision_shelf_transform",
+                                                collision_shelf_transform_doubles))
     return false;
-  if (!ros_param_utilities::convertDoublesToEigen(parent_name, collision_shelf_transform_doubles, collision_shelf_transform_))
+  if (!ros_param_utilities::convertDoublesToEigen(parent_name, collision_shelf_transform_doubles,
+                                                  collision_shelf_transform_))
     return false;
-  if (!ros_param_utilities::getDoubleParameter(parent_name, nh, "collision_shelf_transform_x_offset", 
-                               collision_shelf_transform_x_offset))
+  if (!ros_param_utilities::getDoubleParameter(parent_name, nh,
+                                               "collision_shelf_transform_x_offset",
+                                               collision_shelf_transform_x_offset))
     return false;
 
   // Calculate shelf corners for *this ShelfObject
   bottom_right_ = world_to_shelf_transform_;
   top_left_.translation().x() = bottom_right_.translation().x() + shelf_depth_;
-  top_left_.translation().y() = shelf_width_/2.0;
+  top_left_.translation().y() = shelf_width_ / 2.0;
   top_left_.translation().z() = shelf_height_;
 
   // Transform debugging
-  //visuals_->tf_->publishTransform(world_to_shelf_transform_, "world", "shelf");
-
+  // visuals_->tf_->publishTransform(world_to_shelf_transform_, "world", "shelf");
 
   // Create shelf parts -----------------------------
   // Note: bottom right is at 0,0,0
@@ -275,23 +285,26 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     else if (wall_id == 2)
       this_bin_width = bin_left_width_;
     else
-      this_bin_width = 0; // doesn't matter
+      this_bin_width = 0;  // doesn't matter
 
     // Increment the y location
     previous_y += this_bin_width + this_shelf_wall_width;
-
 
     // Create a column of shelf bins from top to bottom
     if (wall_id < 3)
     {
       bin_z = first_bin_from_bottom_;
-      insertBinHelper(wall_id + 0, bin_tall_height_, this_bin_width, top_left.translation().y(), bin_z); // bottom rop
+      insertBinHelper(wall_id + 0, bin_tall_height_, this_bin_width, top_left.translation().y(),
+                      bin_z);  // bottom rop
       bin_z += bin_tall_height_;
-      insertBinHelper(wall_id + 3, bin_short_height_, this_bin_width, top_left.translation().y(), bin_z); // middle bottom row
+      insertBinHelper(wall_id + 3, bin_short_height_, this_bin_width, top_left.translation().y(),
+                      bin_z);  // middle bottom row
       bin_z += bin_short_height_;
-      insertBinHelper(wall_id + 6, bin_short_height_, this_bin_width, top_left.translation().y(), bin_z); // middle top row
+      insertBinHelper(wall_id + 6, bin_short_height_, this_bin_width, top_left.translation().y(),
+                      bin_z);  // middle top row
       bin_z += bin_short_height_;
-      insertBinHelper(wall_id + 9, bin_tall_height_, this_bin_width, top_left.translation().y(), bin_z); // top row
+      insertBinHelper(wall_id + 9, bin_tall_height_, this_bin_width, top_left.translation().y(),
+                      bin_z);  // top row
     }
   }
 
@@ -312,7 +325,8 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
     shelf.setTopLeft(top_left);
 
     bottom_right = shelf.getBottomRight();
-    bottom_right.translation().z() = shelf.getTopLeft().translation().z() - shelf_surface_thickness_; // add thickenss
+    bottom_right.translation().z() =
+        shelf.getTopLeft().translation().z() - shelf_surface_thickness_;  // add thickenss
     shelf.setBottomRight(bottom_right);
 
     // Choose what height the current bin is
@@ -322,7 +336,7 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
       this_bin_height = bin_tall_height_;
 
     // Increment the z location
-    previous_z += this_bin_height; // flush with top shelf
+    previous_z += this_bin_height;  // flush with top shelf
   }
 
   // Goal bin
@@ -338,16 +352,13 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   goal_bin_->setCollisionMeshPath("file://" + package_path + "/meshes/goal_bin/goal_bin.stl");
 
   // Computer vision shelf
-  loadComputerVisionShelf(collision_shelf_transform_doubles, collision_shelf_transform_x_offset, package_path);
+  loadComputerVisionShelf(collision_shelf_transform_doubles, collision_shelf_transform_x_offset,
+                          package_path);
 
   // Front wall limit
   front_wall_.reset(new RectangleObject(visuals_, rvt::YELLOW, "front_wall"));
-  front_wall_->setBottomRight(-collision_wall_safety_margin_,
-                              - shelf_width_ / 2.0,
-                              0);
-  front_wall_->setTopLeft(COLLISION_OBJECT_WIDTH,
-                          shelf_width_ * 1.5,
-                          shelf_height_);
+  front_wall_->setBottomRight(-collision_wall_safety_margin_, -shelf_width_ / 2.0, 0);
+  front_wall_->setTopLeft(COLLISION_OBJECT_WIDTH, shelf_width_ * 1.5, shelf_height_);
 
   // Other objects in our collision environment
   addOtherCollisionObjects();
@@ -357,22 +368,22 @@ bool ShelfObject::initialize(const std::string &package_path, ros::NodeHandle &n
   collision_mesh_path_ = high_res_mesh_path_;
 
   // Calculate offset for high-res mesh
-  //high_res_mesh_offset_ = Eigen::Affine3d::Identity();
-  high_res_mesh_offset_ = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitX())
-    * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
-    * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ());
+  // high_res_mesh_offset_ = Eigen::Affine3d::Identity();
+  high_res_mesh_offset_ = Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitX()) *
+                          Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitY()) *
+                          Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ());
   high_res_mesh_offset_.translation().x() = shelf_depth_ / 2.0;
   high_res_mesh_offset_.translation().y() = shelf_width_ / 2.0;
-  high_res_mesh_offset_.translation().z() = 0; //first_bin_from_bottom_ - 0.81; // TODO remove this height - only for temp table setup
+  high_res_mesh_offset_.translation().z() =
+      0;  // first_bin_from_bottom_ - 0.81; // TODO remove this height - only for temp table setup
 
   // Calculate offset - FOR COLLISION
   Eigen::Affine3d offset;
-  offset = Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitX())
-    * Eigen::AngleAxisd(M_PI/2.0, Eigen::Vector3d::UnitY())
-    * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ());
+  offset = Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitX()) *
+           Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitY()) *
+           Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ());
   offset.translation().x() = bottom_right_.translation().x() + shelf_depth_ / 2.0;
   offset.translation().y() = 0;
-
 
   return true;
 }
@@ -383,78 +394,61 @@ void ShelfObject::addOtherCollisionObjects()
   if (left_wall_y_ > 0.001 || left_wall_y_ < -0.001)
   {
     RectangleObjectPtr left_wall(new RectangleObject(visuals_, rvt::YELLOW, "left_wall"));
-    left_wall->setBottomRight(-1,
-                              left_wall_y_,
-                              0);
-    left_wall->setTopLeft(1,
-                          left_wall_y_ + shelf_wall_width_,
-                          shelf_height_);
-    environment_objects_["left_wall"]  =  left_wall;
+    left_wall->setBottomRight(-1, left_wall_y_, 0);
+    left_wall->setTopLeft(1, left_wall_y_ + shelf_wall_width_, shelf_height_);
+    environment_objects_["left_wall"] = left_wall;
   }
   if (right_wall_y_ > 0.001 || right_wall_y_ < -0.001)
   {
     RectangleObjectPtr right_wall(new RectangleObject(visuals_, rvt::YELLOW, "right_wall"));
-    right_wall->setBottomRight(-2,
-                               right_wall_y_,
-                               0);
-    right_wall->setTopLeft(0,
-                           right_wall_y_ + shelf_wall_width_,
-                           shelf_height_);
-    environment_objects_["right_wall"]  =  right_wall;
+    right_wall->setBottomRight(-2, right_wall_y_, 0);
+    right_wall->setTopLeft(0, right_wall_y_ + shelf_wall_width_, shelf_height_);
+    environment_objects_["right_wall"] = right_wall;
   }
 
   // Ceiling wall limit
-  RectangleObjectPtr ceiling_wall(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "ceiling_wall"));
-  ceiling_wall->setBottomRight(-2,
-                               - shelf_width_,
-                               ceiling_z_);
-  ceiling_wall->setTopLeft(1,
-                           shelf_width_ * 2,
-                           ceiling_z_ + COLLISION_OBJECT_WIDTH);
-  environment_objects_["ceiling_wall"]  =  ceiling_wall;
+  RectangleObjectPtr ceiling_wall(
+      new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "ceiling_wall"));
+  ceiling_wall->setBottomRight(-2, -shelf_width_, ceiling_z_);
+  ceiling_wall->setTopLeft(1, shelf_width_ * 2, ceiling_z_ + COLLISION_OBJECT_WIDTH);
+  environment_objects_["ceiling_wall"] = ceiling_wall;
 
   // Floor wall limit
-  RectangleObjectPtr floor_wall(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "floor_wall"));
+  RectangleObjectPtr floor_wall(
+      new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "floor_wall"));
   floor_wall->setBottomRight(ceiling_wall->getBottomRight().translation().x(),
-                             ceiling_wall->getBottomRight().translation().y(),
-                             0);
+                             ceiling_wall->getBottomRight().translation().y(), 0);
   floor_wall->setTopLeft(ceiling_wall->getTopLeft().translation().x(),
-                         ceiling_wall->getTopLeft().translation().y(),
-                         -COLLISION_OBJECT_WIDTH);
-  environment_objects_["floor_wall"]  =  floor_wall;
+                         ceiling_wall->getTopLeft().translation().y(), -COLLISION_OBJECT_WIDTH);
+  environment_objects_["floor_wall"] = floor_wall;
 
   // Left side bars of our dummy shelf
   static const double SIDE_BAR_WIDTH = 0.12;
-  RectangleObjectPtr left_shelf_bars(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "left_shelf_bars"));
-  left_shelf_bars->setBottomRight(-0.05,
-                                  -SIDE_BAR_WIDTH,
-                                  0.0);
-  left_shelf_bars->setTopLeft(0,
-                              0,
-                              shelf_height_);
-  environment_objects_["left_shelf_bars"]  =  left_shelf_bars;
+  RectangleObjectPtr left_shelf_bars(
+      new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "left_shelf_bars"));
+  left_shelf_bars->setBottomRight(-0.05, -SIDE_BAR_WIDTH, 0.0);
+  left_shelf_bars->setTopLeft(0, 0, shelf_height_);
+  environment_objects_["left_shelf_bars"] = left_shelf_bars;
 
   // Right side bars of our dummy shelf
-  RectangleObjectPtr right_shelf_bars(new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "right_shelf_bars"));
-  right_shelf_bars->setBottomRight(-0.05,
-                                   shelf_width_,
-                                   0.0);
-  right_shelf_bars->setTopLeft(0,
-                               shelf_width_ + SIDE_BAR_WIDTH,
-                               shelf_height_);
-  environment_objects_["right_shelf_bars"]  =  right_shelf_bars;
-
+  RectangleObjectPtr right_shelf_bars(
+      new RectangleObject(visuals_, rvt::TRANSLUCENT_LIGHT, "right_shelf_bars"));
+  right_shelf_bars->setBottomRight(-0.05, shelf_width_, 0.0);
+  right_shelf_bars->setTopLeft(0, shelf_width_ + SIDE_BAR_WIDTH, shelf_height_);
+  environment_objects_["right_shelf_bars"] = right_shelf_bars;
 }
 
-bool ShelfObject::insertBinHelper(int bin_id, double height, double width, double wall_y, double bin_z)
+bool ShelfObject::insertBinHelper(int bin_id, double height, double width, double wall_y,
+                                  double bin_z)
 {
-  const std::string bin_name = "bin_" + boost::lexical_cast<std::string>((char)(65 + num_bins_ - bin_id - 1)); // reverse the lettering
-  //std::string bin_name = "bin_" + boost::lexical_cast<std::string>(bin_id);
-  ROS_DEBUG_STREAM_NAMED("shelf","Creating bin '" << bin_name << "' with id " << bin_id);
+  const std::string bin_name =
+      "bin_" + boost::lexical_cast<std::string>(
+                   (char)(65 + num_bins_ - bin_id - 1));  // reverse the lettering
+  // std::string bin_name = "bin_" + boost::lexical_cast<std::string>(bin_id);
+  ROS_DEBUG_STREAM_NAMED("shelf", "Creating bin '" << bin_name << "' with id " << bin_id);
 
   BinObjectPtr new_bin(new BinObject(visuals_, rvt::TRANSLUCENT_DARK, bin_name));
-  bins_.insert( std::pair<std::string, BinObjectPtr>(bin_name, new_bin));
-
+  bins_.insert(std::pair<std::string, BinObjectPtr>(bin_name, new_bin));
 
   // Calculate bottom right
   Eigen::Affine3d bottom_right = Eigen::Affine3d::Identity();
@@ -473,14 +467,13 @@ bool ShelfObject::insertBinHelper(int bin_id, double height, double width, doubl
   top_left.translation().z() += bin_z + height - shelf_surface_thickness_;
   new_bin->setTopLeft(top_left);
 
-
   return true;
 }
 
 bool ShelfObject::visualizeAxis(VisualsPtr visuals) const
 {
   // Show coordinate system
-  //visuals_->visual_tools_->publishAxis( bottom_right_ );
+  // visuals_->visual_tools_->publishAxis( bottom_right_ );
 
   // Show each bin
   for (BinObjectMap::const_iterator bin_it = bins_.begin(); bin_it != bins_.end(); bin_it++)
@@ -495,7 +488,8 @@ bool ShelfObject::visualizeHighRes(bool show_products) const
   Eigen::Affine3d high_res_pose = bottom_right_ * high_res_mesh_offset_;
 
   // Publish mesh
-  if (!visuals_->visual_tools_display_->publishMesh(high_res_pose, high_res_mesh_path_, rvt::BROWN, 1, "Shelf"))
+  if (!visuals_->visual_tools_display_->publishMesh(high_res_pose, high_res_mesh_path_, rvt::BROWN,
+                                                    1, "Shelf"))
     return false;
 
   // Show each bin's products
@@ -509,7 +503,7 @@ bool ShelfObject::visualizeHighRes(bool show_products) const
 
   // Show goal bin
   goal_bin_->visualizeHighRes(bottom_right_);
-  
+
   // Show computer vision shelf
   if (use_computer_vision_shelf_)
     computer_vision_shelf_->visualizeHighRes(Eigen::Affine3d::Identity());
@@ -524,13 +518,14 @@ bool ShelfObject::visualizeHighRes(bool show_products) const
   const Eigen::Vector3d point1(x1, 1, 0);
   const Eigen::Vector3d point2(x2, -1, 0.001);
   visuals_->visual_tools_display_->publishCuboid(point1, point2, rvt::DARK_GREY);
-    return true;
+  return true;
 }
 
 bool ShelfObject::visualizeEnvironmentObjects() const
 {
   // Show all other environmental objects (walls, etc)
-  for (std::map<std::string,RectangleObjectPtr>::const_iterator env_it = environment_objects_.begin();
+  for (std::map<std::string, RectangleObjectPtr>::const_iterator env_it =
+           environment_objects_.begin();
        env_it != environment_objects_.end(); env_it++)
   {
     env_it->second->visualizeHighRes(bottom_right_);
@@ -541,15 +536,17 @@ bool ShelfObject::visualizeEnvironmentObjects() const
 bool ShelfObject::createCollisionBodiesEnvironmentObjects() const
 {
   // Show all other environmental objects (walls, etc)
-  for (std::map<std::string,RectangleObjectPtr>::const_iterator env_it = environment_objects_.begin();
+  for (std::map<std::string, RectangleObjectPtr>::const_iterator env_it =
+           environment_objects_.begin();
        env_it != environment_objects_.end(); env_it++)
   {
     env_it->second->createCollisionBodies(bottom_right_);
   }
-    return true;
+  return true;
 }
 
-bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool only_show_shelf_frame, bool show_all_products)
+bool ShelfObject::createCollisionBodies(const std::string &focus_bin_name,
+                                        bool only_show_shelf_frame, bool show_all_products)
 {
   // Publish in batch
   visuals_->visual_tools_->enableBatchPublishing(true);
@@ -563,7 +560,8 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
   }
   else
   {
-    // Show simple version of shelf -----------------------------------------------------------------
+    // Show simple version of shelf
+    // -----------------------------------------------------------------
 
     // Create side walls of shelf
     for (std::size_t i = 0; i < shelf_parts_.size(); ++i)
@@ -583,7 +581,7 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
       // Check if this is the focused bin
       if (bin_it->second->getName() == focus_bin_name)
       {
-        focus_bin = bin_it->second; // save for later
+        focus_bin = bin_it->second;  // save for later
       }
       else if (!show_all_products)
       {
@@ -598,7 +596,7 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
       }
     }
 
-    if (focus_bin && !show_all_products) // don't redisplay products if show_all_products is true
+    if (focus_bin && !show_all_products)  // don't redisplay products if show_all_products is true
     {
       // Add products to shelves
       focus_bin->createCollisionBodiesProducts(bottom_right_);
@@ -613,7 +611,7 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
     computer_vision_shelf_->createCollisionBodies(Eigen::Affine3d::Identity());
 
   // Show axis
-  //goal_bin_->visualizeAxis(bottom_right_);
+  // goal_bin_->visualizeAxis(bottom_right_);
 
   // Show all other environmental objects (walls, etc)
   createCollisionBodiesEnvironmentObjects();
@@ -623,21 +621,18 @@ bool ShelfObject::createCollisionBodies(const std::string& focus_bin_name, bool 
 
 bool ShelfObject::createCollisionShelfDetailed()
 {
-  ROS_DEBUG_STREAM_NAMED("shelf","Creating collision body with name " << collision_object_name_);
+  ROS_DEBUG_STREAM_NAMED("shelf", "Creating collision body with name " << collision_object_name_);
 
   Eigen::Affine3d high_res_pose = bottom_right_ * high_res_mesh_offset_;
 
   // Publish mesh
-  if (!visuals_->visual_tools_->publishCollisionMesh(high_res_pose, collision_object_name_, high_res_mesh_path_, color_))
+  if (!visuals_->visual_tools_->publishCollisionMesh(high_res_pose, collision_object_name_,
+                                                     high_res_mesh_path_, color_))
     return false;
   return true;
 }
 
-BinObjectMap& ShelfObject::getBins()
-{
-  return bins_;
-}
-
+BinObjectMap &ShelfObject::getBins() { return bins_; }
 BinObjectPtr ShelfObject::getBin(std::size_t bin_id)
 {
   const std::string bin_name = "bin_" + boost::lexical_cast<std::string>((char)(64 + bin_id));
@@ -645,14 +640,16 @@ BinObjectPtr ShelfObject::getBin(std::size_t bin_id)
   return bins_[bin_name];
 }
 
-ProductObjectPtr ShelfObject::getProduct(const std::string &bin_name, const std::string &product_name)
+ProductObjectPtr ShelfObject::getProduct(const std::string &bin_name,
+                                         const std::string &product_name)
 {
   // Find correct bin
   BinObjectPtr bin = bins_[bin_name];
 
   if (!bin)
   {
-    ROS_WARN_STREAM_NAMED("shelf","Unable to find product " << product_name << " in bin " << bin_name << " in the database");
+    ROS_WARN_STREAM_NAMED("shelf", "Unable to find product " << product_name << " in bin "
+                                                             << bin_name << " in the database");
     return ProductObjectPtr();
   }
 
@@ -660,7 +657,8 @@ ProductObjectPtr ShelfObject::getProduct(const std::string &bin_name, const std:
 
   if (!product)
   {
-    ROS_WARN_STREAM_NAMED("shelf","Unable to find product " << product_name << " in bin " << bin_name << " in the database");
+    ROS_WARN_STREAM_NAMED("shelf", "Unable to find product " << product_name << " in bin "
+                                                             << bin_name << " in the database");
     return ProductObjectPtr();
   }
 
@@ -672,7 +670,8 @@ bool ShelfObject::getAllProducts(std::vector<ProductObjectPtr> &products)
   products.clear();
   for (BinObjectMap::const_iterator bin_it = bins_.begin(); bin_it != bins_.end(); bin_it++)
   {
-    for (std::vector<ProductObjectPtr>::const_iterator product_it = bin_it->second->getProducts().begin(); 
+    for (std::vector<ProductObjectPtr>::const_iterator product_it =
+             bin_it->second->getProducts().begin();
          product_it != bin_it->second->getProducts().end(); product_it++)
     {
       products.push_back(*product_it);
@@ -683,7 +682,7 @@ bool ShelfObject::getAllProducts(std::vector<ProductObjectPtr> &products)
 
 bool ShelfObject::deleteProduct(BinObjectPtr bin, ProductObjectPtr product)
 {
-  std::vector<ProductObjectPtr>& products = bin->getProducts();
+  std::vector<ProductObjectPtr> &products = bin->getProducts();
   // Find correct product
   for (std::size_t prod_id = 0; prod_id < products.size(); ++prod_id)
   {
@@ -694,37 +693,40 @@ bool ShelfObject::deleteProduct(BinObjectPtr bin, ProductObjectPtr product)
     }
   }
 
-  ROS_WARN_STREAM_NAMED("shelf","Unable to delete product " << product->getName() << " in bin " << bin->getName() << " in the database");
+  ROS_WARN_STREAM_NAMED("shelf", "Unable to delete product " << product->getName() << " in bin "
+                                                             << bin->getName()
+                                                             << " in the database");
   return false;
 }
 
-bool ShelfObject::loadComputerVisionShelf(const std::vector<double>& collision_shelf_transform_doubles,
-                                          double collision_shelf_transform_x_offset,
-                                          const std::string& package_path)
+bool ShelfObject::loadComputerVisionShelf(
+    const std::vector<double> &collision_shelf_transform_doubles,
+    double collision_shelf_transform_x_offset, const std::string &package_path)
 {
   // Lu Ma Saves this model in the WORLD COORDINATE SYSTEM
-  ROS_DEBUG_STREAM_NAMED("shelf","Loading shelf from computer vision...");
+  ROS_DEBUG_STREAM_NAMED("shelf", "Loading shelf from computer vision...");
   computer_vision_shelf_.reset(new MeshObject(visuals_, rvt::YELLOW, "computer_vision_shelf"));
 
   // pose from Lu Ma, mesh file is saved in computer vision orientation of "xtion_right_rgb_frame"
-  Eigen::Affine3d computer_vision_shelf_pose = Eigen::Affine3d::Identity();    
-  // //0.0111163    0.383599    1.70677    0.00241    0.286    -0.2208  
-  Eigen::Vector3d translation = Eigen::Vector3d(collision_shelf_transform_doubles[0], 
-                                                collision_shelf_transform_doubles[1], 
-                                                collision_shelf_transform_doubles[2]);
-  Eigen::Vector3d rotation = Eigen::Vector3d(collision_shelf_transform_doubles[3], 
-                                             collision_shelf_transform_doubles[4], 
-                                             collision_shelf_transform_doubles[5]);
+  Eigen::Affine3d computer_vision_shelf_pose = Eigen::Affine3d::Identity();
+  // //0.0111163    0.383599    1.70677    0.00241    0.286    -0.2208
+  Eigen::Vector3d translation =
+      Eigen::Vector3d(collision_shelf_transform_doubles[0], collision_shelf_transform_doubles[1],
+                      collision_shelf_transform_doubles[2]);
+  Eigen::Vector3d rotation =
+      Eigen::Vector3d(collision_shelf_transform_doubles[3], collision_shelf_transform_doubles[4],
+                      collision_shelf_transform_doubles[5]);
 
   // construct world pose to camera pose (pose Lu Ma took as origin when constructing the model)
-  computer_vision_shelf_pose *= Eigen::AngleAxisd(rotation[2], Eigen::Vector3d::UnitZ())
-    * Eigen::AngleAxisd(rotation[1], Eigen::Vector3d::UnitY())
-    * Eigen::AngleAxisd(rotation[0], Eigen::Vector3d::UnitX());
+  computer_vision_shelf_pose *= Eigen::AngleAxisd(rotation[2], Eigen::Vector3d::UnitZ()) *
+                                Eigen::AngleAxisd(rotation[1], Eigen::Vector3d::UnitY()) *
+                                Eigen::AngleAxisd(rotation[0], Eigen::Vector3d::UnitX());
   computer_vision_shelf_pose.translation() = translation;
 
   // convert to ros frame (mesh is saved in computer vision frame)
-  collision_shelf_transform_ = computer_vision_shelf_pose * Eigen::AngleAxisd(-M_PI / 2.0, Eigen::Vector3d::UnitX())
-    * Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitY());
+  collision_shelf_transform_ = computer_vision_shelf_pose *
+                               Eigen::AngleAxisd(-M_PI / 2.0, Eigen::Vector3d::UnitX()) *
+                               Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitY());
 
   // Add padding for not grazing shelf all the time
   collision_shelf_transform_.translation().x() -= collision_shelf_transform_x_offset;
@@ -732,13 +734,15 @@ bool ShelfObject::loadComputerVisionShelf(const std::vector<double>& collision_s
   // computer vision shelf
   if (use_computer_vision_shelf_)
   {
-    //visuals_->visual_tools_->publishAxisLabeled(collision_shelf_transform_,"CV_FRAME");
+    // visuals_->visual_tools_->publishAxisLabeled(collision_shelf_transform_,"CV_FRAME");
 
     computer_vision_shelf_->setCentroid(collision_shelf_transform_);
     computer_vision_shelf_->setMeshCentroid(collision_shelf_transform_);
 
-    computer_vision_shelf_->setHighResMeshPath("file://" + package_path + "/meshes/computer_vision/shelf.stl");
-    computer_vision_shelf_->setCollisionMeshPath("file://" + package_path + "/meshes/computer_vision/shelf.stl");
+    computer_vision_shelf_->setHighResMeshPath("file://" + package_path +
+                                               "/meshes/computer_vision/shelf.stl");
+    computer_vision_shelf_->setCollisionMeshPath("file://" + package_path +
+                                                 "/meshes/computer_vision/shelf.stl");
   }
 
   return true;
@@ -747,11 +751,9 @@ bool ShelfObject::loadComputerVisionShelf(const std::vector<double>& collision_s
 // -------------------------------------------------------------------------------------------------
 // Product Object
 // -------------------------------------------------------------------------------------------------
-ProductObject::ProductObject(VisualsPtr visuals,
-                             const rvt::colors &color,
-                             const std::string &name,
+ProductObject::ProductObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name,
                              const std::string &package_path)
-  : MeshObject( visuals, color, name )
+  : MeshObject(visuals, color, name)
 {
   // Prepend the collision object type to the collision object name
   collision_object_name_ = "product_" + collision_object_name_;
@@ -761,18 +763,20 @@ ProductObject::ProductObject(VisualsPtr visuals,
   collision_mesh_path_ = "file://" + package_path + "/meshes/products/" + name_ + "/collision.stl";
 
   // Debug
-  ROS_DEBUG_STREAM_NAMED("shelf","Creating collision product with name " << collision_object_name_ << " from mesh: "
-                         << high_res_mesh_path_ << "\n Collision mesh: " << collision_mesh_path_);
+  ROS_DEBUG_STREAM_NAMED("shelf", "Creating collision product with name "
+                                      << collision_object_name_
+                                      << " from mesh: " << high_res_mesh_path_
+                                      << "\n Collision mesh: " << collision_mesh_path_);
 }
 
-ProductObject::ProductObject(const ProductObject& copy)
-  : MeshObject( copy )
+ProductObject::ProductObject(const ProductObject &copy)
+  : MeshObject(copy)
 {
 }
 
-Eigen::Affine3d ProductObject::getWorldPose(const ShelfObjectPtr& shelf, const BinObjectPtr& bin)
+Eigen::Affine3d ProductObject::getWorldPose(const ShelfObjectPtr &shelf, const BinObjectPtr &bin)
 {
   return shelf->getBottomRight() * bin->getBottomRight() * getCentroid();
 }
 
-} // namespace
+}  // namespace

@@ -51,10 +51,10 @@
 
 namespace picknik_main
 {
-
 MOVEIT_CLASS_FORWARD(Visuals);
 
-enum SceneModes {
+enum SceneModes
+{
   NOT_LOADED,
   ALL_OPEN_BINS,
   FOCUSED_ON_BIN,
@@ -62,16 +62,15 @@ enum SceneModes {
   EMPTY_SHELF
 };
 
-
 class PlanningSceneManager
 {
 public:
-
   /**
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  PlanningSceneManager(bool verbose, VisualsPtr visuals, PerceptionInterfacePtr perception_interface);
+  PlanningSceneManager(bool verbose, VisualsPtr visuals,
+                       PerceptionInterfacePtr perception_interface);
 
   /**
    * \brief Show shelf with no products
@@ -95,7 +94,7 @@ public:
    * \brief Only show one bin, disable the rest
    * \return true on success
    */
-  bool displayShelfOnlyBin(const std::string& bin_name, bool force = false );
+  bool displayShelfOnlyBin(const std::string& bin_name, bool force = false);
 
   /**
    * \brief Switch between the 3 modes
@@ -109,7 +108,6 @@ public:
   bool updateShelfTransform();
 
 private:
-
   // A shared node handle
   ros::NodeHandle nh_;
 
@@ -126,12 +124,12 @@ private:
   // Perception interface
   PerceptionInterfacePtr perception_interface_;
 
-}; // end class
+};  // end class
 
 // Create boost pointers for this class
 typedef boost::shared_ptr<PlanningSceneManager> PlanningSceneManagerPtr;
 typedef boost::shared_ptr<const PlanningSceneManager> PlanningSceneManagerConstPtr;
 
-} // end namespace
+}  // end namespace
 
 #endif

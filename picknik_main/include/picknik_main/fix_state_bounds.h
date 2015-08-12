@@ -39,11 +39,9 @@
 
 namespace picknik_main
 {
-
 class FixStateBounds
 {
 public:
-
   static const std::string BOUNDS_PARAM_NAME;
   static const std::string DT_PARAM_NAME;
 
@@ -55,35 +53,22 @@ public:
    * \param jmg - the part of the robot to fix
    * \return true on success
    */
-  bool fixBounds(robot_state::RobotState& robot_state,
-                 const moveit::core::JointModelGroup* jmg);
-
+  bool fixBounds(robot_state::RobotState& robot_state, const moveit::core::JointModelGroup* jmg);
 
   /**
    * \brief Getter for MaxBoundsError
-   */ 
-  double getMaxBoundsError() const
-  {
-    return bounds_dist_;
-  }
-  
+   */
+  double getMaxBoundsError() const { return bounds_dist_; }
   /**
    * \brief Setter for MaxBoundsError
    */
-  void setMaxBoundsError(const double& bounds_dist)
-  {
-    bounds_dist_ = bounds_dist;
-  }
-  
+  void setMaxBoundsError(const double& bounds_dist) { bounds_dist_ = bounds_dist; }
 private:
-
   ros::NodeHandle nh_;
   double bounds_dist_;
   double max_dt_offset_;
 };
 
-
 const std::string FixStateBounds::BOUNDS_PARAM_NAME = "start_state_max_bounds_error";
 const std::string FixStateBounds::DT_PARAM_NAME = "start_state_max_dt";
-
 }

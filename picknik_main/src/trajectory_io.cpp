@@ -50,7 +50,6 @@
 
 namespace picknik_main
 {
-
 TrajectoryIO::TrajectoryIO(RemoteControlPtr remote_control, VisualsPtr visuals,
                            ManipulationDataPtr config, ManipulationPtr manipulation)
   : remote_control_(remote_control)
@@ -58,26 +57,25 @@ TrajectoryIO::TrajectoryIO(RemoteControlPtr remote_control, VisualsPtr visuals,
   , config_(config)
   , manipulation_(manipulation)
 {
-
-
 }
 
-bool TrajectoryIO::playbackTrajectoryFromFile(const std::string &file_name, JointModelGroup* arm_jmg,
+bool TrajectoryIO::playbackTrajectoryFromFile(const std::string& file_name,
+                                              JointModelGroup* arm_jmg,
                                               double velocity_scaling_factor)
 {
   std::ifstream input_file;
-  input_file.open (file_name.c_str());
-  ROS_DEBUG_STREAM_NAMED("manipultion","Loading trajectory from file " << file_name);
+  input_file.open(file_name.c_str());
+  ROS_DEBUG_STREAM_NAMED("manipultion", "Loading trajectory from file " << file_name);
 
   std::string line;
   moveit::core::RobotStatePtr current_state = manipulation_->getCurrentState();
 
-  robot_trajectory::RobotTrajectoryPtr robot_traj(new robot_trajectory::RobotTrajectory(current_state->getRobotModel(),
-                                                                                        arm_jmg));
-  double dummy_dt = 1; // temp value
+  robot_trajectory::RobotTrajectoryPtr robot_traj(
+      new robot_trajectory::RobotTrajectory(current_state->getRobotModel(), arm_jmg));
+  double dummy_dt = 1;  // temp value
 
   // Read each line
-  while(std::getline(input_file, line))
+  while (std::getline(input_file, line))
   {
     // Convert line to a robot state
     moveit::core::RobotStatePtr new_state(new moveit::core::RobotState(*current_state));
@@ -91,19 +89,18 @@ bool TrajectoryIO::playbackTrajectoryFromFile(const std::string &file_name, Join
   // Error check
   if (robot_traj->getWayPointCount() == 0)
   {
-    ROS_ERROR_STREAM_NAMED("manipultion","No states loaded from CSV file " << file_name);
+    ROS_ERROR_STREAM_NAMED("manipultion", "No states loaded from CSV file " << file_name);
     return false;
   }
 
   // Unwrap joint values if needed
-
 
   // Interpolate between each point
   double discretization = 0.25;
   manipulation_->interpolate(robot_traj, discretization);
 
   // Perform iterative parabolic smoothing
-  manipulation_->getIterativeSmoother().computeTimeStamps( *robot_traj, velocity_scaling_factor );
+  manipulation_->getIterativeSmoother().computeTimeStamps(*robot_traj, velocity_scaling_factor);
 
   // Convert trajectory to a message
   moveit_msgs::RobotTrajectory trajectory_msg;
@@ -118,12 +115,12 @@ bool TrajectoryIO::playbackTrajectoryFromFile(const std::string &file_name, Join
   bool verbose = true;
   bool execute_trajectory = true;
   bool check_validity = true;
-  ROS_INFO_STREAM_NAMED("trajectory_io","Moving to start state of trajectory");
+  ROS_INFO_STREAM_NAMED("trajectory_io", "Moving to start state of trajectory");
   if (!manipulation_->move(current_state, robot_traj->getFirstWayPointPtr(), arm_jmg,
-                           config_->main_velocity_scaling_factor_,
-                           verbose, execute_trajectory, check_validity))
+                           config_->main_velocity_scaling_factor_, verbose, execute_trajectory,
+                           check_validity))
   {
-    ROS_ERROR_STREAM_NAMED("manipultion","Unable to plan");
+    ROS_ERROR_STREAM_NAMED("manipultion", "Unable to plan");
     return false;
   }
 
@@ -133,46 +130,48 @@ bool TrajectoryIO::playbackTrajectoryFromFile(const std::string &file_name, Join
   std::cout << "-------------------------------------------------------" << std::endl;
 
   // Execute
-  if( !manipulation_->getExecutionInterface()->executeTrajectory(trajectory_msg, arm_jmg) )
+  if (!manipulation_->getExecutionInterface()->executeTrajectory(trajectory_msg, arm_jmg))
   {
-    ROS_ERROR_STREAM_NAMED("trajectory_io","Failed to execute trajectory");
+    ROS_ERROR_STREAM_NAMED("trajectory_io", "Failed to execute trajectory");
     return false;
   }
 
   return true;
 }
 
-bool TrajectoryIO::playbackWaypointsFromFile(const std::string &file_name, JointModelGroup* arm_jmg,
+bool TrajectoryIO::playbackWaypointsFromFile(const std::string& file_name, JointModelGroup* arm_jmg,
                                              double velocity_scaling_factor)
 {
   std::ifstream input_file;
   std::string line;
-  input_file.open (file_name.c_str());
-  ROS_DEBUG_STREAM_NAMED("manipultion","Loading waypoints from file " << file_name);
+  input_file.open(file_name.c_str());
+  ROS_DEBUG_STREAM_NAMED("manipultion", "Loading waypoints from file " << file_name);
 
   // Create desired trajectory
   EigenSTL::vector_Affine3d waypoints;
 
-  double dummy_dt = 1; // temp value
+  double dummy_dt = 1;  // temp value
 
   // Read each line
-  while(std::getline(input_file, line))
+  while (std::getline(input_file, line))
   {
     // Convert line to a robot state
     Eigen::Affine3d pose;
     streamToAffine3d(pose, line, " ");
 
-    // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards object and x out in the grasp dir
-    pose = pose * Eigen::AngleAxisd(-M_PI/2.0, Eigen::Vector3d::UnitZ());
+    // Convert pose that has x arrow pointing to object, to pose that has z arrow pointing towards
+    // object and x out in the grasp dir
+    pose = pose * Eigen::AngleAxisd(-M_PI / 2.0, Eigen::Vector3d::UnitZ());
 
-    Eigen::Affine3d transform = rvt::RvizVisualTools::convertXYZRPY(0.15,-0.01,0,0,0,0); // from testPose()
+    Eigen::Affine3d transform =
+        rvt::RvizVisualTools::convertXYZRPY(0.15, -0.01, 0, 0, 0, 0);  // from testPose()
     pose = transform * pose;
 
     // Debug
-    //visuals_->visual_tools_->publishZArrow(new_point, rvt::RED);
+    // visuals_->visual_tools_->publishZArrow(new_point, rvt::RED);
 
     // Translate to custom end effector geometry
-    //Eigen::Affine3d grasp_pose = new_point * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
+    // Eigen::Affine3d grasp_pose = new_point * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
 
     waypoints.push_back(pose);
   }
@@ -183,7 +182,7 @@ bool TrajectoryIO::playbackWaypointsFromFile(const std::string &file_name, Joint
   // Error check
   if (waypoints.empty())
   {
-    ROS_ERROR_STREAM_NAMED("trajectory_io","No waypoints loaded from CSV file " << file_name);
+    ROS_ERROR_STREAM_NAMED("trajectory_io", "No waypoints loaded from CSV file " << file_name);
     return false;
   }
 
@@ -193,10 +192,10 @@ bool TrajectoryIO::playbackWaypointsFromFile(const std::string &file_name, Joint
     visuals_->visual_tools_->enableBatchPublishing(true);
     for (std::size_t i = 0; i < waypoints.size(); ++i)
     {
-      //printTransform(waypoints[i]);
+      // printTransform(waypoints[i]);
 
-      //visuals_->visual_tools_->publishAxis(waypoints[i]);
-      //visuals_->visual_tools_->publishZArrow(waypoints[i]);
+      // visuals_->visual_tools_->publishAxis(waypoints[i]);
+      // visuals_->visual_tools_->publishZArrow(waypoints[i]);
       visuals_->visual_tools_->publishSphere(waypoints[i]);
     }
     visuals_->visual_tools_->triggerBatchPublishAndDisable();
@@ -205,20 +204,20 @@ bool TrajectoryIO::playbackWaypointsFromFile(const std::string &file_name, Joint
   // Plan and move
   if (!manipulation_->moveCartesianWaypointPath(arm_jmg, waypoints))
   {
-    ROS_ERROR_STREAM_NAMED("trajectory_io","Error executing path");
+    ROS_ERROR_STREAM_NAMED("trajectory_io", "Error executing path");
     return false;
   }
 
   return true;
 }
 
-bool TrajectoryIO::recordTrajectoryToFile(const std::string &file_path)
+bool TrajectoryIO::recordTrajectoryToFile(const std::string& file_path)
 {
   bool include_header = false;
 
   std::ofstream output_file;
-  output_file.open (file_path.c_str());
-  ROS_DEBUG_STREAM_NAMED("trajectory_io","Saving bin trajectory to file " << file_path);
+  output_file.open(file_path.c_str());
+  ROS_DEBUG_STREAM_NAMED("trajectory_io", "Saving bin trajectory to file " << file_path);
 
   remote_control_->waitForNextStep("record trajectory");
 
@@ -229,11 +228,12 @@ bool TrajectoryIO::recordTrajectoryToFile(const std::string &file_path)
   std::cout << "-------------------------------------------------------" << std::endl;
 
   std::size_t counter = 0;
-  while(ros::ok() && !remote_control_->getStop())
+  while (ros::ok() && !remote_control_->getStop())
   {
-    ROS_INFO_STREAM_THROTTLE_NAMED(1, "trajectory_io","Recording waypoint #" << counter++ );
+    ROS_INFO_STREAM_THROTTLE_NAMED(1, "trajectory_io", "Recording waypoint #" << counter++);
 
-    moveit::core::robotStateToStream(*manipulation_->getCurrentState(), output_file, include_header);
+    moveit::core::robotStateToStream(*manipulation_->getCurrentState(), output_file,
+                                     include_header);
 
     ros::Duration(0.25).sleep();
   }
@@ -245,7 +245,7 @@ bool TrajectoryIO::recordTrajectoryToFile(const std::string &file_path)
   return true;
 }
 
-bool TrajectoryIO::getFilePath(std::string &file_path, const std::string &file_name) const
+bool TrajectoryIO::getFilePath(std::string& file_path, const std::string& file_name) const
 {
   namespace fs = boost::filesystem;
 
@@ -254,10 +254,10 @@ bool TrajectoryIO::getFilePath(std::string &file_path, const std::string &file_n
   path = fs::path(config_->package_path_ + "/trajectories");
 
   boost::system::error_code returnedError;
-  fs::create_directories( path, returnedError );
+  fs::create_directories(path, returnedError);
 
   // Error check
-  if ( returnedError )
+  if (returnedError)
   {
     ROS_ERROR_STREAM_NAMED("trajectory_io", "Unable to create directory " << path.string());
     return false;
@@ -267,11 +267,12 @@ bool TrajectoryIO::getFilePath(std::string &file_path, const std::string &file_n
   path = path / fs::path(file_name + ".csv");
   file_path = path.string();
 
-  ROS_DEBUG_STREAM_NAMED("manipulation.file_path","Using full file path" << file_path);
+  ROS_DEBUG_STREAM_NAMED("manipulation.file_path", "Using full file path" << file_path);
   return true;
 }
 
-bool TrajectoryIO::streamToAffine3d(Eigen::Affine3d& pose, const std::string& line, const std::string& separator)
+bool TrajectoryIO::streamToAffine3d(Eigen::Affine3d& pose, const std::string& line,
+                                    const std::string& separator)
 {
   std::stringstream line_stream(line);
   std::string cell;
@@ -282,16 +283,17 @@ bool TrajectoryIO::streamToAffine3d(Eigen::Affine3d& pose, const std::string& li
   for (std::size_t i = 0; i < values.size(); ++i)
   {
     // Get a variable
-    if(!std::getline(line_stream, cell, ',')) //separator.c_str())) TODO
+    if (!std::getline(line_stream, cell, ','))  // separator.c_str())) TODO
     {
-      ROS_ERROR_STREAM_NAMED("trajectory_io","Missing variable " << i << " on cell '" << cell << "' line '" << line << "'");
+      ROS_ERROR_STREAM_NAMED("trajectory_io", "Missing variable " << i << " on cell '" << cell
+                                                                  << "' line '" << line << "'");
       return false;
     }
 
     values[i] = atof(cell.c_str());
   }
 
-  Eigen::Map<Eigen::Matrix<double,4,4,Eigen::RowMajor> > matrix(values.data(),4,4);
+  Eigen::Map<Eigen::Matrix<double, 4, 4, Eigen::RowMajor>> matrix(values.data(), 4, 4);
 
   // if (false)
   // {
@@ -299,10 +301,10 @@ bool TrajectoryIO::streamToAffine3d(Eigen::Affine3d& pose, const std::string& li
   //   std::cout << "-------------------------------------------------------" << std::endl;
   // }
 
-  //Eigen::Affine3d dummy;
+  // Eigen::Affine3d dummy;
   pose.matrix() = matrix;
 
   return true;
 }
 
-} // end namespace
+}  // end namespace

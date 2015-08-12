@@ -58,20 +58,19 @@
 
 namespace picknik_main
 {
-
-static const double PRODUCT_POSE_WITHIN_BIN_TOLERANCE = 0.2; // throw an error if pose is beyond this amount
+static const double PRODUCT_POSE_WITHIN_BIN_TOLERANCE =
+    0.2;  // throw an error if pose is beyond this amount
 static const std::string PERCEPTION_TOPIC = "perception/recognize_objects";
 
 class PerceptionInterface
 {
 public:
-
   /**
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  PerceptionInterface(bool verbose, VisualsPtr visuals, ManipulationDataPtr config, 
-                  boost::shared_ptr<tf::TransformListener> tf, ros::NodeHandle nh);
+  PerceptionInterface(bool verbose, VisualsPtr visuals, ManipulationDataPtr config,
+                      boost::shared_ptr<tf::TransformListener> tf, ros::NodeHandle nh);
 
   /**
    * \brief Check if perception is ready
@@ -79,19 +78,19 @@ public:
    * \return true if ready
    */
   bool isPerceptionReady();
-  
+
   /**
    * \brief Get the latest location of the frame on the robot from ROS
    * \param world_to_frame 4x4 matrix to fill in with transpose
    * \param time_stamp - the time that the arm was in this location
    * \return true on success
    */
-  bool getTFTransform(Eigen::Affine3d& world_to_frame, ros::Time& time_stamp, const std::string& frame_id);  
+  bool getTFTransform(Eigen::Affine3d& world_to_frame, ros::Time& time_stamp,
+                      const std::string& frame_id);
   bool getTFTransform(Eigen::Affine3d& world_to_frame, ros::Time& time_stamp,
                       const std::string& parent_frame_id, const std::string& frame_id);
 
 private:
-
   /**
    * \brief Display a visualization of a camera view frame
    * \return true on success
@@ -124,20 +123,20 @@ private:
   bool is_processing_perception_;
 
   // Camera intrinsics
-  double camera_fx_; 
-  double camera_fy_; 
-  double camera_cx_; 
-  double camera_cy_; 
-  double camera_min_depth_; 
-  
-  bounding_box::BoundingBox bounding_box_;  
+  double camera_fx_;
+  double camera_fy_;
+  double camera_cx_;
+  double camera_cy_;
+  double camera_min_depth_;
+
+  bounding_box::BoundingBox bounding_box_;
   double bounding_box_reduction_;
-}; // end class
+};  // end class
 
 // Create boost pointers for this class
 typedef boost::shared_ptr<PerceptionInterface> PerceptionInterfacePtr;
 typedef boost::shared_ptr<const PerceptionInterface> PerceptionInterfaceConstPtr;
 
-} // end namespace
+}  // end namespace
 
 #endif

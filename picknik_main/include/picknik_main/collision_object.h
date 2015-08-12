@@ -24,7 +24,6 @@
 
 namespace picknik_main
 {
-
 MOVEIT_CLASS_FORWARD(RectangleObject);
 MOVEIT_CLASS_FORWARD(MeshObject);
 
@@ -36,16 +35,16 @@ int iRand(int min, int max)
   do
   {
     x = rand();
-  }
-  while (x >= RAND_MAX - remainder);
+  } while (x >= RAND_MAX - remainder);
   return min + x % n;
 }
 
-void printTransform(const Eigen::Affine3d &transform)
+void printTransform(const Eigen::Affine3d& transform)
 {
   Eigen::Quaterniond q(transform.rotation());
-  std::cout << "T.xyz = [" << transform.translation().x() << ", " << transform.translation().y() << ", " << transform.translation().z() << "], Q.xyzw = ["
-            << q.x() << ", " << q.y() << ", " << q.z() << ", " << q.w() << "]" << std::endl;
+  std::cout << "T.xyz = [" << transform.translation().x() << ", " << transform.translation().y()
+            << ", " << transform.translation().z() << "], Q.xyzw = [" << q.x() << ", " << q.y()
+            << ", " << q.z() << ", " << q.w() << "]" << std::endl;
 }
 
 /**
@@ -66,40 +65,44 @@ public:
   /**
    * \brief Constructor
    */
-  CollisionObject(VisualsPtr visuals, const rvt::colors &color = rvt::RAND, const std::string &name = "");
+  CollisionObject(VisualsPtr visuals, const rvt::colors& color = rvt::RAND,
+                  const std::string& name = "");
   CollisionObject(const CollisionObject& copy);
-  
+
   /**
    * \brief Show the outline of the object
    * \param trans - transform from parent container to current container
    * \return true on success
    */
-  virtual bool visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const = 0;
-  virtual bool visualizeHighResWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const = 0;
+  virtual bool visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors& color) const = 0;
+  virtual bool visualizeHighResWireframe(const Eigen::Affine3d& trans,
+                                         const rvt::colors& color) const = 0;
 
   /**
    * \brief Getter for rectangle name
-   */ 
+   */
   std::string getName() const;
-  
+
   /**
    * \brief Setter for rectangle name
    */
   void setName(std::string name);
 
   /**
-   * \brief Getter for collision name - unique in case there are more than 1 product with the same name
+   * \brief Getter for collision name - unique in case there are more than 1 product with the same
+   * name
    */
   const std::string& getCollisionName() const;
-  
+
   /**
-   * \brief Setter for collision name - unique in case there are more than 1 product with the same name
+   * \brief Setter for collision name - unique in case there are more than 1 product with the same
+   * name
    */
   void setCollisionName(std::string name);
 
   /**
    * \brief Getter for Color
-   */ 
+   */
   const rvt::colors& getColor() const;
 
   /**
@@ -109,30 +112,29 @@ public:
 
   /**
    * \brief Getter for HighResMeshPath
-   */ 
+   */
   const std::string& getHighResMeshPath();
-  
+
   /**
    * \brief Setter for HighResMeshPath
    */
-  void setHighResMeshPath(const std::string &high_res_mesh_path);
+  void setHighResMeshPath(const std::string& high_res_mesh_path);
 
   /**
    * \brief Getter for CollisionMeshPath
-   */ 
+   */
   const std::string& getCollisionMeshPath();
 
   /**
    * \brief Setter for CollisionMeshPath
    */
-  void setCollisionMeshPath(const std::string &collision_mesh_path);
+  void setCollisionMeshPath(const std::string& collision_mesh_path);
 
 protected:
-
   // Name of object
   std::string name_;
 
-  // A unique name to the world, whereas name_ can be duplicate e.g. oreo and oreo 
+  // A unique name to the world, whereas name_ can be duplicate e.g. oreo and oreo
   std::string collision_object_name_;
 
   // Pointer to a pre-loaded visual_tools_ object
@@ -146,7 +148,6 @@ protected:
   std::string collision_mesh_path_;
 };
 
-
 // -------------------------------------------------------------------------------------------------
 // Rectangle Object - uses BottomRight and TopLeft coordinate system (not centroid-basd)
 // -------------------------------------------------------------------------------------------------
@@ -156,9 +157,10 @@ public:
   /**
    * \brief Constructor
    */
-  RectangleObject(VisualsPtr visuals, const rvt::colors &color = rvt::RAND, const std::string &name = "");
+  RectangleObject(VisualsPtr visuals, const rvt::colors& color = rvt::RAND,
+                  const std::string& name = "");
   RectangleObject(const RectangleObject& copy);
-  
+
   /**
    * \brief Show bin in Rviz (not collision bodies)
    * \param trans - transform from parent container to current container
@@ -170,8 +172,10 @@ public:
    * \param trans - transform from parent container to current container
    * \return true on success
    */
-  bool visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color = rvt::LIME_GREEN) const;
-  bool visualizeHighResWireframe(const Eigen::Affine3d& trans, const rvt::colors &color = rvt::LIME_GREEN) const;
+  bool visualizeWireframe(const Eigen::Affine3d& trans,
+                          const rvt::colors& color = rvt::LIME_GREEN) const;
+  bool visualizeHighResWireframe(const Eigen::Affine3d& trans,
+                                 const rvt::colors& color = rvt::LIME_GREEN) const;
 
   /**
    * \brief Show the bottom right of the object
@@ -184,7 +188,7 @@ public:
    * \brief Create collision bodies of rectangle
    * \param trans - transform from parent container to current container
    */
-  bool createCollisionBodies(const Eigen::Affine3d &trans);
+  bool createCollisionBodies(const Eigen::Affine3d& trans);
 
   /**
    * \brief Get height of rectangle
@@ -203,9 +207,9 @@ public:
 
   /**
    * \brief Getter for BottomRight
-   */ 
+   */
   const Eigen::Affine3d& getBottomRight() const;
-  
+
   /**
    * \brief Setter for BottomRight
    */
@@ -223,7 +227,7 @@ public:
 
   /**
    * \brief Getter for TopLeft
-   */ 
+   */
   const Eigen::Affine3d& getTopLeft() const;
 
   /**
@@ -238,16 +242,14 @@ public:
 
   /**
    * \brief Getter for Centroid
-   */ 
+   */
   const Eigen::Affine3d getCentroid() const;
 
 protected:
-
   // Poses relative to center bottom of robot
   Eigen::Affine3d bottom_right_;
   Eigen::Affine3d top_left_;
-}; // RectangleObject
-
+};  // RectangleObject
 
 // -------------------------------------------------------------------------------------------------
 // Mesh Object - centroid-based
@@ -258,9 +260,10 @@ public:
   /**
    * \brief Constructor
    */
-  MeshObject(VisualsPtr visuals, const rvt::colors &color = rvt::RAND, const std::string &name = "");
+  MeshObject(VisualsPtr visuals, const rvt::colors& color = rvt::RAND,
+             const std::string& name = "");
   MeshObject(const MeshObject& copy);
-  
+
   /**
    * \brief Show bin in Rviz (not collision bodies)
    * \param trans - transform from parent container to current container
@@ -272,8 +275,10 @@ public:
    * \param trans - transform from parent container to current container
    * \return true on success
    */
-  bool visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color = rvt::LIME_GREEN) const;
-  bool visualizeHighResWireframe(const Eigen::Affine3d& trans, const rvt::colors &color = rvt::LIME_GREEN) const;
+  bool visualizeWireframe(const Eigen::Affine3d& trans,
+                          const rvt::colors& color = rvt::LIME_GREEN) const;
+  bool visualizeHighResWireframe(const Eigen::Affine3d& trans,
+                                 const rvt::colors& color = rvt::LIME_GREEN) const;
 
   /**
    * \brief Show the centroid of the object
@@ -296,7 +301,7 @@ public:
 
   /**
    * \brief Getter for CollisionMesh
-   */ 
+   */
   shape_msgs::Mesh& getCollisionMesh();
 
   /**
@@ -308,7 +313,7 @@ public:
    * \brief Create collision bodies of rectangle
    * \param trans - transform from parent container to current container
    */
-  bool createCollisionBodies(const Eigen::Affine3d &trans);
+  bool createCollisionBodies(const Eigen::Affine3d& trans);
 
   /**
    * \brief Get height of rectangle
@@ -342,9 +347,9 @@ public:
 
   /**
    * \brief Getter for Centroid
-   */ 
+   */
   const Eigen::Affine3d& getCentroid() const;
-  
+
   /**
    * \brief Setter for Centroid
    */
@@ -352,9 +357,8 @@ public:
 
   /**
    * \brief Getter for mesh-specific centroid
-   */ 
+   */
   const Eigen::Affine3d& getMeshCentroid() const;
-
 
   /**
    * \brief Setter for centroid of mesh, which is often different than the calculated bounding box
@@ -362,7 +366,6 @@ public:
   void setMeshCentroid(const Eigen::Affine3d& centroid);
 
 protected:
-
   // Geometry
   double height_;
   double width_;
@@ -375,9 +378,8 @@ protected:
   Eigen::Affine3d centroid_;
   Eigen::Affine3d mesh_centroid_;
 
-}; // MeshObject
+};  // MeshObject
 
-} // namespace
+}  // namespace
 
 #endif
-

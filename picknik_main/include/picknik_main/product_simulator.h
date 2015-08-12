@@ -50,7 +50,6 @@
 
 namespace picknik_main
 {
-
 static const double LOWER_SEARCH_DISCRETIZATION = 0.001;
 const static double RAND_PADDING = 0.01;
 const static std::size_t MAX_ATTEMPTS = 1000;
@@ -58,7 +57,6 @@ const static std::size_t MAX_ATTEMPTS = 1000;
 class ProductSimulator
 {
 public:
-
   /**
    * \brief Constructor
    * \param verbose - run in debug mode
@@ -70,12 +68,14 @@ public:
    * \brief Place objects on shelf randomly in simulation
    * \return true on success
    */
-  bool generateRandomProductPoses(ShelfObjectPtr shelf, PerceptionInterfacePtr percepetion_interface);
+  bool generateRandomProductPoses(ShelfObjectPtr shelf,
+                                  PerceptionInterfacePtr percepetion_interface);
 
   /**
    * \brief Add a collision mesh of a product to any scene
    * \param product - object that contains everything needed to know about it
-   * \param world_to_bin - translation from world from to the frame of refrence of the product's centroid
+   * \param world_to_bin - translation from world from to the frame of refrence of the product's
+   * centroid
    * \return true on success
    */
   bool addCollisionMesh(ProductObjectPtr& product, const Eigen::Affine3d& world_to_bin);
@@ -83,7 +83,8 @@ public:
   /**
    * \brief Checks if new product is in collision with current planning scene world
    * \param product - object that contains everything needed to know about it
-   * \param world_to_bin - translation from world from to the frame of refrence of the product's centroid
+   * \param world_to_bin - translation from world from to the frame of refrence of the product's
+   * centroid
    * \return true if in collision
    */
   bool inCollision(ProductObjectPtr& product, const Eigen::Affine3d& world_to_bin);
@@ -95,9 +96,8 @@ public:
    * \return true on success
    */
   bool convertMeshToBinFrame(ProductObjectPtr product);
-  
-private:
 
+private:
   // Show more visual and console output, with general slower run time.
   bool verbose_;
 
@@ -110,12 +110,12 @@ private:
   // Reusable secondary planning scene for testing new object locations
   planning_scene::PlanningScene secondary_scene_;
 
-}; // end class
+};  // end class
 
 // Create boost pointers for this class
 typedef boost::shared_ptr<ProductSimulator> ProductSimulatorPtr;
 typedef boost::shared_ptr<const ProductSimulator> ProductSimulatorConstPtr;
 
-} // end namespace
+}  // end namespace
 
 #endif

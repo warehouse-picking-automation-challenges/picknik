@@ -19,35 +19,31 @@
 
 namespace picknik_main
 {
-
 AmazonJSONParser::AmazonJSONParser(bool verbose, VisualsPtr visuals)
   : verbose_(verbose)
   , visuals_(visuals)
 {
 }
 
-AmazonJSONParser::~AmazonJSONParser()
-{
-}
-
-bool AmazonJSONParser::parse(const std::string& file_path, const std::string& package_path, ShelfObjectPtr shelf, WorkOrders& orders)
+AmazonJSONParser::~AmazonJSONParser() {}
+bool AmazonJSONParser::parse(const std::string& file_path, const std::string& package_path,
+                             ShelfObjectPtr shelf, WorkOrders& orders)
 {
   std::ifstream input_stream(file_path.c_str());
 
   if (!input_stream.good())
   {
-    ROS_ERROR_STREAM_NAMED("parser","Unable to load file " << file_path);
+    ROS_ERROR_STREAM_NAMED("parser", "Unable to load file " << file_path);
     return false;
   }
 
-  Json::Value root;   // will contains the root value after parsing
+  Json::Value root;  // will contains the root value after parsing
   Json::Reader reader;
-  bool parsingSuccessful = reader.parse( input_stream, root );
-  if ( !parsingSuccessful )
+  bool parsingSuccessful = reader.parse(input_stream, root);
+  if (!parsingSuccessful)
   {
     // report to the user the failure and their locations in the document.
-    std::cout  << "Failed to parse configuration\n"
-               << reader.getFormattedErrorMessages();
+    std::cout << "Failed to parse configuration\n" << reader.getFormattedErrorMessages();
     return false;
   }
 
@@ -55,7 +51,7 @@ bool AmazonJSONParser::parse(const std::string& file_path, const std::string& pa
   const Json::Value bin_contents = root["bin_contents"];
   if (!bin_contents)
   {
-    ROS_ERROR_STREAM_NAMED("parser","Unable to find json element 'bin_contents'");
+    ROS_ERROR_STREAM_NAMED("parser", "Unable to find json element 'bin_contents'");
     return false;
   }
   if (!parseBins(package_path, bin_contents, shelf))
@@ -67,12 +63,12 @@ bool AmazonJSONParser::parse(const std::string& file_path, const std::string& pa
   const Json::Value work_orders = root["work_order"];
   if (!work_orders)
   {
-    ROS_ERROR_STREAM_NAMED("parser","Unable to find json element 'work_order'");
+    ROS_ERROR_STREAM_NAMED("parser", "Unable to find json element 'work_order'");
     return false;
   }
   if (!work_orders.isArray())
   {
-    ROS_ERROR_STREAM_NAMED("parser","work_order not an array");
+    ROS_ERROR_STREAM_NAMED("parser", "work_order not an array");
     return false;
   }
   if (!parseWorkOrders(work_orders, shelf, orders))
@@ -83,28 +79,29 @@ bool AmazonJSONParser::parse(const std::string& file_path, const std::string& pa
   return true;
 }
 
-bool AmazonJSONParser::parseBins(const std::string& package_path, const Json::Value bin_contents, ShelfObjectPtr shelf)
+bool AmazonJSONParser::parseBins(const std::string& package_path, const Json::Value bin_contents,
+                                 ShelfObjectPtr shelf)
 {
   const Json::Value::Members bin_names = bin_contents.getMemberNames();
   Eigen::Affine3d bottom_right;
   Eigen::Affine3d top_left;
-  for (Json::Value::Members::const_iterator bin_it = bin_names.begin();
-       bin_it != bin_names.end(); bin_it++)
+  for (Json::Value::Members::const_iterator bin_it = bin_names.begin(); bin_it != bin_names.end();
+       bin_it++)
   {
     const std::string& bin_name = *bin_it;
     if (verbose_)
-      ROS_DEBUG_STREAM_NAMED("parser","Loaded: " << bin_name);
+      ROS_DEBUG_STREAM_NAMED("parser", "Loaded: " << bin_name);
 
     const Json::Value& bin = bin_contents[bin_name];
 
-    //double bin_y_space = 0.08; // where to place objects
+    // double bin_y_space = 0.08; // where to place objects
 
     // Get each product
-    for ( std::size_t index = 0; index < bin.size(); ++index )
+    for (std::size_t index = 0; index < bin.size(); ++index)
     {
       const std::string& product_name = bin[int(index)].asString();
       if (verbose_)
-        ROS_DEBUG_STREAM_NAMED("parser","   product: " << product_name);
+        ROS_DEBUG_STREAM_NAMED("parser", "   product: " << product_name);
 
       // Add object to a bin
       ProductObjectPtr product(new ProductObject(visuals_, rvt::RAND, product_name, package_path));
@@ -117,16 +114,17 @@ bool AmazonJSONParser::parseBins(const std::string& package_path, const Json::Va
   return true;
 }
 
-bool AmazonJSONParser::parseWorkOrders(const Json::Value work_orders, ShelfObjectPtr shelf, WorkOrders& orders)
+bool AmazonJSONParser::parseWorkOrders(const Json::Value work_orders, ShelfObjectPtr shelf,
+                                       WorkOrders& orders)
 {
   // Get each work order
-  for ( std::size_t work_id = 0; work_id < work_orders.size(); ++work_id )
+  for (std::size_t work_id = 0; work_id < work_orders.size(); ++work_id)
   {
-    const Json::Value& work_order = work_orders[int(work_id)]; // is an object
+    const Json::Value& work_order = work_orders[int(work_id)];  // is an object
 
     if (!work_order.isObject())
     {
-      ROS_ERROR_STREAM_NAMED("parser","work_order not an object");
+      ROS_ERROR_STREAM_NAMED("parser", "work_order not an object");
       return false;
     }
 
@@ -134,15 +132,15 @@ bool AmazonJSONParser::parseWorkOrders(const Json::Value work_orders, ShelfObjec
     const std::string product_name = work_order["item"].asString();
 
     if (verbose_)
-      ROS_DEBUG_STREAM_NAMED("parser","Creating work order with product " << product_name
-                             << " in bin " << bin_name);
+      ROS_DEBUG_STREAM_NAMED("parser", "Creating work order with product "
+                                           << product_name << " in bin " << bin_name);
 
     // Find ptr to the bin
     BinObjectPtr bin = shelf->getBins()[bin_name];
 
     if (!bin)
     {
-      ROS_ERROR_STREAM_NAMED("parser","Unable to find bin named " << bin_name);
+      ROS_ERROR_STREAM_NAMED("parser", "Unable to find bin named " << bin_name);
       return false;
     }
 
@@ -151,7 +149,7 @@ bool AmazonJSONParser::parseWorkOrders(const Json::Value work_orders, ShelfObjec
 
     if (!product)
     {
-      ROS_ERROR_STREAM_NAMED("parser","Unable to find product named " << product_name);
+      ROS_ERROR_STREAM_NAMED("parser", "Unable to find product named " << product_name);
       return false;
     }
 
@@ -165,4 +163,4 @@ bool AmazonJSONParser::parseWorkOrders(const Json::Value work_orders, ShelfObjec
   return true;
 }
 
-} //namespace
+}  // namespace

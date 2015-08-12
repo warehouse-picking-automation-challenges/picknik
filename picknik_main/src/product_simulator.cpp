@@ -41,21 +41,21 @@
 
 namespace picknik_main
 {
-
-ProductSimulator::ProductSimulator(bool verbose, VisualsPtr visuals,
-                                   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor)
+ProductSimulator::ProductSimulator(
+    bool verbose, VisualsPtr visuals,
+    planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor)
   : verbose_(verbose)
   , visuals_(visuals)
   , planning_scene_monitor_(planning_scene_monitor)
   , secondary_scene_(planning_scene_monitor->getPlanningScene()->getCurrentState().getRobotModel())
 {
-
-  ROS_INFO_STREAM_NAMED("product_simulator","ProductSimulator Ready.");
+  ROS_INFO_STREAM_NAMED("product_simulator", "ProductSimulator Ready.");
 }
 
-bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, PerceptionInterfacePtr percepetion_interface)
+bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf,
+                                                  PerceptionInterfacePtr percepetion_interface)
 {
-  ROS_WARN_STREAM_NAMED("product_simulator","Generating random product poses (slightly slow)");
+  ROS_WARN_STREAM_NAMED("product_simulator", "Generating random product poses (slightly slow)");
 
   // Setup random pose generator
   Eigen::Affine3d pose;
@@ -64,7 +64,8 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
   pose_bounds.x_min_ = RAND_PADDING;
   pose_bounds.y_min_ = RAND_PADDING;
   pose_bounds.z_min_ = RAND_PADDING;
-  pose_bounds.x_max_ = shelf->bin_depth_*0.5 - RAND_PADDING; // TODO - we are restraining bin depth of object
+  pose_bounds.x_max_ =
+      shelf->bin_depth_ * 0.5 - RAND_PADDING;  // TODO - we are restraining bin depth of object
   pose_bounds.y_max_ = shelf->bin_middle_width_ - RAND_PADDING;
   pose_bounds.z_max_ = shelf->bin_tall_height_ - RAND_PADDING;
 
@@ -72,21 +73,21 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
   visuals_->visual_tools_->removeAllCollisionObjects();
   bool just_frame = true;
   bool show_all_products = false;
-  shelf->createCollisionBodies("", just_frame, show_all_products); // only show the frame
+  shelf->createCollisionBodies("", just_frame, show_all_products);  // only show the frame
   visuals_->visual_tools_->triggerPlanningSceneUpdate();
-  
+
   // Show empty shelf in Rviz DISPLAY
   bool show_random_generated_poses = visuals_->isEnabled("show_random_generated_poses");
 
   // Loop through each bin
-  for (BinObjectMap::const_iterator bin_it = shelf->getBins().begin(); bin_it != shelf->getBins().end(); bin_it++)
+  for (BinObjectMap::const_iterator bin_it = shelf->getBins().begin();
+       bin_it != shelf->getBins().end(); bin_it++)
   {
-
     if (!ros::ok())
       return false;
 
     BinObjectPtr bin = bin_it->second;
-    ROS_DEBUG_STREAM_NAMED("product_simulator","Updating products in " << bin->getName());
+    ROS_DEBUG_STREAM_NAMED("product_simulator", "Updating products in " << bin->getName());
 
     // Calculate once the bin transform
     world_to_bin = transform(bin->getBottomRight(), shelf->getBottomRight());
@@ -95,7 +96,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
     for (std::size_t product_id = 0; product_id < bin->getProducts().size(); ++product_id)
     {
       ProductObjectPtr product = bin->getProducts()[product_id];
-      ROS_DEBUG_STREAM_NAMED("product_simulator","Updating product " << product->getName());
+      ROS_DEBUG_STREAM_NAMED("product_simulator", "Updating product " << product->getName());
 
       // Loop until non-collision pose found
       bool found = false;
@@ -110,7 +111,7 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
 
         if (!inCollision(product, world_to_bin))
         {
-          found = true; // this is good enough
+          found = true;  // this is good enough
           // Lower product and loop until in collision (e.g. crappy gravity simulation)
           for (std::size_t z = 0; z < 1; z += LOWER_SEARCH_DISCRETIZATION)
           {
@@ -118,15 +119,15 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
             product->setCentroid(pose);
             product->setMeshCentroid(pose);
 
-            //if (verbose_)
+            // if (verbose_)
             //  product->visualizeHighRes(world_to_bin);
-            
+
             if (inCollision(product, world_to_bin))
             {
               // Use current location, no matter where it ended up
               break;
             }
-          } // for lower z height
+          }  // for lower z height
 
           // Debug
           if (show_random_generated_poses && false)
@@ -134,14 +135,13 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
             product->createCollisionBodies(world_to_bin);
           }
 
-
           // so that bounding_box works correctly
           convertMeshToBinFrame(product);
 
           // Calculate bounding mesh
           if (!percepetion_interface->updateBoundingMesh(product, bin))
           {
-            ROS_WARN_STREAM_NAMED("product_simulator","Unable to update bounding mesh");
+            ROS_WARN_STREAM_NAMED("product_simulator", "Unable to update bounding mesh");
           }
 
           // Visualize bounding box
@@ -152,33 +152,36 @@ bool ProductSimulator::generateRandomProductPoses(ShelfObjectPtr shelf, Percepti
           if (show_random_generated_poses)
           {
             product->createCollisionBodies(world_to_bin);
-            //product->visualizeHighRes(world_to_bin);
+            // product->visualizeHighRes(world_to_bin);
           }
 
           break;
         }
 
-      } // for non-collision
+      }  // for non-collision
 
       if (!found)
-        ROS_ERROR_STREAM_NAMED("product_simulator","A product never had a random pose found and was not added to the planning scene");
-    } // for each product
-  } // for each bin
+        ROS_ERROR_STREAM_NAMED(
+            "product_simulator",
+            "A product never had a random pose found and was not added to the planning scene");
+    }  // for each product
+  }    // for each bin
 
   return true;
 }
 
-bool ProductSimulator::addCollisionMesh(ProductObjectPtr& product, const Eigen::Affine3d& world_to_bin)
+bool ProductSimulator::addCollisionMesh(ProductObjectPtr& product,
+                                        const Eigen::Affine3d& world_to_bin)
 {
   // Get product pose
   Eigen::Affine3d world_to_product = transform(product->getCentroid(), world_to_bin);
 
   // TODO - don't load the mesh over and over, rather store the mesh
-  shapes::Shape *mesh = shapes::createMeshFromResource(product->getCollisionMeshPath());
-  shapes::ShapeMsg shape_msg; // this is a boost::variant type from shape_messages.h
+  shapes::Shape* mesh = shapes::createMeshFromResource(product->getCollisionMeshPath());
+  shapes::ShapeMsg shape_msg;  // this is a boost::variant type from shape_messages.h
   if (!mesh || !shapes::constructMsgFromShape(mesh, shape_msg))
   {
-    ROS_ERROR_STREAM_NAMED("visual_tools","Unable to create mesh shape message");
+    ROS_ERROR_STREAM_NAMED("visual_tools", "Unable to create mesh shape message");
     return false;
   }
 
@@ -189,14 +192,15 @@ bool ProductSimulator::addCollisionMesh(ProductObjectPtr& product, const Eigen::
   moveit_msgs::CollisionObject collision_object_msg;
   collision_object_msg.header.stamp = ros::Time::now();
   collision_object_msg.header.frame_id = visuals_->visual_tools_->getBaseFrame();
-  collision_object_msg.id = "singular_collision_object"; // this will overwrite any pre-existing objects from previous calls
+  collision_object_msg.id = "singular_collision_object";  // this will overwrite any pre-existing
+                                                          // objects from previous calls
   collision_object_msg.operation = moveit_msgs::CollisionObject::ADD;
   collision_object_msg.mesh_poses.resize(1);
   collision_object_msg.mesh_poses[0] = visuals_->visual_tools_->convertPose(world_to_product);
   collision_object_msg.meshes.resize(1);
   collision_object_msg.meshes[0] = mesh_msg;
 
-  //scene->getCurrentStateNonConst().update(); // hack to prevent bad transforms
+  // scene->getCurrentStateNonConst().update(); // hack to prevent bad transforms
   secondary_scene_.processCollisionObjectMsg(collision_object_msg);
 
   return true;
@@ -210,12 +214,13 @@ bool ProductSimulator::inCollision(ProductObjectPtr& product, const Eigen::Affin
   // Create request
   collision_detection::CollisionRequest req;
   req.verbose = verbose_;
-  collision_detection::CollisionResult  res;
+  collision_detection::CollisionResult res;
 
   // Check if in collision - Get planning scene lock
   {
     planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor_);
-    scene->getCollisionWorld()->checkWorldCollision(req, res, *secondary_scene_.getCollisionWorld());
+    scene->getCollisionWorld()->checkWorldCollision(req, res,
+                                                    *secondary_scene_.getCollisionWorld());
   }
   return res.collision;
 }
@@ -235,4 +240,4 @@ bool ProductSimulator::convertMeshToBinFrame(ProductObjectPtr product)
   return true;
 }
 
-} // end namespace
+}  // end namespace

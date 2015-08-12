@@ -7,7 +7,7 @@
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
  *********************************************************************/
-/* 
+/*
    Author: Dave Coleman <dave@dav.ee>
    Desc:   Shortcuts for namespaces
 */
@@ -16,9 +16,15 @@
 #define PICKNIK_MAIN__NAMESPACES
 
 // Temporarily define namespaces
-namespace moveit_visual_tools {}
-namespace rviz_visual_tools {}
-namespace ompl_visual_tools {}
+namespace moveit_visual_tools
+{
+}
+namespace rviz_visual_tools
+{
+}
+namespace ompl_visual_tools
+{
+}
 namespace moveit
 {
 namespace core

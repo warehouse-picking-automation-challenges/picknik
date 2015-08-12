@@ -26,12 +26,12 @@
 
 namespace picknik_main
 {
-
 MOVEIT_CLASS_FORWARD(ShelfObject);
 MOVEIT_CLASS_FORWARD(BinObject);
 MOVEIT_CLASS_FORWARD(ProductObject);
 
-// Width of non-important collision objects such that the collision detector does not pass through them
+// Width of non-important collision objects such that the collision detector does not pass through
+// them
 static const double COLLISION_OBJECT_WIDTH = 0.1;
 
 // -------------------------------------------------------------------------------------------------
@@ -43,11 +43,10 @@ class BinObject : public RectangleObject
   std::vector<ProductObjectPtr> products_;
 
 public:
-
   /**
    * \brief Constructor
    */
-  BinObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name);
+  BinObject(VisualsPtr visuals, const rvt::colors& color, const std::string& name);
 
   /**
    * \brief Show bin in Rviz (not collision bodies)
@@ -66,29 +65,29 @@ public:
    * \param trans - transform from parent container to current container
    * \return true on success
    */
-  bool createCollisionBodiesProducts(const Eigen::Affine3d &trans) const;
+  bool createCollisionBodiesProducts(const Eigen::Affine3d& trans) const;
 
   /**
    * \brief Getter for products
-   */ 
+   */
   std::vector<ProductObjectPtr>& getProducts();
 
   /**
    * \brief Getter for the products names
-   */ 
-  void getProducts(std::vector<std::string> &products);
+   */
+  void getProducts(std::vector<std::string>& products);
 
   /**
    * \brief Getter for a product
-   */ 
+   */
   ProductObjectPtr getProduct(const std::string& name);
 
   /**
    * \brief Helper to get the parent transform
    */
-  Eigen::Affine3d getBinToWorld(ShelfObjectPtr &parent);
+  Eigen::Affine3d getBinToWorld(ShelfObjectPtr& parent);
 
-}; // class
+};  // class
 
 typedef std::map<std::string, BinObjectPtr> BinObjectMap;
 
@@ -103,12 +102,13 @@ public:
    * \brief Constructor
    * \param shelf_id
    */
-  ShelfObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name, bool use_computer_vision_shelf);
+  ShelfObject(VisualsPtr visuals, const rvt::colors& color, const std::string& name,
+              bool use_computer_vision_shelf);
 
   /**
    * \brief Load geometry of shelf and bins (coordinate systems, etc)
    */
-  bool initialize(const std::string &package_path, ros::NodeHandle &nh);
+  bool initialize(const std::string& package_path, ros::NodeHandle& nh);
 
   /**
    * \brief Other objects in our collision environment
@@ -146,7 +146,8 @@ public:
    * \param only_show_shelf_frame - when false, show the contents of the shelf too
    * \param show_all_products - when false, only show the products of the focus bin
    */
-  bool createCollisionBodies(const std::string& focus_bin_name = "", bool only_show_shelf_frame = false, bool show_all_products = false);
+  bool createCollisionBodies(const std::string& focus_bin_name = "",
+                             bool only_show_shelf_frame = false, bool show_all_products = false);
 
   /**
    * \brief Represent shelf in MoveIt! planning scene
@@ -155,7 +156,7 @@ public:
 
   /**
    * \brief Getter for Bins
-   */ 
+   */
   BinObjectMap& getBins();
 
   /**
@@ -170,13 +171,13 @@ public:
    * \param product name
    * \return product info
    */
-  ProductObjectPtr getProduct(const std::string &bin_name, const std::string &product_name);
+  ProductObjectPtr getProduct(const std::string& bin_name, const std::string& product_name);
 
   /**
    * \brief Get all the products existing in all the bins
    * \return true on success
    */
-  bool getAllProducts(std::vector<ProductObjectPtr> &products);
+  bool getAllProducts(std::vector<ProductObjectPtr>& products);
 
   /**
    * \brief Delete product
@@ -198,51 +199,39 @@ public:
    * \brief Get shelf parts for prevent collision with products
    * \return true on success
    */
-  const std::vector<RectangleObject>& getShelfParts()
-  {
-    return shelf_parts_;
-  }
-
+  const std::vector<RectangleObject>& getShelfParts() { return shelf_parts_; }
   /**
    * \brief Getter for GoalBin
-   */ 
-  MeshObjectPtr getGoalBin()
-  {
-    return goal_bin_;
-  }
-  
+   */
+  MeshObjectPtr getGoalBin() { return goal_bin_; }
   /**
    * \brief Setter for GoalBin
    */
-  void setGoalBin(MeshObjectPtr goal_bin)
-  {
-    goal_bin_ = goal_bin;
-  }
-
+  void setGoalBin(MeshObjectPtr goal_bin) { goal_bin_ = goal_bin; }
   /**
    * \brief Getter for RightWall
-   */ 
+   */
   // const RectangleObjectPtr& getRightWall() const
   // {
   //   return right_wall_;
   // }
-  
+
   // /**
   //  * \brief Getter for FloorWall
-  //  */ 
+  //  */
   // const RectangleObjectPtr& getFloorWall() const
   // {
   //   return floor_wall_;
   // }
-  
+
   // /**
   //  * \brief Getter for CeilingWall
-  //  */ 
+  //  */
   // const RectangleObjectPtr& getCeilingWall() const
   // {
   //   return ceiling_wall_;
   // }
-  
+
   // /**
   //  * \brief Setter for RightWall
   //  */
@@ -253,12 +242,12 @@ public:
 
   // /**
   //  * \brief Getter for LeftWall
-  //  */ 
+  //  */
   // const RectangleObjectPtr& getLeftWall() const
   // {
   //   return left_wall_;
   // }
-  
+
   // /**
   //  * \brief Setter for LeftWall
   //  */
@@ -269,20 +258,12 @@ public:
 
   /**
    * \brief Getter for FrontWall
-   */ 
-  const RectangleObjectPtr& getFrontWall() const
-  {
-    return front_wall_;
-  }
-  
+   */
+  const RectangleObjectPtr& getFrontWall() const { return front_wall_; }
   /**
    * \brief Setter for FrontWall
    */
-  void setFrontWall(const RectangleObjectPtr& front_wall)
-  {
-    front_wall_ = front_wall;
-  }
-
+  void setFrontWall(const RectangleObjectPtr& front_wall) { front_wall_ = front_wall; }
   /**
    * \brief Get an object in the environment collision
    */
@@ -302,9 +283,9 @@ public:
       bin_it->second->getProducts().clear();
     }
   }
-  
+
   // Loaded shelf parameter values
-  //double shelf_distance_from_robot_;
+  // double shelf_distance_from_robot_;
   Eigen::Affine3d world_to_shelf_transform_;
   Eigen::Affine3d collision_shelf_transform_;
   double shelf_width_;
@@ -344,7 +325,6 @@ public:
   double collision_wall_safety_margin_;
 
 private:
-
   // Walls of shelf
   std::vector<RectangleObject> shelf_parts_;
 
@@ -356,12 +336,12 @@ private:
 
   RectangleObjectPtr front_wall_;
 
-  std::map<std::string,RectangleObjectPtr> environment_objects_;
+  std::map<std::string, RectangleObjectPtr> environment_objects_;
 
   Eigen::Affine3d high_res_mesh_offset_;
 
   bool use_computer_vision_shelf_;
-}; // class
+};  // class
 
 // -------------------------------------------------------------------------------------------------
 // Product Object
@@ -369,23 +349,23 @@ private:
 class ProductObject : public MeshObject
 {
 public:
- /**
-   * \brief Constructor
-   */
-  ProductObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name, const std::string &package_path);
+  /**
+    * \brief Constructor
+    */
+  ProductObject(VisualsPtr visuals, const rvt::colors& color, const std::string& name,
+                const std::string& package_path);
   ProductObject(const ProductObject& copy);
 
   /**
    * \brief Get pose of product in frame of world
    * \param shelf - the shelf holding the product
    * \param bin - the ben holding the product
-   * \return pose of product to world   
+   * \return pose of product to world
    */
   Eigen::Affine3d getWorldPose(const ShelfObjectPtr& shelf, const BinObjectPtr& bin);
 
 private:
-
-}; // class
+};  // class
 
 // -------------------------------------------------------------------------------------------------
 // Work Order Struct
@@ -395,14 +375,12 @@ private:
  */
 struct WorkOrder
 {
-  WorkOrder()
-  {}
-
-  WorkOrder( BinObjectPtr bin,
-             ProductObjectPtr product)
+  WorkOrder() {}
+  WorkOrder(BinObjectPtr bin, ProductObjectPtr product)
     : bin_(bin)
     , product_(product)
-  {}
+  {
+  }
 
   BinObjectPtr bin_;
   ProductObjectPtr product_;
@@ -410,6 +388,6 @@ struct WorkOrder
 
 typedef std::vector<WorkOrder> WorkOrders;
 
-} // namespace
+}  // namespace
 
 #endif

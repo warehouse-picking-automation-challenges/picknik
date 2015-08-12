@@ -27,11 +27,9 @@
 
 namespace picknik_main
 {
-
 class AmazonJSONParser
 {
 private:
-
   // A shared node handle
   ros::NodeHandle nh_;
 
@@ -42,7 +40,6 @@ private:
   VisualsPtr visuals_;
 
 public:
-
   /**
    * \brief Constructor
    * \param verbose - run in debug mode
@@ -58,15 +55,17 @@ public:
    * \brief Parse an input JSON file
    * \return true on success
    */
-  bool parse(const std::string& file_path, const std::string& package_path, ShelfObjectPtr shelf, WorkOrders& orders);
-  bool parseBins(const std::string& package_path, const Json::Value bin_contents, ShelfObjectPtr shelf);
+  bool parse(const std::string& file_path, const std::string& package_path, ShelfObjectPtr shelf,
+             WorkOrders& orders);
+  bool parseBins(const std::string& package_path, const Json::Value bin_contents,
+                 ShelfObjectPtr shelf);
   bool parseWorkOrders(const Json::Value work_orders, ShelfObjectPtr shelf, WorkOrders& orders);
 
-}; // end class
+};  // end class
 
 // Create boost pointers for this class
 typedef boost::shared_ptr<AmazonJSONParser> AmazonJSONParserPtr;
 
-} // end namespace
+}  // end namespace
 
 #endif

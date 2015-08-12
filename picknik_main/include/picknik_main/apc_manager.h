@@ -39,28 +39,28 @@
 
 namespace picknik_main
 {
-
 static const std::string ROBOT_DESCRIPTION = "robot_description";
 static const std::string JOINT_STATE_TOPIC = "/robot/joint_states";
 static const std::string PACKAGE_NAME = "picknik_main";
-static const std::string GET_PLANNING_SCENE_SERVICE_NAME = "get_planning_scene"; // name of the service that can be used to query the planning scene
-
+static const std::string GET_PLANNING_SCENE_SERVICE_NAME =
+    "get_planning_scene";  // name of the service that can be used to query the planning scene
 
 class APCManager
 {
 public:
-
   /**
    * \brief Constructor
    * \param verbose - run in debug mode
    * \param order_file_path
-   * \param autonomous - whether it should pause for human input, except executing trajectories which is always manual
+   * \param autonomous - whether it should pause for human input, except executing trajectories
+   * which is always manual
    * \param full_autonomous - whether it should pause for human input
    * \param fake_execution - when true velocities are full speed
    * \param fake_perception
    */
-  APCManager(bool verbose, std::string order_file_path, bool autonomous = false, bool full_autonomous = false,
-             bool fake_execution = false, bool fake_perception = false);
+  APCManager(bool verbose, std::string order_file_path, bool autonomous = false,
+             bool full_autonomous = false, bool fake_execution = false,
+             bool fake_perception = false);
 
   /**
    * \brief Check if all communication is properly active
@@ -73,7 +73,7 @@ public:
    * \param shelf to focus on. rest of shelves will be disabled
    * \return true on success
    */
-  bool focusSceneOnBin( const std::string& bin_name );
+  bool focusSceneOnBin(const std::string& bin_name);
 
   /**
    * \brief Main program runner
@@ -82,7 +82,8 @@ public:
    * \param num_orders - how many products to pick from the order, 0 = all
    * \return true on success
    */
-  bool mainOrderProcessor(std::size_t order_start = 0, std::size_t jump_to = 0, std::size_t num_orders = 0);
+  bool mainOrderProcessor(std::size_t order_start = 0, std::size_t jump_to = 0,
+                          std::size_t num_orders = 0);
 
   /**
    * \brief Main program runner
@@ -323,7 +324,8 @@ public:
   /**
    * \brief Allow other nodes such as rviz to request the entire planning scene
    */
-  bool getPlanningSceneService(moveit_msgs::GetPlanningScene::Request &req, moveit_msgs::GetPlanningScene::Response &res);
+  bool getPlanningSceneService(moveit_msgs::GetPlanningScene::Request& req,
+                               moveit_msgs::GetPlanningScene::Response& res);
 
   /**
    * \brief Get remote control functionality
@@ -342,7 +344,8 @@ public:
   bool attachProduct(ProductObjectPtr product, JointModelGroup* arm_jmg);
 
   /**
-   * \brief Update the attached collision object to the ideal shape and location, to prevent collision with cameras and shelf
+   * \brief Update the attached collision object to the ideal shape and location, to prevent
+   * collision with cameras and shelf
    * \return true on success
    */
   bool updateAttachedCollisionObject(ProductObjectPtr product, JointModelGroup* arm_jmg);
@@ -363,7 +366,7 @@ public:
    * \brief Central Rviz status visualizer
    * \return true on success
    */
-  bool statusPublisher(const std::string &status);
+  bool statusPublisher(const std::string& status);
 
   /**
    * \brief Test various product benchmarks
@@ -375,7 +378,8 @@ public:
    * \brief Update settings for new unit test
    * \return true on success
    */
-  bool startUnitTest(const std::string &json_file, const std::string &test_name, const Eigen::Affine3d &product_pose);
+  bool startUnitTest(const std::string& json_file, const std::string& test_name,
+                     const Eigen::Affine3d& product_pose);
 
   /**
    * \brief Move to a pose named in the SRDF
@@ -422,7 +426,6 @@ public:
   bool testGraspWidths();
 
 private:
-
   // A shared node handle
   ros::NodeHandle nh_private_;
   ros::NodeHandle nh_root_;
@@ -442,7 +445,7 @@ private:
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
 
   // User feedback
-  Eigen::Affine3d status_position_; // where to display messages
+  Eigen::Affine3d status_position_;  // where to display messages
 
   // Properties
   ShelfObjectPtr shelf_;
@@ -462,7 +465,7 @@ private:
   PerceptionInterfacePtr perception_interface_;
 
   // Helper classes
-  //LearningPipelinePtr learning_;
+  // LearningPipelinePtr learning_;
 
   // Robot-sepcific data for the APC
   ManipulationDataPtr config_;
@@ -484,9 +487,8 @@ private:
   // Allow loading and saving trajectories to file
   TrajectoryIOPtr trajectory_io_;
 
-}; // end class
+};  // end class
 
-} // end namespace
-
+}  // end namespace
 
 #endif

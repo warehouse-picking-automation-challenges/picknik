@@ -38,23 +38,20 @@
 
 namespace picknik_main
 {
-
 static const std::string ROBOT_DESCRIPTION = "robot_description";
 static const std::string JOINT_STATE_TOPIC = "/robot/joint_states";
 static const std::string PACKAGE_NAME = "picknik_main";
-static const std::string GET_PLANNING_SCENE_SERVICE_NAME = "get_planning_scene"; // name of the service that can be used to query the planning scene
-
+static const std::string GET_PLANNING_SCENE_SERVICE_NAME =
+    "get_planning_scene";  // name of the service that can be used to query the planning scene
 
 class PickManager
 {
 public:
-
   /**
    * \brief Constructor
    * \param verbose - run in debug mode
    */
   PickManager(bool verbose);
-
 
   /**
    * \brief Check if all communication is properly active
@@ -160,7 +157,8 @@ public:
   /**
    * \brief Allow other nodes such as rviz to request the entire planning scene
    */
-  bool getPlanningSceneService(moveit_msgs::GetPlanningScene::Request &req, moveit_msgs::GetPlanningScene::Response &res);
+  bool getPlanningSceneService(moveit_msgs::GetPlanningScene::Request& req,
+                               moveit_msgs::GetPlanningScene::Response& res);
 
   /**
    * \brief Get remote control functionality
@@ -213,12 +211,13 @@ public:
   /** \brief Allow interactive markers to control robot */
   void enableTeleoperation();
 
-  VisualsPtr getVisuals() { return visuals_;}
+  VisualsPtr getVisuals() { return visuals_; }
+  planning_scene_monitor::PlanningSceneMonitorPtr getPlanningSceneMonitor() const
+  {
+    return planning_scene_monitor_;
+  }
 
-  planning_scene_monitor::PlanningSceneMonitorPtr getPlanningSceneMonitor() const { return planning_scene_monitor_; }
-  
 private:
-
   // A shared node handle
   ros::NodeHandle nh_private_;
   ros::NodeHandle nh_root_;
@@ -226,7 +225,7 @@ private:
 
   // Show more visual and console output, with general slower run time.
   bool verbose_;
-  
+
   // For visualizing things in rviz
   VisualsPtr visuals_;
   PlanningSceneManagerPtr planning_scene_manager_;
@@ -238,7 +237,7 @@ private:
   planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
 
   // User feedback
-  Eigen::Affine3d status_position_; // where to display messages
+  Eigen::Affine3d status_position_;  // where to display messages
 
   // Properties
   std::string order_file_path_;
@@ -259,7 +258,7 @@ private:
   LineTrackingPtr line_tracking_;
 
   // Helper classes
-  //LearningPipelinePtr learning_;
+  // LearningPipelinePtr learning_;
 
   // Robot-sepcific data for the APC
   ManipulationDataPtr config_;
@@ -269,7 +268,7 @@ private:
 
   // Perception
   bool fake_perception_;
-  //bool skip_homing_step_;
+  // bool skip_homing_step_;
 
   // Allow Rviz to request the entire scene at startup
   ros::ServiceServer get_scene_service_;
@@ -284,10 +283,9 @@ private:
   bool teleoperation_enabled_;
   Eigen::Affine3d interactive_marker_pose_;
   moveit::core::RobotStatePtr teleop_state_;
-  
-}; // end class
 
-} // end namespace
+};  // end class
 
+}  // end namespace
 
 #endif

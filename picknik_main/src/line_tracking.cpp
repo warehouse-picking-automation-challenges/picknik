@@ -17,8 +17,9 @@
 
 namespace picknik_main
 {
-LineTracking::LineTracking(VisualsPtr visuals)
+LineTracking::LineTracking(VisualsPtr visuals, ManipulationPtr manipulation)
   : visuals_(visuals)
+  , manipulation_(manipulation)
 {
   std::size_t queue_size = 1;
   end_effector_data_sub_ =
@@ -45,8 +46,8 @@ void LineTracking::displayLineDirection(const std_msgs::Float64MultiArray::Const
   bool verbose = false;
 
   // Unpack vector to variable names
-  const double pt1_x = msg->data[LINE_CENTER_X];
-  const double pt1_y = msg->data[LINE_CENTER_Y];
+  const double& pt1_x = msg->data[LINE_CENTER_X];
+  const double& pt1_y = msg->data[LINE_CENTER_Y];
   const double& eigen_vec_x = msg->data[LINE_EIGEN_VEC_X];
   const double& eigen_vec_y = msg->data[LINE_EIGEN_VEC_Y];
   const double& eigen_vec_val = msg->data[LINE_EIGEN_VAL];
@@ -93,7 +94,6 @@ void LineTracking::displayLineDirection(const std_msgs::Float64MultiArray::Const
   double theta = atan2(eigen_vec_y, eigen_vec_x);
 
   // Visualize tool always pointing down away from gripper
-
   Eigen::Affine3d eigen_pose = visuals_->visual_tools_->convertPose(pt1.pose);
 
   if (theta > M_PI / 2.0)
@@ -108,9 +108,8 @@ void LineTracking::displayLineDirection(const std_msgs::Float64MultiArray::Const
 
   eigen_pose = eigen_pose * Eigen::AngleAxisd(theta, Eigen::Vector3d::UnitZ());
 
-  // Do some orientation magic
-
-  geometry_msgs::PoseStamped pose_msg = pt1;
+  geometry_msgs::PoseStamped pose_msg;
+  pose_msg.header.frame_id = ATTACH_FRAME;
   pose_msg.pose = visuals_->visual_tools_->convertPose(eigen_pose);
 
   // Visualize arrow
@@ -147,6 +146,25 @@ void LineTracking::displaySheerForce(const std_msgs::Float64MultiArray::ConstPtr
       pt1, rvt::GREEN, visuals_->visual_tools_->getScale(rvt::XXSMALL), "Sphere1", 1);
   visuals_->visual_tools_->publishSphere(
       pt2, rvt::BLUE, visuals_->visual_tools_->getScale(rvt::XXSMALL), "Sphere2", 2);
+
+  // Visualize tool always pointing down away from gripper
+  Eigen::Affine3d eigen_pose = visuals_->visual_tools_->convertPose(pt1.pose);
+
+  // Find the angle between the line and the horizontal (x) axis
+  double delta_y = pt2.pose.position.y - pt1.pose.position.y;
+  double delta_x = pt2.pose.position.x - pt1.pose.position.x;
+
+  double theta = atan2(delta_y, delta_x);  // radians
+  eigen_pose = eigen_pose * Eigen::AngleAxisd(theta, Eigen::Vector3d::UnitZ());
+
+  geometry_msgs::PoseStamped pose_msg;
+  pose_msg.header.frame_id = ATTACH_FRAME;
+  pose_msg.pose = visuals_->visual_tools_->convertPose(eigen_pose);
+
+  // Visualize arrow
+  const double length = 0.1;
+  const int id = 1;
+  visuals_->visual_tools_->publishArrow(pose_msg, rvt::GREY, rvt::SMALL, length, id);
 }
 
 void LineTracking::publishUpdatedLine(geometry_msgs::Point& pt1, geometry_msgs::Point& pt2)

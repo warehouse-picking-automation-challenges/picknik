@@ -46,16 +46,15 @@
 
 namespace picknik_main
 {
-
-PlanningSceneManager::PlanningSceneManager(bool verbose, VisualsPtr visuals, PerceptionInterfacePtr perception_interface)
+PlanningSceneManager::PlanningSceneManager(bool verbose, VisualsPtr visuals,
+                                           PerceptionInterfacePtr perception_interface)
   : verbose_(verbose)
   , visuals_(visuals)
   , mode_(NOT_LOADED)
   , perception_interface_(perception_interface)
   , focused_bin_("")
 {
-
-  ROS_INFO_STREAM_NAMED("planning_scene_manager","PlanningSceneManager Ready.");
+  ROS_INFO_STREAM_NAMED("planning_scene_manager", "PlanningSceneManager Ready.");
 }
 
-} // end namespace
+}  // end namespace

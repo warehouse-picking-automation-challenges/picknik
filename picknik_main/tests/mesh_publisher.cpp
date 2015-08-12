@@ -54,14 +54,12 @@ namespace fs = boost::filesystem;
 
 namespace picknik_main
 {
-
 class MeshPublisher
 {
   // For visualizing things in rviz
   mvt::MoveItVisualToolsPtr visual_tools_;
 
 public:
-
   /**
    * \brief Constructor
    * \param verbose - run in debug mode
@@ -80,11 +78,11 @@ public:
 
     visual_tools_->deleteAllMarkers();
     visual_tools_->removeAllCollisionObjects();
-    //visual_tools_->triggerPlanningSceneUpdate();
-    //visual_tools_->setManualSceneUpdating(true);
-    //visual_tools_->enableBatchPublishing(true);
+    // visual_tools_->triggerPlanningSceneUpdate();
+    // visual_tools_->setManualSceneUpdating(true);
+    // visual_tools_->enableBatchPublishing(true);
 
-    ROS_INFO_STREAM_NAMED("mesh_publisher","MeshPublisher Ready.");
+    ROS_INFO_STREAM_NAMED("mesh_publisher", "MeshPublisher Ready.");
   }
 
   bool publishAll(double y)
@@ -101,13 +99,13 @@ public:
     pose.translation().y() = y;
     static std::size_t counter = 0;
 
-    BOOST_FOREACH(fs::path const &p, std::make_pair(it, eod))
+    BOOST_FOREACH (fs::path const &p, std::make_pair(it, eod))
     {
       if (!ros::ok())
         return true;
 
-      //ROS_DEBUG_STREAM_NAMED("temp","File: " << p.string());
-      ROS_INFO_STREAM_NAMED("temp","Processing mesh " << p.stem().string());
+      // ROS_DEBUG_STREAM_NAMED("temp","File: " << p.string());
+      ROS_INFO_STREAM_NAMED("temp", "Processing mesh " << p.stem().string());
 
       processProductMeshes(p, pose);
       pose.translation().x() += 0.25;
@@ -125,17 +123,17 @@ public:
   {
     // Collision Name
     static std::size_t counter = 0;
-    std::string collision_name = "object"+boost::lexical_cast<std::string>(counter++);
+    std::string collision_name = "object" + boost::lexical_cast<std::string>(counter++);
 
     // Show Label
     Eigen::Affine3d text_pose = pose;
     text_pose.translation().z() += 0.1;
     text_pose.translation().y() += 0.1;
-    //visual_tools_->publishText(text_pose, p.filename().string(), rvt::WHITE, rvt::SMALL, false);
+    // visual_tools_->publishText(text_pose, p.filename().string(), rvt::WHITE, rvt::SMALL, false);
     visual_tools_->publishText(text_pose, collision_name, rvt::WHITE, rvt::SMALL, false);
 
     // Show Product Axis
-    //visual_tools_->publishAxis(pose);
+    // visual_tools_->publishAxis(pose);
 
     // Files
     fs::path display_file_name("recommended.dae");
@@ -155,15 +153,16 @@ public:
     {
       Eigen::Affine3d collision_pose = pose;
       collision_pose.translation().y() += 0.2;
-      visual_tools_->publishCollisionMesh(collision_pose, collision_name, "file://" + collision_mesh_path.string(), rvt::RAND);
-      //visual_tools_->publishCollisionMesh(collision_pose, collision_name, "file://" + display_mesh_path.string(), rvt::RAND);
-      //visual_tools_->triggerPlanningSceneUpdate();
+      visual_tools_->publishCollisionMesh(collision_pose, collision_name,
+                                          "file://" + collision_mesh_path.string(), rvt::RAND);
+      // visual_tools_->publishCollisionMesh(collision_pose, collision_name, "file://" +
+      // display_mesh_path.string(), rvt::RAND);
+      // visual_tools_->triggerPlanningSceneUpdate();
     }
     return true;
   }
 
 private:
-
   // A shared node handle
   ros::NodeHandle nh_;
 
@@ -173,15 +172,15 @@ private:
   bool test_rviz_visual_tools_;
   bool test_planning_scene_;
 
-}; // end class
+};  // end class
 
 // Create boost pointers for this class
 typedef boost::shared_ptr<MeshPublisher> MeshPublisherPtr;
 typedef boost::shared_ptr<const MeshPublisher> MeshPublisherConstPtr;
 
-} // end namespace
+}  // end namespace
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
   ros::init(argc, argv, "mesh_publisher");
   ROS_INFO_STREAM_NAMED("main", "Starting MeshPublisher...");
@@ -198,7 +197,7 @@ int main(int argc, char** argv)
     {
       if (strcmp(argv[i], "--verbose") == 0)
       {
-        ROS_INFO_STREAM_NAMED("main","Running in VERBOSE mode (slower)");
+        ROS_INFO_STREAM_NAMED("main", "Running in VERBOSE mode (slower)");
         verbose = true;
       }
     }

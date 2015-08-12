@@ -47,10 +47,9 @@
 
 namespace picknik_main
 {
-
-const double POSE_DISCRETIZATION = 0.05; //0.02; // how spread apart to create training poses
+const double POSE_DISCRETIZATION = 0.05;  // 0.02; // how spread apart to create training poses
 const double POSE_HORIZONTAL_MARGIN = 0.08;
-const double POSE_TOP_MARGIN = 0.26 - 0.05; //BIN_HEIGHT - 0.05;
+const double POSE_TOP_MARGIN = 0.26 - 0.05;  // BIN_HEIGHT - 0.05;
 const double POSE_BOTTOM_MARGIN = 0.05;
 
 struct BinExperienceData
@@ -64,12 +63,11 @@ typedef std::map<const std::string, BinExperienceData> BinExperienceDataMap;
 class LearningPipeline : private ManipulationPipeline
 {
 public:
-
   /**
    * \brief Constructor
    * \param verbose - run in debug mode
    */
-  LearningPipeline(bool verbose, VisualsPtr visuals,                   
+  LearningPipeline(bool verbose, VisualsPtr visuals,
                    planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                    ShelfObjectPtr shelf, bool use_experience, bool show_database);
 
@@ -95,7 +93,7 @@ public:
    * \brief Determine which grasps have IK solutions
    * \return true on success
    */
-  bool analyzeGrasps(const moveit::core::JointModelGroup* arm_jmg);
+  bool analyzeGrasps(const moveit::core::JointModelGroup *arm_jmg);
 
   /**
    * \brief Plan to grasps
@@ -116,17 +114,16 @@ public:
   bool testSingleGraspIK();
 
 private:
-
   BinExperienceDataMap bin_experience_data_;
 
   // Save all IK and collision-valid grasps
   std::vector<moveit_grasps::GraspSolution> filtered_grasps_;
 
-}; // end class
+};  // end class
 
 // Create boost pointers for this class
 typedef boost::shared_ptr<LearningPipeline> LearningPipelinePtr;
 
-} // end namespace
+}  // end namespace
 
 #endif

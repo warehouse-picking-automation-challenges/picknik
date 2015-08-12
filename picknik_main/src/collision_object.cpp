@@ -18,13 +18,12 @@
 
 namespace picknik_main
 {
-
 // -------------------------------------------------------------------------------------------------
 // Basic properties of an object in the world
 // -------------------------------------------------------------------------------------------------
 
-CollisionObject::CollisionObject(VisualsPtr visuals,
-                                 const rvt::colors &color, const std::string &name)
+CollisionObject::CollisionObject(VisualsPtr visuals, const rvt::colors& color,
+                                 const std::string& name)
   : visuals_(visuals)
   , color_(color)
 {
@@ -37,28 +36,24 @@ CollisionObject::CollisionObject(VisualsPtr visuals,
     // use this func so that a unique collision ID is also generated
     setName("collision_" + boost::lexical_cast<std::string>(rectangle_id));
 
-    ROS_WARN_STREAM_NAMED("collision_object","Creating default rectangle named " << name_);
+    ROS_WARN_STREAM_NAMED("collision_object", "Creating default rectangle named " << name_);
   }
   else
   {
-    setName(name); // use this func so that a unique collision ID is also generated
+    setName(name);  // use this func so that a unique collision ID is also generated
   }
 }
 
 CollisionObject::CollisionObject(const CollisionObject& copy)
 {
-  visuals_= copy.visuals_;
-  color_= copy.color_;
+  visuals_ = copy.visuals_;
+  color_ = copy.color_;
 
   // Must set collision_object_name_ and name_ manually via setName() function
   setName(copy.name_);
 }
 
-std::string CollisionObject::getName() const
-{
-  return name_;
-}
-
+std::string CollisionObject::getName() const { return name_; }
 void CollisionObject::setName(std::string name)
 {
   name_ = name;
@@ -69,42 +64,18 @@ void CollisionObject::setName(std::string name)
   collision_object_name_ = name + "_" + boost::lexical_cast<std::string>(collision_id);
 }
 
-const std::string& CollisionObject::getCollisionName() const
-{
-  return collision_object_name_;
-}
-
-void CollisionObject::setCollisionName(std::string name)
-{
-  collision_object_name_ = name;
-}
-
-const rvt::colors& CollisionObject::getColor() const
-{
-  return color_;
-}
-
-void CollisionObject::setColor(const rvt::colors& color)
-{
-  color_ = color;
-}
-
-const std::string& CollisionObject::getHighResMeshPath()
-{
-  return high_res_mesh_path_;
-}
-
-void CollisionObject::setHighResMeshPath(const std::string &high_res_mesh_path)
+const std::string& CollisionObject::getCollisionName() const { return collision_object_name_; }
+void CollisionObject::setCollisionName(std::string name) { collision_object_name_ = name; }
+const rvt::colors& CollisionObject::getColor() const { return color_; }
+void CollisionObject::setColor(const rvt::colors& color) { color_ = color; }
+const std::string& CollisionObject::getHighResMeshPath() { return high_res_mesh_path_; }
+void CollisionObject::setHighResMeshPath(const std::string& high_res_mesh_path)
 {
   high_res_mesh_path_ = high_res_mesh_path;
 }
 
-const std::string& CollisionObject::getCollisionMeshPath()
-{
-  return collision_mesh_path_;
-}
-
-void CollisionObject::setCollisionMeshPath(const std::string &collision_mesh_path)
+const std::string& CollisionObject::getCollisionMeshPath() { return collision_mesh_path_; }
+void CollisionObject::setCollisionMeshPath(const std::string& collision_mesh_path)
 {
   collision_mesh_path_ = collision_mesh_path;
 }
@@ -113,7 +84,8 @@ void CollisionObject::setCollisionMeshPath(const std::string &collision_mesh_pat
 // Rectangle Object - uses BottomRight and TopLeft coordinate system (not centroid-basd)
 // -------------------------------------------------------------------------------------------------
 
-RectangleObject::RectangleObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name)
+RectangleObject::RectangleObject(VisualsPtr visuals, const rvt::colors& color,
+                                 const std::string& name)
   : CollisionObject(visuals, color, name)
   , bottom_right_(Eigen::Affine3d::Identity())
   , top_left_(Eigen::Affine3d::Identity())
@@ -121,46 +93,52 @@ RectangleObject::RectangleObject(VisualsPtr visuals, const rvt::colors &color, c
 }
 
 RectangleObject::RectangleObject(const RectangleObject& copy)
-  : CollisionObject( copy )
+  : CollisionObject(copy)
 {
-  bottom_right_= copy.bottom_right_;
-  top_left_= copy.top_left_;
+  bottom_right_ = copy.bottom_right_;
+  top_left_ = copy.top_left_;
 }
 
 bool RectangleObject::visualizeHighRes(const Eigen::Affine3d& trans) const
 {
   // Show simple geometric shape
-  return visuals_->visual_tools_display_->publishCuboid( transform(bottom_right_, trans).translation(),
-                                                         transform(top_left_, trans).translation(), color_);
+  return visuals_->visual_tools_display_->publishCuboid(
+      transform(bottom_right_, trans).translation(), transform(top_left_, trans).translation(),
+      color_);
 }
 
-bool RectangleObject::visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const
+bool RectangleObject::visualizeWireframe(const Eigen::Affine3d& trans,
+                                         const rvt::colors& color) const
 {
-  ROS_WARN_STREAM_NAMED("collision_object","viz wireframe todo");
-  //return visuals_->visual_tools_->publishWireframeCuboid( transform(centroid_, trans), getDepth(), getWidth(), getHeight(), color_);
+  ROS_WARN_STREAM_NAMED("collision_object", "viz wireframe todo");
+  // return visuals_->visual_tools_->publishWireframeCuboid( transform(centroid_, trans),
+  // getDepth(), getWidth(), getHeight(), color_);
   return true;
 }
 
-bool RectangleObject::visualizeHighResWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const
+bool RectangleObject::visualizeHighResWireframe(const Eigen::Affine3d& trans,
+                                                const rvt::colors& color) const
 {
-  ROS_WARN_STREAM_NAMED("collision_object","viz wireframe todo");
-  //return visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans), getDepth(), getWidth(), getHeight(), color_);
+  ROS_WARN_STREAM_NAMED("collision_object", "viz wireframe todo");
+  // return visuals_->visual_tools_display_->publishWireframeCuboid( transform(centroid_, trans),
+  // getDepth(), getWidth(), getHeight(), color_);
   return true;
 }
 
 bool RectangleObject::visualizeAxis(const Eigen::Affine3d& trans) const
 {
-  return visuals_->visual_tools_->publishAxisLabeled( transform(bottom_right_, trans), name_ );
+  return visuals_->visual_tools_->publishAxisLabeled(transform(bottom_right_, trans), name_);
 }
 
-bool RectangleObject::createCollisionBodies(const Eigen::Affine3d &trans)
+bool RectangleObject::createCollisionBodies(const Eigen::Affine3d& trans)
 {
-  ROS_DEBUG_STREAM_NAMED("collision_object","Adding/updating collision body '" << collision_object_name_ << "'");
+  ROS_DEBUG_STREAM_NAMED("collision_object", "Adding/updating collision body '"
+                                                 << collision_object_name_ << "'");
 
   // Just use basic rectangle
-  return visuals_->visual_tools_->publishCollisionCuboid( transform(bottom_right_, trans).translation(),
-                                                          transform(top_left_, trans).translation(),
-                                                          collision_object_name_, color_ );
+  return visuals_->visual_tools_->publishCollisionCuboid(
+      transform(bottom_right_, trans).translation(), transform(top_left_, trans).translation(),
+      collision_object_name_, color_);
 }
 
 double RectangleObject::getHeight() const
@@ -178,11 +156,7 @@ double RectangleObject::getDepth() const
   return top_left_.translation().x() - bottom_right_.translation().x();
 }
 
-const Eigen::Affine3d& RectangleObject::getBottomRight() const
-{
-  return bottom_right_;
-}
-
+const Eigen::Affine3d& RectangleObject::getBottomRight() const { return bottom_right_; }
 void RectangleObject::setBottomRight(const Eigen::Affine3d& bottom_right)
 {
   bottom_right_ = bottom_right;
@@ -191,7 +165,7 @@ void RectangleObject::setBottomRight(const Eigen::Affine3d& bottom_right)
 void RectangleObject::setBottomRightUpdateAll(const Eigen::Affine3d& bottom_right)
 {
   bottom_right_ = bottom_right;
-  
+
   // TODO
 }
 
@@ -202,16 +176,8 @@ void RectangleObject::setBottomRight(const double& x, const double& y, const dou
   bottom_right_.translation().z() = z;
 }
 
-const Eigen::Affine3d& RectangleObject::getTopLeft() const
-{
-  return top_left_;
-}
-
-void RectangleObject::setTopLeft(const Eigen::Affine3d& top_left)
-{
-  top_left_ = top_left;
-}
-
+const Eigen::Affine3d& RectangleObject::getTopLeft() const { return top_left_; }
+void RectangleObject::setTopLeft(const Eigen::Affine3d& top_left) { top_left_ = top_left; }
 void RectangleObject::setTopLeft(const double& x, const double& y, const double& z)
 {
   top_left_.translation().x() = x;
@@ -232,7 +198,7 @@ const Eigen::Affine3d RectangleObject::getCentroid() const
 // Mesh Object - centroid-based
 // -------------------------------------------------------------------------------------------------
 
-MeshObject::MeshObject(VisualsPtr visuals, const rvt::colors &color, const std::string &name)
+MeshObject::MeshObject(VisualsPtr visuals, const rvt::colors& color, const std::string& name)
   : CollisionObject(visuals, color, name)
   , centroid_(Eigen::Affine3d::Identity())
   , mesh_centroid_(Eigen::Affine3d::Identity())
@@ -243,10 +209,10 @@ MeshObject::MeshObject(VisualsPtr visuals, const rvt::colors &color, const std::
 }
 
 MeshObject::MeshObject(const MeshObject& copy)
-  : CollisionObject( copy )
+  : CollisionObject(copy)
 {
-  centroid_= copy.centroid_;
-  mesh_centroid_= copy.mesh_centroid_;
+  centroid_ = copy.centroid_;
+  mesh_centroid_ = copy.mesh_centroid_;
   height_ = copy.height_;
   width_ = copy.width_;
   depth_ = copy.depth_;
@@ -259,50 +225,53 @@ bool MeshObject::visualizeHighRes(const Eigen::Affine3d& trans) const
 {
   if (high_res_mesh_path_.empty())
   {
-    ROS_ERROR_STREAM_NAMED("collision_object","no mesh path provided");
+    ROS_ERROR_STREAM_NAMED("collision_object", "no mesh path provided");
   }
 
   // Show axis
-  //visuals_->visual_tools_display_->publishAxis(transform(centroid_, trans), 0.1/2, 0.01/2);
+  // visuals_->visual_tools_display_->publishAxis(transform(centroid_, trans), 0.1/2, 0.01/2);
 
   // Show full resolution mesh - scale = 1,
   const std::size_t id = 1;
-  return visuals_->visual_tools_display_->publishMesh(transform(mesh_centroid_, trans), high_res_mesh_path_,
-                                                      rvt::CLEAR, 1, collision_object_name_, id);
+  return visuals_->visual_tools_display_->publishMesh(transform(mesh_centroid_, trans),
+                                                      high_res_mesh_path_, rvt::CLEAR, 1,
+                                                      collision_object_name_, id);
 }
 
-bool MeshObject::visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const
+bool MeshObject::visualizeWireframe(const Eigen::Affine3d& trans, const rvt::colors& color) const
 {
   Eigen::Affine3d pose = transform(centroid_, trans);
   std::size_t id = 1;
-  visuals_->visual_tools_->publishWireframeCuboid( pose, depth_, width_, height_, color, 
-                                                   collision_object_name_ + "_wireframe", id);
+  visuals_->visual_tools_->publishWireframeCuboid(pose, depth_, width_, height_, color,
+                                                  collision_object_name_ + "_wireframe", id);
   visuals_->visual_tools_->publishAxis(pose);
   return true;
 }
 
-bool MeshObject::visualizeHighResWireframe(const Eigen::Affine3d& trans, const rvt::colors &color) const
+bool MeshObject::visualizeHighResWireframe(const Eigen::Affine3d& trans,
+                                           const rvt::colors& color) const
 {
   Eigen::Affine3d pose = transform(centroid_, trans);
   std::size_t id = 1;
-  visuals_->visual_tools_display_->publishWireframeCuboid( pose, depth_, width_, height_, color, 
-                                                           collision_object_name_ + "_wireframe", id);
+  visuals_->visual_tools_display_->publishWireframeCuboid(
+      pose, depth_, width_, height_, color, collision_object_name_ + "_wireframe", id);
   return true;
 }
 
 bool MeshObject::visualizeAxis(const Eigen::Affine3d& trans) const
 {
-  return visuals_->visual_tools_->publishAxisLabeled( transform(centroid_, trans), name_ );
+  return visuals_->visual_tools_->publishAxisLabeled(transform(centroid_, trans), name_);
 }
 
 bool MeshObject::loadCollisionBodies()
 {
-  shapes::Shape *mesh = shapes::createMeshFromResource(collision_mesh_path_); // make sure its prepended by file://
-  shapes::ShapeMsg shape_msg; // this is a boost::variant type from shape_messages.h
+  shapes::Shape* mesh =
+      shapes::createMeshFromResource(collision_mesh_path_);  // make sure its prepended by file://
+  shapes::ShapeMsg shape_msg;  // this is a boost::variant type from shape_messages.h
   if (!mesh || !shapes::constructMsgFromShape(mesh, shape_msg))
   {
-    ROS_ERROR_STREAM_NAMED("collision_object","Unable to create mesh shape message from resource " 
-                           << collision_mesh_path_);
+    ROS_ERROR_STREAM_NAMED("collision_object", "Unable to create mesh shape message from resource "
+                                                   << collision_mesh_path_);
     return false;
   }
 
@@ -313,10 +282,10 @@ bool MeshObject::loadCollisionBodies()
 
 bool MeshObject::writeCollisionBody(const std::string& file_path)
 {
-  ROS_DEBUG_STREAM_NAMED("collision_object","Writing mesh to file");
+  ROS_DEBUG_STREAM_NAMED("collision_object", "Writing mesh to file");
 
-  shapes::Shape *shape = shapes::constructShapeFromMsg(mesh_msg_);
-  shapes::Mesh *mesh = static_cast<shapes::Mesh*>(shape);
+  shapes::Shape* shape = shapes::constructShapeFromMsg(mesh_msg_);
+  shapes::Mesh* mesh = static_cast<shapes::Mesh*>(shape);
 
   std::vector<char> buffer;
   shapes::writeSTLBinary(mesh, buffer);
@@ -331,89 +300,47 @@ bool MeshObject::writeCollisionBody(const std::string& file_path)
 shape_msgs::Mesh& MeshObject::getCollisionMesh()
 {
   // Check if mesh needs to be loaded
-  if (mesh_msg_.triangles.empty()) // load mesh from file
+  if (mesh_msg_.triangles.empty())  // load mesh from file
   {
     if (!loadCollisionBodies())
     {
-      ROS_ERROR_STREAM_NAMED("collision_object","Unable to load collision object");
+      ROS_ERROR_STREAM_NAMED("collision_object", "Unable to load collision object");
     }
   }
 
   return mesh_msg_;
 }
 
-void MeshObject::setCollisionMesh(const shape_msgs::Mesh& mesh)
+void MeshObject::setCollisionMesh(const shape_msgs::Mesh& mesh) { mesh_msg_ = mesh; }
+bool MeshObject::createCollisionBodies(const Eigen::Affine3d& trans)
 {
-  mesh_msg_ = mesh;
-}
-
-bool MeshObject::createCollisionBodies(const Eigen::Affine3d &trans)
-{
-  ROS_DEBUG_STREAM_NAMED("collision_object","Adding/updating collision body '" << collision_object_name_ << "'");
+  ROS_DEBUG_STREAM_NAMED("collision_object", "Adding/updating collision body '"
+                                                 << collision_object_name_ << "'");
 
   // Check if mesh is provided
   if (collision_mesh_path_.empty())
   {
-    ROS_ERROR_STREAM_NAMED("collision_object","no collision body provided");
+    ROS_ERROR_STREAM_NAMED("collision_object", "no collision body provided");
   }
 
   // Check if mesh needs to be loaded
-  if (mesh_msg_.triangles.empty()) // load mesh from file
+  if (mesh_msg_.triangles.empty())  // load mesh from file
   {
     if (!loadCollisionBodies())
       return false;
   }
-  return visuals_->visual_tools_->publishCollisionMesh(transform(mesh_centroid_, trans), collision_object_name_, mesh_msg_, color_);
+  return visuals_->visual_tools_->publishCollisionMesh(transform(mesh_centroid_, trans),
+                                                       collision_object_name_, mesh_msg_, color_);
 }
 
-double MeshObject::getHeight() const
-{
-  return height_;
-}
-
-double MeshObject::getWidth() const
-{
-  return width_;
-}
-
-double MeshObject::getDepth() const
-{
-  return depth_;
-}
-
-void MeshObject::setHeight(const double& height)
-{
-  height_ = height;
-}
-
-void MeshObject::setWidth(const double& width)
-{
-  width_ = width;
-}
-
-void MeshObject::setDepth(const double& depth)
-{
-  depth_ = depth;
-}
-
-const Eigen::Affine3d& MeshObject::getCentroid() const
-{
-  return centroid_;
-}
-
-void MeshObject::setCentroid(const Eigen::Affine3d& centroid)
-{
-  centroid_ = centroid;
-}
-
-const Eigen::Affine3d& MeshObject::getMeshCentroid() const
-{
-  return mesh_centroid_;
-}
-
-void MeshObject::setMeshCentroid(const Eigen::Affine3d& centroid)
-{
-  mesh_centroid_ = centroid;
-}
-
-} // namespace
+double MeshObject::getHeight() const { return height_; }
+double MeshObject::getWidth() const { return width_; }
+double MeshObject::getDepth() const { return depth_; }
+void MeshObject::setHeight(const double& height) { height_ = height; }
+void MeshObject::setWidth(const double& width) { width_ = width; }
+void MeshObject::setDepth(const double& depth) { depth_ = depth; }
+const Eigen::Affine3d& MeshObject::getCentroid() const { return centroid_; }
+void MeshObject::setCentroid(const Eigen::Affine3d& centroid) { centroid_ = centroid; }
+const Eigen::Affine3d& MeshObject::getMeshCentroid() const { return mesh_centroid_; }
+void MeshObject::setMeshCentroid(const Eigen::Affine3d& centroid) { mesh_centroid_ = centroid; }
+}  // namespace

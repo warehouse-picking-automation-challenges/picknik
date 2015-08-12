@@ -45,45 +45,46 @@
 
 namespace picknik_main
 {
-
 class TrajectoryIO
 {
 public:
-
   /**
    * \brief Constructor
    */
-  TrajectoryIO(RemoteControlPtr remote_control, VisualsPtr visuals,
-               ManipulationDataPtr config, ManipulationPtr manipulation);
-  
+  TrajectoryIO(RemoteControlPtr remote_control, VisualsPtr visuals, ManipulationDataPtr config,
+               ManipulationPtr manipulation);
+
   /**
    * \brief Read a joint trajectory from CSV and execute on robot
    * \param file_name - location of file
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
-   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
+   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to
+   * utilize
    * \return true on success
    */
-  bool playbackTrajectoryFromFile(const std::string &file_name, JointModelGroup* arm_jmg,
+  bool playbackTrajectoryFromFile(const std::string& file_name, JointModelGroup* arm_jmg,
                                   double velocity_scaling_factor);
 
   /**
    * \brief Read a waypoint trajectory from CSV and execute on robot
    * \param file_name - location of file
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
-   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
+   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to
+   * utilize
    * \return true on success
    */
-  bool playbackWaypointsFromFile(const std::string &file_name, JointModelGroup* arm_jmg,
+  bool playbackWaypointsFromFile(const std::string& file_name, JointModelGroup* arm_jmg,
                                  double velocity_scaling_factor);
 
   /**
    * \brief Read a trajectory from CSV and execute on robot state by state
    * \param file_name - location of file
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
-   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to utilize
+   * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to
+   * utilize
    * \return true on success
    */
-  bool playbackTrajectoryFromFileInteractive(const std::string &file_name, JointModelGroup* arm_jmg,
+  bool playbackTrajectoryFromFileInteractive(const std::string& file_name, JointModelGroup* arm_jmg,
                                              double velocity_scaling_factor);
 
   /**
@@ -91,12 +92,14 @@ public:
    * \param file_name - location of file
    * \return true on success
    */
-  bool recordTrajectoryToFile(const std::string &file_name);
+  bool recordTrajectoryToFile(const std::string& file_name);
 
   /**
-   * \brief Convert a 6-vector of x,y,z, roll,pitch,yall to an Affine3d with quaternion, from a line of a file
+   * \brief Convert a 6-vector of x,y,z, roll,pitch,yall to an Affine3d with quaternion, from a line
+   * of a file
    */
-  bool streamToAffine3d(Eigen::Affine3d& pose, const std::string& line, const std::string& separator);
+  bool streamToAffine3d(Eigen::Affine3d& pose, const std::string& line,
+                        const std::string& separator);
 
   /**
    * \brief Get location to save a CSV file
@@ -104,10 +107,9 @@ public:
    * \param file_name - the desired name of the file
    * \return true on success
    */
-  bool getFilePath(std::string &file_path, const std::string &file_name) const;
+  bool getFilePath(std::string& file_path, const std::string& file_name) const;
 
 private:
-
   // A shared node handle
   ros::NodeHandle nh_;
 
@@ -117,12 +119,12 @@ private:
   ManipulationDataPtr config_;
   ManipulationPtr manipulation_;
 
-}; // end class
+};  // end class
 
 // Create boost pointers for this class
 typedef boost::shared_ptr<TrajectoryIO> TrajectoryIOPtr;
 typedef boost::shared_ptr<const TrajectoryIO> TrajectoryIOConstPtr;
 
-} // end namespace
+}  // end namespace
 
 #endif

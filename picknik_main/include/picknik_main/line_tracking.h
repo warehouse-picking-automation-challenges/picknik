@@ -22,6 +22,7 @@
 // PickNik
 #include <picknik_main/namespaces.h>
 #include <picknik_main/visuals.h>
+#include <picknik_main/manipulation.h>
 
 namespace picknik_main
 {
@@ -71,6 +72,7 @@ private:
   ros::Subscriber end_effector_data_sub_;
 
   VisualsPtr visuals_;
+  ManipulationPtr manipulation_;
 
 };  // end class
 
