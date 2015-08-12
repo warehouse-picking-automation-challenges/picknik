@@ -947,10 +947,11 @@ void PickManager::insertion()
         break;
       }
 
-    } else if (true) {
+    } else {
       // Move in
       std::cout << "-------------------------------------------------------" << std::endl;
       std::cout << "MOVING IN " << std::endl;
+      
       bool direction_in = true;
       velocity_scaling_factor = 0.05;
       if (!manipulation_->executeInsertionPath(arm_jmg, desired_distance, direction_in,

@@ -4,9 +4,7 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
         - /Grid1/Offset1
-        - /Planning Goal State1
         - /Amazon Markers1/Namespaces1
         - /Amazon Trajectory Markers1/Namespaces1
         - /OMPL Experience1/Namespaces1
@@ -126,7 +124,7 @@ Visualization Manager:
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Bicep:
@@ -199,12 +197,12 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_start_state
       Show All Links: true
       Show Highlights: true
-      Value: true
+      Value: false
       Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
       Collision Enabled: false
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Bicep:
@@ -277,7 +275,7 @@ Visualization Manager:
       Robot State Topic: /picknik_main/robot_goal_state
       Show All Links: true
       Show Highlights: true
-      Value: true
+      Value: false
       Visual Enabled: true
     - Attached Body Color: 150; 50; 150
       Class: moveit_rviz_plugin/RobotState
@@ -363,9 +361,7 @@ Visualization Manager:
       Name: Amazon Markers
       Namespaces:
         Arrow: true
-        LineObject: true
-        Sphere1: true
-        Sphere2: true
+        Sphere: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -858,22 +854,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 1.02185
+      Distance: 0.676997
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.245227
-        Y: -0.496843
-        Z: 5.96046e-08
+        X: 0.0832107
+        Y: -0.557438
+        Z: 1.49011e-08
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.700398
+      Pitch: 0.450397
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 4.45359
+      Yaw: 4.30858
     Saved: ~
 Window Geometry:
   Displays:

@@ -1063,7 +1063,7 @@ bool Manipulation::executeInsertionPath(JointModelGroup *arm_jmg, double desired
 
   // Move in and out
   Eigen::Vector3d approach_direction;
-  approach_direction << 0, 0, (in ? 1 : -1);
+  approach_direction << 0.5, 0, (in ? 1 : -1);
 
   // Compute Cartesian Path
   //the direction can be in the local reference frame (in which case we rotate it)

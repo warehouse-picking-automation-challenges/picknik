@@ -26,6 +26,13 @@ LineTracking::LineTracking(VisualsPtr visuals) : visuals_(visuals) {
 
 void LineTracking::dataCallback(const std_msgs::Float64MultiArray::ConstPtr& msg) {
   bool verbose = false;
+
+  // Error check
+  if (msg->data.size() < 6) {
+    ROS_ERROR_STREAM_NAMED("line_tracking","Invalid number of end effector data points recieved: "
+                           << msg->data.size());
+    return;
+  }
   
   // Unpack vector to variable names
   double pt1_x = msg->data[1];
@@ -33,7 +40,9 @@ void LineTracking::dataCallback(const std_msgs::Float64MultiArray::ConstPtr& msg
   const double& eigen_vec_x =msg->data[3];
   const double& eigen_vec_y = msg->data[4];
   const double& eigen_vec_val = msg->data[4];
-
+  const double& sheer_displacment_x = msg->data[5];
+  const double& sheer_displacment_y = msg->data[6];
+  
   // Calculate point 2
   const double distance_between_points = 2000;
   double pt2_x = pt1_x + distance_between_points * (eigen_vec_x * eigen_vec_val);
