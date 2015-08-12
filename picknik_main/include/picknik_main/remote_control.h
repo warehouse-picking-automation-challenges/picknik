@@ -52,21 +52,16 @@
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
 
-//#include <moveit/robot_interaction/robot_interaction.h>
-
 // Boost
 #include <boost/thread/mutex.hpp>
 
-
 namespace picknik_main
 {
-
 MOVEIT_CLASS_FORWARD(PickManager);
 
 class RemoteControl
 {
 public:
-
   /**
    * \brief Constructor
    * \param verbose - run in debug mode
@@ -77,7 +72,7 @@ public:
    * \brief Remote control from Rviz
    */
   void remoteCallback(const picknik_msgs::PickNikDashboard::ConstPtr& msg);
-  
+
   /**
    * \brief Recieves inputs from joystick
    * \param input - description
@@ -118,23 +113,23 @@ public:
    * \brief Wait until user presses a button
    * \return true on success
    */
-  bool waitForNextStep(const std::string &caption = "go to next step");
-  bool waitForNextFullStep(const std::string &caption = "go to next full step");
+  bool waitForNextStep(const std::string& caption = "go to next step");
+  bool waitForNextFullStep(const std::string& caption = "go to next full step");
 
   void initializeInteractiveMarkers(const geometry_msgs::Pose& pose);
 
 private:
+  void make6DofMarker(bool fixed, unsigned int interaction_mode, const geometry_msgs::Pose& pose,
+                      bool show_6dof);
 
-  void make6DofMarker( bool fixed, unsigned int interaction_mode, const geometry_msgs::Pose& pose,
-                       bool show_6dof );
+  visualization_msgs::InteractiveMarkerControl&
+  makeBoxControl(visualization_msgs::InteractiveMarker& msg);
 
-  visualization_msgs::InteractiveMarkerControl& makeBoxControl( visualization_msgs::InteractiveMarker &msg );
-
-  void processFeedback( const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback );
+  void processFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
 
   /** \brief Not sure what this does */
-  //void publishInteractiveMarkers(bool pose_update);
-  
+  // void publishInteractiveMarkers(bool pose_update);
+
   // Show more visual and console output, with general slower run time.
   bool verbose_;
 
@@ -160,22 +155,15 @@ private:
   interactive_markers::MenuHandler menu_handler_;
   bool teleoperation_ready_ = true;
 
-  // robot interaction
-  // robot_interaction::RobotInteractionPtr robot_interaction_;
-  // robot_interaction::RobotInteraction::InteractionHandlerPtr query_goal_state_;
-  // boost::shared_ptr<interactive_markers::MenuHandler> menu_handler_goal_;
-  // moveit::core::RobotStatePtr goal_;
-  //std::map<std::string, LinkDisplayStatus> status_links_goal_;
-
   ros::Time throttle_time_;
   boost::mutex interactive_mutex_;
-    
-}; // end class
+
+};  // end class
 
 // Create boost pointers for this class
 typedef boost::shared_ptr<RemoteControl> RemoteControlPtr;
 typedef boost::shared_ptr<const RemoteControl> RemoteControlConstPtr;
 
-} // end namespace
+}  // end namespace
 
 #endif

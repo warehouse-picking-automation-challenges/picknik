@@ -49,7 +49,6 @@
 
 namespace picknik_main
 {
-
 DEFINE_bool(auto_step, false, "Automatically go through each step");
 DEFINE_bool(full_auto, false, "Automatically run ignoring all errors");
 
@@ -69,30 +68,19 @@ RemoteControl::RemoteControl(bool verbose, ros::NodeHandle nh, PickManager* pare
 {
   // Warnings
   if (autonomous_)
-    ROS_WARN_STREAM_NAMED("remote_control","In autonomous mode - will only stop at breakpoints");
+    ROS_WARN_STREAM_NAMED("remote_control", "In autonomous mode - will only stop at breakpoints");
   if (full_autonomous_)
-    ROS_WARN_STREAM_NAMED("remote_control","In FULL autonomous mode - will ignore breakpoints");
+    ROS_WARN_STREAM_NAMED("remote_control", "In FULL autonomous mode - will ignore breakpoints");
 
   // Subscribe to remote control topic
   std::size_t queue_size = 10;
-  remote_control_ = nh_.subscribe("/picknik_main/remote_control", queue_size, &RemoteControl::remoteCallback, this);
+  remote_control_ = nh_.subscribe("/picknik_main/remote_control", queue_size,
+                                  &RemoteControl::remoteCallback, this);
   remote_joy_ = nh_.subscribe("/joy", queue_size, &RemoteControl::joyCallback, this);
 
   throttle_time_ = ros::Time::now();
-  
-  // Load interactive markers
-  // robot_interaction_.reset(new robot_interaction::RobotInteraction(parent->getVisuals()->visual_tools_->getRobotModel(),
-  //                                                                  "rviz_moveit_motion_planning_display"));
-  // robot_interaction_->decideActiveComponents("arm");
-  // goal_.reset(new moveit::core::RobotState(parent->getVisuals()->visual_tools_->getRobotModel()));
-  // goal_->setToDefaultValues();
-  // query_goal_state_.reset(new robot_interaction::RobotInteraction::InteractionHandler("goal", *goal_,
-  //                                                                                     parent_->getPlanningSceneMonitor()->getTFClient()));
-  // //  query_goal_state_->setState(goal);
-  // bool pose_update = false;
-  // publishInteractiveMarkers(pose_update);
 
-  ROS_INFO_STREAM_NAMED("remote_control","RemoteControl Ready.");
+  ROS_INFO_STREAM_NAMED("remote_control", "RemoteControl Ready.");
 }
 
 void RemoteControl::remoteCallback(const picknik_msgs::PickNikDashboard::ConstPtr& msg)
@@ -141,7 +129,6 @@ void RemoteControl::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
   // 4 - LT
   // 6 - cross key left/right
   // 7 - cross key up/down
-
 }
 
 bool RemoteControl::setReadyForNextStep()
@@ -179,30 +166,19 @@ void RemoteControl::setStop(bool stop)
   }
 }
 
-bool RemoteControl::getStop()
-{
-  return stop_;
-}
-
-bool RemoteControl::getAutonomous()
-{
-  return autonomous_;
-}
-
-bool RemoteControl::getFullAutonomous()
-{
-  return full_autonomous_;
-}
-
-bool RemoteControl::waitForNextStep(const std::string &caption)
+bool RemoteControl::getStop() { return stop_; }
+bool RemoteControl::getAutonomous() { return autonomous_; }
+bool RemoteControl::getFullAutonomous() { return full_autonomous_; }
+bool RemoteControl::waitForNextStep(const std::string& caption)
 {
   // Check if we really need to wait
-  if ( !(!next_step_ready_ && !autonomous_ && ros::ok()) )
+  if (!(!next_step_ready_ && !autonomous_ && ros::ok()))
     return true;
 
   // Show message
   std::cout << std::endl << std::endl;
-  std::cout << MOVEIT_CONSOLE_COLOR_CYAN << "Waiting to " << caption << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
+  std::cout << MOVEIT_CONSOLE_COLOR_CYAN << "Waiting to " << caption << MOVEIT_CONSOLE_COLOR_RESET
+            << std::endl;
 
   is_waiting_ = true;
   // Wait until next step is ready
@@ -218,14 +194,15 @@ bool RemoteControl::waitForNextStep(const std::string &caption)
   return true;
 }
 
-bool RemoteControl::waitForNextFullStep(const std::string &caption)
+bool RemoteControl::waitForNextFullStep(const std::string& caption)
 {
   // Check if we really need to wait
-  if ( !(!next_step_ready_ && !full_autonomous_ && ros::ok()) )
+  if (!(!next_step_ready_ && !full_autonomous_ && ros::ok()))
     return true;
 
   // Show message
-  std::cout << MOVEIT_CONSOLE_COLOR_CYAN << "Waiting to " << caption << MOVEIT_CONSOLE_COLOR_RESET << std::endl;
+  std::cout << MOVEIT_CONSOLE_COLOR_CYAN << "Waiting to " << caption << MOVEIT_CONSOLE_COLOR_RESET
+            << std::endl;
 
   is_waiting_ = true;
   // Wait until next step is ready
@@ -244,31 +221,32 @@ bool RemoteControl::waitForNextFullStep(const std::string &caption)
 void RemoteControl::initializeInteractiveMarkers(const geometry_msgs::Pose& pose)
 {
   // Server
-  imarker_server_.reset( new interactive_markers::InteractiveMarkerServer("basic_controls","",false) );
+  imarker_server_.reset(
+      new interactive_markers::InteractiveMarkerServer("basic_controls", "", false));
 
   // Menu
-  menu_handler_.insert( "First Entry", boost::bind(&RemoteControl::processFeedback, this, _1) );
-  menu_handler_.insert( "Second Entry", boost::bind(&RemoteControl::processFeedback, this, _1) );
-  interactive_markers::MenuHandler::EntryHandle sub_menu_handle = menu_handler_.insert( "Submenu" );
-  menu_handler_.insert( sub_menu_handle, "First Entry", boost::bind(&RemoteControl::processFeedback, this, _1) );
-  menu_handler_.insert( sub_menu_handle, "Second Entry", boost::bind(&RemoteControl::processFeedback, this, _1) );
+  menu_handler_.insert("First Entry", boost::bind(&RemoteControl::processFeedback, this, _1));
+  menu_handler_.insert("Second Entry", boost::bind(&RemoteControl::processFeedback, this, _1));
+  interactive_markers::MenuHandler::EntryHandle sub_menu_handle = menu_handler_.insert("Submenu");
+  menu_handler_.insert(sub_menu_handle, "First Entry",
+                       boost::bind(&RemoteControl::processFeedback, this, _1));
+  menu_handler_.insert(sub_menu_handle, "Second Entry",
+                       boost::bind(&RemoteControl::processFeedback, this, _1));
 
   // Get initial pose
 
-
-
   // Marker
   bool fixed = false;
-  //tf::Vector3 position;
-  //position = tf::Vector3( 0.518256, -0.0173147, 0.648519);
+  // tf::Vector3 position;
+  // position = tf::Vector3( 0.518256, -0.0173147, 0.648519);
   bool show_6dof = true;
-  make6DofMarker( fixed, visualization_msgs::InteractiveMarkerControl::MENU, pose, show_6dof );
+  make6DofMarker(fixed, visualization_msgs::InteractiveMarkerControl::MENU, pose, show_6dof);
 
   imarker_server_->applyChanges();
 }
 
-void RemoteControl::make6DofMarker( bool fixed, unsigned int interaction_mode, const geometry_msgs::Pose& pose,
-                                    bool show_6dof )
+void RemoteControl::make6DofMarker(bool fixed, unsigned int interaction_mode,
+                                   const geometry_msgs::Pose& pose, bool show_6dof)
 {
   using namespace visualization_msgs;
 
@@ -286,7 +264,7 @@ void RemoteControl::make6DofMarker( bool fixed, unsigned int interaction_mode, c
 
   InteractiveMarkerControl control;
 
-  if ( fixed )
+  if (fixed)
   {
     int_marker.name += "_fixed";
     int_marker.description += "\n(fixed orientation)";
@@ -296,14 +274,18 @@ void RemoteControl::make6DofMarker( bool fixed, unsigned int interaction_mode, c
   if (interaction_mode != InteractiveMarkerControl::NONE)
   {
     std::string mode_text;
-    if( interaction_mode == InteractiveMarkerControl::MOVE_3D )         mode_text = "MOVE_3D";
-    if( interaction_mode == InteractiveMarkerControl::ROTATE_3D )       mode_text = "ROTATE_3D";
-    if( interaction_mode == InteractiveMarkerControl::MOVE_ROTATE_3D )  mode_text = "MOVE_ROTATE_3D";
+    if (interaction_mode == InteractiveMarkerControl::MOVE_3D)
+      mode_text = "MOVE_3D";
+    if (interaction_mode == InteractiveMarkerControl::ROTATE_3D)
+      mode_text = "ROTATE_3D";
+    if (interaction_mode == InteractiveMarkerControl::MOVE_ROTATE_3D)
+      mode_text = "MOVE_ROTATE_3D";
     int_marker.name += "_" + mode_text;
-    int_marker.description = std::string("3D Control") + (show_6dof ? " + 6-DOF controls" : "") + "\n" + mode_text;
+    int_marker.description =
+        std::string("3D Control") + (show_6dof ? " + 6-DOF controls" : "") + "\n" + mode_text;
   }
 
-  if(show_6dof)
+  if (show_6dof)
   {
     control.orientation.w = 1;
     control.orientation.x = 1;
@@ -340,13 +322,14 @@ void RemoteControl::make6DofMarker( bool fixed, unsigned int interaction_mode, c
   }
 
   imarker_server_->insert(int_marker);
-  imarker_server_->setCallback(int_marker.name, boost::bind(&RemoteControl::processFeedback, this, _1) );
+  imarker_server_->setCallback(int_marker.name,
+                               boost::bind(&RemoteControl::processFeedback, this, _1));
   if (interaction_mode != visualization_msgs::InteractiveMarkerControl::NONE)
-    menu_handler_.apply( *imarker_server_, int_marker.name );
+    menu_handler_.apply(*imarker_server_, int_marker.name);
 }
 
 visualization_msgs::InteractiveMarkerControl&
-RemoteControl::makeBoxControl( visualization_msgs::InteractiveMarker &msg )
+RemoteControl::makeBoxControl(visualization_msgs::InteractiveMarker& msg)
 {
   using namespace visualization_msgs;
 
@@ -363,34 +346,38 @@ RemoteControl::makeBoxControl( visualization_msgs::InteractiveMarker &msg )
   marker.color.b = 0.5;
   marker.color.a = 1.0;
 
-  control.markers.push_back( marker );
-  msg.controls.push_back( control );
+  control.markers.push_back(marker);
+  msg.controls.push_back(control);
 
   return msg.controls.back();
 }
 
-void RemoteControl::processFeedback( const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback )
+void RemoteControl::processFeedback(
+    const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
   using namespace visualization_msgs;
 
   // Check that we didn't process another request too recently
   // if (ros::Time::now() - throttle_time_ < ros::Duration(0.1)) {
-  //   ROS_WARN_STREAM_NAMED("remote_control","Skipping message because last one was procesed too recently");
+  //   ROS_WARN_STREAM_NAMED("remote_control","Skipping message because last one was procesed too
+  //   recently");
   //   return;
   // }
   // throttle_time_ = ros::Time::now(); // remember last time we procesed feedback
 
   {
     boost::unique_lock<boost::mutex> scoped_lock(interactive_mutex_);
-    if (!teleoperation_ready_) {
+    if (!teleoperation_ready_)
+    {
       return;
     }
     teleoperation_ready_ = false;
   }
-  
+
   // Check that this feedback isn't too old
   // if (feedback->header.stamp < ros::Time::now() - )  {
-  //ROS_DEBUG_STREAM_NAMED("remote_control","Skipped because old " << feedback->header.stamp << " now: " << ros::Time::now());
+  // ROS_DEBUG_STREAM_NAMED("remote_control","Skipped because old " << feedback->header.stamp << "
+  // now: " << ros::Time::now());
   //   return;
   // }
   // std::cout << "not skipped " << std::endl;
@@ -410,14 +397,15 @@ void RemoteControl::processFeedback( const visualization_msgs::InteractiveMarker
   //                  << " in frame " << feedback->header.frame_id;
   // }
 
-  switch ( feedback->event_type )
+  switch (feedback->event_type)
   {
     case InteractiveMarkerFeedback::BUTTON_CLICK:
       // ROS_INFO_STREAM( stream.str() << ": button click" << mouse_point_ss.str() << "." );
       break;
 
     case InteractiveMarkerFeedback::MENU_SELECT:
-      // ROS_INFO_STREAM( stream.str() << ": menu item " << feedback->menu_entry_id << " clicked" << mouse_point_ss.str() << "." );
+      // ROS_INFO_STREAM( stream.str() << ": menu item " << feedback->menu_entry_id << " clicked" <<
+      // mouse_point_ss.str() << "." );
       break;
 
     case InteractiveMarkerFeedback::POSE_UPDATE:
@@ -443,7 +431,7 @@ void RemoteControl::processFeedback( const visualization_msgs::InteractiveMarker
       break;
 
     case InteractiveMarkerFeedback::MOUSE_UP:
-      ROS_INFO_STREAM( "mouse up" );
+      ROS_INFO_STREAM("mouse up");
 
       parent_->processMarkerPose(feedback->pose, true);
 
@@ -453,27 +441,9 @@ void RemoteControl::processFeedback( const visualization_msgs::InteractiveMarker
   imarker_server_->applyChanges();
 
   {
-    boost::unique_lock<boost::mutex> scoped_lock(interactive_mutex_);  
+    boost::unique_lock<boost::mutex> scoped_lock(interactive_mutex_);
     teleoperation_ready_ = true;
   }
 }
 
-// void RemoteControl::publishInteractiveMarkers(bool pose_update)
-// {
-//   if (robot_interaction_)
-//   {
-//     if (pose_update)
-//     {
-//       robot_interaction_->updateInteractiveMarkers(query_goal_state_);
-//     }
-//     else
-//     {
-//       robot_interaction_->clearInteractiveMarkers();
-//       double scale = 1;
-//       robot_interaction_->addInteractiveMarkers(query_goal_state_, scale);
-//       robot_interaction_->publishInteractiveMarkers();
-//     }
-//   }
-// }
-
-} // end namespace
+}  // end namespace
