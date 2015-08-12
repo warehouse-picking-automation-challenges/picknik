@@ -25,27 +25,45 @@
 
 namespace picknik_main
 {
-
 static const std::string ATTACH_FRAME = "finger_sensor_pad";
+
+/** \brief Names of data sent from Gelsight to rest of BLUE
+           NOTE: this is copied from
+           gelsight/include/gelsight/image_processing.hpp
+ */
+enum EndEffectorData
+{
+  SHEER_FORCE = 0,
+  LINE_CENTER_X,
+  LINE_CENTER_Y,
+  LINE_EIGEN_VEC_X,
+  LINE_EIGEN_VEC_Y,
+  LINE_EIGEN_VAL,
+  SHEER_DISPLACEMENT_X,
+  SHEER_DISPLACEMENT_Y,
+  IMAGE_HEIGHT,
+  IMAGE_WIDTH,
+  ALWAYS_AT_END  // for counting array size
+};
 
 class LineTracking
 {
 public:
-
   /**
    * \brief Constructor
    */
   LineTracking(VisualsPtr visuals);
 
+private:
   void dataCallback(const std_msgs::Float64MultiArray::ConstPtr& msg);
 
-  void convertPixelToMeters(double &x, double &y);
-  
+  void displayLineDirection(const std_msgs::Float64MultiArray::ConstPtr& msg);
+
+  void displaySheerForce(const std_msgs::Float64MultiArray::ConstPtr& msg);
+
   void publishUpdatedLine(geometry_msgs::Point& pt1, geometry_msgs::Point& pt2);
 
-  void getToolDirection(const geometry_msgs::PoseStamped& center_point,  double theta);
-  
-private:
+  void convertPixelToMeters(geometry_msgs::Pose& pose, int height, int width);
 
   // A shared node handle
   ros::NodeHandle nh_;
@@ -54,11 +72,11 @@ private:
 
   VisualsPtr visuals_;
 
-}; // end class
+};  // end class
 
 // Create boost pointers for this class
 typedef boost::shared_ptr<LineTracking> LineTrackingPtr;
 
-} // end namespace
+}  // end namespace
 
 #endif
