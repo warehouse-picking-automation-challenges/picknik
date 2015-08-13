@@ -22,6 +22,7 @@
 #include <picknik_main/fix_state_bounds.h>
 #include <picknik_main/remote_control.h>
 #include <picknik_main/execution_interface.h>
+#include <picknik_main/line_tracking.h>
 
 // ROS
 #include <ros/ros.h>
@@ -69,7 +70,7 @@ public:
   Manipulation(bool verbose, VisualsPtr visuals,
                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                ManipulationDataPtr config, moveit_grasps::GraspDatas grasp_datas,
-               RemoteControlPtr remote_control, bool fake_execution);
+               RemoteControlPtr remote_control, bool fake_execution, LineTrackingPtr line_tracking);
 
   /**
    * \brief Choose the grasp for the object
@@ -295,6 +296,9 @@ public:
   bool executeInsertionPath(JointModelGroup* arm_jmg, double desired_distance, bool in,
                             double velocity_scaling_factor);
 
+  /** \brief Use tactile feedback */
+  bool executeInsertionClosedLoop(JointModelGroup* arm_jmg, double desired_distance, bool in,
+                                  double velocity_scaling_factor);
   /**
    * \brief Generic execute straight line path function
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
@@ -589,6 +593,9 @@ protected:
   // State modification helper
   FixStateBounds fix_state_bounds_;
   trajectory_processing::IterativeParabolicTimeParameterization iterative_smoother_;
+
+  // End effector data
+  LineTrackingPtr line_tracking_;
 
 };  // end class
 

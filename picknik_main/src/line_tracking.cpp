@@ -17,9 +17,8 @@
 
 namespace picknik_main
 {
-LineTracking::LineTracking(VisualsPtr visuals, ManipulationPtr manipulation)
+LineTracking::LineTracking(VisualsPtr visuals)
   : visuals_(visuals)
-  , manipulation_(manipulation)
 {
   std::size_t queue_size = 1;
   end_effector_data_sub_ =
@@ -154,8 +153,8 @@ void LineTracking::displaySheerForce(const std_msgs::Float64MultiArray::ConstPtr
   double delta_y = pt2.pose.position.y - pt1.pose.position.y;
   double delta_x = pt2.pose.position.x - pt1.pose.position.x;
 
-  double theta = atan2(delta_y, delta_x);  // radians
-  eigen_pose = eigen_pose * Eigen::AngleAxisd(theta, Eigen::Vector3d::UnitZ());
+  sheer_theta_ = atan2(delta_y, delta_x);  // radians
+  eigen_pose = eigen_pose * Eigen::AngleAxisd(sheer_theta_, Eigen::Vector3d::UnitZ());
 
   geometry_msgs::PoseStamped pose_msg;
   pose_msg.header.frame_id = ATTACH_FRAME;

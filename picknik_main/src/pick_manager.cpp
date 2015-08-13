@@ -88,6 +88,9 @@ PickManager::PickManager(bool verbose)
   // Load the remote control for dealing with GUIs
   remote_control_.reset(new RemoteControl(verbose, nh_private_, this));
 
+  // Load line tracker
+  line_tracking_.reset(new LineTracking(visuals_));
+
   // Load grasp data specific to our robot
   grasp_datas_[config_->right_arm_].reset(
       new moveit_grasps::GraspData(nh_private_, config_->right_hand_name_, robot_model_));
@@ -101,7 +104,8 @@ PickManager::PickManager(bool verbose)
 
   // Create manipulation manager
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_,
-                                       grasp_datas_, remote_control_, FLAGS_fake_execution));
+                                       grasp_datas_, remote_control_, FLAGS_fake_execution,
+                                       line_tracking_));
 
   // Load trajectory IO class
   trajectory_io_.reset(new TrajectoryIO(remote_control_, visuals_, config_, manipulation_));
@@ -112,9 +116,6 @@ PickManager::PickManager(bool verbose)
 
   // Load planning scene manager
   planning_scene_manager_.reset(new PlanningSceneManager(verbose, visuals_, perception_interface_));
-
-  // Load line tracker
-  line_tracking_.reset(new LineTracking(visuals_, manipulation_));
 
   // Show interactive marker
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
@@ -900,17 +901,17 @@ void PickManager::processMarkerPose(const geometry_msgs::Pose& pose, bool move)
   // debugging!
 
   // Get pose and visualize
-  interactive_marker_pose_ = visuals_->visual_tools_->convertPose(pose);
+  interactive_marker_pose_ = visuals_->trajectory_lines_->convertPose(pose);
+
+  // Debug
+  if (true)
+  {
+    // visuals_->visual_tools_->printTransformRPY(interactive_marker_pose_);
+    visuals_->trajectory_lines_->publishZArrow(interactive_marker_pose_);
+  }
 
   if (!teleoperation_enabled_)
     return;
-
-  // visuals_->trajectory_lines_->publishArrow(pose);
-  // return;
-
-  // Debug
-  if (false)
-    visuals_->visual_tools_->printTransformRPY(interactive_marker_pose_);
 
   // if (!teleoperation_enabled_)
   move = true;
@@ -959,6 +960,8 @@ bool PickManager::teleoperation(Eigen::Affine3d ee_pose, bool move)
 // Mode 3
 void PickManager::insertion()
 {
+  remote_control_->waitForNextStep("begin insertion process");
+
   // Note: The pre-insertion pose is from interactive_marker_pose_
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
@@ -966,17 +969,18 @@ void PickManager::insertion()
       new moveit::core::RobotState(*manipulation_->getCurrentState()));
 
   double velocity_scaling_factor = 0.1;
-  bool in =
-      true;  // prentend that at first we are inserted so that it moves to the correct pre-position
+  // pretend that at first we are inserted so that it moves to the correct pre-position
+  bool in = true;
+
   while (ros::ok())
   {
-    const double desired_distance = 0.05;
+    const double desired_distance = 0.1;
 
     if (in)
     {
       // Move to pre-pose
       std::cout << "-------------------------------------------------------" << std::endl;
-      std::cout << "MOVING TO MARKER POSE " << std::endl;
+      std::cout << "RETRACTING " << std::endl;
 
       Eigen::Affine3d ee_pose =
           interactive_marker_pose_ * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
@@ -995,12 +999,15 @@ void PickManager::insertion()
         ROS_ERROR_STREAM_NAMED("pick_manager", "Failed to execute state");
         break;
       }
+
+      // remote_control_->waitForNextStep("insert");
     }
     else
     {
       // Move in
+      std::cout << std::endl;
       std::cout << "-------------------------------------------------------" << std::endl;
-      std::cout << "MOVING IN " << std::endl;
+      std::cout << "INSERTING " << std::endl;
 
       bool direction_in = true;
       velocity_scaling_factor = 0.05;
@@ -1010,9 +1017,11 @@ void PickManager::insertion()
         ROS_ERROR_STREAM_NAMED("pick_manager", "Unable to execute insertion path");
         break;
       }
+
+      // remote_control_->waitForNextStep("retract");
     }
 
-    ros::Duration(2.0).sleep();
+    ros::Duration(6).sleep();
     visuals_->visual_tools_->deleteAllMarkers();
     in = !in;
   }

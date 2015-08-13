@@ -180,6 +180,16 @@ target_link_libraries(execution_interface
   ${Boost_LIBRARIES}
 )
 
+# show a sensor line
+add_library(line_tracking
+  src/line_tracking.cpp
+)
+target_link_libraries(line_tracking
+  visuals
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
+
 # Manipulation pipeline library
 add_library(manipulation
   src/manipulation.cpp
@@ -191,11 +201,12 @@ target_link_libraries(manipulation
   execution_interface
   fix_state_bounds
   remote_control  
+  line_tracking
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
 
-# library
+# trajectory input/output
 add_library(trajectory_io
   src/trajectory_io.cpp
 )
@@ -204,17 +215,6 @@ target_link_libraries(trajectory_io
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
-
-# show a sensor line
-add_library(line_tracking
-  src/line_tracking.cpp
-)
-target_link_libraries(line_tracking
-  visuals
-  ${catkin_LIBRARIES} 
-  ${Boost_LIBRARIES}
-)
-
 
 # Experience trainer library
 # add_library(learning_pipeline

@@ -37,7 +37,8 @@ namespace picknik_main
 Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
                            planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                            ManipulationDataPtr config, moveit_grasps::GraspDatas grasp_datas,
-                           RemoteControlPtr remote_control, bool fake_execution)
+                           RemoteControlPtr remote_control, bool fake_execution,
+                           LineTrackingPtr line_tracking)
   : nh_("~")
   , verbose_(verbose)
   , visuals_(visuals)
@@ -45,6 +46,7 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   , config_(config)
   , grasp_datas_(grasp_datas)
   , remote_control_(remote_control)
+  , line_tracking_(line_tracking)
   , use_logging_(true)
 {
   // Create initial robot state
@@ -725,7 +727,8 @@ bool Manipulation::executeState(const moveit::core::RobotStatePtr goal_state, Jo
   }
 
   // Execute
-  if (!execution_interface_->executeTrajectory(trajectory_msg, jmg))
+  const bool wait_for_execution = true;
+  if (!execution_interface_->executeTrajectory(trajectory_msg, jmg, wait_for_execution))
   {
     ROS_ERROR_STREAM_NAMED("manipulation", "Failed to execute trajectory");
     return false;
@@ -1111,7 +1114,71 @@ bool Manipulation::executeInsertionPath(JointModelGroup* arm_jmg, double desired
 
   // Move in and out
   Eigen::Vector3d approach_direction;
-  approach_direction << 0.5, 0, (in ? 1 : -1);
+  approach_direction << 0, 0, (in ? 1 : -1);
+
+  // Compute Cartesian Path
+  // the direction can be in the local reference frame (in which case we rotate it)
+  const Eigen::Vector3d rotated_direction = ee_start_pose.rotation() * approach_direction;
+
+  // The target pose is built by applying a translation to the start pose for the desired direction
+  // and distance
+  Eigen::Affine3d target_pose = ee_start_pose;
+  target_pose.translation() += rotated_direction * desired_distance;
+  visuals_->visual_tools_->publishZArrow(target_pose, rvt::GREEN);
+
+  // Resolution of trajectory
+  double max_step = 0.01;  // 0.01 // The maximum distance in Cartesian space between consecutive
+                           // points on the resulting path
+
+  // Jump threshold for preventing consequtive joint values from 'jumping' by a large amount in
+  // joint space
+  double jump_threshold = config_->jump_threshold_;  // aka jump factor
+
+  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
+  double last_valid_percentage =
+      robot_state->computeCartesianPath(arm_jmg, robot_state_trajectory, ik_tip_link, target_pose,
+                                        true, max_step, jump_threshold, NULL);
+  std::cout << "last_valid_percentage: " << last_valid_percentage << std::endl;
+
+  visuals_->visual_tools_->publishTrajectoryPoints(robot_state_trajectory, ik_tip_link);
+
+  // Get approach trajectory message
+  moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
+  const bool use_interpolation = false;
+  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg,
+                                      velocity_scaling_factor, use_interpolation))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation", "Failed to convert to parameterized trajectory");
+    return false;
+  }
+
+  // Execute
+  if (!execution_interface_->executeTrajectory(cartesian_trajectory_msg, arm_jmg))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation", "Failed to execute trajectory");
+    return false;
+  }
+
+  return true;
+}
+
+bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double desired_distance,
+                                              bool in, double velocity_scaling_factor)
+{
+  const moveit::core::LinkModel* ik_tip_link = grasp_datas_[arm_jmg]->parent_link_;
+
+  moveit::core::RobotStatePtr robot_state(new moveit::core::RobotState(*getCurrentState()));
+
+  // Get current pose
+  Eigen::Affine3d ee_start_pose =
+      robot_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+
+  // Visualize current pose
+  visuals_->visual_tools_->publishZArrow(ee_start_pose, rvt::ORANGE);
+
+  // Move in and out
+  Eigen::Vector3d approach_direction;
+  approach_direction << 0, 0, (in ? 1 : -1);
 
   // Compute Cartesian Path
   // the direction can be in the local reference frame (in which case we rotate it)
@@ -1462,6 +1529,7 @@ bool Manipulation::getRobotStateFromPose(const Eigen::Affine3d& ee_pose,
     if (!robot_state->setFromIK(arm_jmg, ee_pose, ik_tip_link->getName(), consistency_limits,
                                 attempts, timeout, constraint_fn))
     {
+      visuals_->visual_tools_->publishZArrow(ee_pose, rvt::RED);
       ROS_WARN_STREAM_NAMED("manipulation", "Unable to find arm solution for desired pose");
       return false;
     }
