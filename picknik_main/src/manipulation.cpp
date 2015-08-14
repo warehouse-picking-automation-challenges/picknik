@@ -2459,8 +2459,8 @@ bool Manipulation::beginTouchControl()
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
   const bool move = true;
 
-  Eigen::Affine3d start_pose;
-  Eigen::Affine3d target_pose;
+  Eigen::Affine3d target_pose =
+      getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
   // double velocity_scaling_factor = 0.1;
 
   while (ros::ok())
@@ -2468,8 +2468,8 @@ bool Manipulation::beginTouchControl()
     ros::Duration(0.1).sleep();
 
     // Get current pose
-    // start_pose = getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
-    start_pose = teleop_state_->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+
+    // target_pose = teleop_state_->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
 
     // Check if overall sheer force is enough to move the arm
     if (line_tracking_->getSheerForce() < config_->sheer_force_threshold_)
@@ -2488,15 +2488,18 @@ bool Manipulation::beginTouchControl()
     direction << -1 * sin(line_tracking_->getSheerTheta()), 0, cos(line_tracking_->getSheerTheta());
 
     // std::cout << "Direction:\n " << direction << std::endl;
-    const Eigen::Vector3d rotated_direction = start_pose.rotation() * direction;
+    const Eigen::Vector3d rotated_direction = target_pose.rotation() * direction;
 
-    // The target pose is built by applying a translation to the start pose for the desired
+    // The target pose is built by applying a translation to the target pose for the desired
     // direction and distance
-    Eigen::Affine3d target_pose = start_pose;
     target_pose.translation() += rotated_direction * desired_distance;
-    std::cout << "\n" << rotated_direction * desired_distance << std::endl;
+    // std::cout << "\n" << rotated_direction * desired_distance << std::endl;
 
-    teleoperation(target_pose, move, arm_jmg);
+    // Convert pose to frame of robot base
+    const Eigen::Affine3d& world_to_base = getCurrentState()->getGlobalLinkTransform("base_link");
+    Eigen::Affine3d base_to_desired = world_to_base.inverse() * target_pose;
+
+    embededTeleoperation(base_to_desired, move, arm_jmg);
   }
 
   ROS_INFO_STREAM_NAMED("manipulation", "Finished touch control");
@@ -2529,6 +2532,22 @@ bool Manipulation::teleoperation(const Eigen::Affine3d& ee_pose, bool move,
     // Visualize what we would have done
     visuals_->goal_state_->publishRobotState(teleop_state_, rvt::BLUE);
   }
+
+  return true;
+}
+
+bool Manipulation::embededTeleoperation(const Eigen::Affine3d& ee_pose, bool move,
+                                        JointModelGroup* arm_jmg)
+{
+  // NOTE this is in a separate thread, so we should only use visuals_->trajectory_lines_ for
+  // debugging!
+
+  // Convert the parent link location to that which Blue expects (URDFs are off). This value was
+  // manually
+  // calibrated
+  Eigen::Affine3d ee_pose_blue = ee_pose * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
+
+  execution_interface_->executePose(ee_pose_blue);
 
   return true;
 }

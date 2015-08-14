@@ -39,12 +39,12 @@
 
 namespace picknik_main
 {
+const std::string BOUNDS_PARAM_NAME = "start_state_max_bounds_error";
+const std::string DT_PARAM_NAME = "start_state_max_dt";
+
 class FixStateBounds
 {
 public:
-  static const std::string BOUNDS_PARAM_NAME;
-  static const std::string DT_PARAM_NAME;
-
   FixStateBounds();
 
   /**
@@ -68,7 +68,4 @@ private:
   double bounds_dist_;
   double max_dt_offset_;
 };
-
-const std::string FixStateBounds::BOUNDS_PARAM_NAME = "start_state_max_bounds_error";
-const std::string FixStateBounds::DT_PARAM_NAME = "start_state_max_dt";
 }

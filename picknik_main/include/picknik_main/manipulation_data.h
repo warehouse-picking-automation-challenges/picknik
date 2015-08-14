@@ -149,13 +149,14 @@ public:
 
   std::string joint_state_topic_;
 
+  Eigen::Affine3d teleoperation_offset_;
+
 private:
   // A shared node handle
   ros::NodeHandle nh_;
 
   // For tweaking
   Eigen::Affine3d test_pose_;
-  std::vector<double> test_pose_doubles_;
 
 };  // end class
 

@@ -200,11 +200,11 @@ const Eigen::Affine3d RectangleObject::getCentroid() const
 
 MeshObject::MeshObject(VisualsPtr visuals, const rvt::colors& color, const std::string& name)
   : CollisionObject(visuals, color, name)
-  , centroid_(Eigen::Affine3d::Identity())
-  , mesh_centroid_(Eigen::Affine3d::Identity())
   , height_(0.0)
   , width_(0.0)
   , depth_(0.0)
+  , centroid_(Eigen::Affine3d::Identity())
+  , mesh_centroid_(Eigen::Affine3d::Identity())
 {
 }
 

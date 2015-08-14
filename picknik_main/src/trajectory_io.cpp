@@ -150,8 +150,6 @@ bool TrajectoryIO::playbackWaypointsFromFile(const std::string& file_name, Joint
   // Create desired trajectory
   EigenSTL::vector_Affine3d waypoints;
 
-  double dummy_dt = 1;  // temp value
-
   // Read each line
   while (std::getline(input_file, line))
   {

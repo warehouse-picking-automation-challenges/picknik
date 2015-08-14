@@ -431,7 +431,7 @@ void RemoteControl::processFeedback(
       break;
 
     case InteractiveMarkerFeedback::MOUSE_UP:
-      ROS_INFO_STREAM("mouse up");
+      // ROS_INFO_STREAM("mouse up");
 
       parent_->processMarkerPose(feedback->pose, true);
 

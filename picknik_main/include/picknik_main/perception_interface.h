@@ -109,11 +109,11 @@ private:
   // Robot-sepcific data for the APC
   ManipulationDataPtr config_;
 
-  // Perception pipeline communication
-  actionlib::SimpleActionClient<picknik_msgs::FindObjectsAction> find_objects_action_;
-
   // TF Listener
   boost::shared_ptr<tf::TransformListener> tf_;
+
+  // Perception pipeline communication
+  actionlib::SimpleActionClient<picknik_msgs::FindObjectsAction> find_objects_action_;
 
   // Tell the perception pipeline we are done moving the camera
   ros::ServiceClient stop_perception_client_;

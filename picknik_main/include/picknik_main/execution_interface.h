@@ -79,6 +79,13 @@ public:
                      bool fake_execution);
 
   /**
+   * \brief Execute a desired cartesian end effector pose
+   * \param pose
+   * \return true on success
+   */
+  bool executePose(const Eigen::Affine3d &pose);
+
+  /**
    * \brief Do a bunch of checks and send to low level controllers
    * \return true on success
    */
@@ -151,6 +158,9 @@ private:
   // Check which controllers are loaded
   ros::ServiceClient zaber_list_controllers_client_;
   ros::ServiceClient kinova_list_controllers_client_;
+
+  geometry_msgs::Pose cartesian_command_msg_;
+  ros::Publisher cartesian_command_pub_;
 
   // Unit testing mode - do not actually execute trajectories
   bool unit_testing_enabled_;

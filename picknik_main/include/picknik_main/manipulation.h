@@ -48,7 +48,7 @@ MOVEIT_CLASS_FORWARD(PlanningPipeline);
 
 namespace moveit_grasps
 {
-MOVEIT_CLASS_FORWARD(GraspGenerator);
+// MOVEIT_CLASS_FORWARD(GraspGenerator);
 // TODO add more here
 }
 
@@ -539,11 +539,14 @@ public:
    */
   bool showJointLimits(JointModelGroup* jmg);
 
-  /** \brief Quickly response to pose requests */
+  /** \brief Quickly response to pose requests. Uses IK on dev computer, not embedded */
   bool teleoperation(const Eigen::Affine3d& ee_pose, bool move, JointModelGroup* arm_jmg);
 
   /** \brief Respond to touch sensors on hand */
   bool beginTouchControl();
+
+  /** \brief Teleoperate robot, but run IK on robot's embedded IK solver */
+  bool embededTeleoperation(const Eigen::Affine3d& ee_pose, bool move, JointModelGroup* arm_jmg);
 
   /** \brief Setup robot state for teleop */
   bool enableTeleoperation();

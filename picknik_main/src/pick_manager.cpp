@@ -105,7 +105,7 @@ PickManager::PickManager(bool verbose)
                                        line_tracking_));
 
   // Load trajectory IO class
-  trajectory_io_.reset(new TrajectoryIO(remote_control_, visuals_, config_, manipulation_));
+  // trajectory_io_.reset(new TrajectoryIO(remote_control_, visuals_, config_, manipulation_));
 
   // Load perception layer
   perception_interface_.reset(
@@ -115,15 +115,7 @@ PickManager::PickManager(bool verbose)
   planning_scene_manager_.reset(new PlanningSceneManager(verbose, visuals_, perception_interface_));
 
   // Show interactive marker
-  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
-  interactive_marker_pose_ =
-      manipulation_->getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
-  interactive_marker_pose_ =
-      interactive_marker_pose_ * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_.inverse();
-  geometry_msgs::Pose pose_msg = visuals_->visual_tools_->convertPose(interactive_marker_pose_);
-  // geometry_msgs::Pose pose =
-  // visuals_->visual_tools_->convertPose(config_->grasp_location_transform_);
-  remote_control_->initializeInteractiveMarkers(pose_msg);
+  setupInteractiveMarker();
 
   ROS_INFO_STREAM_NAMED("pick_manager", "PickManager Ready.");
 }
@@ -167,7 +159,7 @@ bool PickManager::checkSystemReady()
   }
 
   // Choose which planning group to use
-  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  // JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Check robot calibrated
   // TODO
@@ -339,9 +331,6 @@ bool PickManager::getSRDFPose()
 // Mode 42
 bool PickManager::testInCollision()
 {
-  // Choose which planning group to use
-  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
-
   while (ros::ok())
   {
     std::cout << std::endl;
@@ -894,28 +883,28 @@ void PickManager::processMarkerPose(const geometry_msgs::Pose& pose, bool move)
   interactive_marker_pose_ = visuals_->trajectory_lines_->convertPose(pose);
 
   // Debug
-  if (true)
-  {
-    // visuals_->visual_tools_->printTransformRPY(interactive_marker_pose_);
-    visuals_->trajectory_lines_->publishZArrow(interactive_marker_pose_);
-  }
+  if (false)
+    visuals_->trajectory_lines_->publishZArrow(interactive_marker_pose_, rvt::RED);
 
   if (!teleoperation_enabled_)
     return;
 
-  // if (!teleoperation_enabled_)
   move = true;
-  // else
-  // move = true; // allow continous movements
 
   // Choose arm
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
-  // Offset ee pose forward
-  Eigen::Affine3d ee_pose =
-      interactive_marker_pose_ * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
+  // Offset ee pose forward, because we are treating interactive marker as a special thing in front
+  // of hand
+  Eigen::Affine3d ee_pose = interactive_marker_pose_ * config_->teleoperation_offset_;
 
-  manipulation_->teleoperation(ee_pose, move, arm_jmg);
+  // Convert pose to frame of robot base
+  const Eigen::Affine3d& world_to_base =
+      manipulation_->getCurrentState()->getGlobalLinkTransform("base_link");
+  Eigen::Affine3d base_to_desired = world_to_base.inverse() * ee_pose;
+
+  // New Method
+  manipulation_->embededTeleoperation(base_to_desired, move, arm_jmg);
 }
 
 // Mode 3
@@ -996,6 +985,41 @@ void PickManager::enableTeleoperation()
   ROS_INFO_STREAM_NAMED("pick_manager", "Teleoperation enabled");
   teleoperation_enabled_ = true;
   manipulation_->enableTeleoperation();
+
+  // TEST - measure the offset between blue tool frame and ROS tool frame
+  if (false)
+  {
+    moveit::core::RobotStatePtr before_state(
+        new moveit::core::RobotState(*manipulation_->getCurrentState()));
+
+    JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+
+    const Eigen::Affine3d world_to_desired = interactive_marker_pose_;
+    const Eigen::Affine3d& world_to_base =
+        manipulation_->getCurrentState()->getGlobalLinkTransform("base_link");
+    Eigen::Affine3d base_to_desired = world_to_base.inverse() * world_to_desired;
+
+    // New Method
+    bool move = true;
+    manipulation_->embededTeleoperation(base_to_desired, move, arm_jmg);
+
+    ros::Duration(1.0).sleep();
+    moveit::core::RobotStatePtr after_state(
+        new moveit::core::RobotState(*manipulation_->getCurrentState()));
+
+    // Now find the difference between EE poses
+    visuals_->visual_tools_->printTransform(
+        before_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_));
+    std::cout << "after: " << std::endl;
+    visuals_->visual_tools_->printTransform(
+        after_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_));
+
+    std::cout << (before_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_)
+                      .translation() -
+                  after_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_)
+                      .translation())
+              << std::endl;
+  }
 }
 
 // Mode 4
@@ -1004,8 +1028,22 @@ void PickManager::touchControl()
   ROS_INFO_STREAM_NAMED("pick_manager", "Responding to touch on finger sensor");
   manipulation_->enableTeleoperation();
 
-  remote_control_->waitForNextStep("start touch control");
   manipulation_->beginTouchControl();
+}
+
+void PickManager::setupInteractiveMarker()
+{
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  interactive_marker_pose_ =
+      manipulation_->getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+  if (true)
+    interactive_marker_pose_ = interactive_marker_pose_ * config_->teleoperation_offset_.inverse();
+
+  geometry_msgs::Pose pose_msg = visuals_->visual_tools_->convertPose(interactive_marker_pose_);
+
+  // geometry_msgs::Pose pose =
+  // visuals_->visual_tools_->convertPose(config_->grasp_location_transform_);
+  remote_control_->initializeInteractiveMarkers(pose_msg);
 }
 
 }  // end namespace

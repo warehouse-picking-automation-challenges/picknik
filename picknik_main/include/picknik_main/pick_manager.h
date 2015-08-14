@@ -212,6 +212,9 @@ public:
   /** \brief Start responding to touch sensors */
   void touchControl();
 
+  /** \brief Initialize with correct location */
+  void setupInteractiveMarker();
+
   VisualsPtr getVisuals() { return visuals_; }
   planning_scene_monitor::PlanningSceneMonitorPtr getPlanningSceneMonitor() const
   {
