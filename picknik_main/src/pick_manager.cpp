@@ -59,6 +59,10 @@ PickManager::PickManager(bool verbose)
   // get_scene_service_ = nh_root_.advertiseService(GET_PLANNING_SCENE_SERVICE_NAME,
   // &PickManager::getPlanningSceneService, this);
 
+  // Load manipulation data for our robot
+  config_.reset(new ManipulationData());
+  config_->load(robot_model_, FLAGS_fake_execution, package_path_);
+
   // Create tf transformer
   tf_.reset(new tf::TransformListener(nh_private_));
   // TODO: remove these lines, only an attempt to fix loadPlanningSceneMonitor bug
@@ -77,10 +81,6 @@ PickManager::PickManager(bool verbose)
   package_path_ = ros::package::getPath(PACKAGE_NAME);
   if (package_path_.empty())
     ROS_FATAL_STREAM_NAMED("product", "Unable to get " << PACKAGE_NAME << " package path");
-
-  // Load manipulation data for our robot
-  config_.reset(new ManipulationData());
-  config_->load(robot_model_, FLAGS_fake_execution, package_path_);
 
   // Load the remote control for dealing with GUIs
   remote_control_.reset(new RemoteControl(verbose, nh_private_, this));
