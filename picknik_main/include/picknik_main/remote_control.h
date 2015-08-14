@@ -47,7 +47,7 @@
 
 // ROS
 #include <ros/ros.h>
-#include <picknik_msgs/PickNikDashboard.h>
+#include <dashboard_msgs/DashboardControl.h>
 #include <sensor_msgs/Joy.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
@@ -71,7 +71,7 @@ public:
   /**
    * \brief Remote control from Rviz
    */
-  void remoteCallback(const picknik_msgs::PickNikDashboard::ConstPtr& msg);
+  void remoteCallback(const dashboard_msgs::DashboardControl::ConstPtr& msg);
 
   /**
    * \brief Recieves inputs from joystick

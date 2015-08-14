@@ -38,7 +38,7 @@
 
 #include <picknik_main/remote_control.h>
 #include <picknik_main/pick_manager.h>
-#include <picknik_msgs/PickNikDashboard.h>
+#include <dashboard_msgs/DashboardControl.h>
 #include <moveit/macros/console_colors.h>
 
 // Command line arguments
@@ -83,7 +83,7 @@ RemoteControl::RemoteControl(bool verbose, ros::NodeHandle nh, PickManager* pare
   ROS_INFO_STREAM_NAMED("remote_control", "RemoteControl Ready.");
 }
 
-void RemoteControl::remoteCallback(const picknik_msgs::PickNikDashboard::ConstPtr& msg)
+void RemoteControl::remoteCallback(const dashboard_msgs::DashboardControl::ConstPtr& msg)
 {
   if (msg->next_step)
     setReadyForNextStep();

@@ -30,22 +30,20 @@
 #define TELEOP_PANEL_H
 
 #ifndef Q_MOC_RUN
-# include <ros/ros.h>
+#include <ros/ros.h>
 
-# include <rviz/panel.h>
+#include <rviz/panel.h>
 #endif
 
 #include <QPushButton>
 #include <QComboBox>
-#include <picknik_msgs/PickNikDashboard.h>
+#include <dashboard_msgs/DashboardControl.h>
 
 class QLineEdit;
 class QSpinBox;
 
 namespace picknik_gui
 {
-
-
 // BEGIN_TUTORIAL
 // Here we declare our new subclass of rviz::Panel.  Every panel which
 // can be added via the Panels/Add_New_Panel menu is a subclass of
@@ -54,11 +52,11 @@ namespace picknik_gui
 // PickNikPanel will show a text-entry field to set the output topic
 // and a 2D control area.  The 2D control area is implemented by the
 // DriveWidget class, and is described there.
-class PickNikPanel: public rviz::Panel
+class PickNikPanel : public rviz::Panel
 {
-// This class uses Qt slots and is a subclass of QObject, so it needs
-// the Q_OBJECT macro.
-Q_OBJECT
+  // This class uses Qt slots and is a subclass of QObject, so it needs
+  // the Q_OBJECT macro.
+  Q_OBJECT
 public:
   // QWidget subclass constructors usually take a parent widget
   // parameter (which usually defaults to 0).  At the same time,
@@ -67,13 +65,13 @@ public:
   // a default of 0 lets the default constructor work and also lets
   // someone using the class for something else to pass in a parent
   // widget as they normally would with Qt.
-  PickNikPanel( QWidget* parent = 0 );
+  PickNikPanel(QWidget *parent = 0);
 
   // Now we declare overrides of rviz::Panel functions for saving and
   // loading data from the config file.  Here the data is the
   // topic name.
-  virtual void load( const rviz::Config& config );
-  virtual void save( rviz::Config config ) const;
+  virtual void load(const rviz::Config &config);
+  virtual void save(rviz::Config config) const;
 
   // Next come a couple of public Qt slots.
 public Q_SLOTS:
@@ -116,8 +114,8 @@ protected:
   QPushButton *btn_stop_;
   QPushButton *btn_reset_;
   QPushButton *btn_bringup_;
-  QPushButton *btn_home_;  
-  QPushButton *btn_grip_;  
+  QPushButton *btn_home_;
+  QPushButton *btn_grip_;
   QSpinBox *spin_box_;
   QComboBox *combo_mode_;
 
@@ -130,6 +128,6 @@ protected:
   // END_TUTORIAL
 };
 
-} // end namespace picknik_gui
+}  // end namespace picknik_gui
 
-#endif // TELEOP_PANEL_H
+#endif  // TELEOP_PANEL_H
