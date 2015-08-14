@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(picknik_main)
 
 # C++ 11
-set(CMAKE_CXX_FLAGS "-std=c++0x ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-std=c++0x -Wall ${CMAKE_CXX_FLAGS}")
 
 find_package(catkin REQUIRED COMPONENTS
   moveit_core

@@ -88,30 +88,6 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
                                           goal_bin_clearance_);
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "jump_threshold", jump_threshold_);
 
-  // Load perception variables
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/x_translation_from_bin",
-                                          camera_x_translation_from_bin_);
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/y_translation_from_bin",
-                                          camera_y_translation_from_bin_);
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/z_translation_from_bin",
-                                          camera_z_translation_from_bin_);
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/x_rotation_from_standard_grasp",
-                                          camera_x_rotation_from_standard_grasp_);
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/y_rotation_from_standard_grasp",
-                                          camera_y_rotation_from_standard_grasp_);
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/z_rotation_from_standard_grasp",
-                                          camera_z_rotation_from_standard_grasp_);
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/lift_distance",
-                                          camera_lift_distance_);
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/left_distance",
-                                          camera_left_distance_);
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "camera/camera_frame_display_scale",
-                                          camera_frame_display_scale_);
-  ros_param_utilities::getStringParameter(parent_name, nh_, "camera/left_camera_frame",
-                                          left_camera_frame_);
-  ros_param_utilities::getStringParameter(parent_name, nh_, "camera/right_camera_frame",
-                                          right_camera_frame_);
-
   // Load robot semantics
   ros_param_utilities::getStringParameter(parent_name, nh_, "start_pose", start_pose_);
   ros_param_utilities::getStringParameter(parent_name, nh_, "right_arm_dropoff_pose",
@@ -133,12 +109,6 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
                                           experience_type_);
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "moveit_ompl/planning_time",
                                           planning_time_);
-
-  // Camera view positions
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "bin_height/row1", bin_height_row1_);
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "bin_height/row2", bin_height_row2_);
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "bin_height/row3", bin_height_row3_);
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "bin_height/row4", bin_height_row4_);
 
   // Behavior configs
   ros_param_utilities::getBoolMap(parent_name, nh_, "behavior", enabled_);
@@ -162,8 +132,13 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   ros_param_utilities::convertDoublesToEigen(parent_name, grasp_location_transform_doubles,
                                              grasp_location_transform_);
 
-  // End effector configuration
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "finger_3_offset", finger_3_offset_);
+  // Tactile Sensor Data
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "sheer_force_threshold",
+                                          sheer_force_threshold_);
+
+  // Pick Manager settings
+  ros_param_utilities::getStringParameter(parent_name, nh_, "joint_state_topic",
+                                          joint_state_topic_);
 
   // Load proper groups
   // TODO - check if joint model group exists

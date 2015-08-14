@@ -111,19 +111,6 @@ public:
   std::string left_arm_name_;
   std::string both_arms_name_;
 
-  // Perception variables
-  double camera_x_translation_from_bin_;
-  double camera_y_translation_from_bin_;
-  double camera_z_translation_from_bin_;
-  double camera_x_rotation_from_standard_grasp_;
-  double camera_y_rotation_from_standard_grasp_;
-  double camera_z_rotation_from_standard_grasp_;
-  double camera_lift_distance_;
-  double camera_left_distance_;
-  double camera_frame_display_scale_;
-  std::string left_camera_frame_;
-  std::string right_camera_frame_;
-
   // Load planning configs
   bool use_experience_setup_;
   std::string experience_type_;
@@ -138,6 +125,9 @@ public:
   // Logic on type of robot
   bool dual_arm_;
   bool has_gantry_;
+
+  // Tactile Sensor Data
+  double sheer_force_threshold_;
 
   // Execution mode
   bool fake_execution_;
@@ -154,17 +144,10 @@ public:
   // File path to ROS package on drive
   std::string package_path_;
 
-  // End effector configuration
-  double finger_3_offset_;
-
-  // Bin heightsi
-  double bin_height_row1_;
-  double bin_height_row2_;
-  double bin_height_row3_;
-  double bin_height_row4_;
-
   // Location to grasp
   Eigen::Affine3d grasp_location_transform_;
+
+  std::string joint_state_topic_;
 
 private:
   // A shared node handle

@@ -97,6 +97,9 @@ private:
    */
   bool publishCameraFrame(Eigen::Affine3d camera_to_world);
 
+  // ROS Comm
+  ros::NodeHandle nh_;
+
   // Show more visual and console output, with general slower run time.
   bool verbose_;
 
@@ -111,9 +114,6 @@ private:
 
   // TF Listener
   boost::shared_ptr<tf::TransformListener> tf_;
-
-  // ROS Comm
-  ros::NodeHandle nh_;
 
   // Tell the perception pipeline we are done moving the camera
   ros::ServiceClient stop_perception_client_;

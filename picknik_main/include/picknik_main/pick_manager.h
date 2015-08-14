@@ -203,13 +203,14 @@ public:
 
   void processMarkerPose(const geometry_msgs::Pose& pose, bool move);
 
-  bool teleoperation(Eigen::Affine3d ee_pose, bool move);
-
   /** \brief Peg in hole demo */
   void insertion();
 
   /** \brief Allow interactive markers to control robot */
   void enableTeleoperation();
+
+  /** \brief Start responding to touch sensors */
+  void touchControl();
 
   VisualsPtr getVisuals() { return visuals_; }
   planning_scene_monitor::PlanningSceneMonitorPtr getPlanningSceneMonitor() const
@@ -282,7 +283,6 @@ private:
 
   bool teleoperation_enabled_;
   Eigen::Affine3d interactive_marker_pose_;
-  moveit::core::RobotStatePtr teleop_state_;
 
 };  // end class
 

@@ -539,6 +539,15 @@ public:
    */
   bool showJointLimits(JointModelGroup* jmg);
 
+  /** \brief Quickly response to pose requests */
+  bool teleoperation(const Eigen::Affine3d& ee_pose, bool move, JointModelGroup* arm_jmg);
+
+  /** \brief Respond to touch sensors on hand */
+  bool beginTouchControl();
+
+  /** \brief Setup robot state for teleop */
+  bool enableTeleoperation();
+
   /**
    * \brief Get the iterative smoother
    */
@@ -570,6 +579,7 @@ protected:
   // Allocated memory for robot state
   moveit::core::RobotStatePtr current_state_;
   moveit::core::RobotStatePtr first_state_in_trajectory_;  // for use with generateApproachPath()
+  moveit::core::RobotStatePtr teleop_state_;
 
   // Robot-sepcific data for the APC
   ManipulationDataPtr config_;
@@ -580,9 +590,12 @@ protected:
   // Remote control
   RemoteControlPtr remote_control_;
 
+  // End effector data
+  LineTrackingPtr line_tracking_;
+
   // Experience-based planning
   bool use_experience_;
-  bool use_logging_;
+  bool use_loggaing_;
   std::ofstream logging_file_;
 
   // Grasp generator
@@ -593,9 +606,6 @@ protected:
   // State modification helper
   FixStateBounds fix_state_bounds_;
   trajectory_processing::IterativeParabolicTimeParameterization iterative_smoother_;
-
-  // End effector data
-  LineTrackingPtr line_tracking_;
 
 };  // end class
 

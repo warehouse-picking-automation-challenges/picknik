@@ -56,11 +56,11 @@ PerceptionInterface::PerceptionInterface(bool verbose, VisualsPtr visuals,
                                          ManipulationDataPtr config,
                                          boost::shared_ptr<tf::TransformListener> tf,
                                          ros::NodeHandle nh)
-  : verbose_(verbose)
+  : nh_(nh)
+  , verbose_(verbose)
   , visuals_(visuals)
   , config_(config)
   , tf_(tf)
-  , nh_(nh)
   , find_objects_action_(PERCEPTION_TOPIC)
   , is_processing_perception_(false)
 {

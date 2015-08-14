@@ -18,16 +18,13 @@
 // PickNik
 #include <picknik_main/pick_manager.h>
 
-// Parameter loading
-#include <ros_param_shortcuts/ros_param_utilities.h>
-
 // MoveIt
-#include <moveit/robot_state/conversions.h>
+//#include <moveit/robot_state/conversions.h>
 #include <moveit/macros/console_colors.h>
 
 // Boost
-#include <boost/filesystem.hpp>
-#include <boost/foreach.hpp>
+//#include <boost/filesystem.hpp>
+//#include <boost/foreach.hpp>
 
 namespace picknik_main
 {
@@ -460,8 +457,6 @@ bool PickManager::testJointLimits()
   int test_joint_limit_joint;
   std::size_t first_joint;
   std::size_t last_joint;
-  ros_param_utilities::getIntParameter("pick_manager", nh_private_, "test/test_joint_limit_joint",
-                                       test_joint_limit_joint);
   if (test_joint_limit_joint < 0)
   {
     first_joint = 0;
@@ -581,15 +576,10 @@ bool PickManager::loadPlanningSceneMonitor()
       planning_scene_, robot_model_loader_, tf_, PLANNING_SCENE_MONITOR_NAME));
   ros::spinOnce();
 
-  // Get the joint state topic
-  std::string joint_state_topic;
-  ros_param_utilities::getStringParameter("pick_manager", nh_private_, "joint_state_topic",
-                                          joint_state_topic);
   if (planning_scene_monitor_->getPlanningScene())
   {
     // Optional monitors to start:
-    planning_scene_monitor_->startStateMonitor(joint_state_topic,
-                                               "");  /// attached_collision_object");
+    planning_scene_monitor_->startStateMonitor(config_->joint_state_topic_, "");
     planning_scene_monitor_->startPublishingPlanningScene(
         planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE, "picknik_planning_scene");
     planning_scene_monitor_->getPlanningScene()->setName("picknik_planning_scene");
@@ -613,7 +603,7 @@ bool PickManager::loadPlanningSceneMonitor()
   while (!planning_scene_monitor_->getStateMonitor()->haveCompleteState() && ros::ok())
   {
     ROS_INFO_STREAM_THROTTLE_NAMED(1, "pick_manager", "Waiting for complete state from topic "
-                                                          << joint_state_topic);
+                                                          << config_->joint_state_topic_);
     ros::Duration(0.1).sleep();
     ros::spinOnce();
 
@@ -750,11 +740,11 @@ bool PickManager::calibrateInCircle()
 
   // Get location of camera
   Eigen::Affine3d camera_pose;
-  manipulation_->getPose(camera_pose, config_->right_camera_frame_);
+  // TODO  manipulation_->getPose(camera_pose, config_->right_camera_frame_);
 
   // Move camera pose forward away from camera
   Eigen::Affine3d translate_forward = Eigen::Affine3d::Identity();
-  translate_forward.translation().x() += config_->camera_x_translation_from_bin_;
+  translate_forward.translation().x() += 1.0;  // TODO config_->camera_x_translation_from_bin_;
   translate_forward.translation().z() -= 0.15;
   camera_pose = translate_forward * camera_pose;
 
@@ -918,43 +908,14 @@ void PickManager::processMarkerPose(const geometry_msgs::Pose& pose, bool move)
   // else
   // move = true; // allow continous movements
 
-  teleoperation(interactive_marker_pose_, move);
-}
-
-bool PickManager::teleoperation(Eigen::Affine3d ee_pose, bool move)
-{
-  // NOTE this is in a separate thread, so we should only use visuals_->trajectory_lines_ for
-  // debugging!
-
   // Choose arm
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
   // Offset ee pose forward
-  ee_pose = ee_pose * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
+  Eigen::Affine3d ee_pose =
+      interactive_marker_pose_ * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
 
-  // Solve IK
-  bool use_consistency_limits = true;
-  if (!manipulation_->getRobotStateFromPose(ee_pose, teleop_state_, arm_jmg,
-                                            use_consistency_limits))
-    return false;
-
-  // Execute robot pose
-  if (move)
-  {
-    const double velocity_scaling_factor = 1.0;
-    if (!manipulation_->moveDirectToState(teleop_state_, arm_jmg, velocity_scaling_factor))
-    {
-      ROS_ERROR_STREAM_NAMED("pick_manager", "Failed to execute state");
-      return false;
-    }
-  }
-  else
-  {
-    // Visualize what we would have done
-    visuals_->goal_state_->publishRobotState(teleop_state_, rvt::BLUE);
-  }
-
-  return true;
+  manipulation_->teleoperation(ee_pose, move, arm_jmg);
 }
 
 // Mode 3
@@ -1034,7 +995,17 @@ void PickManager::enableTeleoperation()
 {
   ROS_INFO_STREAM_NAMED("pick_manager", "Teleoperation enabled");
   teleoperation_enabled_ = true;
-  teleop_state_.reset(new moveit::core::RobotState(*manipulation_->getCurrentState()));
+  manipulation_->enableTeleoperation();
+}
+
+// Mode 4
+void PickManager::touchControl()
+{
+  ROS_INFO_STREAM_NAMED("pick_manager", "Responding to touch on finger sensor");
+  manipulation_->enableTeleoperation();
+
+  remote_control_->waitForNextStep("start touch control");
+  manipulation_->beginTouchControl();
 }
 
 }  // end namespace

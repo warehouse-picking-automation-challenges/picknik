@@ -54,6 +54,13 @@ public:
    */
   LineTracking(VisualsPtr visuals);
 
+  double getSheerTheta() { return sheer_theta_; };
+  double getSheerForce() { return end_effector_data_cached_.data[SHEER_FORCE]; };
+  // double getSheerDisplacementX() { return end_effector_data_cached_.data[SHEER_DISPLACEMENT_X];
+  // };
+  // double getSheerDisplacementY() { return end_effector_data_cached_.data[SHEER_DISPLACEMENT_Y];
+  // };
+
 private:
   void dataCallback(const std_msgs::Float64MultiArray::ConstPtr& msg);
 
@@ -73,6 +80,8 @@ private:
   VisualsPtr visuals_;
 
   double sheer_theta_;
+  std_msgs::Float64MultiArray end_effector_data_cached_;
+
 };  // end class
 
 // Create boost pointers for this class

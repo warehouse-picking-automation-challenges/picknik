@@ -73,6 +73,10 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main", "Insertion");
       manager.insertion();
       break;
+    case 4:
+      ROS_INFO_STREAM_NAMED("main", "Touch control");
+      manager.touchControl();
+      break;
     case 5:
       ROS_INFO_STREAM_NAMED("main", "Raise the roof (go up and down)");
       manager.testUpAndDown();

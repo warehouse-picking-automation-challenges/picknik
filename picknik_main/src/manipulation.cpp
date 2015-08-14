@@ -47,7 +47,6 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   , grasp_datas_(grasp_datas)
   , remote_control_(remote_control)
   , line_tracking_(line_tracking)
-  , use_logging_(true)
 {
   // Create initial robot state
   {
@@ -68,7 +67,7 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
                                                     current_state_, fake_execution));
 
   // Load logging capability
-  if (use_logging_ && config_->use_experience_setup_)
+  if (config_->use_experience_setup_)
   {
     if (config_->experience_type_ == "thunder")
       logging_file_.open("/home/dave/ompl_storage/thunder_logging.csv",
@@ -542,13 +541,6 @@ bool Manipulation::planPostProcessing()
     if (visuals_->isEnabled("verbose_experience_database_stats"))
       experience_setup->printLogs();
 
-    // Logging
-    if (use_logging_)
-    {
-      experience_setup->saveDataLog(logging_file_);
-      logging_file_.flush();
-    }
-
     // Show experience database
     if (visuals_->isEnabled("show_experience_database"))
     {
@@ -557,6 +549,7 @@ bool Manipulation::planPostProcessing()
       displayExperienceDatabase(arm_jmg);
     }
   }
+  return true;
 }
 
 bool Manipulation::printExperienceLogs()
@@ -2458,6 +2451,91 @@ bool Manipulation::showJointLimits(JointModelGroup* jmg)
       std::cout << MOVEIT_CONSOLE_COLOR_RESET;
   }
 
+  return true;
+}
+
+bool Manipulation::beginTouchControl()
+{
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  const bool move = true;
+
+  Eigen::Affine3d start_pose;
+  Eigen::Affine3d target_pose;
+  // double velocity_scaling_factor = 0.1;
+
+  while (ros::ok())
+  {
+    ros::Duration(0.1).sleep();
+
+    // Get current pose
+    // start_pose = getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+    start_pose = teleop_state_->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+
+    // Check if overall sheer force is enough to move the arm
+    if (line_tracking_->getSheerForce() < config_->sheer_force_threshold_)
+    {
+      std::cout << "force to low: " << line_tracking_->getSheerForce() << "/"
+                << config_->sheer_force_threshold_ << " --------------------------------------- "
+                << std::endl;
+      continue;
+    }
+
+    // Calculate amount to translate
+    const double desired_distance = 0.005;
+    Eigen::Vector3d direction;
+    // std::cout << "Sheer theta: " << line_tracking_->getSheerTheta() << std::endl;
+
+    direction << -1 * sin(line_tracking_->getSheerTheta()), 0, cos(line_tracking_->getSheerTheta());
+
+    // std::cout << "Direction:\n " << direction << std::endl;
+    const Eigen::Vector3d rotated_direction = start_pose.rotation() * direction;
+
+    // The target pose is built by applying a translation to the start pose for the desired
+    // direction and distance
+    Eigen::Affine3d target_pose = start_pose;
+    target_pose.translation() += rotated_direction * desired_distance;
+    std::cout << "\n" << rotated_direction * desired_distance << std::endl;
+
+    teleoperation(target_pose, move, arm_jmg);
+  }
+
+  ROS_INFO_STREAM_NAMED("manipulation", "Finished touch control");
+  return true;
+}
+
+bool Manipulation::teleoperation(const Eigen::Affine3d& ee_pose, bool move,
+                                 JointModelGroup* arm_jmg)
+{
+  // NOTE this is in a separate thread, so we should only use visuals_->trajectory_lines_ for
+  // debugging!
+
+  // Solve IK
+  bool use_consistency_limits = true;
+  if (!getRobotStateFromPose(ee_pose, teleop_state_, arm_jmg, use_consistency_limits))
+    return false;
+
+  // Execute robot pose
+  if (move)
+  {
+    const double velocity_scaling_factor = 1.0;
+    if (!moveDirectToState(teleop_state_, arm_jmg, velocity_scaling_factor))
+    {
+      ROS_ERROR_STREAM_NAMED("pick_manager", "Failed to execute state");
+      return false;
+    }
+  }
+  else
+  {
+    // Visualize what we would have done
+    visuals_->goal_state_->publishRobotState(teleop_state_, rvt::BLUE);
+  }
+
+  return true;
+}
+
+bool Manipulation::enableTeleoperation()
+{
+  teleop_state_.reset(new moveit::core::RobotState(*getCurrentState()));
   return true;
 }
 

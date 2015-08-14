@@ -144,10 +144,10 @@ private:
   ros::Subscriber remote_joy_;
 
   // Remote control
+  bool is_waiting_;
+  bool next_step_ready_;
   bool autonomous_;
   bool full_autonomous_;
-  bool next_step_ready_;
-  bool is_waiting_;
   bool stop_;
 
   // Interactive markers

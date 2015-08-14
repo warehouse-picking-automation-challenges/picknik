@@ -19,6 +19,7 @@ namespace picknik_main
 {
 LineTracking::LineTracking(VisualsPtr visuals)
   : visuals_(visuals)
+  , sheer_theta_(0.0)
 {
   std::size_t queue_size = 1;
   end_effector_data_sub_ =
@@ -34,6 +35,9 @@ void LineTracking::dataCallback(const std_msgs::Float64MultiArray::ConstPtr& msg
                                                 << msg->data.size());
     return;
   }
+
+  // Save latest data
+  end_effector_data_cached_ = *msg;
 
   // displayLineDirection(msg);
 
@@ -153,7 +157,10 @@ void LineTracking::displaySheerForce(const std_msgs::Float64MultiArray::ConstPtr
   double delta_y = pt2.pose.position.y - pt1.pose.position.y;
   double delta_x = pt2.pose.position.x - pt1.pose.position.x;
 
+  // Save for later use
   sheer_theta_ = atan2(delta_y, delta_x);  // radians
+
+  // Create new pose
   eigen_pose = eigen_pose * Eigen::AngleAxisd(sheer_theta_, Eigen::Vector3d::UnitZ());
 
   geometry_msgs::PoseStamped pose_msg;
@@ -161,9 +168,9 @@ void LineTracking::displaySheerForce(const std_msgs::Float64MultiArray::ConstPtr
   pose_msg.pose = visuals_->visual_tools_->convertPose(eigen_pose);
 
   // Visualize arrow
-  const double length = 0.1;
+  const double length = 0.5;
   const int id = 1;
-  visuals_->visual_tools_->publishArrow(pose_msg, rvt::GREY, rvt::SMALL, length, id);
+  visuals_->visual_tools_->publishArrow(pose_msg, rvt::RED, rvt::REGULAR, length, id);
 }
 
 void LineTracking::publishUpdatedLine(geometry_msgs::Point& pt1, geometry_msgs::Point& pt2)
@@ -207,7 +214,7 @@ void LineTracking::convertPixelToMeters(geometry_msgs::Pose& pose, int height, i
   const double& image_width = width;
 
   pose.position.x = WIDTH_OF_GELSIGHT * pose.position.x / image_width;
-  pose.position.y = WIDTH_OF_GELSIGHT * pose.position.y / image_height;
+  pose.position.y = HEIGHT_OF_GELSIGHT * pose.position.y / image_height;
 }
 
 }  // end namespace
