@@ -128,6 +128,7 @@ public:
 
   // Tactile Sensor Data
   double sheer_force_threshold_;
+  double touch_teleop_gain_;
 
   // Execution mode
   bool fake_execution_;

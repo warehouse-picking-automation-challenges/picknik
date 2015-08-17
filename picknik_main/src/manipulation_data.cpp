@@ -143,6 +143,8 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   // Tactile Sensor Data
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "sheer_force_threshold",
                                           sheer_force_threshold_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "touch_teleop_gain",
+                                          touch_teleop_gain_);
 
   // Pick Manager settings
   ros_param_utilities::getStringParameter(parent_name, nh_, "joint_state_topic",

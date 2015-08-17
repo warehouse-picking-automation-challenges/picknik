@@ -20,6 +20,7 @@ namespace picknik_main
 LineTracking::LineTracking(VisualsPtr visuals)
   : visuals_(visuals)
   , sheer_theta_(0.0)
+  , end_effector_data_cached_(ALWAYS_AT_END, 0.0)  // initial dummy data
 {
   std::size_t queue_size = 1;
   end_effector_data_sub_ =
@@ -37,25 +38,27 @@ void LineTracking::dataCallback(const std_msgs::Float64MultiArray::ConstPtr& msg
   }
 
   // Save latest data
-  end_effector_data_cached_ = *msg;
+  end_effector_data_cached_ = msg->data;
 
-  // displayLineDirection(msg);
+  // displayLineDirection();
+  displaySheerForce();
 
-  displaySheerForce(msg);
+  // Do callback
+  end_effector_data_callback_();
 }
 
-void LineTracking::displayLineDirection(const std_msgs::Float64MultiArray::ConstPtr& msg)
+void LineTracking::displayLineDirection()
 {
   bool verbose = false;
 
   // Unpack vector to variable names
-  const double& pt1_x = msg->data[LINE_CENTER_X];
-  const double& pt1_y = msg->data[LINE_CENTER_Y];
-  const double& eigen_vec_x = msg->data[LINE_EIGEN_VEC_X];
-  const double& eigen_vec_y = msg->data[LINE_EIGEN_VEC_Y];
-  const double& eigen_vec_val = msg->data[LINE_EIGEN_VAL];
-  const double& image_height = msg->data[IMAGE_HEIGHT];
-  const double& image_width = msg->data[IMAGE_WIDTH];
+  const double& pt1_x = end_effector_data_cached_[LINE_CENTER_X];
+  const double& pt1_y = end_effector_data_cached_[LINE_CENTER_Y];
+  const double& eigen_vec_x = end_effector_data_cached_[LINE_EIGEN_VEC_X];
+  const double& eigen_vec_y = end_effector_data_cached_[LINE_EIGEN_VEC_Y];
+  const double& eigen_vec_val = end_effector_data_cached_[LINE_EIGEN_VAL];
+  const double& image_height = end_effector_data_cached_[IMAGE_HEIGHT];
+  const double& image_width = end_effector_data_cached_[IMAGE_WIDTH];
 
   // Calculate point 2
   const double distance_between_points = 2000;
@@ -121,12 +124,12 @@ void LineTracking::displayLineDirection(const std_msgs::Float64MultiArray::Const
   visuals_->visual_tools_->publishArrow(pose_msg, rvt::GREY, rvt::SMALL, length, id);
 }
 
-void LineTracking::displaySheerForce(const std_msgs::Float64MultiArray::ConstPtr& msg)
+void LineTracking::displaySheerForce()
 {
-  const double& sheer_displacement_x = msg->data[SHEER_DISPLACEMENT_X];
-  const double& sheer_displacement_y = msg->data[SHEER_DISPLACEMENT_Y];
-  const double& image_height = msg->data[IMAGE_HEIGHT];
-  const double& image_width = msg->data[IMAGE_WIDTH];
+  const double& sheer_displacement_x = end_effector_data_cached_[SHEER_DISPLACEMENT_X];
+  const double& sheer_displacement_y = end_effector_data_cached_[SHEER_DISPLACEMENT_Y];
+  const double& image_height = end_effector_data_cached_[IMAGE_HEIGHT];
+  const double& image_width = end_effector_data_cached_[IMAGE_WIDTH];
 
   // Convert to ROS msg
   geometry_msgs::PoseStamped pt1;

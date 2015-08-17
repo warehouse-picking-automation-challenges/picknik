@@ -2457,53 +2457,47 @@ bool Manipulation::showJointLimits(JointModelGroup* jmg)
 bool Manipulation::beginTouchControl()
 {
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+
+  target_teleop_pose_ =
+      getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+
+  base_to_world_ = getCurrentState()->getGlobalLinkTransform("base_link").inverse();
+
+  line_tracking_->setEndEffectorDataCallback(
+      std::bind(&Manipulation::updateTouchControl, this, arm_jmg));
+
+  ros::spin();
+
+  return true;
+}
+
+void Manipulation::updateTouchControl(JointModelGroup* arm_jmg)
+{
   const bool move = true;
 
-  Eigen::Affine3d target_pose =
-      getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
-  // double velocity_scaling_factor = 0.1;
-
-  while (ros::ok())
+  // Check if overall sheer force is enough to move the arm
+  if (line_tracking_->getSheerForce() < config_->sheer_force_threshold_)
   {
-    ros::Duration(0.1).sleep();
-
-    // Get current pose
-
-    // target_pose = teleop_state_->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
-
-    // Check if overall sheer force is enough to move the arm
-    if (line_tracking_->getSheerForce() < config_->sheer_force_threshold_)
-    {
-      std::cout << "force to low: " << line_tracking_->getSheerForce() << "/"
-                << config_->sheer_force_threshold_ << " --------------------------------------- "
-                << std::endl;
-      continue;
-    }
-
-    // Calculate amount to translate
-    const double desired_distance = 0.005;
-    Eigen::Vector3d direction;
-    // std::cout << "Sheer theta: " << line_tracking_->getSheerTheta() << std::endl;
-
-    direction << -1 * sin(line_tracking_->getSheerTheta()), 0, cos(line_tracking_->getSheerTheta());
-
-    // std::cout << "Direction:\n " << direction << std::endl;
-    const Eigen::Vector3d rotated_direction = target_pose.rotation() * direction;
-
-    // The target pose is built by applying a translation to the target pose for the desired
-    // direction and distance
-    target_pose.translation() += rotated_direction * desired_distance;
-    // std::cout << "\n" << rotated_direction * desired_distance << std::endl;
-
-    // Convert pose to frame of robot base
-    const Eigen::Affine3d& world_to_base = getCurrentState()->getGlobalLinkTransform("base_link");
-    Eigen::Affine3d base_to_desired = world_to_base.inverse() * target_pose;
-
-    embededTeleoperation(base_to_desired, move, arm_jmg);
+    std::cout << "force to low: " << line_tracking_->getSheerForce() << "/"
+              << config_->sheer_force_threshold_ << " --------------------------------\n";
+    return;
   }
 
-  ROS_INFO_STREAM_NAMED("manipulation", "Finished touch control");
-  return true;
+  // Calculate amount to translate
+  target_teleop_direction_ << -1 * sin(line_tracking_->getSheerTheta()), 0,
+      cos(line_tracking_->getSheerTheta());
+  target_teleop_rotated_direction_ = target_teleop_pose_.rotation() * target_teleop_direction_;
+
+  // The target pose is built by applying a translation to the target pose for the desired
+  // direction and distance
+  target_teleop_pose_.translation() +=
+      target_teleop_rotated_direction_ * config_->touch_teleop_gain_;
+
+  // Convert pose to frame of robot base
+  teleop_base_to_desired_ = base_to_world_ * target_teleop_pose_;
+
+  // Move robot
+  embededTeleoperation(teleop_base_to_desired_, move, arm_jmg);
 }
 
 bool Manipulation::teleoperation(const Eigen::Affine3d& ee_pose, bool move,

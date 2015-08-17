@@ -55,18 +55,18 @@ public:
   LineTracking(VisualsPtr visuals);
 
   double getSheerTheta() { return sheer_theta_; };
-  double getSheerForce() { return end_effector_data_cached_.data[SHEER_FORCE]; };
-  // double getSheerDisplacementX() { return end_effector_data_cached_.data[SHEER_DISPLACEMENT_X];
-  // };
-  // double getSheerDisplacementY() { return end_effector_data_cached_.data[SHEER_DISPLACEMENT_Y];
-  // };
+  double getSheerForce() { return end_effector_data_cached_[SHEER_FORCE]; };
+  void setEndEffectorDataCallback(std::function<void()> function)
+  {
+    end_effector_data_callback_ = function;
+  };
 
 private:
   void dataCallback(const std_msgs::Float64MultiArray::ConstPtr& msg);
 
-  void displayLineDirection(const std_msgs::Float64MultiArray::ConstPtr& msg);
+  void displayLineDirection();
 
-  void displaySheerForce(const std_msgs::Float64MultiArray::ConstPtr& msg);
+  void displaySheerForce();
 
   void publishUpdatedLine(geometry_msgs::Point& pt1, geometry_msgs::Point& pt2);
 
@@ -80,7 +80,10 @@ private:
   VisualsPtr visuals_;
 
   double sheer_theta_;
-  std_msgs::Float64MultiArray end_effector_data_cached_;
+  std::vector<double> end_effector_data_cached_;
+
+  // Allow a callback to be added whenever new end effector data is recieved
+  std::function<void()> end_effector_data_callback_;
 
 };  // end class
 

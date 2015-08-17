@@ -44,6 +44,7 @@ test:
   
 # Tactile Sensor Data
 sheer_force_threshold: 2
+touch_teleop_gain: 0.005
 
 # Teleoperation
 teleoperation_offset: [0.0, 0.0, -0.2, 0, 0, 0] # x,y,z,r,p,y

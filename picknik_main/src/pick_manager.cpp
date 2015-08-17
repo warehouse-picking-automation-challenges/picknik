@@ -1010,15 +1010,15 @@ void PickManager::enableTeleoperation()
     // Now find the difference between EE poses
     visuals_->visual_tools_->printTransform(
         before_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_));
-    std::cout << "after: " << std::endl;
+
     visuals_->visual_tools_->printTransform(
         after_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_));
 
-    std::cout << (before_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_)
-                      .translation() -
-                  after_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_)
-                      .translation())
-              << std::endl;
+    // std::cout << (before_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_)
+    //                   .translation() -
+    //               after_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_)
+    //                   .translation())
+    //           << std::endl;
   }
 }
 
@@ -1026,7 +1026,7 @@ void PickManager::enableTeleoperation()
 void PickManager::touchControl()
 {
   ROS_INFO_STREAM_NAMED("pick_manager", "Responding to touch on finger sensor");
-  manipulation_->enableTeleoperation();
+  // manipulation_->enableTeleoperation();
 
   manipulation_->beginTouchControl();
 }

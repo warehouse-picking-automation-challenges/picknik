@@ -545,6 +545,9 @@ public:
   /** \brief Respond to touch sensors on hand */
   bool beginTouchControl();
 
+  /** \brief Callback whenever new gelsight data recieved */
+  void updateTouchControl(JointModelGroup* arm_jmg);
+
   /** \brief Teleoperate robot, but run IK on robot's embedded IK solver */
   bool embededTeleoperation(const Eigen::Affine3d& ee_pose, bool move, JointModelGroup* arm_jmg);
 
@@ -593,8 +596,13 @@ protected:
   // Remote control
   RemoteControlPtr remote_control_;
 
-  // End effector data
+  // End effector sheer force teleoperation
   LineTrackingPtr line_tracking_;
+  Eigen::Affine3d target_teleop_pose_;
+  Eigen::Vector3d target_teleop_direction_;
+  Eigen::Vector3d target_teleop_rotated_direction_;
+  Eigen::Affine3d base_to_world_;
+  Eigen::Affine3d teleop_base_to_desired_;
 
   // Experience-based planning
   bool use_experience_;
