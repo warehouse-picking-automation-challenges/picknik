@@ -43,8 +43,9 @@ void LineTracking::dataCallback(const std_msgs::Float64MultiArray::ConstPtr& msg
   // displayLineDirection();
   displaySheerForce();
 
-  // Do callback
-  end_effector_data_callback_();
+  // Do callback if provided
+  if (end_effector_data_callback_)
+    end_effector_data_callback_();
 }
 
 void LineTracking::displayLineDirection()
@@ -171,7 +172,11 @@ void LineTracking::displaySheerForce()
   pose_msg.pose = visuals_->visual_tools_->convertPose(eigen_pose);
 
   // Visualize arrow
-  const double length = 0.5;
+  static const double VISUAL_MAX_LENGTH = 0.5;  // based on personal visual preferance
+  static const double SHEER_FORCE_MAX = 20;     // ignore sheer force higher than this
+  static const double SHEER_RATIO = VISUAL_MAX_LENGTH / SHEER_FORCE_MAX;
+  double sheer_force = std::min(SHEER_FORCE_MAX, getSheerForce());
+  const double length = sheer_force * SHEER_RATIO;
   const int id = 1;
   visuals_->visual_tools_->publishArrow(pose_msg, rvt::RED, rvt::REGULAR, length, id);
 }

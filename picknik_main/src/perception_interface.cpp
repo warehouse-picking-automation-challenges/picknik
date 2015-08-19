@@ -103,7 +103,7 @@ bool PerceptionInterface::isPerceptionReady()
 bool PerceptionInterface::getTFTransform(Eigen::Affine3d& world_to_frame, ros::Time& time_stamp,
                                          const std::string& frame_id)
 {
-  return getTFTransform(world_to_frame, time_stamp, config_->world_frame_, frame_id);
+  return getTFTransform(world_to_frame, time_stamp, config_->robot_base_frame_, frame_id);
 }
 
 bool PerceptionInterface::getTFTransform(Eigen::Affine3d& world_to_frame, ros::Time& time_stamp,

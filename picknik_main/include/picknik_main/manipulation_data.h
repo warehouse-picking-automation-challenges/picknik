@@ -128,7 +128,10 @@ public:
 
   // Tactile Sensor Data
   double sheer_force_threshold_;
-  double touch_teleop_gain_;
+  double touch_teleop_max_translation_step_;
+  double insertion_steps_per_meter_;
+  double insertion_duration_;
+  double insertion_distance_;
 
   // Execution mode
   bool fake_execution_;
@@ -136,8 +139,8 @@ public:
   // Behavior settings
   std::map<std::string, bool> enabled_;
 
-  // World frame / base frame / model frame
-  std::string world_frame_;
+  // Base frame / model frame e.g. "base_link"
+  std::string robot_base_frame_;
 
   // Generic variable adjustment
   double test_double_;

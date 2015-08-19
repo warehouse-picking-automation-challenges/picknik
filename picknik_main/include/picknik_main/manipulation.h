@@ -292,13 +292,14 @@ public:
                           double desired_retreat_distance, bool retreat,
                           bool ignore_collision = false);
 
-  /** \brief Move in direction that end effecotr is pointing */
-  bool executeInsertionPath(JointModelGroup* arm_jmg, double desired_distance, bool in,
-                            double velocity_scaling_factor);
-
   /** \brief Use tactile feedback */
   bool executeInsertionClosedLoop(JointModelGroup* arm_jmg, double desired_distance, bool in,
                                   double velocity_scaling_factor);
+
+  /** \brief Move in direction that end effecotr is pointing */
+  bool executeInsertionOpenLoop(JointModelGroup* arm_jmg, double desired_distance, bool in,
+                                double velocity_scaling_factor);
+
   /**
    * \brief Generic execute straight line path function
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
@@ -548,9 +549,6 @@ public:
   /** \brief Callback whenever new gelsight data recieved */
   void updateTouchControl(JointModelGroup* arm_jmg);
 
-  /** \brief Teleoperate robot, but run IK on robot's embedded IK solver */
-  bool embededTeleoperation(const Eigen::Affine3d& ee_pose, bool move, JointModelGroup* arm_jmg);
-
   /** \brief Setup robot state for teleop */
   bool enableTeleoperation();
 
@@ -601,7 +599,6 @@ protected:
   Eigen::Affine3d target_teleop_pose_;
   Eigen::Vector3d target_teleop_direction_;
   Eigen::Vector3d target_teleop_rotated_direction_;
-  Eigen::Affine3d base_to_world_;
   Eigen::Affine3d teleop_base_to_desired_;
 
   // Experience-based planning

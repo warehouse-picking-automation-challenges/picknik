@@ -27,7 +27,6 @@
 // OMPL
 #include <ompl/tools/lightning/Lightning.h>
 #include <ompl/tools/thunder/Thunder.h>
-//#include <ompl_thunder/Thunder.h>
 
 // moveit_grasps
 #include <moveit_grasps/grasp_generator.h>
@@ -1091,11 +1090,9 @@ bool Manipulation::executeRetreatPath(JointModelGroup* arm_jmg, double desired_r
   return true;
 }
 
-bool Manipulation::executeInsertionPath(JointModelGroup* arm_jmg, double desired_distance, bool in,
-                                        double velocity_scaling_factor)
+bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double desired_distance,
+                                              bool in, double velocity_scaling_factor)
 {
-  const moveit::core::LinkModel* ik_tip_link = grasp_datas_[arm_jmg]->parent_link_;
-
   moveit::core::RobotStatePtr robot_state(new moveit::core::RobotState(*getCurrentState()));
 
   // Get current pose
@@ -1113,50 +1110,54 @@ bool Manipulation::executeInsertionPath(JointModelGroup* arm_jmg, double desired
   // the direction can be in the local reference frame (in which case we rotate it)
   const Eigen::Vector3d rotated_direction = ee_start_pose.rotation() * approach_direction;
 
+  // Reusable transform from robot base to world. Could be identity. Assumes that it does not change
+  Eigen::Affine3d base_to_world = getCurrentState()->getGlobalLinkTransform("base_link").inverse();
+
   // The target pose is built by applying a translation to the start pose for the desired direction
   // and distance
   Eigen::Affine3d target_pose = ee_start_pose;
-  target_pose.translation() += rotated_direction * desired_distance;
-  visuals_->visual_tools_->publishZArrow(target_pose, rvt::GREEN);
+  Eigen::Affine3d target_pose_base_frame;
+  std::size_t num_steps = desired_distance * config_->insertion_steps_per_meter_;
 
-  // Resolution of trajectory
-  double max_step = 0.01;  // 0.01 // The maximum distance in Cartesian space between consecutive
-                           // points on the resulting path
+  // Pre-calculate values
+  double step_distance = desired_distance / double(num_steps);
+  double step_duration = config_->insertion_duration_ / double(num_steps);
 
-  // Jump threshold for preventing consequtive joint values from 'jumping' by a large amount in
-  // joint space
-  double jump_threshold = config_->jump_threshold_;  // aka jump factor
+  std::cout << "step_distance: " << step_distance << std::endl;
+  std::cout << "step_duration: " << step_duration << std::endl;
 
-  std::vector<moveit::core::RobotStatePtr> robot_state_trajectory;
-  double last_valid_percentage =
-      robot_state->computeCartesianPath(arm_jmg, robot_state_trajectory, ik_tip_link, target_pose,
-                                        true, max_step, jump_threshold, NULL);
-  std::cout << "last_valid_percentage: " << last_valid_percentage << std::endl;
+  ros::Rate rate_limiter(1 / step_duration);  // specify the hz
 
-  visuals_->visual_tools_->publishTrajectoryPoints(robot_state_trajectory, ik_tip_link);
-
-  // Get approach trajectory message
-  moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
-  const bool use_interpolation = false;
-  if (!convertRobotStatesToTrajectory(robot_state_trajectory, cartesian_trajectory_msg, arm_jmg,
-                                      velocity_scaling_factor, use_interpolation))
+  // Begin soft-real time loop
+  for (std::size_t i = 0; i < num_steps; ++i)
   {
-    ROS_ERROR_STREAM_NAMED("manipulation", "Failed to convert to parameterized trajectory");
-    return false;
-  }
+    std::cout << "step " << i << std::endl;
 
-  // Execute
-  if (!execution_interface_->executeTrajectory(cartesian_trajectory_msg, arm_jmg))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation", "Failed to execute trajectory");
-    return false;
+    // Move target pose inward
+    target_pose.translation() += rotated_direction * step_distance;
+
+    // Convert deisred pose from 'world' frame to 'robot base' frame
+    target_pose_base_frame = base_to_world * target_pose;
+
+    // Visualize
+    visuals_->visual_tools_->publishZArrow(target_pose_base_frame, rvt::GREEN);
+
+    // Execute
+    execution_interface_->executePose(target_pose_base_frame, arm_jmg, step_duration);
+
+    // Calculate elapsed time
+    std::cout << "Elapsed time: " << rate_limiter.cycleTime().toSec() << std::endl;
+
+    // TODO - actual rate calculations
+    // ros::Duration(step_duration).sleep();
+    rate_limiter.sleep();
   }
 
   return true;
 }
 
-bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double desired_distance,
-                                              bool in, double velocity_scaling_factor)
+bool Manipulation::executeInsertionOpenLoop(JointModelGroup* arm_jmg, double desired_distance,
+                                            bool in, double velocity_scaling_factor)
 {
   const moveit::core::LinkModel* ik_tip_link = grasp_datas_[arm_jmg]->parent_link_;
 
@@ -2353,10 +2354,10 @@ bool Manipulation::getPose(Eigen::Affine3d& pose, const std::string& frame_name)
   try
   {
     // Wait to make sure a transform message has arrived
-    planning_scene_monitor_->getTFClient()->waitForTransform(config_->world_frame_, frame_name,
+    planning_scene_monitor_->getTFClient()->waitForTransform(config_->robot_base_frame_, frame_name,
                                                              ros::Time(0), ros::Duration(1));
     // Get latest transform available
-    planning_scene_monitor_->getTFClient()->lookupTransform(config_->world_frame_, frame_name,
+    planning_scene_monitor_->getTFClient()->lookupTransform(config_->robot_base_frame_, frame_name,
                                                             ros::Time(0), camera_transform);
   }
   catch (tf::TransformException ex)
@@ -2461,8 +2462,6 @@ bool Manipulation::beginTouchControl()
   target_teleop_pose_ =
       getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
 
-  base_to_world_ = getCurrentState()->getGlobalLinkTransform("base_link").inverse();
-
   line_tracking_->setEndEffectorDataCallback(
       std::bind(&Manipulation::updateTouchControl, this, arm_jmg));
 
@@ -2473,8 +2472,6 @@ bool Manipulation::beginTouchControl()
 
 void Manipulation::updateTouchControl(JointModelGroup* arm_jmg)
 {
-  const bool move = true;
-
   // Check if overall sheer force is enough to move the arm
   if (line_tracking_->getSheerForce() < config_->sheer_force_threshold_)
   {
@@ -2483,21 +2480,28 @@ void Manipulation::updateTouchControl(JointModelGroup* arm_jmg)
     return;
   }
 
+  Eigen::Affine3d base_to_world = getCurrentState()->getGlobalLinkTransform("base_link").inverse();
+
   // Calculate amount to translate
   target_teleop_direction_ << -1 * sin(line_tracking_->getSheerTheta()), 0,
       cos(line_tracking_->getSheerTheta());
   target_teleop_rotated_direction_ = target_teleop_pose_.rotation() * target_teleop_direction_;
 
+  // Calculate translation amount based on sheer force
+  static const double SHEER_FORCE_MAX = 20;  // ignore sheer force higher than this
+  const double sheer_force = std::min(SHEER_FORCE_MAX, line_tracking_->getSheerForce());
+  static const double SHEER_RATIO = config_->touch_teleop_max_translation_step_ / SHEER_FORCE_MAX;
+  const double sheer_force_gain = sheer_force * SHEER_RATIO;
+
   // The target pose is built by applying a translation to the target pose for the desired
   // direction and distance
-  target_teleop_pose_.translation() +=
-      target_teleop_rotated_direction_ * config_->touch_teleop_gain_;
+  target_teleop_pose_.translation() += target_teleop_rotated_direction_ * sheer_force_gain;
 
-  // Convert pose to frame of robot base
-  teleop_base_to_desired_ = base_to_world_ * target_teleop_pose_;
+  // Convert deisred pose from 'world' frame to 'robot base' frame
+  teleop_base_to_desired_ = base_to_world * target_teleop_pose_;
 
   // Move robot
-  embededTeleoperation(teleop_base_to_desired_, move, arm_jmg);
+  execution_interface_->executePose(teleop_base_to_desired_, arm_jmg);
 }
 
 bool Manipulation::teleoperation(const Eigen::Affine3d& ee_pose, bool move,
@@ -2526,22 +2530,6 @@ bool Manipulation::teleoperation(const Eigen::Affine3d& ee_pose, bool move,
     // Visualize what we would have done
     visuals_->goal_state_->publishRobotState(teleop_state_, rvt::BLUE);
   }
-
-  return true;
-}
-
-bool Manipulation::embededTeleoperation(const Eigen::Affine3d& ee_pose, bool move,
-                                        JointModelGroup* arm_jmg)
-{
-  // NOTE this is in a separate thread, so we should only use visuals_->trajectory_lines_ for
-  // debugging!
-
-  // Convert the parent link location to that which Blue expects (URDFs are off). This value was
-  // manually
-  // calibrated
-  Eigen::Affine3d ee_pose_blue = ee_pose * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
-
-  execution_interface_->executePose(ee_pose_blue);
 
   return true;
 }

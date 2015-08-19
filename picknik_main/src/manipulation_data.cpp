@@ -143,8 +143,14 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   // Tactile Sensor Data
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "sheer_force_threshold",
                                           sheer_force_threshold_);
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "touch_teleop_gain",
-                                          touch_teleop_gain_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "touch_teleop_max_translation_step",
+                                          touch_teleop_max_translation_step_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_steps_per_meter",
+                                          insertion_steps_per_meter_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_duration",
+                                          insertion_duration_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_distance",
+                                          insertion_distance_);
 
   // Pick Manager settings
   ros_param_utilities::getStringParameter(parent_name, nh_, "joint_state_topic",
@@ -167,7 +173,7 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   }
 
   // Set world frame
-  world_frame_ = robot_model->getModelFrame();
+  robot_base_frame_ = robot_model->getModelFrame();
 
   ROS_INFO_STREAM_NAMED("manipulation_data", "ManipulationData Ready.");
 

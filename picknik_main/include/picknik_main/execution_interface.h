@@ -41,6 +41,7 @@
 
 // ROS
 #include <ros/ros.h>
+#include <cartesian_msgs/CartesianCommand.h>
 
 // PickNik
 #include <picknik_main/visuals.h>
@@ -83,7 +84,8 @@ public:
    * \param pose
    * \return true on success
    */
-  bool executePose(const Eigen::Affine3d &pose);
+  bool executePose(const Eigen::Affine3d &pose, JointModelGroup *arm_jmg,
+                   const double &duration = 0.1);
 
   /**
    * \brief Do a bunch of checks and send to low level controllers
@@ -159,7 +161,7 @@ private:
   ros::ServiceClient zaber_list_controllers_client_;
   ros::ServiceClient kinova_list_controllers_client_;
 
-  geometry_msgs::Pose cartesian_command_msg_;
+  cartesian_msgs::CartesianCommand cartesian_command_msg_;
   ros::Publisher cartesian_command_pub_;
 
   // Unit testing mode - do not actually execute trajectories

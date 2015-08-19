@@ -904,14 +904,12 @@ void PickManager::processMarkerPose(const geometry_msgs::Pose& pose, bool move)
   Eigen::Affine3d base_to_desired = world_to_base.inverse() * ee_pose;
 
   // New Method
-  manipulation_->embededTeleoperation(base_to_desired, move, arm_jmg);
+  manipulation_->getExecutionInterface()->executePose(base_to_desired, arm_jmg);
 }
 
 // Mode 3
 void PickManager::insertion()
 {
-  remote_control_->waitForNextStep("begin insertion process");
-
   // Note: The pre-insertion pose is from interactive_marker_pose_
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
@@ -919,13 +917,25 @@ void PickManager::insertion()
       new moveit::core::RobotState(*manipulation_->getCurrentState()));
 
   double velocity_scaling_factor = 0.1;
+
   // pretend that at first we are inserted so that it moves to the correct pre-position
   bool in = true;
 
+  // Move in
+  std::cout << "INSERTING " << std::endl;
+
+  bool direction_in = true;
+  velocity_scaling_factor = 0.05;
+  if (!manipulation_->executeInsertionClosedLoop(arm_jmg, config_->insertion_distance_,
+                                                 direction_in, velocity_scaling_factor))
+  {
+    ROS_ERROR_STREAM_NAMED("pick_manager", "Unable to execute insertion path");
+  }
+  visuals_->visual_tools_->deleteAllMarkers();
+  return;
+
   while (ros::ok())
   {
-    const double desired_distance = 0.1;
-
     if (in)
     {
       // Move to pre-pose
@@ -961,8 +971,8 @@ void PickManager::insertion()
 
       bool direction_in = true;
       velocity_scaling_factor = 0.05;
-      if (!manipulation_->executeInsertionPath(arm_jmg, desired_distance, direction_in,
-                                               velocity_scaling_factor))
+      if (!manipulation_->executeInsertionClosedLoop(arm_jmg, config_->insertion_distance_,
+                                                     direction_in, velocity_scaling_factor))
       {
         ROS_ERROR_STREAM_NAMED("pick_manager", "Unable to execute insertion path");
         break;
@@ -1000,8 +1010,7 @@ void PickManager::enableTeleoperation()
     Eigen::Affine3d base_to_desired = world_to_base.inverse() * world_to_desired;
 
     // New Method
-    bool move = true;
-    manipulation_->embededTeleoperation(base_to_desired, move, arm_jmg);
+    manipulation_->getExecutionInterface()->executePose(base_to_desired, arm_jmg);
 
     ros::Duration(1.0).sleep();
     moveit::core::RobotStatePtr after_state(

@@ -72,14 +72,22 @@ ExecutionInterface::ExecutionInterface(
   kinova_list_controllers_client_ = nh_.serviceClient<controller_manager_msgs::ListControllers>(
       "/jacob/kinova/controller_manager/list_controllers");
 
-  cartesian_command_pub_ = nh_.advertise<geometry_msgs::Pose>("/r3/cartesian_command", 1000);
+  cartesian_command_pub_ =
+      nh_.advertise<cartesian_msgs::CartesianCommand>("/r3/cartesian_command", 1000);
 
   ROS_INFO_STREAM_NAMED("execution_interface", "ExecutionInterface Ready.");
 }
 
-bool ExecutionInterface::executePose(const Eigen::Affine3d &pose)
+bool ExecutionInterface::executePose(const Eigen::Affine3d &pose, JointModelGroup *arm_jmg,
+                                     const double &duration)
 {
-  visuals_->visual_tools_->convertPoseSafe(pose, cartesian_command_msg_);
+  // Convert the parent link location to that which Blue expects (URDFs are off). This value was
+  // manually calibrated
+  Eigen::Affine3d converted_pose = pose * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
+
+  visuals_->visual_tools_->convertPoseSafe(converted_pose,
+                                           cartesian_command_msg_.desired_pose.pose);
+  cartesian_command_msg_.duration = duration;
   cartesian_command_pub_.publish(cartesian_command_msg_);
   return true;
 }
