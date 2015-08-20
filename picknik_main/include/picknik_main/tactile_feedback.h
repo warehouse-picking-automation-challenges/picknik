@@ -9,11 +9,11 @@
   *********************************************************************/
 /*
   Author: Dave Coleman <dave@dav.ee>
-  Desc:   Holder for multiple visuals tools
+  Desc:   Integrate feedback and command of a tactile sensor
 */
 
-#ifndef PICKNIK_MAIN__LINE_TRACKING
-#define PICKNIK_MAIN__LINE_TRACKING
+#ifndef PICKNIK_MAIN__TACTILE_FEEDBACK
+#define PICKNIK_MAIN__TACTILE_FEEDBACK
 
 // ROS
 #include <ros/ros.h>
@@ -46,13 +46,16 @@ enum EndEffectorData
   ALWAYS_AT_END  // for counting array size
 };
 
-class LineTracking
+class TactileFeedback
 {
 public:
   /**
    * \brief Constructor
    */
-  LineTracking(VisualsPtr visuals);
+  TactileFeedback(VisualsPtr visuals);
+
+  /** \brief Send command to remote sensor to reset itself */
+  void recalibrateTactileSensor();
 
   double getSheerTheta() { return sheer_theta_; };
   double getSheerForce() { return end_effector_data_cached_[SHEER_FORCE]; };
@@ -75,7 +78,11 @@ private:
   // A shared node handle
   ros::NodeHandle nh_;
 
+  // Listen to incoming feedback from sensor
   ros::Subscriber end_effector_data_sub_;
+
+  // Publish commands to re-calibrate sensor
+  ros::Publisher tactile_calibration_pub_;
 
   VisualsPtr visuals_;
 
@@ -88,7 +95,7 @@ private:
 };  // end class
 
 // Create boost pointers for this class
-typedef boost::shared_ptr<LineTracking> LineTrackingPtr;
+typedef boost::shared_ptr<TactileFeedback> TactileFeedbackPtr;
 
 }  // end namespace
 

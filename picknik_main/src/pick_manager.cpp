@@ -86,7 +86,7 @@ PickManager::PickManager(bool verbose)
   remote_control_.reset(new RemoteControl(verbose, nh_private_, this));
 
   // Load line tracker
-  line_tracking_.reset(new LineTracking(visuals_));
+  tactile_feedback_.reset(new TactileFeedback(visuals_));
 
   // Load grasp data specific to our robot
   grasp_datas_[config_->right_arm_].reset(
@@ -102,7 +102,7 @@ PickManager::PickManager(bool verbose)
   // Create manipulation manager
   manipulation_.reset(new Manipulation(verbose_, visuals_, planning_scene_monitor_, config_,
                                        grasp_datas_, remote_control_, FLAGS_fake_execution,
-                                       line_tracking_));
+                                       tactile_feedback_));
 
   // Load trajectory IO class
   // trajectory_io_.reset(new TrajectoryIO(remote_control_, visuals_, config_, manipulation_));
@@ -913,26 +913,30 @@ void PickManager::insertion()
   // Note: The pre-insertion pose is from interactive_marker_pose_
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
-  moveit::core::RobotStatePtr goal_state(
-      new moveit::core::RobotState(*manipulation_->getCurrentState()));
+  // Move the the pre-insertion pose
+  if (false)
+  {
+    static const std::string POSE_NAME = "insertion";
+    double velocity_scaling_factor = 0.1;
+    if (!manipulation_->moveToSRDFPose(arm_jmg, POSE_NAME, velocity_scaling_factor))
+    {
+      ROS_ERROR_STREAM_NAMED("pick_manager", "Failed to move to starting position");
+      return;
+    }
 
-  double velocity_scaling_factor = 0.1;
+    ROS_INFO_STREAM_NAMED("pick_manager", "Preparing to do insertion task");
+    ros::Duration(1.0).sleep();
+  }
+
+  visuals_->start_state_->hideRobot();
+  visuals_->goal_state_->hideRobot();
+
+  // Get current pose - retracted position
+  Eigen::Affine3d desired_pose =
+      manipulation_->getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
 
   // pretend that at first we are inserted so that it moves to the correct pre-position
-  bool in = true;
-
-  // Move in
-  std::cout << "INSERTING " << std::endl;
-
-  bool direction_in = true;
-  velocity_scaling_factor = 0.05;
-  if (!manipulation_->executeInsertionClosedLoop(arm_jmg, config_->insertion_distance_,
-                                                 direction_in, velocity_scaling_factor))
-  {
-    ROS_ERROR_STREAM_NAMED("pick_manager", "Unable to execute insertion path");
-  }
-  visuals_->visual_tools_->deleteAllMarkers();
-  return;
+  bool in = false;
 
   while (ros::ok())
   {
@@ -942,25 +946,19 @@ void PickManager::insertion()
       std::cout << "-------------------------------------------------------" << std::endl;
       std::cout << "RETRACTING " << std::endl;
 
-      Eigen::Affine3d ee_pose =
-          interactive_marker_pose_ * grasp_datas_[arm_jmg]->grasp_pose_to_eef_pose_;
-
-      // Find robot pose
-      if (!manipulation_->getRobotStateFromPose(ee_pose, goal_state, arm_jmg))
+      bool direction_in = false;
+      if (!manipulation_->executeInsertionClosedLoop(arm_jmg, config_->insertion_distance_,
+                                                     desired_pose, direction_in))
       {
-        ROS_ERROR_STREAM_NAMED("pick_manager", "Unable to get robot state from pose");
-        break;
+        ROS_ERROR_STREAM_NAMED("pick_manager", "Unable to execute retract path");
       }
 
-      // Execute robot pose
-      velocity_scaling_factor = 0.1;
-      if (!manipulation_->executeState(goal_state, arm_jmg, velocity_scaling_factor))
-      {
-        ROS_ERROR_STREAM_NAMED("pick_manager", "Failed to execute state");
-        break;
-      }
+      std::cout << "About to restore start position... " << std::endl;
+      ros::Duration(0.5).sleep();
 
-      // remote_control_->waitForNextStep("insert");
+      // TODO
+      // transformGlobalToBaseLink(desired_pose);
+      // manipulation_->getExecutionInterface()->executePose(desired_pose, arm_jmg);
     }
     else
     {
@@ -970,24 +968,43 @@ void PickManager::insertion()
       std::cout << "INSERTING " << std::endl;
 
       bool direction_in = true;
-      velocity_scaling_factor = 0.05;
       if (!manipulation_->executeInsertionClosedLoop(arm_jmg, config_->insertion_distance_,
-                                                     direction_in, velocity_scaling_factor))
+                                                     desired_pose, direction_in))
       {
         ROS_ERROR_STREAM_NAMED("pick_manager", "Unable to execute insertion path");
-        break;
       }
 
       // remote_control_->waitForNextStep("retract");
     }
 
-    ros::Duration(6).sleep();
-    visuals_->visual_tools_->deleteAllMarkers();
+    tactile_feedback_->recalibrateTactileSensor();
+    ros::Duration(config_->insertion_updown_pause_).sleep();
+    // visuals_->visual_tools_->deleteAllMarkers();
     in = !in;
   }
 
   ROS_INFO_STREAM_NAMED("manipulation", "Finished insertion path");
 }
+
+/*
+Eigen::Affine3d ee_pose =
+    interactive_marker_pose_ * grasp_datas_[arm_jmg]->graspp_pose_to_eef_pose_;
+
+// Find robot pose
+if (!manipulation_->getRobotStateFromPose(ee_pose, goal_state, arm_jmg))
+{
+  ROS_ERROR_STREAM_NAMED("pick_manager", "Unable to get robot state from pose");
+  break;
+}
+
+// Execute robot pose
+double velocity_scaling_factor = 0.1;
+if (!manipulation_->executeState(goal_state, arm_jmg, velocity_scaling_factor))
+{
+  ROS_ERROR_STREAM_NAMED("pick_manager", "Failed to execute state");
+  break;
+}
+*/
 
 // Mode 1
 void PickManager::enableTeleoperation()
@@ -1022,12 +1039,6 @@ void PickManager::enableTeleoperation()
 
     visuals_->visual_tools_->printTransform(
         after_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_));
-
-    // std::cout << (before_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_)
-    //                   .translation() -
-    //               after_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_)
-    //                   .translation())
-    //           << std::endl;
   }
 }
 

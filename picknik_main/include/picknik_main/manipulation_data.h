@@ -132,6 +132,8 @@ public:
   double insertion_steps_per_meter_;
   double insertion_duration_;
   double insertion_distance_;
+  double insertion_updown_pause_;
+  double insertion_touch_translation_step_;
 
   // Execution mode
   bool fake_execution_;

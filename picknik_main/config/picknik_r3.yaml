@@ -45,9 +45,12 @@ test:
 # Tactile Sensor Data
 sheer_force_threshold: 2
 touch_teleop_max_translation_step: 0.005
+
 insertion_steps_per_meter: 1000
-insertion_duration: 15 # sec
-insertion_distance: 0.1 # meters
+insertion_duration: 10 # sec
+insertion_distance: 0.05 # meters
+insertion_updown_pause: 2 #sec
+insertion_touch_translation_step: 0.01
 
 # Teleoperation
 teleoperation_offset: [0.0, 0.0, -0.2, 0, 0, 0] # x,y,z,r,p,y

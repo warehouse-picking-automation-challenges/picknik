@@ -22,7 +22,7 @@
 #include <picknik_main/fix_state_bounds.h>
 #include <picknik_main/remote_control.h>
 #include <picknik_main/execution_interface.h>
-#include <picknik_main/line_tracking.h>
+#include <picknik_main/tactile_feedback.h>
 
 // ROS
 #include <ros/ros.h>
@@ -70,7 +70,8 @@ public:
   Manipulation(bool verbose, VisualsPtr visuals,
                planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                ManipulationDataPtr config, moveit_grasps::GraspDatas grasp_datas,
-               RemoteControlPtr remote_control, bool fake_execution, LineTrackingPtr line_tracking);
+               RemoteControlPtr remote_control, bool fake_execution,
+               TactileFeedbackPtr tactile_feedback);
 
   /**
    * \brief Choose the grasp for the object
@@ -293,8 +294,8 @@ public:
                           bool ignore_collision = false);
 
   /** \brief Use tactile feedback */
-  bool executeInsertionClosedLoop(JointModelGroup* arm_jmg, double desired_distance, bool in,
-                                  double velocity_scaling_factor);
+  bool executeInsertionClosedLoop(JointModelGroup* arm_jmg, double desired_distance,
+                                  Eigen::Affine3d& desired_pose, bool direction_in);
 
   /** \brief Move in direction that end effecotr is pointing */
   bool executeInsertionOpenLoop(JointModelGroup* arm_jmg, double desired_distance, bool in,
@@ -552,6 +553,9 @@ public:
   /** \brief Setup robot state for teleop */
   bool enableTeleoperation();
 
+  /** \brief Convert from world frame to base_link frame */
+  void transformGlobalToBaseLink(Eigen::Affine3d& pose);
+
   /**
    * \brief Get the iterative smoother
    */
@@ -595,7 +599,7 @@ protected:
   RemoteControlPtr remote_control_;
 
   // End effector sheer force teleoperation
-  LineTrackingPtr line_tracking_;
+  TactileFeedbackPtr tactile_feedback_;
   Eigen::Affine3d target_teleop_pose_;
   Eigen::Vector3d target_teleop_direction_;
   Eigen::Vector3d target_teleop_rotated_direction_;

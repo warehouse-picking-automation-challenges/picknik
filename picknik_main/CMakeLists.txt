@@ -181,10 +181,10 @@ target_link_libraries(execution_interface
 )
 
 # show a sensor line
-add_library(line_tracking
-  src/line_tracking.cpp
+add_library(tactile_feedback
+  src/tactile_feedback.cpp
 )
-target_link_libraries(line_tracking
+target_link_libraries(tactile_feedback
   visuals
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
@@ -201,7 +201,7 @@ target_link_libraries(manipulation
   execution_interface
   fix_state_bounds
   remote_control  
-  line_tracking
+  tactile_feedback
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
@@ -232,7 +232,7 @@ add_library(pick_manager
 )
 target_link_libraries(pick_manager
   trajectory_io
-  line_tracking
+  tactile_feedback
   manipulation
   perception_interface
   planning_scene_manager

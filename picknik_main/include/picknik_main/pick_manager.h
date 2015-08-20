@@ -24,7 +24,7 @@
 #include <picknik_main/manipulation_data.h>
 #include <picknik_main/perception_interface.h>
 #include <picknik_main/remote_control.h>
-#include <picknik_main/line_tracking.h>
+#include <picknik_main/tactile_feedback.h>
 
 // Picknik Msgs
 #include <picknik_msgs/FindObjectsAction.h>
@@ -259,7 +259,7 @@ private:
   PerceptionInterfacePtr perception_interface_;
 
   // Line tracking interface
-  LineTrackingPtr line_tracking_;
+  TactileFeedbackPtr tactile_feedback_;
 
   // Helper classes
   // LearningPipelinePtr learning_;

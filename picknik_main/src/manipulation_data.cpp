@@ -151,6 +151,10 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
                                           insertion_duration_);
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_distance",
                                           insertion_distance_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_updown_pause",
+                                          insertion_updown_pause_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_touch_translation_step",
+                                          insertion_touch_translation_step_);
 
   // Pick Manager settings
   ros_param_utilities::getStringParameter(parent_name, nh_, "joint_state_topic",

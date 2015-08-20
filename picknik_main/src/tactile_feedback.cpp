@@ -9,31 +9,45 @@
  *********************************************************************/
 /*
   Author: Dave Coleman <dave@dav.ee>
-  Desc:   Holder for multiple visuals tools
+  Desc:   Integrate feedback and command of a tactile sensor
 */
 
 // PickNik
-#include <picknik_main/line_tracking.h>
+#include <picknik_main/tactile_feedback.h>
+
+// ROS
+#include <std_msgs/Bool.h>
+#include <std_msgs/Float64MultiArray.h>
 
 namespace picknik_main
 {
-LineTracking::LineTracking(VisualsPtr visuals)
+TactileFeedback::TactileFeedback(VisualsPtr visuals)
   : visuals_(visuals)
   , sheer_theta_(0.0)
   , end_effector_data_cached_(ALWAYS_AT_END, 0.0)  // initial dummy data
 {
-  std::size_t queue_size = 1;
+  const std::size_t queue_size = 1;
   end_effector_data_sub_ =
-      nh_.subscribe("/end_effector_data", queue_size, &LineTracking::dataCallback, this);
+      nh_.subscribe("/end_effector_data", queue_size, &TactileFeedback::dataCallback, this);
+
+  tactile_calibration_pub_ = nh_.advertise<std_msgs::Bool>("/calibrate_tactile_sensor", queue_size);
 }
 
-void LineTracking::dataCallback(const std_msgs::Float64MultiArray::ConstPtr& msg)
+void TactileFeedback::recalibrateTactileSensor()
+{
+  ROS_INFO_STREAM_NAMED("tactile_feedback", "Recalibrating");
+  std_msgs::Bool msg;
+  tactile_calibration_pub_.publish(msg);
+}
+
+void TactileFeedback::dataCallback(const std_msgs::Float64MultiArray::ConstPtr& msg)
 {
   // Error check
   if (msg->data.size() < ALWAYS_AT_END)
   {
-    ROS_ERROR_STREAM_NAMED("line_tracking", "Invalid number of end effector data points recieved: "
-                                                << msg->data.size());
+    ROS_ERROR_STREAM_NAMED(
+        "tactile_feedback",
+        "Invalid number of end effector data points recieved: " << msg->data.size());
     return;
   }
 
@@ -48,7 +62,7 @@ void LineTracking::dataCallback(const std_msgs::Float64MultiArray::ConstPtr& msg
     end_effector_data_callback_();
 }
 
-void LineTracking::displayLineDirection()
+void TactileFeedback::displayLineDirection()
 {
   bool verbose = false;
 
@@ -106,11 +120,11 @@ void LineTracking::displayLineDirection()
   if (theta > M_PI / 2.0)
   {
     theta -= M_PI;
-    ROS_DEBUG_STREAM_NAMED("line_tracking", "angle of line: " << theta << " (substracted 3.14)");
+    ROS_DEBUG_STREAM_NAMED("tactile_feedback", "angle of line: " << theta << " (substracted 3.14)");
   }
   else
   {
-    ROS_DEBUG_STREAM_NAMED("line_tracking", "angle of line: " << theta);
+    ROS_DEBUG_STREAM_NAMED("tactile_feedback", "angle of line: " << theta);
   }
 
   eigen_pose = eigen_pose * Eigen::AngleAxisd(theta, Eigen::Vector3d::UnitZ());
@@ -125,7 +139,7 @@ void LineTracking::displayLineDirection()
   visuals_->visual_tools_->publishArrow(pose_msg, rvt::GREY, rvt::SMALL, length, id);
 }
 
-void LineTracking::displaySheerForce()
+void TactileFeedback::displaySheerForce()
 {
   const double& sheer_displacement_x = end_effector_data_cached_[SHEER_DISPLACEMENT_X];
   const double& sheer_displacement_y = end_effector_data_cached_[SHEER_DISPLACEMENT_Y];
@@ -181,7 +195,7 @@ void LineTracking::displaySheerForce()
   visuals_->visual_tools_->publishArrow(pose_msg, rvt::RED, rvt::REGULAR, length, id);
 }
 
-void LineTracking::publishUpdatedLine(geometry_msgs::Point& pt1, geometry_msgs::Point& pt2)
+void TactileFeedback::publishUpdatedLine(geometry_msgs::Point& pt1, geometry_msgs::Point& pt2)
 {
   // Make custom marker because we want it in from of reference of finger
   visualization_msgs::Marker line_marker;
@@ -206,7 +220,7 @@ void LineTracking::publishUpdatedLine(geometry_msgs::Point& pt1, geometry_msgs::
   visuals_->visual_tools_->publishMarker(line_marker);
 }
 
-void LineTracking::convertPixelToMeters(geometry_msgs::Pose& pose, int height, int width)
+void TactileFeedback::convertPixelToMeters(geometry_msgs::Pose& pose, int height, int width)
 {
   // Input points are in the range of x: (0-480) y: (0-640)
   // Transform these to the width of the gelsight 25mm x 25mm (0.025m x 0.025m)

@@ -37,7 +37,7 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
                            planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
                            ManipulationDataPtr config, moveit_grasps::GraspDatas grasp_datas,
                            RemoteControlPtr remote_control, bool fake_execution,
-                           LineTrackingPtr line_tracking)
+                           TactileFeedbackPtr tactile_feedback)
   : nh_("~")
   , verbose_(verbose)
   , visuals_(visuals)
@@ -45,7 +45,7 @@ Manipulation::Manipulation(bool verbose, VisualsPtr visuals,
   , config_(config)
   , grasp_datas_(grasp_datas)
   , remote_control_(remote_control)
-  , line_tracking_(line_tracking)
+  , tactile_feedback_(tactile_feedback)
 {
   // Create initial robot state
   {
@@ -1091,33 +1091,34 @@ bool Manipulation::executeRetreatPath(JointModelGroup* arm_jmg, double desired_r
 }
 
 bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double desired_distance,
-                                              bool in, double velocity_scaling_factor)
+                                              Eigen::Affine3d& desired_pose, bool direction_in)
 {
   moveit::core::RobotStatePtr robot_state(new moveit::core::RobotState(*getCurrentState()));
 
   // Get current pose
-  Eigen::Affine3d ee_start_pose =
-      robot_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+  // Eigen::Affine3d ee_start_pose =
+  // robot_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
 
   // Visualize current pose
-  visuals_->visual_tools_->publishZArrow(ee_start_pose, rvt::ORANGE);
+  visuals_->trajectory_lines_->publishZArrow(desired_pose, rvt::ORANGE);
 
   // Move in and out
   Eigen::Vector3d approach_direction;
-  approach_direction << 0, 0, (in ? 1 : -1);
+  approach_direction << 0, 0, (direction_in ? 1 : -1);
 
   // Compute Cartesian Path
   // the direction can be in the local reference frame (in which case we rotate it)
-  const Eigen::Vector3d rotated_direction = ee_start_pose.rotation() * approach_direction;
+  const Eigen::Vector3d rotated_direction = desired_pose.rotation() * approach_direction;
 
   // Reusable transform from robot base to world. Could be identity. Assumes that it does not change
   Eigen::Affine3d base_to_world = getCurrentState()->getGlobalLinkTransform("base_link").inverse();
 
   // The target pose is built by applying a translation to the start pose for the desired direction
   // and distance
-  Eigen::Affine3d target_pose = ee_start_pose;
-  Eigen::Affine3d target_pose_base_frame;
+  Eigen::Affine3d desired_pose_base_frame;
   std::size_t num_steps = desired_distance * config_->insertion_steps_per_meter_;
+  const double SMOOTH_FACTOR =
+      1.1;  // don't allow waypoints to every be reached before next goal sent
 
   // Pre-calculate values
   double step_distance = desired_distance / double(num_steps);
@@ -1127,30 +1128,71 @@ bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double d
   std::cout << "step_duration: " << step_duration << std::endl;
 
   ros::Rate rate_limiter(1 / step_duration);  // specify the hz
-
   // Begin soft-real time loop
   for (std::size_t i = 0; i < num_steps; ++i)
   {
-    std::cout << "step " << i << std::endl;
+    // Check if program needs to end
+    if (!ros::ok())
+      break;
+
+    // Track if tactile sensor was used
+    bool corrected = false;
+
+    std::cout << "step " << i;
 
     // Move target pose inward
-    target_pose.translation() += rotated_direction * step_distance;
+    desired_pose.translation() += rotated_direction * step_distance;
+
+    // Integrate Touch feedback to direct orientation
+    if (tactile_feedback_->getSheerForce() > config_->sheer_force_threshold_)
+    {
+      std::cout << "  force: " << tactile_feedback_->getSheerForce() << "/"
+                << config_->sheer_force_threshold_;
+
+      // Calculate amount to translate
+      Eigen::Vector3d touch_tweak_direction;
+      touch_tweak_direction << -1 * sin(tactile_feedback_->getSheerTheta()), 0,
+          cos(tactile_feedback_->getSheerTheta());
+      Eigen::Vector3d rotated_direction = desired_pose.rotation() * touch_tweak_direction;
+
+      // Calculate translation amount based on sheer force
+      static const double SHEER_FORCE_MAX = 20;  // ignore sheer force higher than this
+      const double sheer_force = std::min(SHEER_FORCE_MAX, tactile_feedback_->getSheerForce());
+      static const double SHEER_RATIO =
+          config_->insertion_touch_translation_step_ / SHEER_FORCE_MAX;
+      const double sheer_force_gain = sheer_force * SHEER_RATIO;
+
+      // The target pose is built by applying a translation to the target pose for the desired
+      // direction and distance
+      desired_pose.translation() += rotated_direction * sheer_force_gain;
+      corrected = true;
+
+      remote_control_->waitForNextStep("move down next step");
+    }
 
     // Convert deisred pose from 'world' frame to 'robot base' frame
-    target_pose_base_frame = base_to_world * target_pose;
+    desired_pose_base_frame = base_to_world * desired_pose;
 
     // Visualize
-    visuals_->visual_tools_->publishZArrow(target_pose_base_frame, rvt::GREEN);
+    visuals_->trajectory_lines_->publishZArrow(desired_pose, rvt::GREEN, rvt::SMALL);
 
     // Execute
-    execution_interface_->executePose(target_pose_base_frame, arm_jmg, step_duration);
+    execution_interface_->executePose(desired_pose_base_frame, arm_jmg,
+                                      step_duration * SMOOTH_FACTOR);
 
-    // Calculate elapsed time
-    std::cout << "Elapsed time: " << rate_limiter.cycleTime().toSec() << std::endl;
+    std::cout << std::endl;
 
-    // TODO - actual rate calculations
-    // ros::Duration(step_duration).sleep();
-    rate_limiter.sleep();
+    // Recalibrate if necessary
+    if (corrected)
+    {
+      // tactile_feedback_->recalibrateTactileSensor();
+      ros::Duration(1).sleep();
+    }
+    else
+    {
+      // Wait for next loop
+      rate_limiter.sleep();
+    }
   }
 
   return true;
@@ -1168,7 +1210,7 @@ bool Manipulation::executeInsertionOpenLoop(JointModelGroup* arm_jmg, double des
       robot_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
 
   // Visualize current pose
-  visuals_->visual_tools_->publishZArrow(ee_start_pose, rvt::ORANGE);
+  visuals_->trajectory_lines_->publishZArrow(ee_start_pose, rvt::ORANGE);
 
   // Move in and out
   Eigen::Vector3d approach_direction;
@@ -1182,7 +1224,7 @@ bool Manipulation::executeInsertionOpenLoop(JointModelGroup* arm_jmg, double des
   // and distance
   Eigen::Affine3d target_pose = ee_start_pose;
   target_pose.translation() += rotated_direction * desired_distance;
-  visuals_->visual_tools_->publishZArrow(target_pose, rvt::GREEN);
+  visuals_->trajectory_lines_->publishZArrow(target_pose, rvt::GREEN);
 
   // Resolution of trajectory
   double max_step = 0.01;  // 0.01 // The maximum distance in Cartesian space between consecutive
@@ -1198,7 +1240,7 @@ bool Manipulation::executeInsertionOpenLoop(JointModelGroup* arm_jmg, double des
                                         true, max_step, jump_threshold, NULL);
   std::cout << "last_valid_percentage: " << last_valid_percentage << std::endl;
 
-  visuals_->visual_tools_->publishTrajectoryPoints(robot_state_trajectory, ik_tip_link);
+  visuals_->trajectory_lines_->publishTrajectoryPoints(robot_state_trajectory, ik_tip_link);
 
   // Get approach trajectory message
   moveit_msgs::RobotTrajectory cartesian_trajectory_msg;
@@ -2462,7 +2504,7 @@ bool Manipulation::beginTouchControl()
   target_teleop_pose_ =
       getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
 
-  line_tracking_->setEndEffectorDataCallback(
+  tactile_feedback_->setEndEffectorDataCallback(
       std::bind(&Manipulation::updateTouchControl, this, arm_jmg));
 
   ros::spin();
@@ -2473,9 +2515,9 @@ bool Manipulation::beginTouchControl()
 void Manipulation::updateTouchControl(JointModelGroup* arm_jmg)
 {
   // Check if overall sheer force is enough to move the arm
-  if (line_tracking_->getSheerForce() < config_->sheer_force_threshold_)
+  if (tactile_feedback_->getSheerForce() < config_->sheer_force_threshold_)
   {
-    std::cout << "force to low: " << line_tracking_->getSheerForce() << "/"
+    std::cout << "force to low: " << tactile_feedback_->getSheerForce() << "/"
               << config_->sheer_force_threshold_ << " --------------------------------\n";
     return;
   }
@@ -2483,13 +2525,13 @@ void Manipulation::updateTouchControl(JointModelGroup* arm_jmg)
   Eigen::Affine3d base_to_world = getCurrentState()->getGlobalLinkTransform("base_link").inverse();
 
   // Calculate amount to translate
-  target_teleop_direction_ << -1 * sin(line_tracking_->getSheerTheta()), 0,
-      cos(line_tracking_->getSheerTheta());
+  target_teleop_direction_ << -1 * sin(tactile_feedback_->getSheerTheta()), 0,
+      cos(tactile_feedback_->getSheerTheta());
   target_teleop_rotated_direction_ = target_teleop_pose_.rotation() * target_teleop_direction_;
 
   // Calculate translation amount based on sheer force
   static const double SHEER_FORCE_MAX = 20;  // ignore sheer force higher than this
-  const double sheer_force = std::min(SHEER_FORCE_MAX, line_tracking_->getSheerForce());
+  const double sheer_force = std::min(SHEER_FORCE_MAX, tactile_feedback_->getSheerForce());
   static const double SHEER_RATIO = config_->touch_teleop_max_translation_step_ / SHEER_FORCE_MAX;
   const double sheer_force_gain = sheer_force * SHEER_RATIO;
 
@@ -2538,6 +2580,12 @@ bool Manipulation::enableTeleoperation()
 {
   teleop_state_.reset(new moveit::core::RobotState(*getCurrentState()));
   return true;
+}
+
+void Manipulation::transformGlobalToBaseLink(Eigen::Affine3d& pose)
+{
+  const Eigen::Affine3d& world_to_base = getCurrentState()->getGlobalLinkTransform("base_link");
+  pose = world_to_base.inverse() * pose;
 }
 
 }  // end namespace
