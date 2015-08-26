@@ -82,10 +82,10 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "wait_before_grasp",
                                           wait_before_grasp_);
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "wait_after_grasp", wait_after_grasp_);
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "place_goal_down_distance_desired",
-                                          place_goal_down_distance_desired_);
-  ros_param_utilities::getDoubleParameter(parent_name, nh_, "goal_bin_clearance",
-                                          goal_bin_clearance_);
+  // ros_param_utilities::getDoubleParameter(parent_name, nh_, "place_goal_down_distance_desired",
+  //                                          place_goal_down_distance_desired_);
+  // ros_param_utilities::getDoubleParameter(parent_name, nh_, "goal_bin_clearance",
+  //                                          goal_bin_clearance_);
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "jump_threshold", jump_threshold_);
 
   // Load robot semantics
@@ -134,11 +134,11 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
                                              teleoperation_offset_);
 
   // Get grasp location doubles
-  std::vector<double> grasp_location_transform_doubles;
-  ros_param_utilities::getDoubleParameters(parent_name, nh_, "grasp_location_transform",
-                                           grasp_location_transform_doubles);
-  ros_param_utilities::convertDoublesToEigen(parent_name, grasp_location_transform_doubles,
-                                             grasp_location_transform_);
+  // std::vector<double> grasp_location_transform_doubles;
+  // ros_param_utilities::getDoubleParameters(parent_name, nh_, "grasp_location_transform",
+  //                                          grasp_location_transform_doubles);
+  // ros_param_utilities::convertDoublesToEigen(parent_name, grasp_location_transform_doubles,
+  //                                            grasp_location_transform_);
 
   // Tactile Sensor Data
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "sheer_force_threshold",
@@ -153,8 +153,16 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
                                           insertion_distance_);
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_updown_pause",
                                           insertion_updown_pause_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_alter_pause",
+                                          insertion_alter_pause_);
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_touch_translation_step",
                                           insertion_touch_translation_step_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_torque_scale",
+                                          insertion_torque_scale_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_torque_max",
+                                          insertion_torque_max_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_torque_min",
+                                          insertion_torque_min_);
 
   // Pick Manager settings
   ros_param_utilities::getStringParameter(parent_name, nh_, "joint_state_topic",

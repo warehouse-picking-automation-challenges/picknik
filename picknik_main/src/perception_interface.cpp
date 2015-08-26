@@ -79,8 +79,8 @@ PerceptionInterface::PerceptionInterface(bool verbose, VisualsPtr visuals,
   ros_param_utilities::getDoubleParameter(parent_name, nh, "camera_intrinsics/fx", camera_cy_);
   ros_param_utilities::getDoubleParameter(parent_name, nh, "camera_intrinsics/min_depth",
                                           camera_min_depth_);
-  ros_param_utilities::getDoubleParameter(parent_name, nh, "bounding_box_reduction",
-                                          bounding_box_reduction_);
+  // ros_param_utilities::getDoubleParameter(parent_name, nh, "bounding_box_reduction",
+  // bounding_box_reduction_);
 
   ROS_INFO_STREAM_NAMED("perception_interface", "PerceptionInterface Ready.");
 }

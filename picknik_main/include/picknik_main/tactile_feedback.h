@@ -21,7 +21,10 @@
 
 // PickNik
 #include <picknik_main/namespaces.h>
-#include <picknik_main/visuals.h>
+#include <picknik_main/manipulation_data.h>
+
+// Visual Tools
+#include <rviz_visual_tools/rviz_visual_tools.h>
 
 namespace picknik_main
 {
@@ -41,6 +44,7 @@ enum EndEffectorData
   LINE_EIGEN_VAL,
   SHEER_DISPLACEMENT_X,
   SHEER_DISPLACEMENT_Y,
+  SHEER_TORQUE,
   IMAGE_HEIGHT,
   IMAGE_WIDTH,
   ALWAYS_AT_END  // for counting array size
@@ -52,13 +56,14 @@ public:
   /**
    * \brief Constructor
    */
-  TactileFeedback(VisualsPtr visuals);
+  TactileFeedback(ManipulationDataPtr config);
 
   /** \brief Send command to remote sensor to reset itself */
   void recalibrateTactileSensor();
 
   double getSheerTheta() { return sheer_theta_; };
   double getSheerForce() { return end_effector_data_cached_[SHEER_FORCE]; };
+  double getSheerTorque() { return end_effector_data_cached_[SHEER_TORQUE]; };
   void setEndEffectorDataCallback(std::function<void()> function)
   {
     end_effector_data_callback_ = function;
@@ -84,13 +89,14 @@ private:
   // Publish commands to re-calibrate sensor
   ros::Publisher tactile_calibration_pub_;
 
-  VisualsPtr visuals_;
-
   double sheer_theta_;
   std::vector<double> end_effector_data_cached_;
 
   // Allow a callback to be added whenever new end effector data is recieved
   std::function<void()> end_effector_data_callback_;
+
+  // Show data
+  rviz_visual_tools::RvizVisualToolsPtr visual_tools_;
 
 };  // end class
 

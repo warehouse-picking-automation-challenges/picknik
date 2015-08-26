@@ -86,7 +86,7 @@ PickManager::PickManager(bool verbose)
   remote_control_.reset(new RemoteControl(verbose, nh_private_, this));
 
   // Load line tracker
-  tactile_feedback_.reset(new TactileFeedback(visuals_));
+  tactile_feedback_.reset(new TactileFeedback(config_));
 
   // Load grasp data specific to our robot
   grasp_datas_[config_->right_arm_].reset(
@@ -928,12 +928,16 @@ void PickManager::insertion()
     ros::Duration(1.0).sleep();
   }
 
-  visuals_->start_state_->hideRobot();
-  visuals_->goal_state_->hideRobot();
+  // visuals_->start_state_->hideRobot();
+  // visuals_->goal_state_->hideRobot();
 
   // Get current pose - retracted position
-  Eigen::Affine3d desired_pose =
+  const Eigen::Affine3d desired_world_to_ee =
       manipulation_->getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+
+  // Move the desired pose forward from EE base to finger tips
+  Eigen::Affine3d desired_world_to_tool =
+      desired_world_to_ee * config_->teleoperation_offset_.inverse();
 
   // pretend that at first we are inserted so that it moves to the correct pre-position
   bool in = false;
@@ -948,7 +952,7 @@ void PickManager::insertion()
 
       bool direction_in = false;
       if (!manipulation_->executeInsertionClosedLoop(arm_jmg, config_->insertion_distance_,
-                                                     desired_pose, direction_in))
+                                                     desired_world_to_tool, direction_in))
       {
         ROS_ERROR_STREAM_NAMED("pick_manager", "Unable to execute retract path");
       }
@@ -957,8 +961,8 @@ void PickManager::insertion()
       ros::Duration(0.5).sleep();
 
       // TODO
-      // transformGlobalToBaseLink(desired_pose);
-      // manipulation_->getExecutionInterface()->executePose(desired_pose, arm_jmg);
+      // transformGlobalToBaseLink(desired_world_to_tool);
+      // manipulation_->getExecutionInterface()->executePose(desired_world_to_tool, arm_jmg);
     }
     else
     {
@@ -969,7 +973,7 @@ void PickManager::insertion()
 
       bool direction_in = true;
       if (!manipulation_->executeInsertionClosedLoop(arm_jmg, config_->insertion_distance_,
-                                                     desired_pose, direction_in))
+                                                     desired_world_to_tool, direction_in))
       {
         ROS_ERROR_STREAM_NAMED("pick_manager", "Unable to execute insertion path");
       }
@@ -985,26 +989,6 @@ void PickManager::insertion()
 
   ROS_INFO_STREAM_NAMED("manipulation", "Finished insertion path");
 }
-
-/*
-Eigen::Affine3d ee_pose =
-    interactive_marker_pose_ * grasp_datas_[arm_jmg]->graspp_pose_to_eef_pose_;
-
-// Find robot pose
-if (!manipulation_->getRobotStateFromPose(ee_pose, goal_state, arm_jmg))
-{
-  ROS_ERROR_STREAM_NAMED("pick_manager", "Unable to get robot state from pose");
-  break;
-}
-
-// Execute robot pose
-double velocity_scaling_factor = 0.1;
-if (!manipulation_->executeState(goal_state, arm_jmg, velocity_scaling_factor))
-{
-  ROS_ERROR_STREAM_NAMED("pick_manager", "Failed to execute state");
-  break;
-}
-*/
 
 // Mode 1
 void PickManager::enableTeleoperation()
@@ -1056,8 +1040,9 @@ void PickManager::setupInteractiveMarker()
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
   interactive_marker_pose_ =
       manipulation_->getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
-  if (true)
-    interactive_marker_pose_ = interactive_marker_pose_ * config_->teleoperation_offset_.inverse();
+
+  // Move marker to tip of fingers
+  interactive_marker_pose_ = interactive_marker_pose_ * config_->teleoperation_offset_.inverse();
 
   geometry_msgs::Pose pose_msg = visuals_->visual_tools_->convertPose(interactive_marker_pose_);
 

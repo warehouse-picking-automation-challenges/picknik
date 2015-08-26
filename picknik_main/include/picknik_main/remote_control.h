@@ -75,8 +75,7 @@ public:
 
   /**
    * \brief Recieves inputs from joystick
-   * \param input - description
-   * \return true on success
+   * \param ROS message
    */
   void joyCallback(const sensor_msgs::Joy::ConstPtr& msg);
 
@@ -118,6 +117,8 @@ public:
 
   void initializeInteractiveMarkers(const geometry_msgs::Pose& pose);
 
+  /** \brief Return true if remote control is waiting for user input */
+  bool isWaiting() { return is_waiting_; }
 private:
   void make6DofMarker(bool fixed, unsigned int interaction_mode, const geometry_msgs::Pose& pose,
                       bool show_6dof);

@@ -21,11 +21,14 @@
 
 namespace picknik_main
 {
-TactileFeedback::TactileFeedback(VisualsPtr visuals)
-  : visuals_(visuals)
-  , sheer_theta_(0.0)
+TactileFeedback::TactileFeedback(ManipulationDataPtr config)
+  : sheer_theta_(0.0)
   , end_effector_data_cached_(ALWAYS_AT_END, 0.0)  // initial dummy data
 {
+  // Load visual tools
+  visual_tools_.reset(new rviz_visual_tools::RvizVisualTools(config->robot_base_frame_,
+                                                             "/picknik_main/tactile_feedback"));
+
   const std::size_t queue_size = 1;
   end_effector_data_sub_ =
       nh_.subscribe("/end_effector_data", queue_size, &TactileFeedback::dataCallback, this);
@@ -105,17 +108,16 @@ void TactileFeedback::displayLineDirection()
               << pt2.pose.position.x << ", " << pt2.pose.position.y << ")" << std::endl;
 
   // Publish visuals
-  visuals_->visual_tools_->publishSphere(
-      pt1, rvt::GREEN, visuals_->visual_tools_->getScale(rvt::XXSMALL), "Sphere1", 1);
-  visuals_->visual_tools_->publishSphere(
-      pt2, rvt::BLUE, visuals_->visual_tools_->getScale(rvt::XXSMALL), "Sphere2", 2);
+  visual_tools_->publishSphere(pt1, rvt::GREEN, visual_tools_->getScale(rvt::XXSMALL), "Sphere1",
+                               1);
+  visual_tools_->publishSphere(pt2, rvt::BLUE, visual_tools_->getScale(rvt::XXSMALL), "Sphere2", 2);
   publishUpdatedLine(pt1.pose.position, pt2.pose.position);
 
   // Get tool direction
   double theta = atan2(eigen_vec_y, eigen_vec_x);
 
   // Visualize tool always pointing down away from gripper
-  Eigen::Affine3d eigen_pose = visuals_->visual_tools_->convertPose(pt1.pose);
+  Eigen::Affine3d eigen_pose = visual_tools_->convertPose(pt1.pose);
 
   if (theta > M_PI / 2.0)
   {
@@ -131,12 +133,12 @@ void TactileFeedback::displayLineDirection()
 
   geometry_msgs::PoseStamped pose_msg;
   pose_msg.header.frame_id = ATTACH_FRAME;
-  pose_msg.pose = visuals_->visual_tools_->convertPose(eigen_pose);
+  pose_msg.pose = visual_tools_->convertPose(eigen_pose);
 
   // Visualize arrow
   const double length = 0.1;
   const int id = 1;
-  visuals_->visual_tools_->publishArrow(pose_msg, rvt::GREY, rvt::SMALL, length, id);
+  visual_tools_->publishArrow(pose_msg, rvt::GREY, rvt::SMALL, length, id);
 }
 
 void TactileFeedback::displaySheerForce()
@@ -163,13 +165,12 @@ void TactileFeedback::displaySheerForce()
   convertPixelToMeters(pt1.pose, image_height, image_width);
   convertPixelToMeters(pt2.pose, image_height, image_width);
 
-  visuals_->visual_tools_->publishSphere(
-      pt1, rvt::GREEN, visuals_->visual_tools_->getScale(rvt::XXSMALL), "Sphere1", 1);
-  visuals_->visual_tools_->publishSphere(
-      pt2, rvt::BLUE, visuals_->visual_tools_->getScale(rvt::XXSMALL), "Sphere2", 2);
+  visual_tools_->publishSphere(pt1, rvt::GREEN, visual_tools_->getScale(rvt::XXSMALL), "Sphere1",
+                               1);
+  visual_tools_->publishSphere(pt2, rvt::BLUE, visual_tools_->getScale(rvt::XXSMALL), "Sphere2", 2);
 
   // Visualize tool always pointing down away from gripper
-  Eigen::Affine3d eigen_pose = visuals_->visual_tools_->convertPose(pt1.pose);
+  Eigen::Affine3d eigen_pose = visual_tools_->convertPose(pt1.pose);
 
   // Find the angle between the line and the horizontal (x) axis
   double delta_y = pt2.pose.position.y - pt1.pose.position.y;
@@ -183,7 +184,7 @@ void TactileFeedback::displaySheerForce()
 
   geometry_msgs::PoseStamped pose_msg;
   pose_msg.header.frame_id = ATTACH_FRAME;
-  pose_msg.pose = visuals_->visual_tools_->convertPose(eigen_pose);
+  pose_msg.pose = visual_tools_->convertPose(eigen_pose);
 
   // Visualize arrow
   static const double VISUAL_MAX_LENGTH = 0.5;  // based on personal visual preferance
@@ -192,7 +193,7 @@ void TactileFeedback::displaySheerForce()
   double sheer_force = std::min(SHEER_FORCE_MAX, getSheerForce());
   const double length = sheer_force * SHEER_RATIO;
   const int id = 1;
-  visuals_->visual_tools_->publishArrow(pose_msg, rvt::RED, rvt::REGULAR, length, id);
+  visual_tools_->publishArrow(pose_msg, rvt::RED, rvt::REGULAR, length, id);
 }
 
 void TactileFeedback::publishUpdatedLine(geometry_msgs::Point& pt1, geometry_msgs::Point& pt2)
@@ -205,7 +206,7 @@ void TactileFeedback::publishUpdatedLine(geometry_msgs::Point& pt1, geometry_msg
   line_marker.type = visualization_msgs::Marker::LINE_STRIP;
   line_marker.action = visualization_msgs::Marker::ADD;
   line_marker.id = 0;
-  line_marker.color = visuals_->visual_tools_->getColor(rvt::RED);
+  line_marker.color = visual_tools_->getColor(rvt::RED);
 
   // Base pose is identity
   line_marker.pose.orientation.w = 1.0;
@@ -217,7 +218,7 @@ void TactileFeedback::publishUpdatedLine(geometry_msgs::Point& pt1, geometry_msg
   line_marker.points.push_back(pt1);
   line_marker.points.push_back(pt2);
 
-  visuals_->visual_tools_->publishMarker(line_marker);
+  visual_tools_->publishMarker(line_marker);
 }
 
 void TactileFeedback::convertPixelToMeters(geometry_msgs::Pose& pose, int height, int width)

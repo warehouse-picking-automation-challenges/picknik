@@ -98,7 +98,6 @@ void RemoteControl::remoteCallback(const dashboard_msgs::DashboardControl::Const
 void RemoteControl::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
 {
   // Table of index number of /joy.buttons: ------------------------------------
-
   // 0 - A
   if (msg->buttons[0])
     setReadyForNextStep();
@@ -116,8 +115,8 @@ void RemoteControl::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
   // 8 - power
   if (msg->buttons[8])
     setFullAutonomous();
-  // 9 - Button stick left
-  // 10 - Button stick right
+  // 9 - Button stick left - does not exist on Logitech Wireless Gamepad
+  // 10 - Button stick right - does not exist on Logitech Wireless Gamepad
 
   // Table of index number of /joy.axis: ------------------------------------
 
@@ -133,10 +132,11 @@ void RemoteControl::joyCallback(const sensor_msgs::Joy::ConstPtr& msg)
 
 bool RemoteControl::setReadyForNextStep()
 {
+  stop_ = false;
+
   if (is_waiting_)
   {
     next_step_ready_ = true;
-    stop_ = false;
   }
   return true;
 }

@@ -547,6 +547,14 @@ public:
   /** \brief Respond to touch sensors on hand */
   bool beginTouchControl();
 
+  /** \brief Adjust the teleop tool pose to tactile feedback
+      \return true if pose was adjusted, false if remained same
+   */
+  bool adjustPoseFromTactile();
+
+  /** \brief Help display which way the EE is moving */
+  void showDirectionArrow(double torque, bool show);
+
   /** \brief Callback whenever new gelsight data recieved */
   void updateTouchControl(JointModelGroup* arm_jmg);
 
@@ -600,10 +608,11 @@ protected:
 
   // End effector sheer force teleoperation
   TactileFeedbackPtr tactile_feedback_;
-  Eigen::Affine3d target_teleop_pose_;
-  Eigen::Vector3d target_teleop_direction_;
-  Eigen::Vector3d target_teleop_rotated_direction_;
-  Eigen::Affine3d teleop_base_to_desired_;
+  Eigen::Vector3d teleop_direction_;
+  Eigen::Vector3d teleop_rotated_direction_;
+  Eigen::Affine3d teleop_world_to_tool_;
+  Eigen::Affine3d teleop_world_to_ee_;
+  Eigen::Affine3d teleop_base_to_ee_;
 
   // Experience-based planning
   bool use_experience_;

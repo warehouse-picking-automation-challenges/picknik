@@ -1091,16 +1091,11 @@ bool Manipulation::executeRetreatPath(JointModelGroup* arm_jmg, double desired_r
 }
 
 bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double desired_distance,
-                                              Eigen::Affine3d& desired_pose, bool direction_in)
+                                              Eigen::Affine3d& desired_world_to_tool,
+                                              bool direction_in)
 {
-  moveit::core::RobotStatePtr robot_state(new moveit::core::RobotState(*getCurrentState()));
-
-  // Get current pose
-  // Eigen::Affine3d ee_start_pose =
-  // robot_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
-
-  // Visualize current pose
-  visuals_->trajectory_lines_->publishZArrow(desired_pose, rvt::ORANGE);
+  // Copy pose
+  teleop_world_to_tool_ = desired_world_to_tool;
 
   // Move in and out
   Eigen::Vector3d approach_direction;
@@ -1108,17 +1103,18 @@ bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double d
 
   // Compute Cartesian Path
   // the direction can be in the local reference frame (in which case we rotate it)
-  const Eigen::Vector3d rotated_direction = desired_pose.rotation() * approach_direction;
+  const Eigen::Vector3d rotated_direction = teleop_world_to_tool_.rotation() * approach_direction;
 
   // Reusable transform from robot base to world. Could be identity. Assumes that it does not change
+  // This should be a constant
   Eigen::Affine3d base_to_world = getCurrentState()->getGlobalLinkTransform("base_link").inverse();
 
   // The target pose is built by applying a translation to the start pose for the desired direction
   // and distance
-  Eigen::Affine3d desired_pose_base_frame;
+  // Eigen::Affine3d teleop_world_to_tool__base_frame;
   std::size_t num_steps = desired_distance * config_->insertion_steps_per_meter_;
-  const double SMOOTH_FACTOR =
-      1.1;  // don't allow waypoints to every be reached before next goal sent
+  // don't allow waypoints to be reached before next goal sent
+  static const double SMOOTH_FACTOR = 1.1;
 
   // Pre-calculate values
   double step_distance = desired_distance / double(num_steps);
@@ -1135,58 +1131,45 @@ bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double d
     if (!ros::ok())
       break;
 
-    // Track if tactile sensor was used
-    bool corrected = false;
-
-    std::cout << "step " << i;
+    if (direction_in)
+      std::cout << "insertion,  step " << i << std::endl;
+    else
+      std::cout << "retracting, step " << i << std::endl;
 
     // Move target pose inward
-    desired_pose.translation() += rotated_direction * step_distance;
+    teleop_world_to_tool_.translation() += rotated_direction * step_distance;
 
-    // Integrate Touch feedback to direct orientation
-    if (tactile_feedback_->getSheerForce() > config_->sheer_force_threshold_)
-    {
-      std::cout << "  force: " << tactile_feedback_->getSheerForce() << "/"
-                << config_->sheer_force_threshold_;
+    // Adjust pose based on tactile feedback
+    // Track if tactile sensor was used
+    bool corrected = adjustPoseFromTactile();
 
-      // Calculate amount to translate
-      Eigen::Vector3d touch_tweak_direction;
-      touch_tweak_direction << -1 * sin(tactile_feedback_->getSheerTheta()), 0,
-          cos(tactile_feedback_->getSheerTheta());
-      Eigen::Vector3d rotated_direction = desired_pose.rotation() * touch_tweak_direction;
+    // Visualize the pivot point for pose rotations
+    visuals_->visual_tools_->publishSphere(
+        visuals_->visual_tools_->convertPose(teleop_world_to_ee_), rvt::PURPLE,
+        visuals_->visual_tools_->getScale(rvt::REGULAR, false, 0.1), "Sphere", 1);
 
-      // Calculate translation amount based on sheer force
-      static const double SHEER_FORCE_MAX = 20;  // ignore sheer force higher than this
-      const double sheer_force = std::min(SHEER_FORCE_MAX, tactile_feedback_->getSheerForce());
-      static const double SHEER_RATIO =
-          config_->insertion_touch_translation_step_ / SHEER_FORCE_MAX;
-      const double sheer_force_gain = sheer_force * SHEER_RATIO;
+    // Move pose from tips of finger (tool) back to base of EE
+    teleop_world_to_ee_ = teleop_world_to_tool_ * config_->teleoperation_offset_;
 
-      // The target pose is built by applying a translation to the target pose for the desired
-      // direction and distance
-      desired_pose.translation() += rotated_direction * sheer_force_gain;
-      corrected = true;
+    // Show pose-rotation pose
+    visuals_->trajectory_lines_->publishZArrow(teleop_world_to_ee_, rvt::ORANGE, rvt::REGULAR);
 
-      remote_control_->waitForNextStep("move down next step");
-    }
+    // Convert desired pose from 'world' frame to 'robot base' frame
+    teleop_base_to_ee_ = base_to_world * teleop_world_to_ee_;
 
-    // Convert deisred pose from 'world' frame to 'robot base' frame
-    desired_pose_base_frame = base_to_world * desired_pose;
+    if (corrected)
+      remote_control_->waitForNextStep("move");
 
-    // Visualize
-    visuals_->trajectory_lines_->publishZArrow(desired_pose, rvt::GREEN, rvt::SMALL);
-
-    // Execute
-    execution_interface_->executePose(desired_pose_base_frame, arm_jmg,
-                                      step_duration * SMOOTH_FACTOR);
+    // Move robot
+    execution_interface_->executePose(teleop_base_to_ee_, arm_jmg, step_duration * SMOOTH_FACTOR);
 
     std::cout << std::endl;
 
-    // Recalibrate if necessary
     if (corrected)
     {
+      std::cout << "CORRECTED" << std::endl;
+      ros::Duration(config_->insertion_alter_pause_).sleep();
       // tactile_feedback_->recalibrateTactileSensor();
-      ros::Duration(1).sleep();
     }
     else
     {
@@ -1194,6 +1177,9 @@ bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double d
       rate_limiter.sleep();
     }
   }
+
+  // Copy pose back
+  desired_world_to_tool = teleop_world_to_tool_;
 
   return true;
 }
@@ -2501,8 +2487,12 @@ bool Manipulation::beginTouchControl()
 {
   JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
 
-  target_teleop_pose_ =
+  // Initialize the teleop pose
+  teleop_world_to_tool_ =
       getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+
+  // Move the teleop pose forward from EE base to finger tips
+  teleop_world_to_tool_ = teleop_world_to_tool_ * config_->teleoperation_offset_.inverse();
 
   tactile_feedback_->setEndEffectorDataCallback(
       std::bind(&Manipulation::updateTouchControl, this, arm_jmg));
@@ -2512,40 +2502,177 @@ bool Manipulation::beginTouchControl()
   return true;
 }
 
+// Multi-use function for adjusting teleoperating and insertion tasks
+bool Manipulation::adjustPoseFromTactile()
+{
+  // Two experimental modes - translation and pitch rotation
+  bool translation_teleop = false;
+  if (translation_teleop)
+  {
+    // Check if overall sheer force is enough to move the arm
+    if (tactile_feedback_->getSheerForce() < config_->sheer_force_threshold_)
+    {
+      std::cout << "force to low: " << tactile_feedback_->getSheerForce() << "/"
+                << config_->sheer_force_threshold_ << " --------------------------------\n";
+      return false;
+    }
+
+    // Calculate amount to translate
+    teleop_direction_ << -1 * sin(tactile_feedback_->getSheerTheta()), 0,
+        cos(tactile_feedback_->getSheerTheta());
+    teleop_rotated_direction_ = teleop_world_to_tool_.rotation() * teleop_direction_;
+
+    // Calculate translation amount based on sheer force
+    static const double SHEER_FORCE_MAX = 20;  // ignore sheer force higher than this
+    const double sheer_force = std::min(SHEER_FORCE_MAX, tactile_feedback_->getSheerForce());
+    static const double SHEER_RATIO = config_->touch_teleop_max_translation_step_ / SHEER_FORCE_MAX;
+    const double sheer_force_gain = sheer_force * SHEER_RATIO;
+
+    // The target pose is built by applying a translation to the target pose for the desired
+    // direction and distance
+    teleop_world_to_tool_.translation() += teleop_rotated_direction_ * sheer_force_gain;
+    return true;
+  }
+  else
+  {
+    // rotate based on torque
+    bool verbose_torque = true;
+
+    // Max threhold, absolute
+    // Notes: getSheerTorque() will generally return values between -360 -> 0 -> 360 but can exceed
+    // those values also. 0 is the calibrated position, i.e. no toruqe
+    double torque = std::min(tactile_feedback_->getSheerTorque(), config_->insertion_torque_max_);
+    torque = std::max(tactile_feedback_->getSheerTorque(), -config_->insertion_torque_max_);
+
+    // Debug
+    if (verbose_torque && false)
+    {
+      std::cout << "raw torque: " << tactile_feedback_->getSheerTorque() << std::endl;
+      std::cout << "capped torque: " << torque << std::endl;
+    }
+
+    // Min threshold, absolute
+    if (fabs(torque) < config_->insertion_torque_min_)
+    {
+      const bool show = false;
+      showDirectionArrow(torque, show);
+
+      if (verbose_torque && false)
+        std::cout << "Ignoring torque because below threshold: " << torque << std::endl;
+      return false;
+    }
+
+    // Remove bottom of torque so that there are no jumps after the min
+    if (torque > 0)
+      torque -= config_->insertion_torque_min_;
+    else
+      torque += config_->insertion_torque_min_;
+
+    if (verbose_torque)
+      std::cout << "  Pre-scaled torque: " << torque << std::endl;
+
+    // Scale torque rotation to output rotation
+    torque *= config_->insertion_torque_scale_;
+    if (verbose_torque)
+      std::cout << "  Scaled (reduced) torque: " << torque << std::endl;
+
+    // Show pre-rotation pose
+    // visuals_->trajectory_lines_->publishZArrow(
+    // teleop_world_to_tool_ * config_->teleoperation_offset_, rvt::GREEN, rvt::REGULAR);
+
+    // Show arrow in direction of movement
+    const bool show = true;
+    showDirectionArrow(torque, show);
+
+    // Apply torque to EE pose
+    Eigen::Affine3d rotation;
+    rotation = Eigen::AngleAxisd(torque, Eigen::Vector3d::UnitY());
+    teleop_world_to_tool_ = teleop_world_to_tool_ * rotation;
+    return true;
+  }
+}
+
+void Manipulation::showDirectionArrow(double torque, bool show)
+{
+  // Move pose from tips of finger (tool) back to base of EE
+  Eigen::Affine3d visualize_direction_arrow =  // teleop_world_to_tool_;
+      teleop_world_to_tool_ * config_->teleoperation_offset_;
+
+  // Rotate to be z-aligned
+  visualize_direction_arrow =
+      visualize_direction_arrow * Eigen::AngleAxisd(-M_PI / 2, Eigen::Vector3d::UnitY());
+
+  // Rotate 90
+  Eigen::Affine3d rotation;
+  if (torque > 0)
+    torque = -1.57;
+  else
+    torque = 1.57;
+  rotation = Eigen::AngleAxisd(torque, Eigen::Vector3d::UnitY());
+  visualize_direction_arrow = visualize_direction_arrow * rotation;
+
+  // Set the frame ID and timestamp.
+  visualization_msgs::Marker arrow_marker;
+  arrow_marker.header.stamp = ros::Time::now();
+  arrow_marker.header.frame_id = config_->robot_base_frame_;
+
+  // Pose
+  arrow_marker.pose = visuals_->trajectory_lines_->convertPose(visualize_direction_arrow);
+
+  // Set the namespace and id for this marker.  This serves to create a unique ID
+  arrow_marker.ns = "Movement Direction";
+  arrow_marker.id = 2;
+
+  // Other properites
+  arrow_marker.type = visualization_msgs::Marker::ARROW;
+  if (show)
+    arrow_marker.action = visualization_msgs::Marker::ADD;
+  else
+    arrow_marker.action = visualization_msgs::Marker::DELETE;
+  arrow_marker.lifetime = ros::Duration(0.0);
+  arrow_marker.color = visuals_->trajectory_lines_->getColor(rvt::BLACK);
+  arrow_marker.scale = visuals_->trajectory_lines_->getScale(rvt::LARGE, true);
+  arrow_marker.scale.x = 0.1;  // overrides previous x scale specified
+
+  // Publish
+  visuals_->trajectory_lines_->publishMarker(arrow_marker);
+}
+
+// This function is called from tactile_feedback.cpp as a binded function
 void Manipulation::updateTouchControl(JointModelGroup* arm_jmg)
 {
-  // Check if overall sheer force is enough to move the arm
-  if (tactile_feedback_->getSheerForce() < config_->sheer_force_threshold_)
+  // Make sure a previous call isn't currently blocking
+  if (remote_control_->isWaiting())
+    return;
+
+  if (remote_control_->getStop())
   {
-    std::cout << "force to low: " << tactile_feedback_->getSheerForce() << "/"
-              << config_->sheer_force_threshold_ << " --------------------------------\n";
+    std::cout << "Error: remote control stopped " << std::endl;
     return;
   }
 
-  Eigen::Affine3d base_to_world = getCurrentState()->getGlobalLinkTransform("base_link").inverse();
+  // Adjust pose based on tactile feedback
+  adjustPoseFromTactile();
 
-  // Calculate amount to translate
-  target_teleop_direction_ << -1 * sin(tactile_feedback_->getSheerTheta()), 0,
-      cos(tactile_feedback_->getSheerTheta());
-  target_teleop_rotated_direction_ = target_teleop_pose_.rotation() * target_teleop_direction_;
+  // Move pose from tips of finger (tool) back to base of EE
+  teleop_world_to_ee_ = teleop_world_to_tool_ * config_->teleoperation_offset_;
 
-  // Calculate translation amount based on sheer force
-  static const double SHEER_FORCE_MAX = 20;  // ignore sheer force higher than this
-  const double sheer_force = std::min(SHEER_FORCE_MAX, tactile_feedback_->getSheerForce());
-  static const double SHEER_RATIO = config_->touch_teleop_max_translation_step_ / SHEER_FORCE_MAX;
-  const double sheer_force_gain = sheer_force * SHEER_RATIO;
-
-  // The target pose is built by applying a translation to the target pose for the desired
-  // direction and distance
-  target_teleop_pose_.translation() += target_teleop_rotated_direction_ * sheer_force_gain;
+  // Show pose-rotation pose
+  visuals_->trajectory_lines_->publishZArrow(teleop_world_to_ee_, rvt::ORANGE, rvt::REGULAR);
 
   // Convert deisred pose from 'world' frame to 'robot base' frame
-  teleop_base_to_desired_ = base_to_world * target_teleop_pose_;
+  Eigen::Affine3d base_to_world = getCurrentState()->getGlobalLinkTransform("base_link").inverse();
+  teleop_base_to_ee_ = base_to_world * teleop_world_to_ee_;
+
+  remote_control_->waitForNextStep("move");
 
   // Move robot
-  execution_interface_->executePose(teleop_base_to_desired_, arm_jmg);
+  execution_interface_->executePose(teleop_base_to_ee_, arm_jmg);
+
+  ros::Duration(1.0).sleep();
 }
 
+// Note: deprecated function
 bool Manipulation::teleoperation(const Eigen::Affine3d& ee_pose, bool move,
                                  JointModelGroup* arm_jmg)
 {

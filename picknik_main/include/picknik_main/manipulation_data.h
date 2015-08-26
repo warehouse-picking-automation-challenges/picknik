@@ -133,7 +133,11 @@ public:
   double insertion_duration_;
   double insertion_distance_;
   double insertion_updown_pause_;
+  double insertion_alter_pause_;
   double insertion_touch_translation_step_;
+  double insertion_torque_scale_;
+  double insertion_torque_max_;
+  double insertion_torque_min_;
 
   // Execution mode
   bool fake_execution_;

@@ -48,12 +48,21 @@ touch_teleop_max_translation_step: 0.005
 
 insertion_steps_per_meter: 1000
 insertion_duration: 10 # sec
-insertion_distance: 0.05 # meters
-insertion_updown_pause: 2 #sec
+insertion_distance: 0.075 # meters
 insertion_touch_translation_step: 0.01
 
+# Insertion Demo Timing
+insertion_updown_pause: 1 #sec
+insertion_alter_pause: 1 #sec
+
+# Torque insertion capability
+insertion_torque_max: 50 # cap all torque readings at this amount, absolute
+insertion_torque_min: 20 # ignore torque readings below this amount, absolute
+insertion_torque_scale: -0.00075 # scale the torque of value (min, max) to an output rotation amount
+
 # Teleoperation
-teleoperation_offset: [0.0, 0.0, -0.2, 0, 0, 0] # x,y,z,r,p,y
+#teleoperation_offset: [0.0, 0.0, -0.25, 0, 0, 0] # x,y,z,r,p,y  - tip of finger
+teleoperation_offset: [0.0, 0.0, -0.36, 0, 0, 0] # x,y,z,r,p,y  - tip of knife
 
 behavior:
   end_effector_enabled: true
