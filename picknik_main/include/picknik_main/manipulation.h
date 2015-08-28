@@ -293,13 +293,27 @@ public:
                           double desired_retreat_distance, bool retreat,
                           bool ignore_collision = false);
 
-  /** \brief Use tactile feedback */
+  /** \brief Use tactile feedback
+   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \param desired_distance
+   * \param direction_pose
+   * \param direction_in
+   */
   bool executeInsertionClosedLoop(JointModelGroup* arm_jmg, double desired_distance,
-                                  Eigen::Affine3d& desired_pose, bool direction_in);
+                                  Eigen::Affine3d& desired_pose, bool direction_in,
+                                  bool& achieved_depth);
 
-  /** \brief Move in direction that end effecotr is pointing */
+  /** \brief Use tactile feedback
+   * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
+   * \param desired_distance
+   * \param in
+   * \param velocity_scaling_factor
+   */
   bool executeInsertionOpenLoop(JointModelGroup* arm_jmg, double desired_distance, bool in,
                                 double velocity_scaling_factor);
+
+  /** \brief Detect when an object has been hit, and retract */
+  bool adjustPoseAndReject();
 
   /**
    * \brief Generic execute straight line path function

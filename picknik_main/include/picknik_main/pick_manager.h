@@ -215,6 +215,16 @@ public:
   /** \brief Initialize with correct location */
   void setupInteractiveMarker();
 
+  /** \brief Test drawing */
+  void drawSpiral();
+
+  /** \brief Generate a large number of poses in a spiral starting from the input center_pose */
+  void getSpiralPoses(std::vector<Eigen::Affine3d>& poses, const Eigen::Affine3d& center_pose,
+                      double distance);
+
+  /** \brief Demo of tactile insertion */
+  void automatedInsertionTest();
+
   VisualsPtr getVisuals() { return visuals_; }
   planning_scene_monitor::PlanningSceneMonitorPtr getPlanningSceneMonitor() const
   {

@@ -85,6 +85,10 @@ int main(int argc, char** argv)
       ROS_INFO_STREAM_NAMED("main", "Plan to random valid locations");
       manager.testRandomValidMotions();
       break;
+    case 7:
+      ROS_INFO_STREAM_NAMED("main", "Draw spiral");
+      manager.drawSpiral();
+      break;
     case 8:
       ROS_INFO_STREAM_NAMED("main", "Test end effectors mode");
       manager.testEndEffectors();
@@ -92,6 +96,10 @@ int main(int argc, char** argv)
     case 9:
       ROS_INFO_STREAM_NAMED("main", "Going to pose " << FLAGS_pose);
       manager.gotoPose(FLAGS_pose);
+      break;
+    case 10:
+      ROS_INFO_STREAM_NAMED("main", "Automated insertion test");
+      manager.automatedInsertionTest();
       break;
     case 11:
       ROS_INFO_STREAM_NAMED("main", "Going in circle for calibration");

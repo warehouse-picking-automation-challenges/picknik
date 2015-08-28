@@ -128,6 +128,7 @@ public:
 
   // Tactile Sensor Data
   double sheer_force_threshold_;
+  double sheer_force_rejection_max_;
   double touch_teleop_max_translation_step_;
   double insertion_steps_per_meter_;
   double insertion_duration_;
@@ -138,6 +139,13 @@ public:
   double insertion_torque_scale_;
   double insertion_torque_max_;
   double insertion_torque_min_;
+  double insertion_attempt_radius_;
+  double insertion_attempt_distance_;
+  double insertion_attempt_distance_scale_;
+  double insertion_spiral_distance_;
+
+  // Automated insertion test
+  double automated_insertion_distance_;
 
   // Execution mode
   bool fake_execution_;

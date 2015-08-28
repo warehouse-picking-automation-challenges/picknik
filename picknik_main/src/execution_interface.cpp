@@ -97,7 +97,7 @@ bool ExecutionInterface::executeTrajectory(moveit_msgs::RobotTrajectory &traject
 {
   trajectory_msgs::JointTrajectory &trajectory = trajectory_msg.joint_trajectory;
 
-  bool run_fast = true;
+  bool run_fast = false;
 
   if (!run_fast)
     ROS_INFO_STREAM_NAMED("execution_interface", "Executing trajectory with "

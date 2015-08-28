@@ -1092,7 +1092,7 @@ bool Manipulation::executeRetreatPath(JointModelGroup* arm_jmg, double desired_r
 
 bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double desired_distance,
                                               Eigen::Affine3d& desired_world_to_tool,
-                                              bool direction_in)
+                                              bool direction_in, bool& achieved_depth)
 {
   // Copy pose
   teleop_world_to_tool_ = desired_world_to_tool;
@@ -1101,7 +1101,6 @@ bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double d
   Eigen::Vector3d approach_direction;
   approach_direction << 0, 0, (direction_in ? 1 : -1);
 
-  // Compute Cartesian Path
   // the direction can be in the local reference frame (in which case we rotate it)
   const Eigen::Vector3d rotated_direction = teleop_world_to_tool_.rotation() * approach_direction;
 
@@ -1123,6 +1122,8 @@ bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double d
   std::cout << "step_distance: " << step_distance << std::endl;
   std::cout << "step_duration: " << step_duration << std::endl;
 
+  achieved_depth = true;  // assume it works
+
   ros::Rate rate_limiter(1 / step_duration);  // specify the hz
   // Begin soft-real time loop
   for (std::size_t i = 0; i < num_steps; ++i)
@@ -1139,9 +1140,20 @@ bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double d
     // Move target pose inward
     teleop_world_to_tool_.translation() += rotated_direction * step_distance;
 
-    // Adjust pose based on tactile feedback
     // Track if tactile sensor was used
-    bool corrected = adjustPoseFromTactile();
+    bool corrected = false;
+
+    // Adjust pose based on tactile feedback
+    corrected = adjustPoseFromTactile();
+
+    // Decide when to stop inserting based on negative z-axis sheer force
+    // if (direction_in && adjustPoseAndReject())
+    // {
+    //   std::cout << "Breaking insertion loop because sheer force too high" << std::endl;
+    //   achieved_depth = false;
+    //   remote_control_->waitForNextStep("reverse direction");
+    //   break;
+    // }
 
     // Visualize the pivot point for pose rotations
     visuals_->visual_tools_->publishSphere(
@@ -1162,8 +1174,6 @@ bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double d
 
     // Move robot
     execution_interface_->executePose(teleop_base_to_ee_, arm_jmg, step_duration * SMOOTH_FACTOR);
-
-    std::cout << std::endl;
 
     if (corrected)
     {
@@ -1245,6 +1255,20 @@ bool Manipulation::executeInsertionOpenLoop(JointModelGroup* arm_jmg, double des
   }
 
   return true;
+}
+
+bool Manipulation::adjustPoseAndReject()
+{
+  // Check if overall sheer force is enough to move the arm
+  if (tactile_feedback_->getSheerForce() > config_->sheer_force_rejection_max_)
+  {
+    std::cout << "sheer force reached max, actual: " << tactile_feedback_->getSheerForce()
+              << ", max:" << config_->sheer_force_rejection_max_
+              << " --------------------------------\n";
+    return true;
+  }
+
+  return false;  // do not reject
 }
 
 bool Manipulation::executeCartesianPath(JointModelGroup* arm_jmg, const Eigen::Vector3d& direction,

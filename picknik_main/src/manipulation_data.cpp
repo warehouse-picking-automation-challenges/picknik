@@ -143,6 +143,8 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   // Tactile Sensor Data
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "sheer_force_threshold",
                                           sheer_force_threshold_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "sheer_force_rejection_max",
+                                          sheer_force_rejection_max_);
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "touch_teleop_max_translation_step",
                                           touch_teleop_max_translation_step_);
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_steps_per_meter",
@@ -163,6 +165,18 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
                                           insertion_torque_max_);
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_torque_min",
                                           insertion_torque_min_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_attempt_radius",
+                                          insertion_attempt_radius_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_attempt_distance",
+                                          insertion_attempt_distance_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_attempt_distance_scale",
+                                          insertion_attempt_distance_scale_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "insertion_spiral_distance",
+                                          insertion_spiral_distance_);
+
+  // Automated insertion test
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "automated_insertion_distance",
+                                          automated_insertion_distance_);
 
   // Pick Manager settings
   ros_param_utilities::getStringParameter(parent_name, nh_, "joint_state_topic",

@@ -443,7 +443,7 @@ bool PickManager::testJointLimits()
       config_->right_arm_->getActiveJointModels();
 
   // Decide if we are testing 1 joint or all
-  int test_joint_limit_joint;
+  int test_joint_limit_joint = 0;
   std::size_t first_joint;
   std::size_t last_joint;
   if (test_joint_limit_joint < 0)
@@ -928,8 +928,9 @@ void PickManager::insertion()
     ros::Duration(1.0).sleep();
   }
 
-  // visuals_->start_state_->hideRobot();
-  // visuals_->goal_state_->hideRobot();
+  // Reusable transform from robot base to world. Could be identity. Assumes that it does not change
+  Eigen::Affine3d base_to_world =
+      manipulation_->getCurrentState()->getGlobalLinkTransform("base_link").inverse();
 
   // Get current pose - retracted position
   const Eigen::Affine3d desired_world_to_ee =
@@ -941,9 +942,26 @@ void PickManager::insertion()
 
   // pretend that at first we are inserted so that it moves to the correct pre-position
   bool in = false;
+  bool achieved_depth = true;  // flag that lets us know if insertion went all the way in
+
+  // Spiral poses
+  std::vector<Eigen::Affine3d> poses;
+  // allow for alternative insertion poses to be tried if needed
+  std::size_t insertion_spiral_pose = 0;
+  getSpiralPoses(poses, desired_world_to_tool, config_->insertion_spiral_distance_);
+  for (std::size_t i = 0; i < poses.size(); ++i)
+  {
+    visuals_->visual_tools_->printTransform(poses[i]);
+    visuals_->visual_tools_->publishZArrow(poses[i], rvt::RED, rvt::REGULAR);
+  }
+  ros::Duration(0.5).sleep();
+  visuals_->visual_tools_->deleteAllMarkers();
 
   while (ros::ok())
   {
+    tactile_feedback_->recalibrateTactileSensor();
+    ros::Duration(0.25).sleep();
+
     if (in)
     {
       // Move to pre-pose
@@ -951,18 +969,29 @@ void PickManager::insertion()
       std::cout << "RETRACTING " << std::endl;
 
       bool direction_in = false;
-      if (!manipulation_->executeInsertionClosedLoop(arm_jmg, config_->insertion_distance_,
-                                                     desired_world_to_tool, direction_in))
+      bool dummy_achieved_depth;
+      if (!manipulation_->executeInsertionClosedLoop(arm_jmg, config_->insertion_distance_ / 2.0,
+                                                     desired_world_to_tool, direction_in,
+                                                     dummy_achieved_depth))
       {
         ROS_ERROR_STREAM_NAMED("pick_manager", "Unable to execute retract path");
       }
 
-      std::cout << "About to restore start position... " << std::endl;
-      ros::Duration(0.5).sleep();
+      if (!achieved_depth)
+      {
+        ROS_INFO_STREAM_NAMED("pick_manager", "Moving to next insertion location "
+                                                  << insertion_spiral_pose);
+        desired_world_to_tool = poses[insertion_spiral_pose++];
 
-      // TODO
-      // transformGlobalToBaseLink(desired_world_to_tool);
-      // manipulation_->getExecutionInterface()->executePose(desired_world_to_tool, arm_jmg);
+        visuals_->visual_tools_->publishZArrow(desired_world_to_tool, rvt::GREEN, rvt::REGULAR);
+
+        // // Move pose from tips of finger (tool) back to base of EE
+        Eigen::Affine3d new_world_to_ee = desired_world_to_tool * config_->teleoperation_offset_;
+        // // Convert desired pose from 'world' frame to 'robot base' frame
+        Eigen::Affine3d new_base_to_ee = base_to_world * new_world_to_ee;
+        manipulation_->getExecutionInterface()->executePose(new_base_to_ee, arm_jmg);
+        ros::Duration(0.5).sleep();
+      }
     }
     else
     {
@@ -973,15 +1002,22 @@ void PickManager::insertion()
 
       bool direction_in = true;
       if (!manipulation_->executeInsertionClosedLoop(arm_jmg, config_->insertion_distance_,
-                                                     desired_world_to_tool, direction_in))
+                                                     desired_world_to_tool, direction_in,
+                                                     achieved_depth))
       {
         ROS_ERROR_STREAM_NAMED("pick_manager", "Unable to execute insertion path");
+      }
+
+      // Check if insertion didn't go all the way
+      if (!achieved_depth)
+      {
+        ROS_WARN_STREAM_NAMED("pick_manager",
+                              "Did not achieve full depth. After retreat will try new location");
       }
 
       // remote_control_->waitForNextStep("retract");
     }
 
-    tactile_feedback_->recalibrateTactileSensor();
     ros::Duration(config_->insertion_updown_pause_).sleep();
     // visuals_->visual_tools_->deleteAllMarkers();
     in = !in;
@@ -1049,6 +1085,205 @@ void PickManager::setupInteractiveMarker()
   // geometry_msgs::Pose pose =
   // visuals_->visual_tools_->convertPose(config_->grasp_location_transform_);
   remote_control_->initializeInteractiveMarkers(pose_msg);
+}
+
+// Mode 7
+void PickManager::drawSpiral()
+{
+  ROS_INFO_STREAM_NAMED("pick_manager", "Drawing spiral");
+
+  JointModelGroup* arm_jmg = config_->dual_arm_ ? config_->both_arms_ : config_->right_arm_;
+  const Eigen::Affine3d& world_to_ee =
+      manipulation_->getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+
+  // Move the pose forward from EE base to finger tips
+  Eigen::Affine3d world_to_tool = world_to_ee * config_->teleoperation_offset_.inverse();
+  Eigen::Affine3d new_sphere = world_to_tool;
+
+  // Center along x/y axis
+  double center_x = world_to_tool.translation().x();
+  double center_y = world_to_tool.translation().y();
+
+  double coils = config_->insertion_attempt_radius_;
+  double rotation = 3.14;
+
+  // value of theta corresponding to end of last coil
+  const double thetaMax = coils * 2 * M_PI;
+
+  // How far to step away from center for each side.
+  const double awayStep = config_->insertion_attempt_radius_ / thetaMax;
+
+  // distance between points to plot
+  const double chord = config_->insertion_attempt_distance_;
+
+  // For every side, step around and away from center.
+  // start at the angle corresponding to a distance of chord
+  // away from centre.
+  for (double theta = chord / awayStep; theta <= thetaMax;)
+  {
+    // How far away from center
+    double away = awayStep * theta;
+
+    // How far around the center.
+    double around = theta + rotation;
+
+    // Convert 'around' and 'away' to X and Y.
+    double x = center_x + cos(around) * away;
+    double y = center_y + sin(around) * away;
+
+    // Now that you know it, do it.
+    new_sphere.translation().x() = x;
+    new_sphere.translation().y() = y;
+    visuals_->visual_tools_->publishZArrow(new_sphere, rvt::RED, rvt::SMALL);
+    visuals_->visual_tools_->printTransform(new_sphere);
+    ros::Duration(0.001).sleep();
+
+    // to a first approximation, the points are on a circle
+    // so the angle between them is chord/radius
+    theta += chord / away;
+
+    if (!ros::ok())
+      break;
+  }
+
+  /*
+    // Draw spiral
+    double x, y;
+    double distance = config_->insertion_attempt_distance_;
+    double radius = config_->insertion_attempt_radius_;
+    int rotations = 4;
+    while (distance <= rotations * 2.0 * M_PI)
+    {
+      // Increment
+      distance += config_->insertion_attempt_distance_;
+      radius += config_->insertion_attempt_radius_;
+
+      // x = rx + (sin(distance) * distance) * radius;
+      // y = ry + (sin(distance + (M_PI / 2.0)) * distance + (M_PI / 2)) * radius;
+
+      x = rx + sin(distance) * radius;
+      y = ry + sin(distance + M_PI / 2.0) * radius;
+
+      new_sphere.translation().x() = x;
+      new_sphere.translation().y() = y;
+      visuals_->visual_tools_->publishZArrow(new_sphere, rvt::RED, rvt::SMALL);
+      ros::Duration(0.001).sleep();
+
+      // visuals_->visual_tools_->printTransform(new_sphere);
+
+      if (!ros::ok())
+        break;
+    }
+  */
+}
+
+void PickManager::getSpiralPoses(std::vector<Eigen::Affine3d>& poses,
+                                 const Eigen::Affine3d& center_pose, double distance)
+{
+  Eigen::Affine3d this_pose = center_pose;
+  bool right_down = true;
+  std::size_t step = 1;
+  std::size_t i;
+  const std::size_t iterations = 10;
+
+  for (i = 0; i < iterations; ++i)
+  {
+    if (right_down)
+    {
+      // Right
+      for (std::size_t j = 0; j < step; ++j)
+      {
+        this_pose.translation().x() += distance;
+        poses.push_back(this_pose);
+      }
+      // Down
+      for (std::size_t j = 0; j < step; ++j)
+      {
+        this_pose.translation().y() -= distance;
+        poses.push_back(this_pose);
+      }
+    }
+    else
+    {
+      // Left
+      for (std::size_t j = 0; j < step; ++j)
+      {
+        this_pose.translation().x() -= distance;
+        poses.push_back(this_pose);
+      }
+      // Up
+      for (std::size_t j = 0; j < step; ++j)
+      {
+        this_pose.translation().y() += distance;
+        poses.push_back(this_pose);
+      }
+    }
+    step++;
+    right_down = !right_down;
+  }
+}
+
+void PickManager::automatedInsertionTest()
+{
+  JointModelGroup* arm_jmg = config_->right_arm_;
+
+  // Go to pre-grap of knife pose
+  static const std::string pose_name = "pickup_location";
+
+  bool check_validity = true;
+  if (!manipulation_->moveToSRDFPose(arm_jmg, pose_name, config_->main_velocity_scaling_factor_,
+                                     check_validity))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation", "Unable to go to pregrasp location");
+    return;
+  }
+  manipulation_->getExecutionInterface()->waitForExecution();
+
+  // Move in to knife
+  bool direction_in = true;
+  if (!manipulation_->executeInsertionOpenLoop(arm_jmg, config_->automated_insertion_distance_,
+                                               direction_in,
+                                               config_->main_velocity_scaling_factor_))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation", "Unable to go to grasp location");
+    return;
+  }
+
+  // Close gripper
+  remote_control_->waitForNextStep("have user manually close gripper");
+
+  // Recalibrate tactile
+  tactile_feedback_->recalibrateTactileSensor();
+
+  // Move knife out
+  direction_in = false;
+  if (!manipulation_->executeInsertionClosedLoop(arm_jmg, config_->automated_insertion_distance_,
+                                                 desired_world_to_tool, direction_in,
+                                                 achieved_depth))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation", "Unable to go to pre-grasp location");
+    return;
+  }
+
+  // Get current pose - retracted position
+  Eigen::Affine3d desired_world_to_ee =
+      manipulation_->getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+
+  // Move the desired pose forward from EE base to finger tips
+  Eigen::Affine3d desired_world_to_tool =
+      desired_world_to_ee * config_->teleoperation_offset_.inverse();
+
+  // Test
+  visuals_->visual_tools_->publishZArrow(desired_world_to_tool, rvt::GREEN);
+
+  // Rotate to desired insertion angle for testing
+  double angle = M_PI / 4;  // 45 degrees
+  Eigen::Affine3d rotation;
+  rotation = Eigen::AngleAxisd(angle, Eigen::Vector3d::UnitY());
+  desired_world_to_tool = desired_world_to_tool * rotation;
+
+  // Test
+  visuals_->visual_tools_->publishZArrow(desired_world_to_tool, rvt::RED);
 }
 
 }  // end namespace

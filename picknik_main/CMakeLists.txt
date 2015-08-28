@@ -258,3 +258,9 @@ target_link_libraries(mesh_publisher
   ${catkin_LIBRARIES} 
   ${Boost_LIBRARIES}
 )
+
+add_executable(simple_test tests/simple_test.cpp)
+target_link_libraries(simple_test
+  ${catkin_LIBRARIES} 
+  ${Boost_LIBRARIES}
+)
