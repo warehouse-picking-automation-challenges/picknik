@@ -146,6 +146,8 @@ public:
 
   // Automated insertion test
   double automated_insertion_distance_;
+  double automated_retract_distance_;
+  double automated_insertion_theta_;
 
   // Execution mode
   bool fake_execution_;

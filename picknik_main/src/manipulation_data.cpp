@@ -177,6 +177,10 @@ bool ManipulationData::load(robot_model::RobotModelPtr robot_model, bool fake_ex
   // Automated insertion test
   ros_param_utilities::getDoubleParameter(parent_name, nh_, "automated_insertion_distance",
                                           automated_insertion_distance_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "automated_retract_distance",
+                                          automated_retract_distance_);
+  ros_param_utilities::getDoubleParameter(parent_name, nh_, "automated_insertion_theta",
+                                          automated_insertion_theta_);
 
   // Pick Manager settings
   ros_param_utilities::getStringParameter(parent_name, nh_, "joint_state_topic",

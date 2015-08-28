@@ -117,6 +117,10 @@ public:
   bool moveToSRDFPose(JointModelGroup* arm_jmg, const std::string& pose_name,
                       double velocity_scaling_factor, bool check_validity = true);
 
+  /** \brief No planning dude */
+  bool moveToSRDFPoseNoPlan(JointModelGroup* arm_jmg, const std::string& pose_name,
+                            double duration);
+
   /**
    * \brief Move EE to a particular pose by solving with IK
    * \param velocity_scaling_factor - the percent of max speed all joints should be allowed to
@@ -303,6 +307,11 @@ public:
                                   Eigen::Affine3d& desired_pose, bool direction_in,
                                   bool& achieved_depth);
 
+  /** \brief Insertion by stream cartesian waypoints */
+  bool executeInsertionOpenLoopNew(JointModelGroup* arm_jmg, double desired_distance,
+                                   double duration, Eigen::Affine3d& desired_world_to_tool,
+                                   bool direction_in, bool& achieved_depth);
+
   /** \brief Use tactile feedback
    * \param arm_jmg - the kinematic chain of joint that should be controlled (a planning group)
    * \param desired_distance
@@ -311,6 +320,13 @@ public:
    */
   bool executeInsertionOpenLoop(JointModelGroup* arm_jmg, double desired_distance, bool in,
                                 double velocity_scaling_factor);
+
+  /**
+   * \brief Pose in tool form
+   * \return true on success
+   */
+  bool executeToolPose(JointModelGroup* arm_jmg, Eigen::Affine3d& pose_world_to_tool,
+                       double duration);
 
   /** \brief Detect when an object has been hit, and retract */
   bool adjustPoseAndReject();
@@ -576,7 +592,7 @@ public:
   bool enableTeleoperation();
 
   /** \brief Convert from world frame to base_link frame */
-  void transformGlobalToBaseLink(Eigen::Affine3d& pose);
+  void transformWorldToBase(Eigen::Affine3d& pose_world, Eigen::Affine3d& pose_base);
 
   /**
    * \brief Get the iterative smoother

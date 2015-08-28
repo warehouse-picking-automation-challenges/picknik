@@ -459,3 +459,36 @@ Test camera view
     rosrun image_view image_view image:=/xtion_right/rgb/image_color
     rosrun image_view image_view image:=/xtion_left/rgb/image_color
 
+
+## Sensor Bot
+
+Visualizer
+
+	roslaunch picknik_main r3_rviz.launch
+
+Gelsight
+
+    cd ~/blue/sandbox/r3/gelsight/scripts
+	. run_gelsight_ros.sh
+
+Manipulation:
+
+    roslaunch picknik_main r3_pick.launch mode:=0
+
+    Modes:
+	  0 Do nothing
+	  1 Interactive marker teleoperation
+	  2 Go home
+	  3 Insertion task
+	  4 Gelsight touch control
+	  10 Automated Insertion Test
+	  41 Get SRDF pose
+	  
+Move to straight down testing pose:
+
+    roslaunch picknik_main r3_pick.launch mode:=9 pose:=straight_down_towards_table
+
+Move to insertion position:
+
+    roslaunch picknik_main r3_pick.launch mode:=9 pose:=insertion_bottom_row
+	

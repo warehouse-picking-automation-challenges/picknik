@@ -71,7 +71,9 @@ insertion_torque_scale: -0.00075 # scale the torque of value (min, max) to an ou
 insertion_spiral_distance: 0.005
 
 # Automated Insertion test
-automated_insertion_distance: 0.1 # meters
+automated_insertion_distance: 0.08 # meters
+automated_retract_distance: 0.18 # meters
+automated_insertion_theta: 0.78539816339 # degrees
 
 # Teleoperation
 #teleoperation_offset: [0.0, 0.0, -0.25, 0, 0, 0] # x,y,z,r,p,y  - tip of finger

@@ -1239,32 +1239,6 @@ void PickManager::automatedInsertionTest()
   }
   manipulation_->getExecutionInterface()->waitForExecution();
 
-  // Move in to knife
-  bool direction_in = true;
-  if (!manipulation_->executeInsertionOpenLoop(arm_jmg, config_->automated_insertion_distance_,
-                                               direction_in,
-                                               config_->main_velocity_scaling_factor_))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation", "Unable to go to grasp location");
-    return;
-  }
-
-  // Close gripper
-  remote_control_->waitForNextStep("have user manually close gripper");
-
-  // Recalibrate tactile
-  tactile_feedback_->recalibrateTactileSensor();
-
-  // Move knife out
-  direction_in = false;
-  if (!manipulation_->executeInsertionClosedLoop(arm_jmg, config_->automated_insertion_distance_,
-                                                 desired_world_to_tool, direction_in,
-                                                 achieved_depth))
-  {
-    ROS_ERROR_STREAM_NAMED("manipulation", "Unable to go to pre-grasp location");
-    return;
-  }
-
   // Get current pose - retracted position
   Eigen::Affine3d desired_world_to_ee =
       manipulation_->getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
@@ -1274,16 +1248,70 @@ void PickManager::automatedInsertionTest()
       desired_world_to_ee * config_->teleoperation_offset_.inverse();
 
   // Test
-  visuals_->visual_tools_->publishZArrow(desired_world_to_tool, rvt::GREEN);
+  // visuals_->visual_tools_->publishZArrow(desired_world_to_tool, rvt::PURPLE);
+  // remote_control_->waitForNextStep("confirm pose");
 
-  // Rotate to desired insertion angle for testing
-  double angle = M_PI / 4;  // 45 degrees
-  Eigen::Affine3d rotation;
-  rotation = Eigen::AngleAxisd(angle, Eigen::Vector3d::UnitY());
-  desired_world_to_tool = desired_world_to_tool * rotation;
+  // Move in to knife
+  bool direction_in = true;
+  bool achieved_depth;
+  double duration = 10;
+  if (!manipulation_->executeInsertionOpenLoopNew(arm_jmg, config_->automated_insertion_distance_,
+                                                  duration, desired_world_to_tool, direction_in,
+                                                  achieved_depth))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation", "Unable to go to grasp location");
+    return;
+  }
 
+  // Close gripper
+  remote_control_->waitForNextFullStep("have user manually close gripper");
+
+  // Recalibrate tactile
+  tactile_feedback_->recalibrateTactileSensor();
+
+  // Move knife out
+  direction_in = false;
+  duration = 10;
+  if (!manipulation_->executeInsertionOpenLoopNew(arm_jmg, config_->automated_retract_distance_,
+                                                  duration, desired_world_to_tool, direction_in,
+                                                  achieved_depth))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation", "Unable to go to pre-grasp location");
+    return;
+  }
+
+  // Move knife to new location
+  duration = 5;
+  if (!manipulation_->moveToSRDFPoseNoPlan(arm_jmg, "insertion_location_side", duration))
+  {
+    ROS_ERROR_STREAM_NAMED("pick_manager", "Unable to move to inseriton location");
+    return;
+  }
+  ros::Duration(6.0).sleep();
+
+  // Get current pose - retracted position
+  desired_world_to_ee =
+      manipulation_->getCurrentState()->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+
+  // Move the desired pose forward from EE base to finger tips
+  desired_world_to_tool = desired_world_to_ee * config_->teleoperation_offset_.inverse();
+
+  /*
   // Test
-  visuals_->visual_tools_->publishZArrow(desired_world_to_tool, rvt::RED);
+  visuals_->visual_tools_->publishZArrow(desired_world_to_tool, rvt::GREEN);
+  */
+
+  remote_control_->waitForNextStep("insert");
+
+  // Move knife in
+  direction_in = true;
+  if (!manipulation_->executeInsertionClosedLoop(arm_jmg, config_->automated_insertion_distance_,
+                                                 desired_world_to_tool, direction_in,
+                                                 achieved_depth))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation", "Unable to insert");
+    return;
+  }
 }
 
 }  // end namespace

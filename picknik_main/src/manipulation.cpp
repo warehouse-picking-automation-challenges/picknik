@@ -269,6 +269,38 @@ bool Manipulation::moveToSRDFPose(JointModelGroup* arm_jmg, const std::string& p
   return true;
 }
 
+bool Manipulation::moveToSRDFPoseNoPlan(JointModelGroup* arm_jmg, const std::string& pose_name,
+                                        double duration)
+{
+  ROS_DEBUG_STREAM_NAMED("manipulation.superdebug", "moveToSRDFPose()");
+
+  // Set new state to current state
+  getCurrentState();
+
+  // Set goal state to initial pose
+  moveit::core::RobotStatePtr goal_state(
+      new moveit::core::RobotState(*current_state_));  // Allocate robot states
+  if (!goal_state->setToDefaultValues(arm_jmg, pose_name))
+  {
+    ROS_ERROR_STREAM_NAMED("manipulation", "Failed to set pose '" << pose_name
+                                                                  << "' for planning group '"
+                                                                  << arm_jmg->getName() << "'");
+    return false;
+  }
+
+  // Get EE pose of goal stae
+  Eigen::Affine3d goal_world_to_ee =
+      goal_state->getGlobalLinkTransform(grasp_datas_[arm_jmg]->parent_link_);
+
+  Eigen::Affine3d goal_base_to_ee;
+  transformWorldToBase(goal_world_to_ee, goal_base_to_ee);
+
+  // Move robot
+  execution_interface_->executePose(goal_base_to_ee, arm_jmg, duration);
+
+  return true;
+}
+
 bool Manipulation::moveToEEPose(const Eigen::Affine3d& ee_pose, double velocity_scaling_factor,
                                 JointModelGroup* arm_jmg)
 {
@@ -1104,10 +1136,6 @@ bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double d
   // the direction can be in the local reference frame (in which case we rotate it)
   const Eigen::Vector3d rotated_direction = teleop_world_to_tool_.rotation() * approach_direction;
 
-  // Reusable transform from robot base to world. Could be identity. Assumes that it does not change
-  // This should be a constant
-  Eigen::Affine3d base_to_world = getCurrentState()->getGlobalLinkTransform("base_link").inverse();
-
   // The target pose is built by applying a translation to the start pose for the desired direction
   // and distance
   // Eigen::Affine3d teleop_world_to_tool__base_frame;
@@ -1131,6 +1159,9 @@ bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double d
     // Check if program needs to end
     if (!ros::ok())
       break;
+
+    if (remote_control_->getStop())
+      remote_control_->waitForNextStep("clear stop");
 
     if (direction_in)
       std::cout << "insertion,  step " << i << std::endl;
@@ -1157,17 +1188,17 @@ bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double d
 
     // Visualize the pivot point for pose rotations
     visuals_->visual_tools_->publishSphere(
-        visuals_->visual_tools_->convertPose(teleop_world_to_ee_), rvt::PURPLE,
-        visuals_->visual_tools_->getScale(rvt::REGULAR, false, 0.1), "Sphere", 1);
+        visuals_->visual_tools_->convertPose(teleop_world_to_tool_), rvt::PURPLE,
+        visuals_->visual_tools_->getScale(rvt::LARGE, false, 0.1), "Sphere", 1);
 
     // Move pose from tips of finger (tool) back to base of EE
     teleop_world_to_ee_ = teleop_world_to_tool_ * config_->teleoperation_offset_;
 
     // Show pose-rotation pose
-    visuals_->trajectory_lines_->publishZArrow(teleop_world_to_ee_, rvt::ORANGE, rvt::REGULAR);
+    visuals_->trajectory_lines_->publishZArrow(teleop_world_to_ee_, rvt::BLACK, rvt::REGULAR);
 
     // Convert desired pose from 'world' frame to 'robot base' frame
-    teleop_base_to_ee_ = base_to_world * teleop_world_to_ee_;
+    transformWorldToBase(teleop_world_to_ee_, teleop_base_to_ee_);
 
     if (corrected)
       remote_control_->waitForNextStep("move");
@@ -1191,6 +1222,87 @@ bool Manipulation::executeInsertionClosedLoop(JointModelGroup* arm_jmg, double d
   // Copy pose back
   desired_world_to_tool = teleop_world_to_tool_;
 
+  return true;
+}
+
+bool Manipulation::executeInsertionOpenLoopNew(JointModelGroup* arm_jmg, double desired_distance,
+                                               double duration,
+                                               Eigen::Affine3d& desired_world_to_tool,
+                                               bool direction_in, bool& achieved_depth)
+{
+  // Copy pose
+  teleop_world_to_tool_ = desired_world_to_tool;
+
+  // Move in and out
+  Eigen::Vector3d approach_direction;
+  approach_direction << 0, 0, (direction_in ? 1 : -1);
+
+  // the direction can be in the local reference frame (in which case we rotate it)
+  const Eigen::Vector3d rotated_direction = teleop_world_to_tool_.rotation() * approach_direction;
+
+  // The target pose is built by applying a translation to the start pose for the desired direction
+  // and distance
+  std::size_t num_steps = desired_distance * config_->insertion_steps_per_meter_;
+  // don't allow waypoints to be reached before next goal sent
+  static const double SMOOTH_FACTOR = 1.1;
+
+  // Pre-calculate values
+  double step_distance = desired_distance / double(num_steps);
+  double step_duration = duration / double(num_steps);
+
+  std::cout << "step_distance: " << step_distance << std::endl;
+  std::cout << "step_duration: " << step_duration << std::endl;
+
+  achieved_depth = true;  // assume it works
+
+  ros::Rate rate_limiter(1 / step_duration);  // specify the hz
+  // Begin soft-real time loop
+  for (std::size_t i = 0; i < num_steps; ++i)
+  {
+    // Check if program needs to end
+    if (!ros::ok())
+      break;
+
+    if (remote_control_->getStop())
+      remote_control_->waitForNextStep("clear stop");
+
+    if (direction_in)
+      std::cout << "insertion,  step " << i << std::endl;
+    else
+      std::cout << "retracting, step " << i << std::endl;
+
+    // Move target pose inward
+    teleop_world_to_tool_.translation() += rotated_direction * step_distance;
+
+    // Move Robot
+    executeToolPose(arm_jmg, teleop_world_to_tool_, step_duration * SMOOTH_FACTOR);
+
+    // Wait for next loop
+    rate_limiter.sleep();
+  }
+
+  // Copy pose back
+  desired_world_to_tool = teleop_world_to_tool_;
+
+  return true;
+}
+
+bool Manipulation::executeToolPose(JointModelGroup* arm_jmg, Eigen::Affine3d& pose_world_to_tool,
+                                   double duration)
+{
+  // Move pose from tips of finger (tool) back to base of EE
+  Eigen::Affine3d pose_world_to_ee = pose_world_to_tool * config_->teleoperation_offset_;
+
+  // Show pose-rotation pose
+  visuals_->trajectory_lines_->publishZArrow(pose_world_to_ee, rvt::GREY, rvt::REGULAR);
+
+  // Convert desired pose from 'world' frame to 'robot base' frame
+  // teleop_base_to_ee_ = base_to_world * teleop_world_to_ee_;
+  Eigen::Affine3d pose_base_to_ee;
+  transformWorldToBase(pose_world_to_ee, pose_base_to_ee);
+
+  // Move robot
+  execution_interface_->executePose(pose_base_to_ee, arm_jmg, duration);
   return true;
 }
 
@@ -2733,10 +2845,11 @@ bool Manipulation::enableTeleoperation()
   return true;
 }
 
-void Manipulation::transformGlobalToBaseLink(Eigen::Affine3d& pose)
+void Manipulation::transformWorldToBase(Eigen::Affine3d& pose_world, Eigen::Affine3d& pose_base)
 {
-  const Eigen::Affine3d& world_to_base = getCurrentState()->getGlobalLinkTransform("base_link");
-  pose = world_to_base.inverse() * pose;
+  const Eigen::Affine3d& base_to_world =
+      getCurrentState()->getGlobalLinkTransform("base_link").inverse();
+  pose_base = base_to_world * pose_world;
 }
 
 }  // end namespace
