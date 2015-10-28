@@ -14,7 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   picknik_msgs
   controller_manager_msgs
   bounding_box  
-  ros_param_shortcuts
+  ros_param_utilities
 )
 
 find_package(Eigen REQUIRED)
@@ -33,7 +33,7 @@ catkin_package(
     picknik_msgs
     controller_manager_msgs
     bounding_box
-    ros_param_shortcuts
+    ros_param_utilities
   DEPENDS
     Eigen
   INCLUDE_DIRS 

@@ -17,7 +17,7 @@
 #include <picknik_main/product_simulator.h>
 
 // Parameter loading
-#include <ros_param_shortcuts/ros_param_utilities.h>
+#include <ros_param_utilities/ros_param_utilities.h>
 
 // MoveIt
 #include <moveit/robot_state/conversions.h>

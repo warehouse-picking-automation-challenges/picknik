@@ -47,7 +47,7 @@
 #include <rviz_visual_tools/rviz_visual_tools.h>
 
 // Parameter loading
-#include <ros_param_shortcuts/ros_param_utilities.h>
+#include <ros_param_utilities/ros_param_utilities.h>
 
 namespace picknik_perception
 {

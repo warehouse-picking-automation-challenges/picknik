@@ -40,7 +40,7 @@
 #include <picknik_main/namespaces.h>
 
 // Parameter loading
-#include <ros_param_shortcuts/ros_param_utilities.h>
+#include <ros_param_utilities/ros_param_utilities.h>
 #include <rviz_visual_tools/rviz_visual_tools.h>
 
 namespace picknik_main
