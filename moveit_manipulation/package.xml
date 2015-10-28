@@ -27,7 +27,6 @@
   <build_depend>ompl</build_depend>
   <build_depend>picknik_msgs</build_depend>
   <build_depend>controller_manager_msgs</build_depend>
-  <build_depend>bounding_box</build_depend>
   <build_depend>ros_param_utilities</build_depend>  
   <build_depend>libgflags-dev</build_depend>
 
@@ -40,7 +39,6 @@
   <run_depend>python-pandas</run_depend>
   <run_depend>joy</run_depend>
   <run_depend>controller_manager_msgs</run_depend>
-  <run_depend>bounding_box</run_depend>
   <run_depend>ros_param_utilities</run_depend>
 
 </package>
